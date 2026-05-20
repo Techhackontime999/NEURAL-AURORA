@@ -59,6 +59,10 @@ export default function App() {
     return () => window.removeEventListener('mousemove', onMouseMove)
   }, [])
 
+  useEffect(() => {
+    import('@splinetool/react-spline')
+  }, [])
+
   return (
     <>
       <div ref={glowRef} className="cursor-glow" />

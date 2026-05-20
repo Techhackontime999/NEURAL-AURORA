@@ -1,5 +1,7 @@
-import { useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
 import AuroraBackground from './components/AuroraBackground'
 import Hero from './components/Hero'
@@ -27,7 +29,7 @@ function HomePage() {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="relative min-h-screen overflow-hidden"
+      className="relative min-h-[100dvh] overflow-hidden"
     >
       <AuroraBackground mouse={mouse} />
       <Navbar />
@@ -43,13 +45,41 @@ function HomePage() {
 }
 
 export default function App() {
+  const [loaderDone, setLoaderDone] = useState(false)
+  const glowRef = useRef(null)
+
+  useEffect(() => {
+    function onMouseMove(e) {
+      if (glowRef.current) {
+        glowRef.current.style.left = e.clientX + 'px'
+        glowRef.current.style.top = e.clientY + 'px'
+      }
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    return () => window.removeEventListener('mousemove', onMouseMove)
+  }, [])
+
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/more" element={<More />} />
-      <Route path="/services" element={<Service />} />
-      <Route path="/blog" element={<Blog />} />
-      <Route path="/blog/:slug" element={<BlogPost />} />
-    </Routes>
+    <>
+      <div ref={glowRef} className="cursor-glow" />
+      {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
+      <AnimatePresence>
+        {loaderDone && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, ease: 'easeInOut' }}
+          >
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/more" element={<More />} />
+              <Route path="/services" element={<Service />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+            </Routes>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

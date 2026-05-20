@@ -8,6 +8,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ## Features
 
+- **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, SpeechRecognition voice verification, and celebratory access-granted animation.
 - **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
 - **Spline 3D Hero** — Embedded Spline interactive 3D scene in the hero section
 - **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
@@ -45,6 +46,7 @@ NEURAL-AURORA/
 ├── public/                 # Static assets (images, resume PDF)
 ├── src/
 │   ├── components/         # React components
+│   │   ├── StartingLoader.jsx # AI gateway — voice/MCQ challenge before portfolio
 │   │   └── ui/             # Reusable UI primitives (Card, Spotlight, etc.)
 │   ├── data/
 │   │   └── portfolio.js    # All portfolio data (projects, skills, blog, etc.)

@@ -39,17 +39,17 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.3 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
   },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30, filter: 'blur(4px)' },
+  hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
   visible: {
     opacity: 1,
     y: 0,
     filter: 'blur(0px)',
-    transition: { type: 'spring', stiffness: 100, damping: 25 },
+    transition: { type: 'spring', stiffness: 150, damping: 20 },
   },
 }
 

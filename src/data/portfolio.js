@@ -43,6 +43,7 @@ export const projects = [
     image: '/images/project-1.png',
     github: 'https://github.com/Techhackontime999/NEURAL-AURORA',
     link: null,
+    demo: null,
   },
   {
     id: 'synaptic-dashboard',
@@ -52,6 +53,7 @@ export const projects = [
     image: '/images/project-2.png',
     github: null,
     link: null,
+    demo: null,
   },
   {
     id: 'aurora-engine',
@@ -61,6 +63,7 @@ export const projects = [
     image: '/images/project-3.png',
     github: 'https://github.com/Techhackontime999',
     link: null,
+    demo: null,
   },
   {
     id: 'codeflux',
@@ -70,6 +73,7 @@ export const projects = [
     image: '/images/project-4.png',
     github: null,
     link: null,
+    demo: null,
   },
   {
     id: 'pixel-oracle',
@@ -79,6 +83,7 @@ export const projects = [
     image: '/images/project-5.png',
     github: 'https://github.com/Techhackontime999',
     link: null,
+    demo: null,
   },
   {
     id: 'quantum-shell',
@@ -88,6 +93,7 @@ export const projects = [
     image: '/images/project-6.jpg',
     github: null,
     link: null,
+    demo: null,
   },
 ]
 

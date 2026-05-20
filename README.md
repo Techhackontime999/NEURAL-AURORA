@@ -2,163 +2,125 @@
 
 **A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
 
----
-
-## 🧠 What is NEURAL AURORA?
-
-This isn't a terminal, OS, 3D carousel, or HUD. It's an immersive interactive experience that transforms how your portfolio is perceived:
-
-- **Neural Networks**: Your projects form interconnected nodes, firing with activity
-- **Aurora Visualization**: Dynamic light effects create an ethereal, living aesthetic
-- **Real-Time Interaction**: Hover, click, and watch the network respond
-- **Synaptic Connections**: Projects link based on shared technologies, themes, and dependencies
+Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 11**, **Tailwind CSS 3**, and **Vite 6**.
 
 ---
 
-## ✨ Features
+## Features
 
-### Core Experience
-- 🌌 **Aurora Field Background** - Animated gradient with real-time particle effects
-- 🧠 **Neural Network Graph** - Projects as nodes, technologies as connections
-- ⚡ **Synaptic Firing** - Visual feedback on interaction and data flow
-- 🎨 **Adaptive Themes** - Light/dark modes with custom color schemes
-- 📱 **Responsive Design** - Seamless experience across all devices
-
-### Interaction
-- Hover over nodes to explore project details
-- Click to expand full project information
-- Drag nodes to rearrange the network
-- Filter by technology or project category
-- Real-time search across portfolio
+- **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
+- **Spline 3D Hero** — Embedded Spline interactive 3D scene in the hero section
+- **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
+- **Extended Pages** — `/services` (consulting/pricing), `/more` (experience, education, blog, case studies), `/blog` (blog listing + individual posts)
+- **Dark/Light Theme** — Custom curtain-animation theme toggle
+- **Glassmorphism Design** — Glass panels, diffusion shadows, noise overlay, animated gradients
+- **Responsive** — Fully responsive with mobile hamburger navigation
 
 ---
 
-## 🚀 Quick Start
-
-### Installation
+## Quick Start
 
 ```bash
 git clone https://github.com/Techhackontime999/NEURAL-AURORA.git
 cd NEURAL-AURORA
 npm install
-```
-
-### Development
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Production Build
+### Build for Production
 
 ```bash
 npm run build
-npm start
+npm run preview
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 NEURAL-AURORA/
-├── public/               # Static assets
+├── public/                 # Static assets (images, resume PDF)
 ├── src/
-│   ├── components/       # React components
-│   │   ├── NeuralNetwork.jsx
-│   │   ├── AuroraField.jsx
-│   │   └── ProjectNode.jsx
-│   ├── pages/            # Page components
-│   ├── styles/           # CSS and theme files
-│   ├── data/             # Portfolio data (projects, skills)
-│   ├── utils/            # Helper functions
-│   └── App.jsx
+│   ├── components/         # React components
+│   │   └── ui/             # Reusable UI primitives (Card, Spotlight, etc.)
+│   ├── data/
+│   │   └── portfolio.js    # All portfolio data (projects, skills, blog, etc.)
+│   ├── lib/
+│   │   └── utils.js        # Utility helpers (cn)
+│   ├── App.jsx             # Router setup
+│   ├── main.jsx            # Entry point
+│   └── index.css           # Tailwind + custom CSS (glassmorphism, themes)
+├── index.html
 ├── package.json
+├── tailwind.config.js
+├── vite.config.js
+├── postcss.config.js
 └── README.md
 ```
 
 ---
 
-## 🎯 Configuration
+## Configuration
 
-### Adding Projects
+### Adding a Project
 
-Edit `src/data/projects.json`:
+Edit `src/data/portfolio.js` and add an object to the `projects` array:
 
-```json
+```js
 {
-  "id": "unique-id",
-  "title": "Project Name",
-  "description": "Brief description",
-  "technologies": ["React", "Three.js"],
-  "link": "https://project-url.com",
-  "github": "https://github.com/...",
-  "image": "/images/project.png"
+  id: "my-project",
+  title: "My Project",
+  description: "What it does.",
+  longDescription: "Detailed description...",
+  image: "/images/project-image.png",
+  technologies: ["React", "Three.js"],
+  liveLink: "https://...",
+  githubLink: "https://github.com/...",
+  category: "fullstack"
 }
 ```
 
 ### Customizing Colors
 
-Edit `src/styles/theme.js` to adjust the aurora colors and neural network aesthetics.
+Edit the CSS custom properties in `src/index.css` (the `:root` and `.dark` blocks) to adjust the light/dark theme palette. The Tailwind config in `tailwind.config.js` extends the `neural` color family.
+
+### Adding Skills
+
+Add entries to the `skills` array in `src/data/portfolio.js`. Skills are grouped by category (Frontend, Backend, Languages, DevOps, Design).
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Frontend**: React, Three.js
-- **Styling**: CSS3, Tailwind CSS
-- **Visualization**: Babylon.js or Three.js for 3D graphics
-- **Build Tools**: Vite or Webpack
-- **Deployment**: Vercel, GitHub Pages, Netlify
-
----
-
-## 📊 Performance
-
-- Optimized particle effects for smooth 60fps
-- Lazy-loaded project data
-- GPU-accelerated rendering
-- Progressive enhancement for slower devices
+- **Framework:** React 18 with Vite 6
+- **3D Graphics:** React Three Fiber, Drei, Three.js
+- **3D Embed:** Spline (`@splinetool/react-spline`)
+- **Animation:** Framer Motion 11
+- **Styling:** Tailwind CSS 3, PostCSS, Autoprefixer
+- **Routing:** React Router DOM 7
+- **Icons:** Lucide React
+- **Utilities:** clsx
 
 ---
 
-## 🎨 Customization Guide
+## Performance Notes
 
-### Colors
-Modify the aurora palette in `src/styles/theme.js`
-
-### Node Behavior
-Edit physics and animation settings in `src/components/NeuralNetwork.jsx`
-
-### Connection Logic
-Adjust how projects link based on shared attributes in `src/utils/networkGraph.js`
+- The 3D background (AuroraBackground) uses **GPU-accelerated** Three.js rendering
+- Spline scene is **lazy-loaded** with React Suspense
+- All animations use Framer Motion's spring physics for optimal frame rate
+- Tailwind CSS is purged in production builds
 
 ---
 
-## 🤝 Contributing
+## License
 
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/AmazingFeature`
-3. Commit changes: `git commit -m 'Add AmazingFeature'`
-4. Push to branch: `git push origin feature/AmazingFeature`
-5. Open a Pull Request
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
-## 📄 License
+## Support & Feedback
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🌟 Support & Feedback
-
-Have suggestions? Found a bug? Open an [issue](https://github.com/Techhackontime999/NEURAL-AURORA/issues) or reach out!
-
----
-
-**NEURAL AURORA** — Where your portfolio *breathes* with life. ⚡🌌
+Open an [issue](https://github.com/Techhackontime999/NEURAL-AURORA/issues) or reach out!

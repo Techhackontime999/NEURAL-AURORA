@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { generateQuestion } from '../lib/gemini'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -7,13 +8,6 @@ const TERMINAL_LINES = [
   'Scanning visitor credentials...',
   'Security protocol: ACTIVE',
   'Verification required to proceed.',
-]
-
-const QUESTIONS = [
-  { q: '2, 6, 12, 20, 30, ?', opts: ['38', '40', '42', '44'], ans: 2 },
-  { q: 'What is the next prime after 7?', opts: ['8', '9', '11', '13'], ans: 2 },
-  { q: 'If NEURAL → LARUEN, then ACTIVE → ?', opts: ['ZARHVI', 'AEVITC', 'XARHVI', 'AEVICT'], ans: 1 },
-  { q: '5 + 3 × 2 = ?', opts: ['16', '11', '10', '13'], ans: 1 },
 ]
 
 function Particles() {
@@ -403,13 +397,10 @@ function Confetti() {
   return <canvas ref={ref} className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }} />
 }
 
-function getRandomQuestion() {
-  return QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)]
-}
-
 export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
+  const [loadingQ, setLoadingQ] = useState(false)
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
 
@@ -419,8 +410,16 @@ export default function StartingLoader({ onComplete }) {
     }
   }, [])
 
-  function handleBootDone() {
-    setQuestion(getRandomQuestion())
+  async function loadQuestion() {
+    setLoadingQ(true)
+    const q = await generateQuestion()
+    setQuestion(q)
+    setLoadingQ(false)
+    return q
+  }
+
+  async function handleBootDone() {
+    await loadQuestion()
     setPhase('selecting')
   }
 
@@ -431,15 +430,15 @@ export default function StartingLoader({ onComplete }) {
     setTimeout(() => doneRef.current(), 3200)
   }
 
-  function handleMCQCorrect() {
+  async function handleMCQCorrect() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3200)
   }
 
-  function handleMCQWrong() {
-    setQuestion(getRandomQuestion())
+  async function handleMCQWrong() {
+    await loadQuestion()
     setPhase('selecting')
   }
 
@@ -506,8 +505,9 @@ export default function StartingLoader({ onComplete }) {
                 </div>
               </button>
               <button
-                onClick={() => { setQuestion(getRandomQuestion()); setPhase('mcq') }}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-purple/50 transition-all duration-300"
+                onClick={async () => { await loadQuestion(); setPhase('mcq') }}
+                disabled={loadingQ}
+                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-purple/50 transition-all duration-300 disabled:opacity-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 transition-colors">

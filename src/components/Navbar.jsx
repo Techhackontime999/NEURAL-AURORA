@@ -80,7 +80,17 @@ export default function Navbar() {
                   {link.label}
                 </button>
               ))}
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
+                <a
+                  href="/login"
+                  onClick={(e) => { e.preventDefault(); navigate('/login') }}
+                  className="text-xs text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors"
+                  title="Admin Login"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </a>
                 <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
               </div>
             </div>
@@ -131,6 +141,16 @@ export default function Navbar() {
                   {link.label}
                 </motion.button>
               ))}
+              <motion.button
+                custom={navLinks.length}
+                variants={staggerItem}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { setOpen(false); navigate('/login') }}
+                className="text-2xl tracking-tight text-neural-500 hover:text-neural-400 transition-colors"
+              >
+                Admin
+              </motion.button>
             </div>
           </motion.div>
         )}

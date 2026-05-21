@@ -216,166 +216,239 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- PROFILES: users can read their own, admins can read all
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id OR is_admin());
 
+DROP POLICY IF EXISTS "Admins can update profiles" ON profiles;
 CREATE POLICY "Admins can update profiles"
   ON profiles FOR UPDATE
   USING (is_admin());
 
 -- PERSONAL INFO: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read personal_info" ON personal_info;
 CREATE POLICY "Anyone can read personal_info"
   ON personal_info FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert personal_info" ON personal_info;
 CREATE POLICY "Admin can insert personal_info"
   ON personal_info FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update personal_info" ON personal_info;
 CREATE POLICY "Admin can update personal_info"
   ON personal_info FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete personal_info" ON personal_info;
 CREATE POLICY "Admin can delete personal_info"
   ON personal_info FOR DELETE
   USING (is_admin());
 
 -- SOCIAL LINKS: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read social_links" ON social_links;
 CREATE POLICY "Anyone can read social_links"
   ON social_links FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert social_links" ON social_links;
 CREATE POLICY "Admin can insert social_links"
   ON social_links FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update social_links" ON social_links;
 CREATE POLICY "Admin can update social_links"
   ON social_links FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete social_links" ON social_links;
 CREATE POLICY "Admin can delete social_links"
   ON social_links FOR DELETE
   USING (is_admin());
 
 -- SKILLS: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read skills" ON skills;
 CREATE POLICY "Anyone can read skills"
   ON skills FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert skills" ON skills;
 CREATE POLICY "Admin can insert skills"
   ON skills FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update skills" ON skills;
 CREATE POLICY "Admin can update skills"
   ON skills FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete skills" ON skills;
 CREATE POLICY "Admin can delete skills"
   ON skills FOR DELETE
   USING (is_admin());
 
 -- PROJECTS: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read projects" ON projects;
 CREATE POLICY "Anyone can read projects"
   ON projects FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert projects" ON projects;
 CREATE POLICY "Admin can insert projects"
   ON projects FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update projects" ON projects;
 CREATE POLICY "Admin can update projects"
   ON projects FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete projects" ON projects;
 CREATE POLICY "Admin can delete projects"
   ON projects FOR DELETE
   USING (is_admin());
 
 -- EDUCATION: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read education" ON education;
 CREATE POLICY "Anyone can read education"
   ON education FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert education" ON education;
 CREATE POLICY "Admin can insert education"
   ON education FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update education" ON education;
 CREATE POLICY "Admin can update education"
   ON education FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete education" ON education;
 CREATE POLICY "Admin can delete education"
   ON education FOR DELETE
   USING (is_admin());
 
 -- EXPERIENCE: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read experience" ON experience;
 CREATE POLICY "Anyone can read experience"
   ON experience FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert experience" ON experience;
 CREATE POLICY "Admin can insert experience"
   ON experience FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update experience" ON experience;
 CREATE POLICY "Admin can update experience"
   ON experience FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete experience" ON experience;
 CREATE POLICY "Admin can delete experience"
   ON experience FOR DELETE
   USING (is_admin());
 
 -- BLOG POSTS: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read blog_posts" ON blog_posts;
 CREATE POLICY "Anyone can read blog_posts"
   ON blog_posts FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert blog_posts" ON blog_posts;
 CREATE POLICY "Admin can insert blog_posts"
   ON blog_posts FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update blog_posts" ON blog_posts;
 CREATE POLICY "Admin can update blog_posts"
   ON blog_posts FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete blog_posts" ON blog_posts;
 CREATE POLICY "Admin can delete blog_posts"
   ON blog_posts FOR DELETE
   USING (is_admin());
 
 -- CASE STUDIES: anyone can read, only admin can write
+DROP POLICY IF EXISTS "Anyone can read case_studies" ON case_studies;
 CREATE POLICY "Anyone can read case_studies"
   ON case_studies FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Admin can insert case_studies" ON case_studies;
 CREATE POLICY "Admin can insert case_studies"
   ON case_studies FOR INSERT
   WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin can update case_studies" ON case_studies;
 CREATE POLICY "Admin can update case_studies"
   ON case_studies FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete case_studies" ON case_studies;
 CREATE POLICY "Admin can delete case_studies"
   ON case_studies FOR DELETE
   USING (is_admin());
 
 -- REVIEWS: anyone can insert, admin can read/update/delete all
+DROP POLICY IF EXISTS "Anyone can insert reviews" ON reviews;
 CREATE POLICY "Anyone can insert reviews"
   ON reviews FOR INSERT
   WITH CHECK (TRUE);
 
+DROP POLICY IF EXISTS "Anyone can read approved reviews" ON reviews;
 CREATE POLICY "Anyone can read approved reviews"
   ON reviews FOR SELECT
   USING (approved = TRUE OR is_admin());
 
+DROP POLICY IF EXISTS "Admin can update reviews" ON reviews;
 CREATE POLICY "Admin can update reviews"
   ON reviews FOR UPDATE
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete reviews" ON reviews;
 CREATE POLICY "Admin can delete reviews"
   ON reviews FOR DELETE
   USING (is_admin());
+
+-- ============================================================
+-- ROLE PERMISSIONS (required for RLS to work)
+-- Without these GRANTs, anon/authenticated roles get
+-- "violates row-level security policy" errors
+-- ============================================================
+
+-- Public portfolio content: anyone can read
+GRANT SELECT ON TABLE personal_info TO anon;
+GRANT SELECT ON TABLE social_links TO anon;
+GRANT SELECT ON TABLE skills TO anon;
+GRANT SELECT ON TABLE projects TO anon;
+GRANT SELECT ON TABLE education TO anon;
+GRANT SELECT ON TABLE experience TO anon;
+GRANT SELECT ON TABLE blog_posts TO anon;
+GRANT SELECT ON TABLE case_studies TO anon;
+
+-- Reviews: anyone can insert and read approved reviews
+GRANT INSERT, SELECT ON TABLE reviews TO anon;
+
+-- Authenticated users (admin): full CRUD on all portfolio tables
+GRANT INSERT, UPDATE, DELETE ON TABLE personal_info TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE social_links TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE skills TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE projects TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE education TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE experience TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE blog_posts TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE case_studies TO authenticated;
+
+-- Reviews: authenticated users can approve/delete
+GRANT SELECT, UPDATE, DELETE ON TABLE reviews TO authenticated;
+
+-- Profiles: authenticated users can read and update
+GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
 
 -- ============================================================
 -- STORAGE BUCKET for images

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { skills } from '../data/portfolio'
+import { useSkills } from '../lib/usePortfolioData'
 
 const categories = [
   { key: 'frontend', label: 'Frontend', color: '#00f0ff' },
@@ -37,6 +37,7 @@ function SkillBar({ name, level, color, index }) {
 }
 
 export default function Skills() {
+  const skills = useSkills()
   return (
     <section id="skills" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

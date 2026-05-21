@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { socialLinks } from '../data/portfolio'
+import { useSocialLinks } from '../lib/usePortfolioData'
 
 export default function Contact() {
+  const socialLinks = useSocialLinks()
   return (
     <section id="contact" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

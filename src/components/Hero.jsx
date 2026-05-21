@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { personalInfo, socialLinks } from '../data/portfolio'
+import { usePersonalInfo, useSocialLinks } from '../lib/usePortfolioData'
 import { SplineScene } from './ui/splite'
 import { Spotlight } from './ui/spotlight'
 
@@ -54,6 +54,8 @@ const itemVariants = {
 }
 
 export default function Hero() {
+  const personalInfo = usePersonalInfo()
+  const socialLinks = useSocialLinks()
   return (
     <section
       id="hero"

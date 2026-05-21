@@ -1,0 +1,32 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import AdminLayout from './AdminLayout'
+import AdminOverview from './AdminOverview'
+import AdminPersonalInfo from './AdminPersonalInfo'
+import AdminSkills from './AdminSkills'
+import AdminProjects from './AdminProjects'
+import AdminEducation from './AdminEducation'
+import AdminExperience from './AdminExperience'
+import AdminBlog from './AdminBlog'
+import AdminCaseStudies from './AdminCaseStudies'
+import AdminSocialLinks from './AdminSocialLinks'
+import AdminReviews from './AdminReviews'
+
+export default function AdminDashboard() {
+  return (
+    <AdminLayout>
+      <Routes>
+        <Route index element={<AdminOverview />} />
+        <Route path="personal-info" element={<AdminPersonalInfo />} />
+        <Route path="skills" element={<AdminSkills />} />
+        <Route path="projects" element={<AdminProjects />} />
+        <Route path="education" element={<AdminEducation />} />
+        <Route path="experience" element={<AdminExperience />} />
+        <Route path="blog" element={<AdminBlog />} />
+        <Route path="case-studies" element={<AdminCaseStudies />} />
+        <Route path="social-links" element={<AdminSocialLinks />} />
+        <Route path="reviews" element={<AdminReviews />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </AdminLayout>
+  )
+}

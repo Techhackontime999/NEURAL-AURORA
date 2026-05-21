@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react'
-import { blogPosts } from '../data/portfolio'
+import { useBlogPosts } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function BlogPost() {
   const { slug } = useParams()
+  const blogPosts = useBlogPosts()
   const post = blogPosts.find((p) => p.slug === slug)
 
   if (!post) {

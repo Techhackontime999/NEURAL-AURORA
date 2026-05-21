@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { AuthProvider } from './context/AuthContext'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
 import AuroraBackground from './components/AuroraBackground'
@@ -10,11 +11,16 @@ import Skills from './components/Skills'
 import Projects from './components/Projects'
 import Resume from './components/Resume'
 import Contact from './components/Contact'
+import ReviewsList from './components/ReviewsList'
+import ReviewForm from './components/ReviewForm'
 import More from './components/More'
 import Service from './components/Service'
 import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
 import { Footer } from './components/ui/footer-section'
+import Login from './components/admin/Login'
+import AdminDashboard from './components/admin/AdminDashboard'
+import { AdminRoute } from './components/admin/ProtectedRoute'
 
 function HomePage() {
   const mouse = useRef({ x: 0, y: 0 })
@@ -38,6 +44,8 @@ function HomePage() {
       <Skills />
       <Projects />
       <Resume />
+      <ReviewsList />
+      <ReviewForm />
       <Contact />
       <Footer />
     </div>
@@ -64,7 +72,7 @@ export default function App() {
   }, [])
 
   return (
-    <>
+    <AuthProvider>
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
@@ -80,10 +88,19 @@ export default function App() {
               <Route path="/services" element={<Service />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/admin/*"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
             </Routes>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </AuthProvider>
   )
 }

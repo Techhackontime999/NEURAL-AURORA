@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Calendar, Briefcase, BookOpen, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { education, experience, blogPosts, caseStudies } from '../data/portfolio'
+import { useEducation, useExperience, useBlogPosts, useCaseStudies } from '../lib/usePortfolioData'
 import MoreNavbar from './MoreNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -124,6 +124,10 @@ function CaseStudyCard({ study, index }) {
 }
 
 export default function More() {
+  const education = useEducation()
+  const experience = useExperience()
+  const blogPosts = useBlogPosts()
+  const caseStudies = useCaseStudies()
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AuroraBackground />

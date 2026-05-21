@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion'
 import { Globe, Palette, Lightbulb, MessageCircle, ArrowRight, CheckCircle, Sparkles, Target, Zap, Layers, ChevronDown, Star, Code, Cpu, Users, Clock, Award, Braces, Database, Layout, Server, PenTool, GitFork, Terminal, Send } from 'lucide-react'
-import { socialLinks } from '../data/portfolio'
+import { useSocialLinks } from '../lib/usePortfolioData'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -390,6 +390,7 @@ function LiveStatusCard() {
 }
 
 export default function Service() {
+  const socialLinks = useSocialLinks()
   const [openFAQ, setOpenFAQ] = useState(null)
 
   return (

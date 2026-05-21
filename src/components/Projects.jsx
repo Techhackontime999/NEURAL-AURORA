@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { projects } from '../data/portfolio'
+import { useProjects } from '../lib/usePortfolioData'
 
 function GithubIcon() {
   return (
@@ -128,6 +128,7 @@ function ProjectCard({ project, index }) {
 }
 
 export default function Projects() {
+  const projects = useProjects()
   return (
     <section id="projects" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

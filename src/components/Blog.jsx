@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Tag, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { blogPosts } from '../data/portfolio'
+import { useBlogPosts } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function Blog() {
+  const blogPosts = useBlogPosts()
   const [search, setSearch] = useState('')
 
   const filtered = blogPosts.filter((post) =>

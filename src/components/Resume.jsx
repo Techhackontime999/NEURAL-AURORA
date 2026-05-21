@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { personalInfo } from '../data/portfolio'
+import { usePersonalInfo } from '../lib/usePortfolioData'
 
 export default function Resume() {
+  const personalInfo = usePersonalInfo()
   return (
     <section id="resume" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

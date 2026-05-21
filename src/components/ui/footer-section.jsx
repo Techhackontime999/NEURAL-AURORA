@@ -23,36 +23,28 @@ const iconMap = {
   facebook: FacebookIcon,
 }
 
-const footerSections = [
-  {
-    label: 'Skills',
-    links: [
-      { title: 'React / Next.js', href: '#skills' },
-      { title: 'Three.js / WebGL', href: '#skills' },
-      { title: 'UI/UX Design', href: '#skills' },
-      { title: 'Full-Stack Dev', href: '#skills' },
-    ],
-  },
-  {
-    label: 'Projects',
-    links: [
-      { title: 'NEURAL AURORA', href: '#projects' },
-      { title: 'Synaptic Dashboard', href: '#projects' },
-      { title: 'Aurora Engine', href: '#projects' },
-      { title: 'View All', href: '#projects' },
-    ],
-  },
-  {
-    label: 'Connect',
-    links: socialLinks
-      .filter((l) => ['github', 'linkedin', 'youtube', 'instagram'].includes(l.icon))
-      .map((l) => ({
-        title: l.label,
-        href: l.url,
-        icon: iconMap[l.icon] || ExternalLink,
-      })),
-  },
-]
+function getStaticSections() {
+  return [
+    {
+      label: 'Skills',
+      links: [
+        { title: 'React / Next.js', href: '#skills' },
+        { title: 'Three.js / WebGL', href: '#skills' },
+        { title: 'UI/UX Design', href: '#skills' },
+        { title: 'Full-Stack Dev', href: '#skills' },
+      ],
+    },
+    {
+      label: 'Projects',
+      links: [
+        { title: 'NEURAL AURORA', href: '#projects' },
+        { title: 'Synaptic Dashboard', href: '#projects' },
+        { title: 'Aurora Engine', href: '#projects' },
+        { title: 'View All', href: '#projects' },
+      ],
+    },
+  ]
+}
 
 function AnimatedContainer({ className, delay = 0.1, children }) {
   const shouldReduceMotion = useReducedMotion()
@@ -76,6 +68,20 @@ export function Footer() {
   const personalInfo = usePersonalInfo()
   const socialLinks = useSocialLinks()
   const currentYear = new Date().getFullYear()
+
+  const footerSections = [
+    ...getStaticSections(),
+    {
+      label: 'Connect',
+      links: socialLinks
+        .filter((l) => ['github', 'linkedin', 'youtube', 'instagram'].includes(l.icon))
+        .map((l) => ({
+          title: l.label,
+          href: l.url,
+          icon: iconMap[l.icon] || ExternalLink,
+        })),
+    },
+  ]
 
   return (
     <footer className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 pb-8">

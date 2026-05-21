@@ -9,16 +9,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const session = supabase.auth.getSession()
-    session.then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        fetchProfile(session.user.id)
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!error && data?.session?.user) {
+        setUser(data.session.user)
+        fetchProfile(data.session.user.id)
       }
+      setLoading(false)
+    }).catch(() => {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
           setUser(session.user)
@@ -31,7 +32,7 @@ export function AuthProvider({ children }) {
       }
     )
 
-    return () => listener?.subscription.unsubscribe()
+    return () => authListener?.subscription?.unsubscribe()
   }, [])
 
   async function fetchProfile(userId) {

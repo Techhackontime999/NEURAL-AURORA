@@ -25,7 +25,7 @@ export default function ReviewForm() {
   return (
     <section id="review" className="py-24">
       <div className="mx-auto max-w-2xl px-4">
-        <div className="glass-panel-strong rounded-2xl border border-white/5 p-8 md:p-12">
+        <div className="glass-panel-strong rounded-2xl border border-black/10 dark:border-white/5 p-8 md:p-12">
           <AnimatePresence mode="wait">
             {done ? (
               <motion.div
@@ -35,15 +35,15 @@ export default function ReviewForm() {
                 className="text-center"
               >
                 <div className="mb-4 text-4xl">✓</div>
-                <h3 className="mb-2 font-display text-xl font-bold text-white">
+                <h3 className="mb-2 font-display text-xl font-bold text-black/80 dark:text-white">
                   Thank You!
                 </h3>
-                <p className="mb-6 text-sm text-neural-400">
+                <p className="mb-6 text-sm text-black/50 dark:text-neural-400">
                   Your review has been submitted and is pending approval.
                 </p>
                 <button
                   onClick={() => setDone(false)}
-                  className="text-sm text-neural-500 underline underline-offset-2 hover:text-neural-300"
+                  className="text-sm text-black/40 dark:text-neural-500 underline underline-offset-2 hover:text-black/70 dark:hover:text-neural-300"
                 >
                   Submit another review
                 </button>
@@ -54,17 +54,17 @@ export default function ReviewForm() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
               >
-                <h2 className="mb-2 font-display text-2xl font-bold text-white">
+                <h2 className="mb-2 font-display text-2xl font-bold text-black/80 dark:text-white">
                   Leave a Review
                 </h2>
-                <p className="mb-8 text-sm text-neural-400">
+                <p className="mb-8 text-sm text-black/50 dark:text-neural-400">
                   Share your thoughts about my work
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-neural-300">
+                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
                         Name <span className="text-red-400">*</span>
                       </label>
                       <input
@@ -73,11 +73,11 @@ export default function ReviewForm() {
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         placeholder="Your name"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-neural-300">
+                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
                         Email
                       </label>
                       <input
@@ -85,13 +85,13 @@ export default function ReviewForm() {
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         placeholder="optional"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-neural-300">
+                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
                       Rating
                     </label>
                     <div className="flex gap-1">
@@ -103,7 +103,7 @@ export default function ReviewForm() {
                           className={`text-2xl transition-colors ${
                             star <= form.rating
                               ? 'text-amber-400'
-                              : 'text-white/10'
+                              : 'text-black/20 dark:text-white/10'
                           } hover:text-amber-300`}
                         >
                           ★
@@ -113,7 +113,7 @@ export default function ReviewForm() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-neural-300">
+                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
                       Message <span className="text-red-400">*</span>
                     </label>
                     <textarea
@@ -122,7 +122,7 @@ export default function ReviewForm() {
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       rows={4}
                       placeholder="Write your review..."
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                      className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                     />
                   </div>
 

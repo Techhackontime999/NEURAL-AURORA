@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import StartingLoader from './components/StartingLoader'
@@ -52,9 +52,16 @@ function HomePage() {
   )
 }
 
-export default function App() {
+function AppContent() {
   const [loaderDone, setLoaderDone] = useState(false)
   const glowRef = useRef(null)
+  const location = useLocation()
+
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/admin')
+
+  useEffect(() => {
+    if (isAuthRoute) setLoaderDone(true)
+  }, [isAuthRoute])
 
   useEffect(() => {
     function onMouseMove(e) {
@@ -72,7 +79,7 @@ export default function App() {
   }, [])
 
   return (
-    <AuthProvider>
+    <>
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
@@ -101,6 +108,14 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   )
 }

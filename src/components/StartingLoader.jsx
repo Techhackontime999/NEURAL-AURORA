@@ -467,19 +467,25 @@ export default function StartingLoader({ onComplete }) {
     setAdLoading(false)
   }
 
-  function handleAdComplete() {
-    incrementAdViewCount(adVideos[currentAd].id)
+  async function handleAdComplete() {
+    try {
+      await incrementAdViewCount(adVideos[currentAd].id)
+    } catch {}
     const next = currentAd + 1
     if (next < adVideos.length) {
       setCurrentAd(next)
     } else {
-      handleVoiceSuccess()
+      sessionStorage.setItem('neural-aurora-verified', 'true')
+      setPhase('success')
+      setTimeout(() => setPhase('transitioning'), 2200)
+      setTimeout(() => doneRef.current(), 3200)
     }
   }
 
   function handleAdSkip() {
-    setPhase('selecting')
     setCurrentAd(null)
+    setAdVideos([])
+    setPhase('selecting')
   }
 
   return (
@@ -620,7 +626,31 @@ export default function StartingLoader({ onComplete }) {
         )}
 
         {phase === 'ad-watching' && currentAd !== null && adVideos[currentAd] && (
-          <motion.div key="ad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            key={`ad-${currentAd}`}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-3 px-4 py-1.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <motion.span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#fbbf24', boxShadow: '0 0 6px rgba(251,191,36,0.4)' }}
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <span className="text-[10px] font-mono tracking-wider" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Ad {currentAd + 1} / {adVideos.length}
+              </span>
+            </motion.div>
             <AdVideoPlayer
               video={adVideos[currentAd]}
               onComplete={handleAdComplete}
@@ -639,7 +669,10 @@ export default function StartingLoader({ onComplete }) {
       <AnimatePresence>
         {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setPhase('selecting')}
+            onClick={() => {
+              if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }
+              setPhase('selecting')
+            }}
             className="absolute top-5 left-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">

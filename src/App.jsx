@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
@@ -22,6 +22,15 @@ import Login from './components/admin/Login'
 import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
+import BottomToTop from './components/ui/bottom-to-top'
+
+function SectionSeparator() {
+  return (
+    <div className="relative z-10 flex justify-center">
+      <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent via-[var(--border-color)] to-transparent" />
+    </div>
+  )
+}
 
 function HomePage() {
   const mouse = useRef({ x: 0, y: 0 })
@@ -41,15 +50,33 @@ function HomePage() {
       <AuroraBackground mouse={mouse} />
       <Navbar />
       <Hero />
+      <SectionSeparator />
       <About />
+      <SectionSeparator />
       <Skills />
+      <SectionSeparator />
       <Projects />
+      <SectionSeparator />
       <Resume />
+      <SectionSeparator />
       <ReviewsList />
       <ReviewForm />
+      <SectionSeparator />
       <Contact />
       <Footer />
     </div>
+  )
+}
+
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 })
+
+  return (
+    <motion.div
+      style={{ scaleX }}
+      className="fixed top-0 left-0 right-0 z-[9999] h-[2px] origin-left bg-gradient-to-r from-[#00f0ff] via-[#b829dd] to-[#f0c040]"
+    />
   )
 }
 
@@ -81,6 +108,8 @@ function AppContent() {
 
   return (
     <>
+      <ScrollProgress />
+      <BottomToTop />
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>

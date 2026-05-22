@@ -60,7 +60,7 @@ export default function About() {
                 Digital Footprint
               </h3>
               <div className="space-y-4">
-                {socialLinks.slice(0, 4).map((link) => (
+                {socialLinks.slice(0, 4).map((link, index) => (
                   <motion.a
                     key={link.label}
                     href={link.url}
@@ -69,7 +69,7 @@ export default function About() {
                     whileHover={{ x: 4 }}
                     className="flex items-center gap-3 group"
                   >
-                    <span className="w-2 h-2 rounded-full bg-black/10 dark:bg-white/10 group-hover:bg-[#00f0ff] transition-colors duration-300" />
+                    <span className="w-2 h-2 rounded-full bg-black/10 dark:bg-white/10 group-hover:bg-[#00f0ff] transition-colors duration-300 animate-float" style={{ animationDelay: `${index * 0.4}s` }} />
                     <span className="text-sm text-black/50 dark:text-white/40 group-hover:text-black/80 dark:group-hover:text-white/80 transition-colors duration-300">
                       {link.label}
                     </span>

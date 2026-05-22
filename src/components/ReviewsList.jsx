@@ -31,10 +31,10 @@ export default function ReviewsList() {
               <div className="mb-3 text-amber-400 text-sm">
                 {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
               </div>
-              <p className="mb-4 text-sm text-black/60 dark:text-neural-300 leading-relaxed">
+              <p className="mb-4 text-sm text-black/60 dark:text-white/70 leading-relaxed">
                 {review.message}
               </p>
-              <p className="text-xs font-medium text-black/40 dark:text-neural-500">{review.name}</p>
+              <p className="text-xs font-medium text-black/40 dark:text-white/50">{review.name}</p>
             </motion.div>
           ))}
         </div>

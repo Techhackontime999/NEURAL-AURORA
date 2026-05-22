@@ -23,14 +23,14 @@ function SkillBar({ name, level, color, index }) {
         <span className="text-xs text-black/40 dark:text-white/30 font-mono">{level}%</span>
       </div>
       <div className="h-[2px] bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          whileInView={{ width: `${level}%` }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 + index * 0.05, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="h-full rounded-full"
-          style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
-        />
+          <motion.div
+            initial={{ width: 0 }}
+            whileInView={{ width: `${level}%` }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 + index * 0.05, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="h-full rounded-full animate-shimmer"
+            style={{ background: `linear-gradient(90deg, ${color}, ${color}88, ${color})` }}
+          />
       </div>
     </motion.div>
   )

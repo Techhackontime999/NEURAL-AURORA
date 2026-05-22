@@ -28,9 +28,13 @@ function TimelineItem({ item, icon: Icon, index }) {
       }}
       className="relative pl-8 pb-8 border-l border-black/10 dark:border-white/10"
     >
-      <div className="absolute left-0 top-0 -translate-x-1/2 w-8 h-8 rounded-full bg-[var(--bg-secondary)] border border-black/10 dark:border-white/10 flex items-center justify-center">
+      <motion.div
+        className="absolute left-0 top-0 -translate-x-1/2 w-8 h-8 rounded-full bg-[var(--bg-secondary)] border border-black/10 dark:border-white/10 flex items-center justify-center"
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+      >
         <Icon className="w-3.5 h-3.5 text-black/50 dark:text-white/50" />
-      </div>
+      </motion.div>
       <div className="glass-panel rounded-xl p-4">
         <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">
           {item.year}

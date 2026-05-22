@@ -38,12 +38,12 @@ export default function ReviewForm() {
                 <h3 className="mb-2 font-display text-xl font-bold text-black/80 dark:text-white">
                   Thank You!
                 </h3>
-                <p className="mb-6 text-sm text-black/50 dark:text-neural-400">
+                <p className="mb-6 text-sm text-black/50 dark:text-white/50">
                   Your review has been submitted and is pending approval.
                 </p>
                 <button
                   onClick={() => setDone(false)}
-                  className="text-sm text-black/40 dark:text-neural-500 underline underline-offset-2 hover:text-black/70 dark:hover:text-neural-300"
+                  className="text-sm text-black/40 dark:text-white/50 underline underline-offset-2 hover:text-black/70 dark:hover:text-white/70"
                 >
                   Submit another review
                 </button>
@@ -57,14 +57,14 @@ export default function ReviewForm() {
                 <h2 className="mb-2 font-display text-2xl font-bold text-black/80 dark:text-white">
                   Leave a Review
                 </h2>
-                <p className="mb-8 text-sm text-black/50 dark:text-neural-400">
+                <p className="mb-8 text-sm text-black/50 dark:text-white/50">
                   Share your thoughts about my work
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
+                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-white/70">
                         Name <span className="text-red-400">*</span>
                       </label>
                       <input
@@ -73,11 +73,11 @@ export default function ReviewForm() {
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         placeholder="Your name"
-                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-white/30 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
+                      <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-white/70">
                         Email
                       </label>
                       <input
@@ -85,13 +85,13 @@ export default function ReviewForm() {
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         placeholder="optional"
-                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-white/30 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
+                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-white/70">
                       Rating
                     </label>
                     <div className="flex gap-1">
@@ -113,7 +113,7 @@ export default function ReviewForm() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-neural-300">
+                    <label className="mb-1.5 block text-sm font-medium text-black/60 dark:text-white/70">
                       Message <span className="text-red-400">*</span>
                     </label>
                     <textarea
@@ -122,7 +122,7 @@ export default function ReviewForm() {
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       rows={4}
                       placeholder="Write your review..."
-                      className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-neural-600 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                      className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-white/30 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
                     />
                   </div>
 

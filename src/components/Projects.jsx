@@ -2,6 +2,28 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useProjects } from '../lib/usePortfolioData'
 
+function ProjectImage({ src, alt, children }) {
+  const [loaded, setLoaded] = useState(false)
+
+  return (
+    <div className="relative overflow-hidden aspect-[4/3] bg-black/5 dark:bg-white/5">
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/5 dark:via-white/5 to-transparent animate-shimmer" />
+      )}
+      <motion.img
+        layout
+        src={src}
+        alt={alt}
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: loaded ? 1 : 0, scale: loaded ? 1 : 1.05 }}
+        onLoad={() => setLoaded(true)}
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      />
+      {children}
+    </div>
+  )
+}
+
 function GithubIcon() {
   return (
     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -42,13 +64,7 @@ function ProjectCard({ project, index }) {
       }`}
       onClick={() => setExpanded(!expanded)}
     >
-      <div className="relative overflow-hidden aspect-[4/3]">
-        <motion.img
-          layout
-          src={project.image}
-          alt={project.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+      <ProjectImage src={project.image} alt={project.title}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#050508] via-transparent to-transparent" />
         <div className="absolute top-4 left-4 flex gap-2">
           {project.technologies.slice(0, 2).map((tech) => (
@@ -65,7 +81,7 @@ function ProjectCard({ project, index }) {
             </span>
           )}
         </div>
-      </div>
+      </ProjectImage>
 
       <div className="p-6 md:p-8 space-y-3">
         <motion.h3 layout className="text-lg font-display font-bold text-black/80 dark:text-white/90 tracking-tight">

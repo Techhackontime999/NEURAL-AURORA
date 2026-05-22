@@ -201,7 +201,7 @@ export default function More() {
           </section>
         </div>
 
-        <section className="mb-16">
+        <section id="blog-posts" className="mb-16">
           <motion.div
             custom={2}
             variants={sectionVariants}

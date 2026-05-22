@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
+import { AutoTraverseProvider } from './context/AutoTraverseContext'
+import AutoTraverseEffect from './components/ui/auto-traverse-effect'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
 import AuroraBackground from './components/AuroraBackground'
@@ -109,6 +111,7 @@ function AppContent() {
   return (
     <>
       <ScrollProgress />
+      <AutoTraverseEffect />
       <BottomToTop />
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
@@ -146,7 +149,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <AutoTraverseProvider>
+        <AppContent />
+      </AutoTraverseProvider>
     </AuthProvider>
   )
 }

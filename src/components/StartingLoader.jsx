@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
+import { useAutoTraverse } from '../context/AutoTraverseContext'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -401,6 +402,7 @@ export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
   const [loadingQ, setLoadingQ] = useState(false)
+  const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
 
@@ -517,6 +519,33 @@ export default function StartingLoader({ onComplete }) {
                     </svg>
                   </div>
                   <div><p className="text-white text-sm">Solve Puzzle</p><p className="text-[10px] text-white/30 mt-0.5">One question</p></div>
+                </div>
+              </button>
+              <button
+                onClick={toggleAutoTraverse}
+                className={`group px-6 py-4 rounded-xl border transition-all duration-300 ${
+                  autoTraverse
+                    ? 'border-emerald-500/50 bg-emerald-500/10'
+                    : 'border-white/10 bg-white/5 hover:border-neural-blue/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                    autoTraverse ? 'bg-emerald-500/20' : 'bg-neural-blue/10 group-hover:bg-neural-blue/20'
+                  }`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-4 h-4">
+                      <circle cx="12" cy="12" r="10" strokeLinecap="round" />
+                      <polyline points="12 6 12 12 16 14" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className={`text-sm ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
+                      {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
+                    </p>
+                    <p className="text-[10px] text-white/30 mt-0.5">
+                      {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
+                    </p>
+                  </div>
                 </div>
               </button>
             </motion.div>

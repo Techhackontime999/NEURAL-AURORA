@@ -50,16 +50,8 @@ function GradientOrbit() {
             left: '50%', top: '50%',
             marginLeft: -2, marginTop: -2,
           }}
-          animate={{
-            x: [0, 0, 0],
-            y: [0, 0, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: -deg / 360 * 8,
-          }}
+          animate={{ x: [0, 0, 0], y: [0, 0, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear', delay: -(deg / 360) * 8 }}
         >
           <motion.div
             className="absolute w-12 h-12 rounded-full"
@@ -109,9 +101,7 @@ function GoogleAdUnit() {
     if (adMounted.current) return
     adMounted.current = true
 
-    const existing = document.querySelector(
-      `script[src*="pagead2.googlesyndication.com"]`
-    )
+    const existing = document.querySelector('script[src*="pagead2.googlesyndication.com"]')
     if (existing) {
       try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
       setLoaded(true)
@@ -188,7 +178,7 @@ function GoogleAdUnit() {
       </AnimatePresence>
 
       <motion.div
-        className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em]"
+        className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
         style={{
           background: 'rgba(251,191,36,0.12)',
           border: '1px solid rgba(251,191,36,0.2)',
@@ -198,8 +188,61 @@ function GoogleAdUnit() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
       >
-        <span className="inline-block w-1 h-1 rounded-full bg-amber-400/60 mr-1.5 align-middle" />
+        <span className="inline-block w-1 h-1 rounded-full bg-amber-400/60" />
         Ad
+      </motion.div>
+    </div>
+  )
+}
+
+function YouTubePlayer({ videoUrl, title }) {
+  const videoId = videoUrl?.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  )?.[1]
+
+  return (
+    <div className="relative w-full min-h-[260px] bg-black/60">
+      <FloatingOrbs />
+      <ShimmerOverlay />
+
+      {videoId ? (
+        <div className="relative aspect-video w-full">
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=1&modestbranding=1`}
+            className="w-full h-full"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            title={title}
+          />
+        </div>
+      ) : (
+        <div className="aspect-video w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-6 h-6">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </div>
+            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
+              Video unavailable
+            </p>
+          </div>
+        </div>
+      )}
+
+      <motion.div
+        className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
+        style={{
+          background: 'rgba(0,240,255,0.1)',
+          border: '1px solid rgba(0,240,255,0.2)',
+          color: 'rgba(0,240,255,0.6)',
+        }}
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
+      >
+        <span className="inline-block w-1 h-1 rounded-full bg-neural-blue/60" />
+        YouTube
       </motion.div>
     </div>
   )
@@ -213,6 +256,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
   const [countdown, setCountdown] = useState(3)
 
   const duration = video?.duration_seconds || 30
+  const isGoogle = video?.ad_type !== 'youtube'
 
   useEffect(() => {
     const t = setTimeout(() => setShowSkip(true), 5000)
@@ -225,10 +269,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
       setElapsed((p) => {
         const next = p + 1
         setProgress(Math.min((next / duration) * 100, 100))
-        if (next >= duration) {
-          setEnded(true)
-          clearInterval(interval)
-        }
+        if (next >= duration) { setEnded(true); clearInterval(interval) }
         return next
       })
     }, 1000)
@@ -293,13 +334,13 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Dev Ad
+            {isGoogle ? 'Auto Ad' : 'Video Ad'}
           </motion.span>
         </div>
 
         <div className="relative">
           <GradientOrbit />
-          <GoogleAdUnit />
+          {isGoogle ? <GoogleAdUnit /> : <YouTubePlayer videoUrl={video.video_url} title={video.title} />}
 
           <AnimatePresence>
             {ended && (
@@ -375,7 +416,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
               >
-                {video?.title || 'Developer Ad'}
+                {video?.title || (isGoogle ? 'Google Ad' : 'Video Ad')}
               </motion.p>
             </div>
             <AnimatePresence>

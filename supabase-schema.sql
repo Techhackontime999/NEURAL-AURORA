@@ -660,7 +660,8 @@ GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
 CREATE TABLE IF NOT EXISTS dev_ads (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   title TEXT NOT NULL,
-  video_url TEXT NOT NULL,
+  ad_type TEXT NOT NULL DEFAULT 'google' CHECK (ad_type IN ('google', 'youtube')),
+  video_url TEXT DEFAULT '',
   thumbnail_url TEXT DEFAULT '',
   duration_seconds INT NOT NULL DEFAULT 30,
   active BOOLEAN DEFAULT TRUE,

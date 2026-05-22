@@ -101,19 +101,31 @@ function GoogleAdUnit() {
   useEffect(() => {
     if (adMounted.current) return
     adMounted.current = true
-    const existing = document.querySelector('script[src*="pagead2.googlesyndication.com"]')
-    if (existing) {
-      try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
-      setLoaded(true)
-      return
+
+    const tryPush = () => {
+      try {
+        (adsbygoogle = window.adsbygoogle || []).push({})
+        setLoaded(true)
+      } catch {
+        setTimeout(tryPush, 500)
+      }
     }
-    const script = document.createElement('script')
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${GOOGLE_AD_CLIENT}`
-    script.crossOrigin = 'anonymous'
-    script.async = true
-    document.head.appendChild(script)
-    script.onload = () => { try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}; setLoaded(true) }
-    script.onerror = () => setLoaded(true)
+
+    const checkAdsByGoogle = () => {
+      if (typeof adsbygoogle !== 'undefined') {
+        tryPush()
+      } else {
+        const interval = setInterval(() => {
+          if (typeof adsbygoogle !== 'undefined') {
+            clearInterval(interval)
+            tryPush()
+          }
+        }, 300)
+        setTimeout(() => { clearInterval(interval); setLoaded(true) }, 5000)
+      }
+    }
+
+    checkAdsByGoogle()
   }, [])
 
   return (
@@ -130,7 +142,6 @@ function GoogleAdUnit() {
           className="adsbygoogle"
           style={{ display: 'block', width: '100%', minHeight: '260px' }}
           data-ad-client={GOOGLE_AD_CLIENT}
-          data-ad-slot="1234567890"
           data-ad-format="auto"
           data-full-width-responsive="true"
         />

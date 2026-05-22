@@ -117,7 +117,7 @@ function GoogleAdUnit() {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-[260px] flex items-center justify-center">
+    <div ref={containerRef} className="relative w-full min-h-[320px] flex items-center justify-center">
       <FloatingOrbs />
       <ShimmerOverlay />
       <motion.div
@@ -181,7 +181,7 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
       <FloatingOrbs />
       <ShimmerOverlay />
       {videoId ? (
-        <div className="relative w-full overflow-hidden" style={{ paddingTop: `${Math.min(paddingTop, 120)}%`, maxHeight: '70vh' }}>
+        <div className="relative w-full overflow-hidden" style={{ paddingTop: `${Math.min(paddingTop, 150)}%` }}>
           <iframe
             src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=1&modestbranding=1`}
             className="absolute inset-0 w-full h-full"
@@ -192,7 +192,7 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
           />
         </div>
       ) : (
-        <div className="relative w-full flex items-center justify-center" style={{ paddingTop: `${Math.min(paddingTop, 120)}%` }}>
+        <div className="relative w-full flex items-center justify-center" style={{ paddingTop: `${Math.min(paddingTop, 150)}%` }}>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="w-14 h-14 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
@@ -222,12 +222,12 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
 function YouTubeShortPlayer({ videoUrl, title }) {
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   return (
-    <div className="relative w-full bg-black/70 flex items-start justify-center" style={{ minHeight: '360px' }}>
+    <div className="relative w-full bg-black/70 flex items-start justify-center" style={{ minHeight: '440px' }}>
       <FloatingOrbs />
       <ShimmerOverlay />
 
       <motion.div
-        className="relative w-full max-w-[340px] mx-auto"
+        className="relative w-full max-w-[400px] mx-auto"
         style={{ paddingTop: 'calc(9/16 * 100%)', maxHeight: '80vh' }}
         initial={{ scale: 0.92, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -403,7 +403,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.5, ease: EASE }}
-      className={`relative z-10 mx-auto px-4 ${isShort ? 'max-w-md' : 'max-w-xl'}`}
+      className={`relative z-10 mx-auto px-4 w-full ${isShort ? 'max-w-lg' : 'max-w-3xl'}`}
     >
       <motion.div
         className="rounded-2xl overflow-hidden"

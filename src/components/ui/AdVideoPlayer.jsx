@@ -1,5 +1,56 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const GOOGLE_AD_CLIENT = 'ca-pub-2699270619596438'
+
+function GoogleAdUnit() {
+  const containerRef = useRef(null)
+  const adMounted = useRef(false)
+
+  useEffect(() => {
+    if (adMounted.current) return
+    adMounted.current = true
+
+    const script = document.createElement('script')
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${GOOGLE_AD_CLIENT}`
+    script.crossOrigin = 'anonymous'
+    script.async = true
+    document.head.appendChild(script)
+
+    script.onload = () => {
+      try {
+        (adsbygoogle = window.adsbygoogle || []).push({})
+      } catch {}
+    }
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [])
+
+  return (
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-black/40">
+      <ins
+        className="adsbygoogle"
+        style={{ display: 'block', width: '100%', height: '100%', minHeight: '250px' }}
+        data-ad-client={GOOGLE_AD_CLIENT}
+        data-ad-slot="1234567890"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full border-2 border-amber-400/20 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-6 h-6">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </div>
+          <p className="text-xs text-white/20 font-mono">Advertisement</p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdVideoPlayer({ video, onComplete, onSkip }) {
   const [progress, setProgress] = useState(0)
@@ -7,7 +58,8 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
   const [ended, setEnded] = useState(false)
   const [showSkip, setShowSkip] = useState(false)
   const [countdown, setCountdown] = useState(3)
-  const iframeRef = useRef(null)
+
+  const duration = video?.duration_seconds || 30
 
   useEffect(() => {
     const t = setTimeout(() => setShowSkip(true), 5000)
@@ -19,9 +71,9 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
     const interval = setInterval(() => {
       setElapsed((p) => {
         const next = p + 1
-        const pct = Math.min((next / video.duration_seconds) * 100, 100)
+        const pct = Math.min((next / duration) * 100, 100)
         setProgress(pct)
-        if (next >= video.duration_seconds) {
+        if (next >= duration) {
           setEnded(true)
           clearInterval(interval)
         }
@@ -29,7 +81,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [ended, video.duration_seconds])
+  }, [ended, duration])
 
   useEffect(() => {
     if (!ended) return
@@ -44,15 +96,6 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
     }, 1000)
     return () => clearInterval(t)
   }, [ended, onComplete])
-
-  function getYouTubeId(url) {
-    const match = url?.match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-    )
-    return match ? match[1] : null
-  }
-
-  const videoId = getYouTubeId(video?.video_url)
 
   return (
     <motion.div
@@ -76,37 +119,15 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
           </p>
         </div>
 
-        <div className="relative bg-black/60">
-          {videoId ? (
-            <div className="relative aspect-video">
-              <iframe
-                ref={iframeRef}
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=1&modestbranding=1`}
-                className="w-full h-full"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                title={video.title}
-              />
-            </div>
-          ) : (
-            <div className="aspect-video flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full border-2 border-white/10 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" className="w-6 h-6">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                </div>
-                <p className="text-xs text-white/20 font-mono">Video unavailable</p>
-              </div>
-            </div>
-          )}
+        <div className="relative bg-black/60 min-h-[280px] flex items-center justify-center">
+          <GoogleAdUnit />
 
           <AnimatePresence>
             {ended && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center"
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-10"
               >
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -137,7 +158,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                 {video?.title || 'Developer Ad'}
               </p>
               <p className="text-[10px] text-white/20 font-mono mt-0.5">
-                {video?.duration_seconds || 30}s
+                {duration}s
               </p>
             </div>
             <AnimatePresence>
@@ -175,7 +196,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
 
           <div className="flex justify-between text-[9px] font-mono">
             <span className="text-white/15">{elapsed}s</span>
-            <span className="text-white/15">{video?.duration_seconds || 30}s</span>
+            <span className="text-white/15">{duration}s</span>
           </div>
         </div>
       </div>

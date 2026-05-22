@@ -19,6 +19,7 @@ import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
 import { Footer } from './components/ui/footer-section'
 import Login from './components/admin/Login'
+import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 
@@ -57,7 +58,7 @@ function AppContent() {
   const glowRef = useRef(null)
   const location = useLocation()
 
-  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/admin')
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin')
 
   useEffect(() => {
     if (isAuthRoute) setLoaderDone(true)
@@ -96,6 +97,7 @@ function AppContent() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route
                 path="/admin/*"
                 element={

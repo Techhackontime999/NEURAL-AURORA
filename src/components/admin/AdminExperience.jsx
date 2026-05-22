@@ -10,9 +10,7 @@ export default function AdminExperience() {
 
   useEffect(() => { load() }, [])
 
-  async function load() {
-    setItems(await getExperience())
-  }
+  async function load() { setItems(await getExperience()) }
 
   async function handleSave(id) {
     await updateExperience(id, editForm)
@@ -27,9 +25,7 @@ export default function AdminExperience() {
     load()
   }
 
-  async function handleDelete(id) {
-    if (confirm('Delete?')) { await deleteExperience(id); load() }
-  }
+  async function handleDelete(id) { if (confirm('Delete?')) { await deleteExperience(id); load() } }
 
   const fields = [
     { key: 'exp_id', label: 'ID' },
@@ -40,67 +36,87 @@ export default function AdminExperience() {
     { key: 'display_order', label: 'Order', type: 'number' },
   ]
 
+  const inputStyle = {
+    borderColor: 'var(--border-color)',
+    background: 'var(--input-bg)',
+    color: 'var(--text-primary)',
+  }
+
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-white">Experience</h1>
-        <button onClick={() => setShowNew(!showNew)} className="rounded-lg bg-neural-500 px-4 py-2 text-sm font-medium text-white hover:bg-neural-400">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Experience
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Manage your work experience history
+          </p>
+        </div>
+        <button
+          onClick={() => setShowNew(!showNew)}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+          style={{ background: 'var(--accent)' }}
+        >
           {showNew ? 'Cancel' : '+ Add'}
         </button>
       </div>
 
       {showNew && (
-        <div className="mb-6 rounded-lg border border-white/5 bg-white/[0.02] p-4">
+        <div className="mb-6 rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
           <div className="grid gap-3 sm:grid-cols-2">
             {fields.map(({ key, label, type }) => (
-              <div key={key}>
-                <label className="mb-1 block text-xs text-neural-500">{label}</label>
+              <div key={key} className={type === 'textarea' ? 'sm:col-span-2' : ''}>
+                <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                 {type === 'textarea' ? (
-                  <textarea value={newForm[key]} onChange={(e) => setNewForm({ ...newForm, [key]: e.target.value })} rows={3} className="w-full rounded border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-neural-500" />
+                  <textarea value={newForm[key]} onChange={(e) => setNewForm({ ...newForm, [key]: e.target.value })} rows={3} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
                 ) : (
-                  <input type={type || 'text'} value={newForm[key]} onChange={(e) => setNewForm({ ...newForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-neural-500" />
+                  <input type={type || 'text'} value={newForm[key]} onChange={(e) => setNewForm({ ...newForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
                 )}
               </div>
             ))}
           </div>
-          <button onClick={handleCreate} className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-500">Create</button>
+          <button onClick={handleCreate} className="mt-4 rounded-lg px-4 py-2 text-sm text-white transition-all hover:opacity-90" style={{ background: '#10b981' }}>Create</button>
         </div>
       )}
 
       <div className="space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="rounded-lg border border-white/5 bg-white/[0.02] p-4">
+          <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
             {editingId === item.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {fields.map(({ key, label, type }) => (
-                  <div key={key}>
-                    <label className="mb-1 block text-xs text-neural-500">{label}</label>
+                  <div key={key} className={type === 'textarea' ? 'sm:col-span-2' : ''}>
+                    <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                     {type === 'textarea' ? (
-                      <textarea value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })} rows={3} className="w-full rounded border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-neural-500" />
+                      <textarea value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })} rows={3} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
                     ) : (
-                      <input type={type || 'text'} value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-neural-500" />
+                      <input type={type || 'text'} value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
                     )}
                   </div>
                 ))}
                 <div className="col-span-2 flex gap-2">
-                  <button onClick={() => handleSave(item.id)} className="rounded bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-500">Save</button>
-                  <button onClick={() => setEditingId(null)} className="rounded bg-white/10 px-3 py-1.5 text-xs text-neural-400 hover:bg-white/20">Cancel</button>
+                  <button onClick={() => handleSave(item.id)} className="rounded px-3 py-1.5 text-xs text-white" style={{ background: '#10b981' }}>Save</button>
+                  <button onClick={() => setEditingId(null)} className="rounded px-3 py-1.5 text-xs" style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}>Cancel</button>
                 </div>
               </div>
             ) : (
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-white">{item.role}</h3>
-                  <p className="text-xs text-neural-400">{item.company} — {item.year}</p>
+                  <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.role}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.company} — {item.year}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setEditingId(item.id); setEditForm(item) }} className="text-xs text-neural-400 hover:text-white">Edit</button>
-                  <button onClick={() => handleDelete(item.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                  <button onClick={() => { setEditingId(item.id); setEditForm(item) }} className="text-xs" style={{ color: 'var(--text-secondary)' }}>Edit</button>
+                  <button onClick={() => handleDelete(item.id)} className="text-xs text-red-400">Delete</button>
                 </div>
               </div>
             )}
           </div>
         ))}
+        {items.length === 0 && (
+          <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No experience entries yet.</p>
+        )}
       </div>
     </div>
   )

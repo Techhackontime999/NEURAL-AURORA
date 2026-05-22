@@ -333,3 +333,125 @@ export async function deleteCaseStudy(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+export async function getAdminSettings() {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateAdminSettings(settings) {
+  const { error } = await supabase
+    .from('admin_settings')
+    .update(settings)
+    .eq('id', 1)
+  if (error) throw error
+}
+
+export async function setAdminEmail(email) {
+  const { data, error } = await supabase.rpc('set_admin_email', { p_email: email })
+  if (error) throw error
+  return data
+}
+
+export async function generateTestData(category, count = 3) {
+  const { data, error } = await supabase.rpc('generate_test_data', {
+    p_category: category,
+    p_count: count,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function getTestDataTemplates() {
+  const { data, error } = await supabase
+    .from('test_data_templates')
+    .select('*')
+  if (error) throw error
+  return data
+}
+
+export async function clearTestData(table) {
+  const { error } = await supabase
+    .from(table)
+    .delete()
+    .ilike('project_id', 'test-%')
+  if (error) {
+    // Try other id fields
+    const { error: err2 } = await supabase
+      .from(table)
+      .delete()
+      .ilike('edu_id', 'test-%')
+    if (err2) {
+      const { error: err3 } = await supabase
+        .from(table)
+        .delete()
+        .ilike('exp_id', 'test-%')
+      if (err3) {
+        const { error: err4 } = await supabase
+          .from(table)
+          .delete()
+          .ilike('post_id', 'test-%')
+        if (err4) {
+          const { error: err5 } = await supabase
+            .from(table)
+            .delete()
+            .ilike('cs_id', 'test-%')
+          if (err5) throw err5
+        }
+      }
+    }
+  }
+}
+
+export async function getAllProfiles() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function updateProfileRole(userId, role) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function submitContactMessage({ name, email, message }) {
+  const { error } = await supabase
+    .from('contact_messages')
+    .insert([{ name, email, message }])
+  if (error) throw error
+}
+
+export async function getContactMessages() {
+  const { data, error } = await supabase
+    .from('contact_messages')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function markContactMessageRead(id) {
+  const { error } = await supabase
+    .from('contact_messages')
+    .update({ read: true })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteContactMessage(id) {
+  const { error } = await supabase
+    .from('contact_messages')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}

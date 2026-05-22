@@ -53,18 +53,15 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  async function signUp(email, password, metaData = {}) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metaData },
-    })
-    if (error) throw error
-    return data
-  }
-
   async function signOut() {
     const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  }
+
+  async function resetPassword(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    })
     if (error) throw error
   }
 
@@ -78,8 +75,8 @@ export function AuthProvider({ children }) {
         loading,
         isAdmin,
         signIn,
-        signUp,
         signOut,
+        resetPassword,
         refreshProfile: () => fetchProfile(user?.id),
       }}
     >

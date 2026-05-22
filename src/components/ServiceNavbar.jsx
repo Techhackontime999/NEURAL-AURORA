@@ -69,10 +69,8 @@ export default function ServiceNavbar() {
                   {link.label}
                 </button>
               ))}
-              <div className="flex items-center">
-                <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
-              </div>
             </div>
+            <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"

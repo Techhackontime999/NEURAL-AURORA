@@ -14,7 +14,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 - **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
 - **Extended Pages** — `/services` (consulting/pricing), `/more` (experience, education, blog, case studies), `/blog` (blog listing + individual posts)
 - **Dynamic Data** — All portfolio content is loaded from **Supabase** (PostgreSQL), with automatic fallback to static data when Supabase is not configured.
-- **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, and reviews.
+- **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, reviews, contact messages, and user roles.
 - **Authentication & Authorization** — Email/password auth via Supabase Auth. First user to register gets the `admin` role; subsequent registrations are blocked from admin routes.
 - **Reviews & Feedback** — Public visitors can submit reviews with star ratings. Reviews appear after admin approval in the admin panel.
 - **Dark/Light Theme** — Custom curtain-animation theme toggle
@@ -59,11 +59,17 @@ Open the Supabase SQL Editor and paste the contents of `supabase-schema.sql`, or
 node scripts/migrate.cjs
 ```
 
+For existing projects, apply any pending migrations in order:
+- `scripts/complete-migration.sql` — adds contact_messages, admin_settings, test generation functions
+- `scripts/fix-contact-rls.sql` / `scripts/fix-contact-rls-v2.sql` — contact message RLS policy fixes
+
 ### 3. Seed initial data (optional)
 
 ```bash
 node scripts/seed.cjs
 ```
+
+Test data can also be generated from the admin dashboard Overview page (supports projects, skills, blog, reviews, education, experience, case studies). Test projects automatically receive unique placeholder images via picsum.photos.
 
 ### 4. Configure environment
 
@@ -81,6 +87,7 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 2. Click the **Register** tab
 3. Create an account — the first user is automatically assigned the `admin` role
 4. Sign in and visit `/admin` to manage your portfolio
+5. Forgot your password? Visit `/forgot-password` to reset it
 
 ---
 
@@ -88,16 +95,18 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 
 | Route | Description |
 |---|---|
-| `/admin` | Overview with counts of all portfolio items |
+| `/admin` | Overview with counts of all portfolio items + Test Data Generator |
 | `/admin/personal-info` | Edit name, title, bio, avatar, resume link |
 | `/admin/skills` | Add/edit/delete skills with category and level |
-| `/admin/projects` | Manage project entries with technologies, links |
+| `/admin/projects` | Manage project entries with technologies, links, image |
 | `/admin/education` | Manage education history |
 | `/admin/experience` | Manage work experience |
 | `/admin/blog` | Create/edit blog posts |
 | `/admin/case-studies` | Manage case studies |
 | `/admin/social-links` | Manage social media links |
 | `/admin/reviews` | Approve/reject public reviews |
+| `/admin/contact-messages` | View and manage visitor contact submissions |
+| `/admin/users` | Manage user roles (promote/demote) |
 
 ## Reviews
 
@@ -115,7 +124,10 @@ NEURAL-AURORA/
 ├── public/                  # Static assets (images, resume PDF)
 ├── scripts/
 │   ├── migrate.cjs          # Supabase schema migration runner
-│   └── seed.cjs             # Initial portfolio data seeder
+│   ├── seed.cjs             # Initial portfolio data seeder
+│   ├── complete-migration.sql  # Schema additions (contact_messages, admin_settings, test data)
+│   ├── fix-contact-rls.sql     # Contact message RLS fix
+│   └── fix-contact-rls-v2.sql  # Contact message RLS v2 fix
 ├── src/
 │   ├── components/
 │   │   ├── admin/           # Admin dashboard CRUD pages
@@ -130,8 +142,12 @@ NEURAL-AURORA/
 │   │   │   ├── AdminCaseStudies.jsx
 │   │   │   ├── AdminSocialLinks.jsx
 │   │   │   ├── AdminReviews.jsx
+│   │   │   ├── AdminContactMessages.jsx
+│   │   │   ├── AdminUsers.jsx
 │   │   │   ├── AdminOverview.jsx
 │   │   │   ├── Login.jsx
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── RichTextEditor.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── ui/              # Reusable UI primitives
 │   │   ├── ReviewForm.jsx   # Public review submission form

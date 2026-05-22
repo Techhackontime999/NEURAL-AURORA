@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -14,12 +14,30 @@ const navItems = [
   { path: '/admin/case-studies', label: 'Case Studies', icon: '▣' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
+  { path: '/admin/messages', label: 'Messages', icon: '✉' },
+  { path: '/admin/users', label: 'Users', icon: '◎' },
 ]
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isDark, setIsDark] = useState(true)
   const { signOut, user, profile } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains('dark')
+    setIsDark(isDarkMode)
+  }, [])
+
+  function toggleTheme() {
+    const next = !isDark
+    setIsDark(next)
+    if (next) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -27,73 +45,8 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-neural-950">
-      <aside className="fixed left-0 top-0 z-40 h-full w-64 -translate-x-full border-r border-white/5 bg-neural-950 transition-transform md:relative md:translate-x-0">
-        <div className="flex h-full flex-col">
-          <div className="border-b border-white/5 p-4">
-            <h2 className="font-display text-lg font-bold text-white">Admin Panel</h2>
-            <p className="mt-1 text-xs text-neural-500">{user?.email}</p>
-          </div>
-
-          <nav className="flex-1 overflow-y-auto p-3">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/admin'}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-neural-500/20 text-neural-300'
-                      : 'text-neural-500 hover:bg-white/5 hover:text-neural-300'
-                  }`
-                }
-              >
-                <span className="text-xs">{item.icon}</span>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="border-t border-white/5 p-3">
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <div className="flex-1">
-        <header className="sticky top-0 z-30 border-b border-white/5 bg-neural-950/80 backdrop-blur-lg">
-          <div className="flex items-center justify-between px-4 py-3 md:px-6">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-lg p-2 text-neural-400 hover:bg-white/5 md:hidden"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-neural-500">{profile?.role}</span>
-              <NavLink
-                to="/"
-                className="text-xs text-neural-600 underline underline-offset-2 hover:text-neural-400"
-              >
-                View Site
-              </NavLink>
-            </div>
-          </div>
-        </header>
-
-        <main className="p-4 md:p-6">
-          {children}
-        </main>
-      </div>
-
+    <div className="flex min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+      {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -101,10 +54,136 @@ export default function AdminLayout({ children }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-30 bg-black/50 md:hidden"
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
           />
         )}
       </AnimatePresence>
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed left-0 top-0 z-50 h-full w-64 border-r transition-transform md:relative md:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{
+          background: 'var(--sidebar-bg)',
+          borderColor: 'var(--border-color)',
+        }}
+      >
+        <div className="flex h-full flex-col">
+          <div
+            className="border-b p-5"
+            style={{ borderColor: 'var(--border-color)' }}
+          >
+            <h2
+              className="font-display text-lg font-bold tracking-tight"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Neural Aurora
+            </h2>
+            <p
+              className="mt-0.5 truncate text-xs"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {user?.email}
+            </p>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/admin'}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'font-medium'
+                      : ''
+                  }`
+                }
+                style={({ isActive }) => ({
+                  background: isActive ? 'var(--hover-bg)' : 'transparent',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                })}
+              >
+                <span className="text-xs opacity-60">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div
+            className="border-t p-3 space-y-1"
+            style={{ borderColor: 'var(--border-color)' }}
+          >
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <span className="text-xs">{isDark ? '☀' : '☾'}</span>
+              {isDark ? 'Light Mode' : 'Dark Mode'}
+            </button>
+
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <span className="text-xs">↩</span>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header
+          className="sticky top-0 z-30 border-b backdrop-blur-lg"
+          style={{
+            background: 'var(--glass-bg)',
+            borderColor: 'var(--border-color)',
+          }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 md:px-6">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="flex items-center justify-center rounded-lg p-2 transition-colors md:hidden"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-3">
+              <span
+                className="rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+                style={{
+                  background: 'var(--hover-bg)',
+                  color: 'var(--text-tertiary)',
+                }}
+              >
+                {profile?.role}
+              </span>
+              <NavLink
+                to="/"
+                className="text-xs transition-colors hover:underline"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                View Site
+              </NavLink>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

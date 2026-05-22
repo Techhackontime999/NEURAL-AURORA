@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion'
 import { Globe, Palette, Lightbulb, MessageCircle, ArrowRight, CheckCircle, Sparkles, Target, Zap, Layers, ChevronDown, Star, Code, Cpu, Users, Clock, Award, Braces, Database, Layout, Server, PenTool, GitFork, Terminal, Send } from 'lucide-react'
 import { useSocialLinks } from '../lib/usePortfolioData'
+import { submitContactMessage } from '../lib/supabase'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -392,6 +393,25 @@ function LiveStatusCard() {
 export default function Service() {
   const socialLinks = useSocialLinks()
   const [openFAQ, setOpenFAQ] = useState(null)
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+  const [contactStatus, setContactStatus] = useState('idle')
+  const [contactError, setContactError] = useState('')
+
+  async function handleContactSubmit(e) {
+    e.preventDefault()
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) return
+    setContactStatus('sending')
+    setContactError('')
+    try {
+      await submitContactMessage(contactForm)
+      setContactStatus('sent')
+      setContactForm({ name: '', email: '', message: '' })
+      setTimeout(() => setContactStatus('idle'), 5000)
+    } catch (err) {
+      setContactError(err.message || 'Failed to send message')
+      setContactStatus('idle')
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -640,7 +660,7 @@ export default function Service() {
               }}
             >
               <form
-                onSubmit={(e) => e.preventDefault()}
+                onSubmit={handleContactSubmit}
                 className="glass-panel rounded-[2rem] p-6 md:p-8 space-y-5"
               >
                 <div className="space-y-2">
@@ -650,7 +670,10 @@ export default function Service() {
                   <input
                     type="text"
                     id="s-name"
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                     placeholder="Your name"
+                    required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                   />
                 </div>
@@ -662,7 +685,10 @@ export default function Service() {
                   <input
                     type="email"
                     id="s-email"
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                     placeholder="your@email.com"
+                    required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                   />
                 </div>
@@ -674,20 +700,49 @@ export default function Service() {
                   <textarea
                     id="s-message"
                     rows={4}
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                     placeholder="Tell me about your project..."
+                    required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-300 resize-none"
                   />
                 </div>
 
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs uppercase tracking-widest font-medium transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                >
-                  Send Message
-                  <Send className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                </motion.button>
+                {contactStatus === 'sent' ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="w-full py-3.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-500 text-center"
+                  >
+                    Message sent! I'll get back to you soon.
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    type="submit"
+                    disabled={contactStatus === 'sending'}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs uppercase tracking-widest font-medium transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {contactStatus === 'sending' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Sending...
+                      </span>
+                    ) : (
+                      <>
+                        Send Message
+                        <Send className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
+                {contactError && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-400 text-center">
+                    {contactError}
+                  </motion.p>
+                )}
               </form>
             </motion.div>
           </motion.div>

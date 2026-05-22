@@ -7,8 +7,8 @@ export function AdminRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neural-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-neural-500 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--border-color)', borderTopColor: 'var(--accent)' }} />
       </div>
     )
   }
@@ -19,9 +19,9 @@ export function AdminRoute({ children }) {
 
   if (!isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neural-950 text-white">
-        <h1 className="mb-4 text-4xl font-bold">Access Denied</h1>
-        <p className="text-neural-400">You do not have permission to access this area.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <h1 className="mb-4 text-4xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Access Denied</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>You do not have permission to access this area.</p>
       </div>
     )
   }

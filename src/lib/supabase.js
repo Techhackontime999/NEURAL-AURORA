@@ -455,3 +455,53 @@ export async function deleteContactMessage(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+export async function getActiveAdVideos() {
+  const { data, error } = await supabase
+    .from('dev_ads')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function getAdVideos() {
+  const { data, error } = await supabase
+    .from('dev_ads')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function addAdVideo(data) {
+  const { data: newAd, error } = await supabase
+    .from('dev_ads')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newAd
+}
+
+export async function updateAdVideo(id, data) {
+  const { error } = await supabase
+    .from('dev_ads')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAdVideo(id) {
+  const { error } = await supabase
+    .from('dev_ads')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function incrementAdViewCount(id) {
+  const { error } = await supabase.rpc('increment_ad_view_count', { ad_id: id })
+  if (error) throw error
+}

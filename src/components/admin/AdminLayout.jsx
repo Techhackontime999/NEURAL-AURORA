@@ -15,6 +15,7 @@ const navItems = [
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
   { path: '/admin/messages', label: 'Messages', icon: '✉' },
+  { path: '/admin/ads', label: 'Dev Ads', icon: '⊡' },
   { path: '/admin/users', label: 'Users', icon: '◎' },
 ]
 

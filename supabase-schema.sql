@@ -662,6 +662,7 @@ CREATE TABLE IF NOT EXISTS dev_ads (
   title TEXT NOT NULL,
   ad_type TEXT NOT NULL DEFAULT 'google' CHECK (ad_type IN ('google', 'youtube')),
   format TEXT NOT NULL DEFAULT 'video' CHECK (format IN ('video', 'short')),
+  aspect_ratio TEXT NOT NULL DEFAULT '16/9' CHECK (aspect_ratio IN ('16/9', '4/3', '21/9', '1/1', '3/2', '16/10')),
   video_url TEXT DEFAULT '',
   thumbnail_url TEXT DEFAULT '',
   duration_seconds INT NOT NULL DEFAULT 30,

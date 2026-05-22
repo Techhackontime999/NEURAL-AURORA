@@ -11,7 +11,16 @@ const FORMAT_OPTIONS = [
   { value: 'short', label: 'Short / Vertical', icon: '▮' },
 ]
 
-const defaultForm = { title: '', ad_type: 'google', format: 'video', video_url: '', duration_seconds: 30, active: true }
+const ASPECT_RATIOS = [
+  { value: '16/9', label: '16:9', desc: 'Widescreen' },
+  { value: '4/3', label: '4:3', desc: 'Standard' },
+  { value: '21/9', label: '21:9', desc: 'Ultrawide' },
+  { value: '1/1', label: '1:1', desc: 'Square' },
+  { value: '3/2', label: '3:2', desc: 'Classic' },
+  { value: '16/10', label: '16:10', desc: 'Monitor' },
+]
+
+const defaultForm = { title: '', ad_type: 'google', format: 'video', aspect_ratio: '16/9', video_url: '', duration_seconds: 30, active: true }
 
 export default function AdminAds() {
   const [ads, setAds] = useState([])
@@ -133,6 +142,16 @@ export default function AdminAds() {
                     </button>
                   ))}
                 </div>
+                {newForm.format === 'video' && (
+                  <select
+                    value={newForm.aspect_ratio}
+                    onChange={(e) => setNewForm({ ...newForm, aspect_ratio: e.target.value })}
+                    className="rounded-lg border px-3 py-2 text-sm outline-none"
+                    style={inputStyle}
+                  >
+                    {ASPECT_RATIOS.map((r) => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
+                  </select>
+                )}
                 <input
                   type="text"
                   placeholder="YouTube URL"
@@ -210,6 +229,16 @@ export default function AdminAds() {
                     >
                       {FORMAT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.icon} {f.label}</option>)}
                     </select>
+                    {editForm.format === 'video' && (
+                      <select
+                        value={editForm.aspect_ratio}
+                        onChange={(e) => setEditForm({ ...editForm, aspect_ratio: e.target.value })}
+                        className="rounded border px-2 py-1 text-[10px] outline-none"
+                        style={inputStyle}
+                      >
+                        {ASPECT_RATIOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    )}
                     <input
                       type="text"
                       value={editForm.video_url}
@@ -256,7 +285,7 @@ export default function AdminAds() {
                       ? 'text-purple-400 bg-purple-500/10'
                       : 'text-neural-blue bg-neural-blue/10'
                 }`}>
-                  {ad.ad_type === 'google' ? 'Google' : ad.format === 'short' ? 'Short' : 'Video'}
+                  {ad.ad_type === 'google' ? 'Google' : ad.format === 'short' ? 'Short' : ad.aspect_ratio}
                 </span>
                 <span className="w-28 truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   {ad.ad_type === 'youtube' ? ad.video_url : '—'}

@@ -171,14 +171,14 @@ function GoogleAdUnit() {
   )
 }
 
-function YouTubeVideoPlayer({ videoUrl, title }) {
+function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   return (
     <div className="relative w-full bg-black/60">
       <FloatingOrbs />
       <ShimmerOverlay />
       {videoId ? (
-        <div className="relative aspect-video w-full">
+        <div className="relative w-full" style={{ aspectRatio: aspectRatio || '16/9' }}>
           <iframe
             src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=1&modestbranding=1`}
             className="w-full h-full"
@@ -188,7 +188,7 @@ function YouTubeVideoPlayer({ videoUrl, title }) {
           />
         </div>
       ) : (
-        <div className="aspect-video w-full flex items-center justify-center">
+        <div className="w-full flex items-center justify-center" style={{ aspectRatio: aspectRatio || '16/9' }}>
           <div className="text-center">
             <div className="w-14 h-14 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-6 h-6">
@@ -448,7 +448,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
           ) : isShort ? (
             <YouTubeShortPlayer videoUrl={video.video_url} title={video.title} />
           ) : (
-            <YouTubeVideoPlayer videoUrl={video.video_url} title={video.title} />
+            <YouTubeVideoPlayer videoUrl={video.video_url} title={video.title} aspectRatio={video.aspect_ratio} />
           )}
           <AnimatePresence>{ended && <CompletionOverlay countdown={countdown} />}</AnimatePresence>
         </div>

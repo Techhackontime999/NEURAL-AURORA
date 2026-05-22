@@ -9,16 +9,19 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 ## Features
 
 - **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), Gemini API-generated logic puzzles, and celebratory access-granted animation.
+- **Watch Dev Ads** — Alternative gateway method: watch Google AdSense ads or custom YouTube videos (landscape or Shorts format) to unlock the site. Ads are queued and played sequentially with animated transitions.
+- **Auto Traverse** — One-click full-site demo tour. A visual cursor automatically navigates through all pages (`/` → `/services` → `/more` → `/blog`) with configurable dwell time, spring-based smooth scrolling, and a glowing cyan cursor that follows the reading position.
 - **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
 - **Spline 3D Hero** — Embedded Spline interactive 3D scene in the hero section (preloaded during gateway for instant reveal)
 - **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
 - **Extended Pages** — `/services` (consulting/pricing), `/more` (experience, education, blog, case studies), `/blog` (blog listing + individual posts)
 - **Dynamic Data** — All portfolio content is loaded from **Supabase** (PostgreSQL), with automatic fallback to static data when Supabase is not configured.
-- **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, reviews, contact messages, and user roles.
+- **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, reviews, contact messages, user roles, and dev ads.
 - **Authentication & Authorization** — Email/password auth via Supabase Auth. First user to register gets the `admin` role; subsequent registrations are blocked from admin routes.
 - **Reviews & Feedback** — Public visitors can submit reviews with star ratings. Reviews appear after admin approval in the admin panel.
 - **Dark/Light Theme** — Custom curtain-animation theme toggle
 - **Glassmorphism Design** — Glass panels, diffusion shadows, noise overlay, animated gradients
+- **Taste-Skill Aesthetics** — Liquid Glass design language with `cubic-bezier(0.16, 1, 0.3, 1)` easing, spring physics, perpetual micro-interactions, and cyan/purple/gold accent palette
 - **Responsive** — Fully responsive with mobile hamburger navigation
 
 ---
@@ -53,15 +56,18 @@ Go to [supabase.com](https://supabase.com) and create a new project.
 
 ### 2. Run the database schema
 
-Open the Supabase SQL Editor and paste the contents of `supabase-schema.sql`, or run the migration script:
+Open the Supabase SQL Editor and paste the contents of `supabase-schema.sql`, or apply migrations via the Supabase CLI:
 
 ```bash
-node scripts/migrate.cjs
+# Login and link your project
+supabase login
+supabase link --project-ref your-project-ref
+
+# Apply all pending migrations
+supabase db push
 ```
 
-For existing projects, apply any pending migrations in order:
-- `scripts/complete-migration.sql` — adds contact_messages, admin_settings, test generation functions
-- `scripts/fix-contact-rls.sql` / `scripts/fix-contact-rls-v2.sql` — contact message RLS policy fixes
+Migrations are stored in `supabase/migrations/` and are applied in order. The full schema is also available in `supabase-schema.sql` for manual execution.
 
 ### 3. Seed initial data (optional)
 
@@ -105,8 +111,37 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 | `/admin/case-studies` | Manage case studies |
 | `/admin/social-links` | Manage social media links |
 | `/admin/reviews` | Approve/reject public reviews |
-| `/admin/contact-messages` | View and manage visitor contact submissions |
+| `/admin/messages` | View and manage visitor contact submissions |
+| `/admin/ads` | Manage Dev Ads (Google AdSense + YouTube with Short/Video format, configurable aspect ratio) |
 | `/admin/users` | Manage user roles (promote/demote) |
+
+## Dev Ads (Gateway Verification)
+
+Dev Ads provide an alternative gateway verification method — visitors watch ads to unlock the portfolio.
+
+### Ad Types
+
+| Type | Source | Format | Description |
+|------|--------|--------|-------------|
+| **Google AdSense** | Auto-served by Google | Responsive auto-display | Generates ad revenue while unlocking the site |
+| **YouTube Video** | Custom URL | Landscape (16:9, 4:3, 21:9, 1:1, 3:2, 16:10) | Specific YouTube video with configurable aspect ratio |
+| **YouTube Short** | Custom URL | Vertical 9:16 | Phone-style Shorts player with animated side progress bar |
+
+### Ad Queue System
+
+- Active ads are loaded from Supabase and played sequentially
+- Each ad has its own timer based on `duration_seconds`
+- Animated slide transitions between ads with "Ad X / Y" counter
+- View count is incremented after each ad completes
+- After all ads finish, the visitor gains access to the portfolio
+
+### Managing Ads
+
+Admins can manage ads at `/admin/ads`:
+- Add/Edit/Delete ad entries
+- Choose ad type (Google AdSense or YouTube)
+- For YouTube: choose format (Landscape/Short) and aspect ratio
+- Toggle active status, set duration, track view counts
 
 ## Reviews
 
@@ -125,7 +160,7 @@ NEURAL-AURORA/
 ├── scripts/
 │   ├── migrate.cjs          # Supabase schema migration runner
 │   ├── seed.cjs             # Initial portfolio data seeder
-│   ├── complete-migration.sql  # Schema additions (contact_messages, admin_settings, test data)
+│   ├── complete-migration.sql  # Schema additions
 │   ├── fix-contact-rls.sql     # Contact message RLS fix
 │   └── fix-contact-rls-v2.sql  # Contact message RLS v2 fix
 ├── src/
@@ -143,6 +178,7 @@ NEURAL-AURORA/
 │   │   │   ├── AdminSocialLinks.jsx
 │   │   │   ├── AdminReviews.jsx
 │   │   │   ├── AdminContactMessages.jsx
+│   │   │   ├── AdminAds.jsx # Dev Ads CRUD
 │   │   │   ├── AdminUsers.jsx
 │   │   │   ├── AdminOverview.jsx
 │   │   │   ├── Login.jsx
@@ -150,20 +186,29 @@ NEURAL-AURORA/
 │   │   │   ├── RichTextEditor.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── ui/              # Reusable UI primitives
+│   │   │   ├── auto-traverse-effect.jsx # Auto Traverse visual cursor & navigation
+│   │   │   └── AdVideoPlayer.jsx # Ad player (Google AdSense + YouTube Short/Video)
 │   │   ├── ReviewForm.jsx   # Public review submission form
 │   │   ├── ReviewsList.jsx  # Public approved reviews display
-│   │   ├── StartingLoader.jsx # AI gateway
+│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, and ad verification
 │   │   └── ...              # Portfolio section components
 │   ├── context/
-│   │   └── AuthContext.jsx  # Supabase Auth provider + role management
+│   │   ├── AuthContext.jsx  # Supabase Auth provider + role management
+│   │   └── AutoTraverseContext.jsx # Auto Traverse toggle state
 │   ├── lib/
-│   │   ├── supabase.js      # Supabase client + all CRUD functions
+│   │   ├── supabase.js      # Supabase client + all CRUD functions (incl. dev_ads)
 │   │   ├── usePortfolioData.js # Dynamic data hooks with static fallback
 │   │   ├── gemini.js        # Gemini API client
-│   │   └── utils.js         # Utility helpers (cn)
-│   ├── App.jsx              # Router setup + AuthProvider wrapper
+│   │   └── utils.js         # Utility helpers
+│   ├── App.jsx              # Router setup + AuthProvider + AutoTraverseProvider
 │   ├── main.jsx             # Entry point
 │   └── index.css            # Tailwind + custom CSS
+├── supabase/                # Supabase CLI configuration
+│   ├── config.toml
+│   └── migrations/          # Database migrations
+│       ├── 20260522150218_create_dev_ads.sql
+│       ├── 20260522152424_add_ad_type_to_dev_ads.sql
+│       └── 20260522153455_add_aspect_ratio_to_dev_ads.sql
 ├── .env                     # API keys (gitignored)
 ├── .env.example             # Environment variable template
 ├── supabase-schema.sql      # Full database schema with RLS policies
@@ -269,8 +314,10 @@ All three platforms require these in your deployment dashboard:
 
 - **Framework:** React 18 with Vite 6
 - **Backend & Auth:** Supabase (PostgreSQL, Auth, Storage)
+- **CLI:** Supabase CLI (`supabase db push` for migrations)
 - **AI:** Google Gemini API (`gemini-2.0-flash`) — dynamic puzzle generation
 - **Speech:** Web SpeechRecognition API — voice verification
+- **Ads:** Google AdSense (auto-served) + YouTube IFrame Player API
 - **3D Graphics:** React Three Fiber, Drei, Three.js
 - **3D Embed:** Spline (`@splinetool/react-spline`)
 - **Animation:** Framer Motion 11
@@ -286,6 +333,8 @@ All three platforms require these in your deployment dashboard:
 - The 3D background (AuroraBackground) uses **GPU-accelerated** Three.js rendering
 - Spline scene is **lazy-loaded** with React Suspense and **preloaded** during the AI gateway for instant hero reveal
 - All animations use Framer Motion's spring physics for optimal frame rate
+- Auto Traverse cursor uses `useMotionValue` + `useSpring` (zero re-renders during 60fps animation)
+- Google AdSense script is loaded only when the ad-watching phase is entered (not on page load)
 - Tailwind CSS is purged in production builds
 - Gemini API calls use `temperature: 1.0` with random topic rotation for diverse questions
 - Admin routes are lazy-loadable and separate from the public site

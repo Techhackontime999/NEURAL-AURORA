@@ -173,29 +173,35 @@ function GoogleAdUnit() {
 
 function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
+  const ar = aspectRatio || '16/9'
+  const [w, h] = ar.split('/').map(Number)
+  const paddingTop = (h / w) * 100
   return (
     <div className="relative w-full bg-black/60">
       <FloatingOrbs />
       <ShimmerOverlay />
       {videoId ? (
-        <div className="relative w-full" style={{ aspectRatio: aspectRatio || '16/9' }}>
+        <div className="relative w-full overflow-hidden" style={{ paddingTop: `${Math.min(paddingTop, 120)}%`, maxHeight: '70vh' }}>
           <iframe
             src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=1&modestbranding=1`}
-            className="w-full h-full"
+            className="absolute inset-0 w-full h-full"
             allow="autoplay; encrypted-media"
             allowFullScreen
             title={title}
+            style={{ objectFit: 'contain' }}
           />
         </div>
       ) : (
-        <div className="w-full flex items-center justify-center" style={{ aspectRatio: aspectRatio || '16/9' }}>
-          <div className="text-center">
-            <div className="w-14 h-14 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-6 h-6">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
+        <div className="relative w-full flex items-center justify-center" style={{ paddingTop: `${Math.min(paddingTop, 120)}%` }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-6 h-6">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+              </div>
+              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Video unavailable</p>
             </div>
-            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Video unavailable</p>
           </div>
         </div>
       )}
@@ -216,36 +222,35 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
 function YouTubeShortPlayer({ videoUrl, title }) {
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   return (
-    <div className="relative w-full bg-black/70 flex items-center justify-center" style={{ minHeight: '420px' }}>
+    <div className="relative w-full bg-black/70 flex items-start justify-center" style={{ minHeight: '360px' }}>
       <FloatingOrbs />
       <ShimmerOverlay />
 
       <motion.div
-        className="relative w-full max-w-[360px] mx-auto overflow-hidden"
-        style={{ aspectRatio: '9/16', borderRadius: '16px' }}
+        className="relative w-full max-w-[340px] mx-auto"
+        style={{ paddingTop: 'calc(9/16 * 100%)', maxHeight: '80vh' }}
         initial={{ scale: 0.92, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: EASE, delay: 0.15 }}
       >
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 overflow-hidden"
           style={{
             border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px',
-            overflow: 'hidden',
             boxShadow: '0 0 40px rgba(0,240,255,0.06), inset 0 0 60px rgba(0,0,0,0.3)',
           }}
         >
           {videoId ? (
             <iframe
               src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=0&modestbranding=1`}
-              className="w-full h-full"
+              className="absolute inset-0 w-full h-full"
               allow="autoplay; encrypted-media"
               title={title}
-              style={{ pointerEvents: 'none' }}
+              style={{ pointerEvents: 'none', objectFit: 'cover' }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-12 h-12 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-5 h-5">
@@ -259,7 +264,7 @@ function YouTubeShortPlayer({ videoUrl, title }) {
         </div>
 
         <motion.div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6, ease: EASE }}
@@ -279,7 +284,7 @@ function YouTubeShortPlayer({ videoUrl, title }) {
           </motion.div>
         </motion.div>
 
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2.5">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2.5 z-10">
           <motion.div
             className="w-1 rounded-full overflow-hidden"
             style={{ height: '120px', background: 'rgba(255,255,255,0.06)' }}

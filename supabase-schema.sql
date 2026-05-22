@@ -661,6 +661,7 @@ CREATE TABLE IF NOT EXISTS dev_ads (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   title TEXT NOT NULL,
   ad_type TEXT NOT NULL DEFAULT 'google' CHECK (ad_type IN ('google', 'youtube')),
+  format TEXT NOT NULL DEFAULT 'video' CHECK (format IN ('video', 'short')),
   video_url TEXT DEFAULT '',
   thumbnail_url TEXT DEFAULT '',
   duration_seconds INT NOT NULL DEFAULT 30,

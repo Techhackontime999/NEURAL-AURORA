@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const GOOGLE_AD_CLIENT = 'ca-pub-2699270619596438'
 const EASE = [0.16, 1, 0.3, 1]
+const SPRING_STIFF = { type: 'spring', stiffness: 70, damping: 16, mass: 0.6 }
 
 function ShimmerOverlay() {
   return (
@@ -100,24 +101,18 @@ function GoogleAdUnit() {
   useEffect(() => {
     if (adMounted.current) return
     adMounted.current = true
-
     const existing = document.querySelector('script[src*="pagead2.googlesyndication.com"]')
     if (existing) {
       try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
       setLoaded(true)
       return
     }
-
     const script = document.createElement('script')
     script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${GOOGLE_AD_CLIENT}`
     script.crossOrigin = 'anonymous'
     script.async = true
     document.head.appendChild(script)
-
-    script.onload = () => {
-      try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
-      setLoaded(true)
-    }
+    script.onload = () => { try { (adsbygoogle = window.adsbygoogle || []).push({}) } catch {}; setLoaded(true) }
     script.onerror = () => setLoaded(true)
   }, [])
 
@@ -125,7 +120,6 @@ function GoogleAdUnit() {
     <div ref={containerRef} className="relative w-full min-h-[260px] flex items-center justify-center">
       <FloatingOrbs />
       <ShimmerOverlay />
-
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -141,49 +135,31 @@ function GoogleAdUnit() {
           data-full-width-responsive="true"
         />
       </motion.div>
-
       <AnimatePresence>
         {!loaded && (
           <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
             className="absolute inset-0 flex items-center justify-center"
           >
             <div className="text-center">
-              <motion.div
-                className="relative mx-auto mb-4 w-16 h-16"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              >
-                <div className="absolute inset-0 rounded-full border-2 border-transparent"
-                  style={{ borderTopColor: '#00f0ff', borderRightColor: '#b829dd' }} />
+              <motion.div className="relative mx-auto mb-4 w-16 h-16" animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
+                <div className="absolute inset-0 rounded-full border-2 border-transparent" style={{ borderTopColor: '#00f0ff', borderRightColor: '#b829dd' }} />
                 <div className="absolute inset-2 rounded-full border border-white/5 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-6 h-6">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                 </div>
               </motion.div>
-              <motion.p
-                className="text-[11px] font-mono tracking-[0.2em]"
-                style={{ color: 'rgba(255,255,255,0.2)' }}
-                animate={{ opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Loading Ad
-              </motion.p>
+              <motion.p className="text-[11px] font-mono tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.2)' }}
+                animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2, repeat: Infinity }}
+              >Loading Ad</motion.p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
       <motion.div
         className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
-        style={{
-          background: 'rgba(251,191,36,0.12)',
-          border: '1px solid rgba(251,191,36,0.2)',
-          color: 'rgba(251,191,36,0.6)',
-        }}
+        style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.2)', color: 'rgba(251,191,36,0.6)' }}
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
@@ -195,16 +171,12 @@ function GoogleAdUnit() {
   )
 }
 
-function YouTubePlayer({ videoUrl, title }) {
-  const videoId = videoUrl?.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  )?.[1]
-
+function YouTubeVideoPlayer({ videoUrl, title }) {
+  const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   return (
-    <div className="relative w-full min-h-[260px] bg-black/60">
+    <div className="relative w-full bg-black/60">
       <FloatingOrbs />
       <ShimmerOverlay />
-
       {videoId ? (
         <div className="relative aspect-video w-full">
           <iframe
@@ -223,28 +195,160 @@ function YouTubePlayer({ videoUrl, title }) {
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
             </div>
-            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
-              Video unavailable
-            </p>
+            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Video unavailable</p>
           </div>
         </div>
       )}
-
       <motion.div
         className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
-        style={{
-          background: 'rgba(0,240,255,0.1)',
-          border: '1px solid rgba(0,240,255,0.2)',
-          color: 'rgba(0,240,255,0.6)',
-        }}
+        style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.2)', color: 'rgba(0,240,255,0.6)' }}
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
       >
         <span className="inline-block w-1 h-1 rounded-full bg-neural-blue/60" />
-        YouTube
+        Video
       </motion.div>
     </div>
+  )
+}
+
+function YouTubeShortPlayer({ videoUrl, title }) {
+  const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
+  return (
+    <div className="relative w-full bg-black/70 flex items-center justify-center" style={{ minHeight: '420px' }}>
+      <FloatingOrbs />
+      <ShimmerOverlay />
+
+      <motion.div
+        className="relative w-full max-w-[360px] mx-auto overflow-hidden"
+        style={{ aspectRatio: '9/16', borderRadius: '16px' }}
+        initial={{ scale: 0.92, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: EASE, delay: 0.15 }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 0 40px rgba(0,240,255,0.06), inset 0 0 60px rgba(0,0,0,0.3)',
+          }}
+        >
+          {videoId ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&controls=0&modestbranding=1`}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              title={title}
+              style={{ pointerEvents: 'none' }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full border-2 border-white/5 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" className="w-5 h-5">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                </div>
+                <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Unavailable</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <motion.div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.6, ease: EASE }}
+        >
+          <motion.div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)' }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" className="w-3 h-3">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              Short
+            </span>
+          </motion.div>
+        </motion.div>
+
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2.5">
+          <motion.div
+            className="w-1 rounded-full overflow-hidden"
+            style={{ height: '120px', background: 'rgba(255,255,255,0.06)' }}
+          >
+            <motion.div
+              className="w-full rounded-full"
+              style={{ background: 'linear-gradient(180deg, #00f0ff, #b829dd)' }}
+              animate={{ height: ['20%', '80%', '20%'] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </motion.div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
+        style={{ background: 'rgba(184,41,221,0.1)', border: '1px solid rgba(184,41,221,0.2)', color: 'rgba(184,41,221,0.6)' }}
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
+      >
+        <span className="inline-block w-1 h-1 rounded-full bg-purple-400/60" />
+        Short
+      </motion.div>
+    </div>
+  )
+}
+
+function CompletionOverlay({ countdown }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-20 flex items-center justify-center"
+      style={{ background: 'rgba(5,5,12,0.75)', backdropFilter: 'blur(8px)' }}
+    >
+      <motion.div
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={SPRING_STIFF}
+        className="text-center"
+      >
+        <motion.div
+          className="relative mx-auto mb-4 w-16 h-16"
+          initial={{ rotate: -30 }}
+          animate={{ rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 12 }}
+        >
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-400/40 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" className="w-8 h-8">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeLinecap="round" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <motion.div
+            className="absolute -inset-2 rounded-full border border-emerald-400/10"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </motion.div>
+        <motion.p className="text-sm font-medium text-white/80" initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
+          Ad Complete
+        </motion.p>
+        <motion.p className="text-[10px] font-mono mt-1.5" style={{ color: 'rgba(255,255,255,0.25)' }} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }}>
+          Entering in {countdown}s
+        </motion.p>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -257,6 +361,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
 
   const duration = video?.duration_seconds || 30
   const isGoogle = video?.ad_type !== 'youtube'
+  const isShort = video?.format === 'short'
 
   useEffect(() => {
     const t = setTimeout(() => setShowSkip(true), 5000)
@@ -293,7 +398,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.5, ease: EASE }}
-      className="relative z-10 w-full max-w-xl mx-auto px-4"
+      className={`relative z-10 mx-auto px-4 ${isShort ? 'max-w-md' : 'max-w-xl'}`}
     >
       <motion.div
         className="rounded-2xl overflow-hidden"
@@ -321,9 +426,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
-            <span className="text-[9px] font-mono uppercase tracking-[0.25em]"
-              style={{ color: 'rgba(255,255,255,0.2)' }}
-            >
+            <span className="text-[9px] font-mono uppercase tracking-[0.25em]" style={{ color: 'rgba(255,255,255,0.2)' }}>
               Sponsored
             </span>
           </motion.div>
@@ -334,71 +437,20 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {isGoogle ? 'Auto Ad' : 'Video Ad'}
+            {isGoogle ? 'Auto Ad' : isShort ? 'Short' : 'Video'}
           </motion.span>
         </div>
 
         <div className="relative">
           <GradientOrbit />
-          {isGoogle ? <GoogleAdUnit /> : <YouTubePlayer videoUrl={video.video_url} title={video.title} />}
-
-          <AnimatePresence>
-            {ended && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-20 flex items-center justify-center"
-                style={{
-                  background: 'rgba(5,5,12,0.75)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <motion.div
-                  initial={{ scale: 0.7, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 70, damping: 16, mass: 0.6 }}
-                  className="text-center"
-                >
-                  <motion.div
-                    className="relative mx-auto mb-4 w-16 h-16"
-                    initial={{ rotate: -30 }}
-                    animate={{ rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 100, damping: 12 }}
-                  >
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-400/40 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" className="w-8 h-8">
-                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeLinecap="round" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    </div>
-                    <motion.div
-                      className="absolute -inset-2 rounded-full border border-emerald-400/10"
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  </motion.div>
-                  <motion.p
-                    className="text-sm font-medium text-white/80"
-                    initial={{ y: 8, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.15 }}
-                  >
-                    Ad Complete
-                  </motion.p>
-                  <motion.p
-                    className="text-[10px] font-mono mt-1.5"
-                    style={{ color: 'rgba(255,255,255,0.25)' }}
-                    initial={{ y: 8, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.25 }}
-                  >
-                    Entering in {countdown}s
-                  </motion.p>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {isGoogle ? (
+            <GoogleAdUnit />
+          ) : isShort ? (
+            <YouTubeShortPlayer videoUrl={video.video_url} title={video.title} />
+          ) : (
+            <YouTubeVideoPlayer videoUrl={video.video_url} title={video.title} />
+          )}
+          <AnimatePresence>{ended && <CompletionOverlay countdown={countdown} />}</AnimatePresence>
         </div>
 
         <motion.div
@@ -416,7 +468,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
               >
-                {video?.title || (isGoogle ? 'Google Ad' : 'Video Ad')}
+                {video?.title || (isGoogle ? 'Google Ad' : isShort ? 'Short Ad' : 'Video Ad')}
               </motion.p>
             </div>
             <AnimatePresence>
@@ -427,19 +479,11 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                   exit={{ opacity: 0, scale: 0.9 }}
                   onClick={onSkip}
                   className="relative px-4 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider overflow-hidden group"
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.35)',
-                  }}
+                  style={{ border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}
                   whileHover={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)' }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <motion.span
-                    className="absolute inset-0"
-                    style={{ background: 'rgba(255,255,255,0.03)' }}
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                  />
+                  <motion.span className="absolute inset-0" style={{ background: 'rgba(255,255,255,0.03)' }} initial={{ opacity: 0 }} whileHover={{ opacity: 1 }} />
                   Skip
                 </motion.button>
               )}
@@ -470,10 +514,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
               >
                 {elapsed}s
               </motion.span>
-              <motion.span
-                className="text-[9px] font-mono"
-                style={{ color: 'rgba(255,255,255,0.12)' }}
-              >
+              <motion.span className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>
                 {duration}s
               </motion.span>
             </div>

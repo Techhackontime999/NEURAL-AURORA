@@ -6,7 +6,12 @@ const AD_TYPES = [
   { value: 'youtube', label: 'YouTube Video', desc: 'Specific YouTube URL' },
 ]
 
-const defaultForm = { title: '', ad_type: 'google', video_url: '', duration_seconds: 30, active: true }
+const FORMAT_OPTIONS = [
+  { value: 'video', label: 'Landscape', icon: '▬' },
+  { value: 'short', label: 'Short / Vertical', icon: '▮' },
+]
+
+const defaultForm = { title: '', ad_type: 'google', format: 'video', video_url: '', duration_seconds: 30, active: true }
 
 export default function AdminAds() {
   const [ads, setAds] = useState([])
@@ -75,7 +80,7 @@ export default function AdminAds() {
             Dev Ads
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Manage ads shown in the StartingLoader — Google AdSense or custom YouTube videos
+            Manage ads shown in the StartingLoader
           </p>
         </div>
         <button
@@ -110,14 +115,33 @@ export default function AdminAds() {
               {AD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
             {newForm.ad_type === 'youtube' ? (
-              <input
-                type="text"
-                placeholder="YouTube URL"
-                value={newForm.video_url}
-                onChange={(e) => setNewForm({ ...newForm, video_url: e.target.value })}
-                className="rounded-lg border px-3 py-2 text-sm outline-none"
-                style={inputStyle}
-              />
+              <>
+                <div className="flex gap-2">
+                  {FORMAT_OPTIONS.map((f) => (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => setNewForm({ ...newForm, format: f.value })}
+                      className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs transition-all ${
+                        newForm.format === f.value
+                          ? 'border-neural-blue bg-neural-blue/10 text-neural-blue'
+                          : 'border-white/10 text-white/30 hover:border-white/30'
+                      }`}
+                    >
+                      <span>{f.icon}</span>
+                      <span>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="YouTube URL"
+                  value={newForm.video_url}
+                  onChange={(e) => setNewForm({ ...newForm, video_url: e.target.value })}
+                  className="rounded-lg border px-3 py-2 text-sm outline-none"
+                  style={inputStyle}
+                />
+              </>
             ) : (
               <div className="rounded-lg border px-3 py-2 text-xs flex items-center"
                 style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)', background: 'var(--input-bg)' }}
@@ -177,22 +201,35 @@ export default function AdminAds() {
                   {AD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
                 {editForm.ad_type === 'youtube' ? (
-                  <input
-                    type="text"
-                    value={editForm.video_url}
-                    onChange={(e) => setEditForm({ ...editForm, video_url: e.target.value })}
-                    className="w-40 rounded border px-2 py-1 text-sm outline-none"
-                    style={inputStyle}
-                  />
+                  <>
+                    <select
+                      value={editForm.format}
+                      onChange={(e) => setEditForm({ ...editForm, format: e.target.value })}
+                      className="rounded border px-2 py-1 text-[10px] outline-none"
+                      style={inputStyle}
+                    >
+                      {FORMAT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.icon} {f.label}</option>)}
+                    </select>
+                    <input
+                      type="text"
+                      value={editForm.video_url}
+                      onChange={(e) => setEditForm({ ...editForm, video_url: e.target.value })}
+                      className="w-36 rounded border px-2 py-1 text-sm outline-none"
+                      style={inputStyle}
+                    />
+                  </>
                 ) : (
-                  <span className="w-40 text-xs" style={{ color: 'var(--text-tertiary)' }}>Auto-served</span>
+                  <>
+                    <span className="w-8 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>—</span>
+                    <span className="w-36 text-xs" style={{ color: 'var(--text-tertiary)' }}>Auto-served</span>
+                  </>
                 )}
                 <input
                   type="number"
                   value={editForm.duration_seconds}
                   min={1}
                   onChange={(e) => setEditForm({ ...editForm, duration_seconds: +e.target.value })}
-                  className="w-14 rounded border px-2 py-1 text-sm outline-none"
+                  className="w-12 rounded border px-2 py-1 text-sm outline-none"
                   style={inputStyle}
                 />
                 {urlError && editingId === ad.id && (
@@ -215,11 +252,13 @@ export default function AdminAds() {
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                   ad.ad_type === 'google'
                     ? 'text-amber-400 bg-amber-500/10'
-                    : 'text-neural-blue bg-neural-blue/10'
+                    : ad.format === 'short'
+                      ? 'text-purple-400 bg-purple-500/10'
+                      : 'text-neural-blue bg-neural-blue/10'
                 }`}>
-                  {ad.ad_type === 'google' ? 'Google' : 'YouTube'}
+                  {ad.ad_type === 'google' ? 'Google' : ad.format === 'short' ? 'Short' : 'Video'}
                 </span>
-                <span className="w-36 truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="w-28 truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   {ad.ad_type === 'youtube' ? ad.video_url : '—'}
                 </span>
                 <span className="w-12 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>{ad.duration_seconds}s</span>

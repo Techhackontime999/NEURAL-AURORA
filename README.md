@@ -1,8 +1,26 @@
-# NEURAL AURORA — The Synaptic Portfolio
+# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v2.0.0 — Neural Reverie Release</sup>
 
 **A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
 
 Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 11**, **Tailwind CSS 3**, **Vite 6**, and **Supabase**.
+
+---
+
+## What's New in v2.0.0
+
+| Feature | Description |
+|---------|-------------|
+| **Watch Dev Ads** | Alternative gateway — visitors watch Google AdSense ads or YouTube videos (landscape/Short) to unlock the portfolio. Ad queue system with animated transitions and view tracking. |
+| **Auto Traverse** | One-click full-site demo tour. A glowing cyan cursor autonomously navigates through all pages with spring-based smooth scrolling. |
+| **Live Visitor Count** | Real-time visitor counter synced to Supabase, glowing in the footer with animated number transitions. |
+| **Taste-Skill Aesthetics** | Liquid Glass design language — `cubic-bezier(0.16, 1, 0.3, 1)` easing, perpetual micro-interactions, cyan/purple/gold accent palette. |
+| **SEO & Discoverability** | Google Search Console verified, sitemap.xml, robots.txt, OG/Twitter cards, canonical URLs, and Vercel deployment. |
+| **Admin Ads Panel** | Full CRUD for Dev Ads at `/admin/ads` — manage Google AdSense + YouTube ads with configurable aspect ratios and duration. |
+| **Admin User Roles** | User management at `/admin/users` — promote/demote between admin and user roles. |
+| **Enhanced Supabase Migrations** | New migrations for `dev_ads`, `visitor_stats`, contact RLS fixes — all managed via `supabase db push`. |
+| **Vercel Deployment** | Migrated from Netlify to Vercel with auto CI/CD on every push. |
+
+[Full Changelog](#changelog)
 
 ---
 
@@ -344,6 +362,34 @@ All three platforms require these in your deployment dashboard:
 ## License
 
 MIT License — see [LICENSE](LICENSE).
+
+---
+
+## Changelog
+
+### v2.0.0 (Neural Reverie Release)
+
+**Added**
+- Dev Ads gateway — Google AdSense + YouTube (landscape/Short) with ad queue, timers, view counting
+- Auto Traverse — full-site autonomous tour with spring cursor
+- Live Visitor Count — real-time Supabase-backed visitor counter in footer
+- Taste-Skill design language — Liquid Glass aesthetics with custom easing
+- SEO metadata — Google Search Console verification, sitemap.xml, robots.txt, OG/Twitter cards
+- Admin Ads CRUD panel (`/admin/ads`) — manage ads with type, format, aspect ratio, duration
+- Admin User Roles panel (`/admin/users`) — role management (admin/user)
+- Vercel deployment configuration with SPA rewrites
+- Supabase migrations: `dev_ads`, `visitor_stats`, contact RLS fixes
+- `_redirects` file for Netlify SPA fallback
+
+**Changed**
+- Migrated hosting from Netlify to Vercel with auto CI/CD
+- Updated all OG/Twitter URLs to Vercel domain
+- Enhanced admin overview with Test Data Generator
+- Improved theme toggle with curtain animation
+
+### v1.0.0
+
+**Initial release** — AI-powered gateway, 3D aurora background, Spline hero, full portfolio with Supabase CRUD admin, authentication, reviews, dark/light theme, glassmorphism design.
 
 ---
 

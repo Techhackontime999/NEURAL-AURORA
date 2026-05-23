@@ -1,7 +1,7 @@
 {
   "name": "neural-aurora",
   "private": true,
-  "version": "3.1.0",
+  "version": "2.0.0",
   "description": "The Synaptic Portfolio - A living neural network suspended in an aurora field",
   "type": "module",
   "scripts": {

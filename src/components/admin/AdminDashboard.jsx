@@ -31,6 +31,7 @@ export default function AdminDashboard() {
         <Route path="reviews" element={<AdminReviews />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="messages" element={<AdminContactMessages />} />
+        <Route path="ads" element={<AdminAds />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

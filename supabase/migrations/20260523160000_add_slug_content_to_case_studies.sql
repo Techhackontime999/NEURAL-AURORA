@@ -1,0 +1,5 @@
+ALTER TABLE case_studies
+ADD COLUMN IF NOT EXISTS slug TEXT,
+ADD COLUMN IF NOT EXISTS content TEXT DEFAULT '';
+
+CREATE UNIQUE INDEX IF NOT EXISTS case_studies_slug_key ON case_studies (slug) WHERE slug IS NOT NULL;

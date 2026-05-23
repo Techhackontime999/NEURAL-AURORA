@@ -13,19 +13,24 @@ export default function AdminExperience() {
   async function load() { setItems(await getExperience()) }
 
   async function handleSave(id) {
-    await updateExperience(id, editForm)
-    setEditingId(null); load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      await updateExperience(id, payload)
+      setEditingId(null); load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.role.trim()) return
-    await createExperience(newForm)
-    setShowNew(false)
-    setNewForm({ exp_id: '', role: '', company: '', year: '', description: '', display_order: 0 })
-    load()
+    try {
+      await createExperience(newForm)
+      setShowNew(false)
+      setNewForm({ exp_id: '', role: '', company: '', year: '', description: '', display_order: 0 })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { await deleteExperience(id); load() } }
+  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteExperience(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
 
   const fields = [
     { key: 'exp_id', label: 'ID' },

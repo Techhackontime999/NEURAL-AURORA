@@ -15,19 +15,21 @@ export default function AdminSocialLinks() {
   async function load() { setLinks(await getSocialLinks()) }
 
   async function handleSave(id) {
-    await updateSocialLink(id, editForm)
-    setEditingId(null); load()
+    try { const { id: _id, created_at, updated_at, ...payload } = editForm; await updateSocialLink(id, payload); setEditingId(null); load() }
+    catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.label.trim()) return
-    await createSocialLink(newForm)
-    setShowNew(false)
-    setNewForm({ label: '', url: '', icon: 'link', display_order: 0 })
-    load()
+    try {
+      await createSocialLink(newForm)
+      setShowNew(false)
+      setNewForm({ label: '', url: '', icon: 'link', display_order: 0 })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { await deleteSocialLink(id); load() } }
+  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteSocialLink(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
 
   const inputStyle = {
     borderColor: 'var(--border-color)',

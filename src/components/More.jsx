@@ -104,25 +104,29 @@ function CaseStudyCard({ study, index }) {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { delay: index * 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
       }}
-      className="glass-panel rounded-xl p-5"
     >
-      <h3 className="text-sm font-semibold text-black/80 dark:text-white/80">
-        {study.title}
-      </h3>
-      <p className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed">
-        {study.description}
-      </p>
-      <div className="mt-3 p-3 rounded-lg bg-black/5 dark:bg-white/5">
-        <span className="text-[9px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">Outcome</span>
-        <p className="text-xs text-black/60 dark:text-white/60 mt-1">{study.outcome}</p>
-      </div>
-      <div className="flex flex-wrap gap-1.5 mt-3">
-        {study.tech.map((t) => (
-          <span key={t} className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-black/50 dark:text-white/50">
-            {t}
-          </span>
-        ))}
-      </div>
+      <Link
+        to={`/case-study/${study.slug}`}
+        className="glass-panel rounded-xl p-5 block group"
+      >
+        <h3 className="text-sm font-semibold text-black/80 dark:text-white/80 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-400 transition-all duration-300">
+          {study.title}
+        </h3>
+        <p className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed line-clamp-2">
+          {study.description}
+        </p>
+        <div className="mt-3 p-3 rounded-lg bg-black/5 dark:bg-white/5">
+          <span className="text-[9px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">Outcome</span>
+          <p className="text-xs text-black/60 dark:text-white/60 mt-1 line-clamp-2">{study.outcome}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {study.tech.map((t) => (
+            <span key={t} className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-black/50 dark:text-white/50">
+              {t}
+            </span>
+          ))}
+        </div>
+      </Link>
     </motion.div>
   )
 }

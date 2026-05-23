@@ -2,10 +2,10 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export function AdminRoute({ children }) {
-  const { user, profile, loading, isAdmin } = useAuth()
+  const { user, profile, loading, profileLoading, isAdmin } = useAuth()
   const location = useLocation()
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--border-color)', borderTopColor: 'var(--accent)' }} />

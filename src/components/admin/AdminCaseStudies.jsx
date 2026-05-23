@@ -7,30 +7,34 @@ export default function AdminCaseStudies() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
-  const [newForm, setNewForm] = useState({ cs_id: '', title: '', description: '', outcome: '', tech: [], display_order: 0 })
+  const [newForm, setNewForm] = useState({ cs_id: '', title: '', slug: '', description: '', outcome: '', content: '', tech: [], display_order: 0 })
 
   useEffect(() => { load() }, [])
 
   async function load() { setItems(await getCaseStudies()) }
 
   async function handleSave(id) {
-    const payload = { ...editForm }
-    if (typeof payload.tech === 'string') payload.tech = payload.tech.split(',').map(t => t.trim()).filter(Boolean)
-    await updateCaseStudy(id, payload)
-    setEditingId(null); load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      if (typeof payload.tech === 'string') payload.tech = payload.tech.split(',').map(t => t.trim()).filter(Boolean)
+      await updateCaseStudy(id, payload)
+      setEditingId(null); load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.title.trim()) return
-    const payload = { ...newForm }
-    if (typeof payload.tech === 'string') payload.tech = payload.tech.split(',').map(t => t.trim()).filter(Boolean)
-    await createCaseStudy(payload)
-    setShowNew(false)
-    setNewForm({ cs_id: '', title: '', description: '', outcome: '', tech: [], display_order: 0 })
-    load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = newForm
+      if (typeof payload.tech === 'string') payload.tech = payload.tech.split(',').map(t => t.trim()).filter(Boolean)
+      await createCaseStudy(payload)
+      setShowNew(false)
+      setNewForm({ cs_id: '', title: '', slug: '', description: '', outcome: '', content: '', tech: [], display_order: 0 })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { await deleteCaseStudy(id); load() } }
+  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteCaseStudy(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
 
   function startEdit(item) {
     setEditingId(item.id)
@@ -40,6 +44,7 @@ export default function AdminCaseStudies() {
   const fields = [
     { key: 'cs_id', label: 'ID' },
     { key: 'title', label: 'Title' },
+    { key: 'slug', label: 'Slug' },
     { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'tech', label: 'Tech (comma-separated)' },
     { key: 'display_order', label: 'Order', type: 'number' },
@@ -96,6 +101,15 @@ export default function AdminCaseStudies() {
                 minHeight={150}
               />
             </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Content</label>
+              <RichTextEditor
+                value={newForm.content}
+                onChange={(html) => setNewForm({ ...newForm, content: html })}
+                placeholder="Write the full case study content..."
+                minHeight={300}
+              />
+            </div>
           </div>
           <button
             onClick={handleCreate}
@@ -132,6 +146,14 @@ export default function AdminCaseStudies() {
                     value={editForm.outcome}
                     onChange={(html) => setEditForm({ ...editForm, outcome: html })}
                     minHeight={150}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Content</label>
+                  <RichTextEditor
+                    value={editForm.content}
+                    onChange={(html) => setEditForm({ ...editForm, content: html })}
+                    minHeight={300}
                   />
                 </div>
                 <div className="sm:col-span-2 flex gap-2">

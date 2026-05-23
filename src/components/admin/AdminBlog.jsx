@@ -18,24 +18,28 @@ export default function AdminBlog() {
   }
 
   async function handleSave(id) {
-    const payload = { ...editForm }
-    if (typeof payload.tags === 'string') payload.tags = payload.tags.split(',').map(t => t.trim()).filter(Boolean)
-    await updateBlogPost(id, payload)
-    setEditingId(null); load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      if (typeof payload.tags === 'string') payload.tags = payload.tags.split(',').map(t => t.trim()).filter(Boolean)
+      await updateBlogPost(id, payload)
+      setEditingId(null); load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.title.trim()) return
-    const payload = { ...newForm }
-    if (typeof payload.tags === 'string') payload.tags = payload.tags.split(',').map(t => t.trim()).filter(Boolean)
-    await createBlogPost(payload)
-    setShowNew(false)
-    setNewForm({ post_id: '', title: '', slug: '', excerpt: '', content: '', date: '', read_time: '5 min read', tags: [] })
-    load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = newForm
+      if (typeof payload.tags === 'string') payload.tags = payload.tags.split(',').map(t => t.trim()).filter(Boolean)
+      await createBlogPost(payload)
+      setShowNew(false)
+      setNewForm({ post_id: '', title: '', slug: '', excerpt: '', content: '', date: '', read_time: '5 min read', tags: [] })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this post?')) { await deleteBlogPost(id); load() }
+    if (confirm('Delete this post?')) { try { await deleteBlogPost(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
   function startEdit(post) {

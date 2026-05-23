@@ -11,6 +11,7 @@ const categoryConfig = [
   { key: 'education', label: 'Education', color: '#ec4899' },
   { key: 'experience', label: 'Experience', color: '#f97316' },
   { key: 'case_studies', label: 'Case Studies', color: '#06b6d4' },
+  { key: 'services', label: 'Services', color: '#14b8a6' },
 ]
 
 export default function AdminOverview() {

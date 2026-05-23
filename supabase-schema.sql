@@ -161,8 +161,10 @@ CREATE TABLE IF NOT EXISTS case_studies (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   cs_id TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   outcome TEXT DEFAULT '',
+  content TEXT DEFAULT '',
   tech TEXT[] DEFAULT '{}',
   display_order INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -291,8 +293,19 @@ BEGIN
         INSERT INTO reviews (name, email, rating, message, approved)
         VALUES ('Test User', 'test@test.com', 5, 'Great!', random()>0.5);
       WHEN 'case_studies' THEN
-        INSERT INTO case_studies (cs_id, title, description, outcome, tech, display_order)
-        VALUES ('test-'||random_suffix, 'Test CS', 'Desc', 'Done', ARRAY['React'], (SELECT COALESCE(MAX(display_order),0)+1 FROM case_studies));
+        INSERT INTO case_studies (cs_id, title, slug, description, outcome, content, tech, display_order)
+        VALUES ('test-'||random_suffix, 'Test CS', 'test-'||random_suffix, 'Desc', 'Done', 'Content', ARRAY['React'], (SELECT COALESCE(MAX(display_order),0)+1 FROM case_studies));
+      WHEN 'services' THEN
+        INSERT INTO services (service_id, icon_name, title, tagline, description, features, display_order)
+        VALUES (
+          'test-'||random_suffix,
+          (ARRAY['Globe','Palette','Lightbulb','MessageCircle','Code','Server','Zap','Star'])[(random()*8+1)::INT],
+          (ARRAY['Web Development','UI/UX Design','Technical Consulting','Custom Projects','Cloud Architecture','Mobile Development'])[(random()*6+1)::INT] || ' ' || i,
+          (ARRAY['Full-stack applications that perform','Interfaces people love to use','Strategic guidance for your stack','Unique problems need unique solutions'])[(random()*4+1)::INT],
+          'A sample service offering with professional quality and attention to detail.',
+          ARRAY['Feature A','Feature B','Feature C','Feature D'],
+          (SELECT COALESCE(MAX(display_order),0)+1 FROM services)
+        );
       ELSE RETURN 'Unknown: '||p_category;
     END CASE;
     inserted := inserted + 1;
@@ -654,53 +667,7 @@ GRANT SELECT, UPDATE, DELETE ON TABLE contact_messages TO authenticated;
 GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
 
 -- ============================================================
--- ============================================================
--- DEV ADS TABLE
--- ============================================================
-CREATE TABLE IF NOT EXISTS dev_ads (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  title TEXT NOT NULL,
-  ad_type TEXT NOT NULL DEFAULT 'google' CHECK (ad_type IN ('google', 'youtube')),
-  format TEXT NOT NULL DEFAULT 'video' CHECK (format IN ('video', 'short')),
-  aspect_ratio TEXT NOT NULL DEFAULT '16/9' CHECK (aspect_ratio IN ('16/9', '4/3', '21/9', '1/1', '3/2', '16/10')),
-  video_url TEXT DEFAULT '',
-  thumbnail_url TEXT DEFAULT '',
-  duration_seconds INT NOT NULL DEFAULT 30,
-  active BOOLEAN DEFAULT TRUE,
-  view_count INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
-ALTER TABLE dev_ads ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Anyone can read active dev_ads" ON dev_ads;
-CREATE POLICY "Anyone can read active dev_ads"
-  ON dev_ads FOR SELECT
-  USING (active = TRUE OR is_admin());
-
-DROP POLICY IF EXISTS "Admin can insert dev_ads" ON dev_ads;
-CREATE POLICY "Admin can insert dev_ads"
-  ON dev_ads FOR INSERT WITH CHECK (is_admin());
-
-DROP POLICY IF EXISTS "Admin can update dev_ads" ON dev_ads;
-CREATE POLICY "Admin can update dev_ads"
-  ON dev_ads FOR UPDATE USING (is_admin());
-
-DROP POLICY IF EXISTS "Admin can delete dev_ads" ON dev_ads;
-CREATE POLICY "Admin can delete dev_ads"
-  ON dev_ads FOR DELETE USING (is_admin());
-
-GRANT SELECT ON TABLE dev_ads TO anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE dev_ads TO authenticated;
-
-CREATE OR REPLACE FUNCTION increment_ad_view_count(ad_id BIGINT)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE dev_ads SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ad_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- ============================================================
 -- STORAGE BUCKET for images
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public)

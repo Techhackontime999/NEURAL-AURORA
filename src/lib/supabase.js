@@ -96,6 +96,16 @@ export async function getCaseStudies() {
   return data
 }
 
+export async function getCaseStudyBySlug(slug) {
+  const { data, error } = await supabase
+    .from('case_studies')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function getReviews() {
   const { data, error } = await supabase
     .from('reviews')
@@ -400,7 +410,13 @@ export async function clearTestData(table) {
             .from(table)
             .delete()
             .ilike('cs_id', 'test-%')
-          if (err5) throw err5
+          if (err5) {
+            const { error: err6 } = await supabase
+              .from(table)
+              .delete()
+              .ilike('service_id', 'test-%')
+            if (err6) throw err6
+          }
         }
       }
     }
@@ -456,52 +472,3 @@ export async function deleteContactMessage(id) {
   if (error) throw error
 }
 
-export async function getActiveAdVideos() {
-  const { data, error } = await supabase
-    .from('dev_ads')
-    .select('*')
-    .eq('active', true)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data
-}
-
-export async function getAdVideos() {
-  const { data, error } = await supabase
-    .from('dev_ads')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data
-}
-
-export async function addAdVideo(data) {
-  const { data: newAd, error } = await supabase
-    .from('dev_ads')
-    .insert([data])
-    .select()
-    .single()
-  if (error) throw error
-  return newAd
-}
-
-export async function updateAdVideo(id, data) {
-  const { error } = await supabase
-    .from('dev_ads')
-    .update(data)
-    .eq('id', id)
-  if (error) throw error
-}
-
-export async function deleteAdVideo(id) {
-  const { error } = await supabase
-    .from('dev_ads')
-    .delete()
-    .eq('id', id)
-  if (error) throw error
-}
-
-export async function incrementAdViewCount(id) {
-  const { error } = await supabase.rpc('increment_ad_view_count', { ad_id: id })
-  if (error) throw error
-}

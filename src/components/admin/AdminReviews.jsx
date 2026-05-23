@@ -10,11 +10,11 @@ export default function AdminReviews() {
   async function load() { setReviews(await getAllReviews()) }
 
   async function handleApprove(id) {
-    await approveReview(id); load()
+    try { await approveReview(id); load() } catch (err) { alert('Failed to approve: ' + err.message) }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this review?')) { await deleteReview(id); load() }
+    if (confirm('Delete this review?')) { try { await deleteReview(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
   const filtered = filter === 'pending' ? reviews.filter(r => !r.approved)

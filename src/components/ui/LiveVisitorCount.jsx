@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { supabase } from '../../lib/supabase'
 
 const EASE = [0.16, 1, 0.3, 1]
-const COUNTER_KEY = 'neural-aurora-visitors'
 
 function useVisitorCount() {
   const [count, setCount] = useState(null)
@@ -15,17 +15,18 @@ function useVisitorCount() {
 
     async function fetchCount() {
       try {
-        const res = await fetch(`https://api.countapi.xyz/hit/neural-aurora-dev/${COUNTER_KEY}`)
-        const data = await res.json()
-        setCount(data.value)
+        const { data, error } = await supabase.rpc('increment_visitor_count')
+        if (error) throw error
+        setCount(data)
       } catch {
         try {
-          const res = await fetch(`https://api.countapi.xyz/get/neural-aurora-dev/${COUNTER_KEY}`)
-          const data = await res.json()
-          setCount(data.value)
-        } catch {
-          setCount(null)
-        }
+          const { data, error } = await supabase
+            .from('visitor_stats')
+            .select('count')
+            .eq('id', 1)
+            .single()
+          if (!error && data) setCount(data.count)
+        } catch {}
       }
       setLoading(false)
     }

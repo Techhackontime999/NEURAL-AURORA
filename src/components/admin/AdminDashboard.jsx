@@ -13,6 +13,7 @@ import AdminReviews from './AdminReviews'
 import AdminUsers from './AdminUsers'
 import AdminContactMessages from './AdminContactMessages'
 import AdminAds from './AdminAds'
+import AdminServices from './AdminServices'
 export default function AdminDashboard() {
   return (
     <AdminLayout>
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
         <Route path="experience" element={<AdminExperience />} />
         <Route path="blog" element={<AdminBlog />} />
         <Route path="case-studies" element={<AdminCaseStudies />} />
+        <Route path="services" element={<AdminServices />} />
         <Route path="social-links" element={<AdminSocialLinks />} />
         <Route path="reviews" element={<AdminReviews />} />
         <Route path="users" element={<AdminUsers />} />

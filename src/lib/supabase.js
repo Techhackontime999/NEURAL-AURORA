@@ -472,3 +472,104 @@ export async function deleteContactMessage(id) {
   if (error) throw error
 }
 
+export async function getActiveAdVideos() {
+  const { data, error } = await supabase
+    .from('dev_ads')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function getAdVideos() {
+  const { data, error } = await supabase
+    .from('dev_ads')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function addAdVideo(data) {
+  const { data: newAd, error } = await supabase
+    .from('dev_ads')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newAd
+}
+
+export async function updateAdVideo(id, data) {
+  const { error } = await supabase
+    .from('dev_ads')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAdVideo(id) {
+  const { error } = await supabase
+    .from('dev_ads')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function incrementAdViewCount(id) {
+  const { error } = await supabase.rpc('increment_ad_view_count', { ad_id: id })
+  if (error) throw error
+}
+
+export async function getServices() {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createService(data) {
+  const { data: newItem, error } = await supabase
+    .from('services')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateService(id, data) {
+  const { error } = await supabase
+    .from('services')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteService(id) {
+  const { error } = await supabase
+    .from('services')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getServicePage() {
+  const { data, error } = await supabase
+    .from('service_page')
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateServicePage(data) {
+  const { error } = await supabase
+    .from('service_page')
+    .update(data)
+    .eq('id', 1)
+  if (error) throw error
+}

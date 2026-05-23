@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://neural-aurora.netlify.app/sitemap.xml
+Sitemap: https://nural-aurora.vercel.app/sitemap.xml

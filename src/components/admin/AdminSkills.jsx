@@ -17,24 +17,26 @@ export default function AdminSkills() {
   }
 
   async function handleSave(id) {
-    await updateSkill(id, editForm)
-    setEditingId(null)
-    load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      await updateSkill(id, payload)
+      setEditingId(null)
+      load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.name.trim()) return
-    await createSkill(newForm)
-    setNewForm({ name: '', level: 50, category: 'frontend', display_order: 0 })
-    setShowNew(false)
-    load()
+    try {
+      await createSkill(newForm)
+      setNewForm({ name: '', level: 50, category: 'frontend', display_order: 0 })
+      setShowNew(false)
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this skill?')) {
-      await deleteSkill(id)
-      load()
-    }
+    if (confirm('Delete this skill?')) { try { await deleteSkill(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
   const inputStyle = {

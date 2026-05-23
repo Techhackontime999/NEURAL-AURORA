@@ -12,6 +12,7 @@ const navItems = [
   { path: '/admin/experience', label: 'Experience', icon: '○' },
   { path: '/admin/blog', label: 'Blog Posts', icon: '⊡' },
   { path: '/admin/case-studies', label: 'Case Studies', icon: '▣' },
+  { path: '/admin/services', label: 'Services', icon: '⊞' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
   { path: '/admin/messages', label: 'Messages', icon: '✉' },

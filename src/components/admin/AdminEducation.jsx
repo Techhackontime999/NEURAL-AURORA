@@ -13,19 +13,24 @@ export default function AdminEducation() {
   async function load() { setItems(await getEducation()) }
 
   async function handleSave(id) {
-    await updateEducation(id, editForm)
-    setEditingId(null); load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      await updateEducation(id, payload)
+      setEditingId(null); load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.degree.trim()) return
-    await createEducation(newForm)
-    setShowNew(false)
-    setNewForm({ edu_id: '', degree: '', school: '', year: '', description: '', display_order: 0 })
-    load()
+    try {
+      await createEducation(newForm)
+      setShowNew(false)
+      setNewForm({ edu_id: '', degree: '', school: '', year: '', description: '', display_order: 0 })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { await deleteEducation(id); load() } }
+  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteEducation(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
 
   const fields = [
     { key: 'edu_id', label: 'ID' },

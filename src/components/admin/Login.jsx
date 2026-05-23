@@ -8,11 +8,19 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn, user } = useAuth()
+  const { signIn, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   const from = location.state?.from?.pathname || '/admin'
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--border-color)', borderTopColor: 'var(--accent)' }} />
+      </div>
+    )
+  }
 
   if (user) {
     navigate(from, { replace: true })

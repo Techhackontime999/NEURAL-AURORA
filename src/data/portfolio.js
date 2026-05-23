@@ -171,19 +171,160 @@ export const blogPosts = [
   },
 ]
 
+export const services = [
+  {
+    service_id: 'web-dev',
+    icon_name: 'Globe',
+    title: 'Web Development',
+    tagline: 'Full-stack applications that perform',
+    description: 'From landing pages to complex platforms \u2014 I build responsive, performant web apps using modern stacks like React, Next.js, Node.js, and Tailwind CSS.',
+    features: ['Single-page & multi-page apps', 'API integration & backend', 'Performance optimization', 'Responsive design'],
+    display_order: 0,
+  },
+  {
+    service_id: 'ui-ux',
+    icon_name: 'Palette',
+    title: 'UI/UX Design',
+    tagline: 'Interfaces people love to use',
+    description: 'Human-centered design with a focus on accessibility, micro-interactions, and visual polish. Every pixel has a purpose.',
+    features: ['Wireframing & prototyping', 'Design systems & tokens', 'Motion & micro-interactions', 'Usability testing'],
+    display_order: 1,
+  },
+  {
+    service_id: 'consulting',
+    icon_name: 'Lightbulb',
+    title: 'Technical Consulting',
+    tagline: 'Strategic guidance for your stack',
+    description: 'Architecture reviews, tech stack advice, and code audits to help your team ship faster with fewer surprises.',
+    features: ['Stack evaluation & planning', 'Code quality reviews', 'Performance audits', 'Team workshops'],
+    display_order: 2,
+  },
+  {
+    service_id: 'custom-projects',
+    icon_name: 'MessageCircle',
+    title: 'Custom Projects',
+    tagline: 'Unique problems need unique solutions',
+    description: 'Have something unconventional in mind? Let\u2019s talk about your idea and figure out the best way to bring it to life.',
+    features: ['Scope & estimate', 'Iterative delivery', 'Ongoing support', 'Transparent communication'],
+    display_order: 3,
+  },
+]
+
+export const defaultServicePage = {
+  hero_title: 'What I Can Do For You',
+  hero_description: 'Every project starts with a conversation. Here is how I can help turn your ideas into reality.',
+  process_title: 'How I Work',
+  process_description: 'A transparent, collaborative process designed to keep you informed and involved at every stage.',
+  pricing_title: 'Transparent Pricing',
+  pricing_description: 'No hidden fees. Every project is scoped and quoted upfront based on your specific needs.',
+  testimonials_title: 'What People Say',
+  tech_title: 'Technologies I Use',
+  tech_description: 'Modern tools for modern problems.',
+  faq_title: 'Frequently Asked Questions',
+  stats: [
+    { icon_name: 'Users', label: 'Happy Clients', value: 30, suffix: '+' },
+    { icon_name: 'Code', label: 'Projects Delivered', value: 50, suffix: '+' },
+    { icon_name: 'Clock', label: 'Years Experience', value: 2, suffix: '+' },
+    { icon_name: 'Award', label: 'Satisfaction Rate', value: 98, suffix: '%' },
+  ],
+  process_steps: [
+    { icon_name: 'MessageCircle', title: 'Discovery', description: 'We talk through your vision, goals, and constraints. No jargon, just clarity.' },
+    { icon_name: 'Target', title: 'Strategy', description: 'I map out the architecture, tech stack, and timeline tailored to your project.' },
+    { icon_name: 'Zap', title: 'Execution', description: 'Iterative builds with regular check-ins so you are never left in the dark.' },
+    { icon_name: 'Sparkles', title: 'Launch & Support', description: 'Deploy, monitor, and iterate. I stay around to make sure everything runs smoothly.' },
+  ],
+  packages: [
+    {
+      name: 'Starter',
+      price: '2.5k',
+      currency: '$',
+      period: '/project',
+      icon_name: 'Code',
+      features: ['Single-page application', 'Responsive design', 'Basic animations', '1 revision round', '2-week delivery'],
+      popular: false,
+    },
+    {
+      name: 'Growth',
+      price: '7k',
+      currency: '$',
+      period: '/project',
+      icon_name: 'Cpu',
+      features: ['Multi-page application', 'Full backend integration', 'Custom micro-interactions', '3 revision rounds', 'SEO optimization', 'Performance audit'],
+      popular: true,
+    },
+    {
+      name: 'Enterprise',
+      price: '15k',
+      currency: '$',
+      period: '/project',
+      icon_name: 'Star',
+      features: ['Complex platform build', 'Team augmentation', 'Dedicated support', 'Unlimited revisions', 'CI/CD setup', 'Security audit', '12-week support'],
+      popular: false,
+    },
+  ],
+  testimonials: [
+    { quote: 'Transformed our outdated platform into something that actually feels modern. Users noticed immediately.', author: 'Riya S.', role: 'Product Lead, TechCorp' },
+    { quote: 'Rare combination of design sense and technical depth. Delivered ahead of schedule.', author: 'Ankit P.', role: 'Founder, DevStudio' },
+    { quote: 'The micro-interactions and animations took our UX from good to unforgettable.', author: 'Priya M.', role: 'Design Director, WebFlow Labs' },
+  ],
+  tech_stack: [
+    { icon_name: 'Braces', label: 'React' },
+    { icon_name: 'Braces', label: 'Next.js' },
+    { icon_name: 'Layout', label: 'Tailwind CSS' },
+    { icon_name: 'Server', label: 'Node.js' },
+    { icon_name: 'Database', label: 'PostgreSQL' },
+    { icon_name: 'PenTool', label: 'Figma' },
+    { icon_name: 'GitFork', label: 'GitHub' },
+    { icon_name: 'Terminal', label: 'TypeScript' },
+    { icon_name: 'Braces', label: 'Three.js' },
+    { icon_name: 'Cpu', label: 'Framer Motion' },
+  ],
+  live_feed: [
+    { time: '2 min ago', event: 'Deployed v2.4 for Synaptic Dashboard' },
+    { time: '15 min ago', event: 'New build passed all CI checks' },
+    { time: '1 hr ago', event: 'Client feedback integrated \u2014 UI revamp phase 2' },
+    { time: '3 hrs ago', event: 'Database migration completed successfully' },
+    { time: '6 hrs ago', event: 'Performance audit \u2014 96 Lighthouse score' },
+  ],
+  faqs: [
+    { q: 'How long does a typical project take?', a: 'Most projects range from 2 to 8 weeks depending on scope. We will agree on a timeline during the discovery phase.' },
+    { q: 'What is your development process?', a: 'I follow an iterative approach with regular check-ins. You will see progress every few days, not just at the end.' },
+    { q: 'Do you provide ongoing support?', a: 'Absolutely. Every project comes with a support window. Extended maintenance can be arranged separately.' },
+    { q: 'Can you work with existing codebases?', a: 'Yes. I regularly audit and improve existing projects. Compatibility and tech stack alignment are assessed upfront.' },
+    { q: 'What if I only need design, not development?', a: 'That works too. I offer standalone UI/UX design services including wireframes, prototypes, and design systems.' },
+  ],
+}
+
 export const caseStudies = [
   {
     id: 'cs-1',
     title: 'Neural Aurora — A Synaptic Portfolio',
+    slug: 'neural-aurora-synaptic-portfolio',
     description: 'Designed and developed an immersive portfolio experience featuring a living neural network suspended in an aurora field.',
     outcome: 'Increased engagement by 300% and received features on multiple design platforms.',
+    content: `<p>Neural Aurora is a cutting-edge interactive portfolio that pushes the boundaries of web-based 3D experiences. Built with React and Three.js, it features a living neural network visualization that responds to user interaction in real-time.</p>
+<p>The project combines artistic vision with technical excellence, creating an immersive experience that showcases both design sensibility and engineering capability.</p>
+<h3>Key Challenges</h3>
+<p>Creating a seamless 3D environment that performs well across devices while maintaining visual fidelity was the primary challenge. The neural network visualization required careful optimization to run smoothly on mid-range hardware.</p>
+<h3>Approach</h3>
+<p>We used React Three Fiber for the 3D scene management, implementing custom shaders for the aurora effect and particle systems for the neural connections. Framer Motion was used for UI transitions and micro-interactions.</p>
+<h3>Results</h3>
+<p>The project achieved a 300% increase in user engagement compared to traditional portfolio layouts and was featured on multiple design platforms for its innovative approach to personal branding.</p>`,
     tech: ['React', 'Three.js', 'Framer Motion'],
   },
   {
     id: 'cs-2',
     title: 'E-Commerce Redesign',
+    slug: 'ecommerce-redesign',
     description: 'Led a complete redesign of an e-commerce platform, improving UX and performance.',
     outcome: '40% increase in conversion rate and 60% improvement in page load time.',
+    content: `<p>A comprehensive redesign of a legacy e-commerce platform that was struggling with poor performance and outdated user experience. The goal was to modernize the interface while significantly improving core web vitals.</p>
+<h3>Key Challenges</h3>
+<p>The existing platform had accumulated significant technical debt, with slow page loads, inconsistent UI components, and a checkout flow that was causing cart abandonment.</p>
+<h3>Approach</h3>
+<p>We migrated from a monolithic architecture to Next.js with Tailwind CSS, implementing server-side rendering for product pages and optimizing images with next/image. The checkout flow was rebuilt from the ground up with Stripe integration.</p>
+<h3>Results</h3>
+<p>The redesign delivered a 40% increase in conversion rate and 60% improvement in page load time, with a 25% reduction in cart abandonment during checkout.</p>`,
     tech: ['Next.js', 'Tailwind CSS', 'Stripe'],
   },
 ]

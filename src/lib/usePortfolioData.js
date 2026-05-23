@@ -8,6 +8,9 @@ import {
   getExperience,
   getBlogPosts,
   getCaseStudies,
+  getCaseStudyBySlug,
+  getServices,
+  getServicePage,
 } from './supabase'
 import {
   personalInfo as staticPersonalInfo,
@@ -18,6 +21,8 @@ import {
   experience as staticExperience,
   blogPosts as staticBlogPosts,
   caseStudies as staticCaseStudies,
+  services as staticServices,
+  defaultServicePage as staticServicePage,
 } from '../data/portfolio'
 
 const supabaseConfigured =
@@ -103,12 +108,51 @@ export function useBlogPosts() {
   return data
 }
 
+export function useCaseStudyBySlug(slug) {
+  const [data, setData] = useState(() => staticCaseStudies.find((s) => s.slug === slug) || null)
+  useEffect(() => {
+    if (supabaseConfigured && slug) {
+      getCaseStudyBySlug(slug).then(setData).catch(() => {})
+    }
+  }, [slug])
+  return data
+}
+
 export function useCaseStudies() {
   const [data, setData] = useState(staticCaseStudies)
   useEffect(() => {
     if (supabaseConfigured) {
       getCaseStudies().then(setData).catch(() => {})
     }
+  }, [])
+  return data
+}
+
+export function useServices() {
+  const [data, setData] = useState(staticServices)
+  useEffect(() => {
+    fetchWithFallback(getServices, staticServices).then(setData)
+  }, [])
+  return data
+}
+
+export function useServicePage() {
+  const [data, setData] = useState(staticServicePage)
+  useEffect(() => {
+    fetchWithFallback(getServicePage, staticServicePage).then((result) => {
+      if (result && result !== staticServicePage) {
+        const merged = { ...staticServicePage }
+        for (const key of Object.keys(merged)) {
+          if (key in result) {
+            const val = result[key]
+            if (Array.isArray(val) && val.length === 0) continue
+            if (val === null || val === undefined) continue
+            merged[key] = val
+          }
+        }
+        setData(merged)
+      }
+    })
   }, [])
   return data
 }

@@ -7,26 +7,31 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data, error }) => {
       if (!error && data?.session?.user) {
         setUser(data.session.user)
         fetchProfile(data.session.user.id)
+      } else {
+        setProfileLoading(false)
       }
       setLoading(false)
     }).catch(() => {
       setLoading(false)
+      setProfileLoading(false)
     })
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
           setUser(session.user)
           fetchProfile(session.user.id)
         } else {
           setUser(null)
           setProfile(null)
+          setProfileLoading(false)
         }
         setLoading(false)
       }
@@ -36,12 +41,14 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
+    setProfileLoading(true)
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
     if (data) setProfile(data)
+    setProfileLoading(false)
   }
 
   async function signIn(email, password) {
@@ -73,6 +80,7 @@ export function AuthProvider({ children }) {
         user,
         profile,
         loading,
+        profileLoading,
         isAdmin,
         signIn,
         signOut,

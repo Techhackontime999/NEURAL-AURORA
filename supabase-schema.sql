@@ -161,8 +161,10 @@ CREATE TABLE IF NOT EXISTS case_studies (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   cs_id TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   outcome TEXT DEFAULT '',
+  content TEXT DEFAULT '',
   tech TEXT[] DEFAULT '{}',
   display_order INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -291,8 +293,19 @@ BEGIN
         INSERT INTO reviews (name, email, rating, message, approved)
         VALUES ('Test User', 'test@test.com', 5, 'Great!', random()>0.5);
       WHEN 'case_studies' THEN
-        INSERT INTO case_studies (cs_id, title, description, outcome, tech, display_order)
-        VALUES ('test-'||random_suffix, 'Test CS', 'Desc', 'Done', ARRAY['React'], (SELECT COALESCE(MAX(display_order),0)+1 FROM case_studies));
+        INSERT INTO case_studies (cs_id, title, slug, description, outcome, content, tech, display_order)
+        VALUES ('test-'||random_suffix, 'Test CS', 'test-'||random_suffix, 'Desc', 'Done', 'Content', ARRAY['React'], (SELECT COALESCE(MAX(display_order),0)+1 FROM case_studies));
+      WHEN 'services' THEN
+        INSERT INTO services (service_id, icon_name, title, tagline, description, features, display_order)
+        VALUES (
+          'test-'||random_suffix,
+          (ARRAY['Globe','Palette','Lightbulb','MessageCircle','Code','Server','Zap','Star'])[(random()*8+1)::INT],
+          (ARRAY['Web Development','UI/UX Design','Technical Consulting','Custom Projects','Cloud Architecture','Mobile Development'])[(random()*6+1)::INT] || ' ' || i,
+          (ARRAY['Full-stack applications that perform','Interfaces people love to use','Strategic guidance for your stack','Unique problems need unique solutions'])[(random()*4+1)::INT],
+          'A sample service offering with professional quality and attention to detail.',
+          ARRAY['Feature A','Feature B','Feature C','Feature D'],
+          (SELECT COALESCE(MAX(display_order),0)+1 FROM services)
+        );
       ELSE RETURN 'Unknown: '||p_category;
     END CASE;
     inserted := inserted + 1;
@@ -654,6 +667,7 @@ GRANT SELECT, UPDATE, DELETE ON TABLE contact_messages TO authenticated;
 GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
 
 -- ============================================================
+
 -- STORAGE BUCKET for images
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public)

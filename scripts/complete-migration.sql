@@ -237,6 +237,19 @@ BEGIN
         );
         inserted := inserted + 1;
 
+      WHEN 'services' THEN
+        INSERT INTO services (service_id, icon_name, title, tagline, description, features, display_order)
+        VALUES (
+          'test-' || random_suffix,
+          (ARRAY['Globe', 'Code', 'Server', 'Zap', 'Star'])[floor(random() * 5 + 1)::INT],
+          'Test Service ' || i,
+          'A sample service tagline for testing.',
+          '<strong>Service description</strong> with <em>rich</em> content for testing purposes.',
+          ARRAY['Feature A', 'Feature B', 'Feature C'],
+          (SELECT COALESCE(MAX(display_order), 0) + 1 FROM services)
+        );
+        inserted := inserted + 1;
+
       ELSE
         RETURN 'Unknown category: ' || p_category;
     END CASE;

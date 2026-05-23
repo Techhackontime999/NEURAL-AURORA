@@ -1,125 +1,18 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion'
-import { Globe, Palette, Lightbulb, MessageCircle, ArrowRight, CheckCircle, Sparkles, Target, Zap, Layers, ChevronDown, Star, Code, Cpu, Users, Clock, Award, Braces, Database, Layout, Server, PenTool, GitFork, Terminal, Send } from 'lucide-react'
-import { useSocialLinks } from '../lib/usePortfolioData'
+import * as LucideIcons from 'lucide-react'
+const { CheckCircle, ArrowRight, ChevronDown, Layers, Send } = LucideIcons
+import { useSocialLinks, useServices, useServicePage } from '../lib/usePortfolioData'
 import { submitContactMessage } from '../lib/supabase'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
-const services = [
-  {
-    id: 'web-dev',
-    icon: Globe,
-    title: 'Web Development',
-    tagline: 'Full-stack applications that perform',
-    description: 'From landing pages to complex platforms — I build responsive, performant web apps using modern stacks like React, Next.js, Node.js, and Tailwind CSS.',
-    features: ['Single-page & multi-page apps', 'API integration & backend', 'Performance optimization', 'Responsive design'],
-  },
-  {
-    id: 'ui-ux',
-    icon: Palette,
-    title: 'UI/UX Design',
-    tagline: 'Interfaces people love to use',
-    description: 'Human-centered design with a focus on accessibility, micro-interactions, and visual polish. Every pixel has a purpose.',
-    features: ['Wireframing & prototyping', 'Design systems & tokens', 'Motion & micro-interactions', 'Usability testing'],
-  },
-  {
-    id: 'consulting',
-    icon: Lightbulb,
-    title: 'Technical Consulting',
-    tagline: 'Strategic guidance for your stack',
-    description: 'Architecture reviews, tech stack advice, and code audits to help your team ship faster with fewer surprises.',
-    features: ['Stack evaluation & planning', 'Code quality reviews', 'Performance audits', 'Team workshops'],
-  },
-  {
-    id: 'custom-projects',
-    icon: MessageCircle,
-    title: 'Custom Projects',
-    tagline: 'Unique problems need unique solutions',
-    description: 'Have something unconventional in mind? Let\'s talk about your idea and figure out the best way to bring it to life.',
-    features: ['Scope & estimate', 'Iterative delivery', 'Ongoing support', 'Transparent communication'],
-  },
-]
-
-const processSteps = [
-  { icon: MessageCircle, title: 'Discovery', description: 'We talk through your vision, goals, and constraints. No jargon, just clarity.' },
-  { icon: Target, title: 'Strategy', description: 'I map out the architecture, tech stack, and timeline tailored to your project.' },
-  { icon: Zap, title: 'Execution', description: 'Iterative builds with regular check-ins so you are never left in the dark.' },
-  { icon: Sparkles, title: 'Launch & Support', description: 'Deploy, monitor, and iterate. I stay around to make sure everything runs smoothly.' },
-]
-
-const testimonials = [
-  { quote: 'Transformed our outdated platform into something that actually feels modern. Users noticed immediately.', author: 'Riya S.', role: 'Product Lead, TechCorp' },
-  { quote: 'Rare combination of design sense and technical depth. Delivered ahead of schedule.', author: 'Ankit P.', role: 'Founder, DevStudio' },
-  { quote: 'The micro-interactions and animations took our UX from good to unforgettable.', author: 'Priya M.', role: 'Design Director, WebFlow Labs' },
-]
-
-const packages = [
-  {
-    name: 'Starter',
-    price: '2.5k',
-    currency: '$',
-    period: '/project',
-    icon: Code,
-    features: ['Single-page application', 'Responsive design', 'Basic animations', '1 revision round', '2-week delivery'],
-    popular: false,
-  },
-  {
-    name: 'Growth',
-    price: '7k',
-    currency: '$',
-    period: '/project',
-    icon: Cpu,
-    features: ['Multi-page application', 'Full backend integration', 'Custom micro-interactions', '3 revision rounds', 'SEO optimization', 'Performance audit'],
-    popular: true,
-  },
-  {
-    name: 'Enterprise',
-    price: '15k',
-    currency: '$',
-    period: '/project',
-    icon: Star,
-    features: ['Complex platform build', 'Team augmentation', 'Dedicated support', 'Unlimited revisions', 'CI/CD setup', 'Security audit', '12-week support'],
-    popular: false,
-  },
-]
-
-const faqs = [
-  { q: 'How long does a typical project take?', a: 'Most projects range from 2 to 8 weeks depending on scope. We will agree on a timeline during the discovery phase.' },
-  { q: 'What is your development process?', a: 'I follow an iterative approach with regular check-ins. You will see progress every few days, not just at the end.' },
-  { q: 'Do you provide ongoing support?', a: 'Absolutely. Every project comes with a support window. Extended maintenance can be arranged separately.' },
-  { q: 'Can you work with existing codebases?', a: 'Yes. I regularly audit and improve existing projects. Compatibility and tech stack alignment are assessed upfront.' },
-  { q: 'What if I only need design, not development?', a: 'That works too. I offer standalone UI/UX design services including wireframes, prototypes, and design systems.' },
-]
-
-const stats = [
-  { icon: Users, label: 'Happy Clients', value: 30, suffix: '+' },
-  { icon: Code, label: 'Projects Delivered', value: 50, suffix: '+' },
-  { icon: Clock, label: 'Years Experience', value: 2, suffix: '+' },
-  { icon: Award, label: 'Satisfaction Rate', value: 98, suffix: '%' },
-]
-
-const techStack = [
-  { icon: Braces, label: 'React' },
-  { icon: Braces, label: 'Next.js' },
-  { icon: Layout, label: 'Tailwind CSS' },
-  { icon: Server, label: 'Node.js' },
-  { icon: Database, label: 'PostgreSQL' },
-  { icon: PenTool, label: 'Figma' },
-  { icon: GitFork, label: 'GitHub' },
-  { icon: Terminal, label: 'TypeScript' },
-  { icon: Braces, label: 'Three.js' },
-  { icon: Cpu, label: 'Framer Motion' },
-]
-
-const liveFeed = [
-  { time: '2 min ago', event: 'Deployed v2.4 for Synaptic Dashboard' },
-  { time: '15 min ago', event: 'New build passed all CI checks' },
-  { time: '1 hr ago', event: 'Client feedback integrated — UI revamp phase 2' },
-  { time: '3 hrs ago', event: 'Database migration completed successfully' },
-  { time: '6 hrs ago', event: 'Performance audit — 96 Lighthouse score' },
-]
+function ResolvedIcon({ name, className = 'w-4 h-4' }) {
+  const Icon = LucideIcons[name]
+  if (!Icon) return null
+  return <Icon className={className} />
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -200,7 +93,7 @@ function ServiceCard({ service, index }) {
       <div className="relative">
         <div className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center mb-5 ring-1 ring-black/5 dark:ring-white/10">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
-            <service.icon className="w-4 h-4 text-cyan-500 group-hover:text-cyan-400 transition-colors duration-300" />
+            <ResolvedIcon name={service.icon_name} className="w-4 h-4 text-cyan-500 group-hover:text-cyan-400 transition-colors duration-300" />
           </div>
         </div>
         <h2 className="text-lg font-semibold text-black/80 dark:text-white/80 mb-1">
@@ -241,7 +134,7 @@ function ProcessStep({ step, index }) {
       className="relative pl-10 pb-10 last:pb-0"
     >
       <div className="absolute left-0 top-0 -translate-x-1/2 w-8 h-8 rounded-full bg-[var(--bg-secondary)] border border-black/10 dark:border-white/10 flex items-center justify-center z-10">
-        <step.icon className="w-3.5 h-3.5 text-cyan-500" />
+        <ResolvedIcon name={step.icon_name} className="w-3.5 h-3.5 text-cyan-500" />
       </div>
       <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/30 via-purple-500/20 to-transparent translate-x-[3px]" />
       <div className="glass-panel rounded-xl p-4 ml-2">
@@ -272,7 +165,7 @@ function PackageCard({ pkg, index }) {
         </span>
       )}
       <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center mb-4">
-        <pkg.icon className="w-5 h-5 text-cyan-500" />
+        <ResolvedIcon name={pkg.icon_name} className="w-5 h-5 text-cyan-500" />
       </div>
       <h3 className="text-lg font-semibold text-black/80 dark:text-white/80">{pkg.name}</h3>
       <div className="flex items-baseline gap-0.5 mt-2 mb-4">
@@ -342,7 +235,7 @@ function FAQItem({ faq, index, openIndex, setOpenIndex }) {
   )
 }
 
-function LiveStatusCard() {
+function LiveStatusCard({ items }) {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
@@ -352,6 +245,8 @@ function LiveStatusCard() {
     }, 5000)
     return () => clearInterval(interval)
   }, [])
+
+  if (!items || items.length === 0) return null
 
   return (
     <div className="glass-panel rounded-2xl p-6 md:p-8 overflow-hidden relative">
@@ -365,9 +260,9 @@ function LiveStatusCard() {
         </span>
       </div>
       <div className="space-y-3">
-        {liveFeed.map((item, i) => (
+        {items.map((item, i) => (
           <motion.div
-            key={item.time}
+            key={item.time + item.event}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -392,6 +287,8 @@ function LiveStatusCard() {
 
 export default function Service() {
   const socialLinks = useSocialLinks()
+  const services = useServices()
+  const page = useServicePage()
   const [openFAQ, setOpenFAQ] = useState(null)
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactStatus, setContactStatus] = useState('idle')
@@ -413,6 +310,25 @@ export default function Service() {
     }
   }
 
+  const heroTitle = page?.hero_title || 'What I Can Do For You'
+  const heroDesc = page?.hero_description || ''
+  const processTitle = page?.process_title || 'How I Work'
+  const processDesc = page?.process_description || ''
+  const pricingTitle = page?.pricing_title || 'Transparent Pricing'
+  const pricingDesc = page?.pricing_description || ''
+  const testimonialsTitle = page?.testimonials_title || 'What People Say'
+  const techTitle = page?.tech_title || 'Technologies I Use'
+  const techDesc = page?.tech_description || ''
+  const faqTitle = page?.faq_title || 'Frequently Asked Questions'
+
+  const stats = page?.stats || []
+  const processSteps = page?.process_steps || []
+  const packages = page?.packages || []
+  const testimonials = page?.testimonials || []
+  const techStack = page?.tech_stack || []
+  const liveFeed = page?.live_feed || []
+  const faqs = page?.faqs || []
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AuroraBackground />
@@ -428,175 +344,199 @@ export default function Service() {
           >
             <motion.span variants={childVariants} className="eyebrow">Services</motion.span>
             <motion.h1 variants={childVariants} className="text-3xl md:text-5xl lg:text-6xl font-display font-bold tracking-tighter text-black/80 dark:text-white/90 mt-4">
-              What I Can Do <span className="text-gradient">For You</span>
+              {heroTitle.split(/(\S*For\S*|\S*You\S*)/g).map((part, i) =>
+                /For|You/.test(part) ? <span key={i} className="text-gradient">{part}</span> : part
+              )}
             </motion.h1>
             <motion.p variants={childVariants} className="text-sm text-black/50 dark:text-white/50 mt-3 max-w-lg mx-auto">
-              Every project starts with a conversation. Here is how I can help turn your ideas into reality.
+              {heroDesc}
             </motion.p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-24">
-          {services.map((service, i) => (
-            <ServiceCard key={service.id} service={service} index={i} />
-          ))}
-        </div>
-        </div>
-
-        <div className="grid md:grid-cols-4 gap-4 mb-24">
-          {stats.map((stat) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-panel rounded-2xl p-6 text-center"
-            >
-              <stat.icon className="w-5 h-5 text-cyan-500 mx-auto mb-3" />
-              <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-              <p className="text-xs text-black/40 dark:text-white/40 mt-1 uppercase tracking-wider">
-                {stat.label}
-              </p>
-            </motion.div>
-          ))}
+            {services.map((service, i) => (
+              <ServiceCard key={service.service_id || i} service={service} index={i} />
+            ))}
+          </div>
         </div>
 
-        <div id="process" className="grid md:grid-cols-5 gap-6 mb-24">
-          <div className="md:col-span-2 md:sticky md:top-32 md:self-start">
+        {stats.length > 0 && (
+          <div className="grid md:grid-cols-4 gap-4 mb-24">
+            {stats.map((stat) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-panel rounded-2xl p-6 text-center"
+              >
+                <ResolvedIcon name={stat.icon_name} className="w-5 h-5 text-cyan-500 mx-auto mb-3" />
+                <AnimatedCounter value={stat.value} suffix={stat.suffix || ''} />
+                <p className="text-xs text-black/40 dark:text-white/40 mt-1 uppercase tracking-wider">
+                  {stat.label}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {processSteps.length > 0 && (
+          <div id="process" className="grid md:grid-cols-5 gap-6 mb-24">
+            <div className="md:col-span-2 md:sticky md:top-32 md:self-start">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                <span className="eyebrow">Process</span>
+                <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4 mb-3">
+                  {processTitle.split(/(Work)/g).map((part, i) =>
+                    part === 'Work' ? <span key={i} className="text-gradient">{part}</span> : part
+                  )}
+                </h2>
+                <p className="text-sm text-black/50 dark:text-white/50 leading-relaxed">
+                  {processDesc}
+                </p>
+              </motion.div>
+            </div>
+            <div className="md:col-span-3">
+              {processSteps.map((step, i) => (
+                <ProcessStep key={step.title || i} step={step} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {packages.length > 0 && (
+          <div id="pricing" className="mb-24">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView="visible"
               viewport={{ once: true }}
+              className="text-center mb-12"
             >
-              <span className="eyebrow">Process</span>
-              <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4 mb-3">
-                How I <span className="text-gradient">Work</span>
+              <span className="eyebrow">Pricing</span>
+              <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
+                {pricingTitle.split(/(Pricing)/g).map((part, i) =>
+                  part === 'Pricing' ? <span key={i} className="text-gradient">{part}</span> : part
+                )}
               </h2>
-              <p className="text-sm text-black/50 dark:text-white/50 leading-relaxed">
-                A transparent, collaborative process designed to keep you informed and involved at every stage.
+              <p className="text-sm text-black/50 dark:text-white/50 mt-3 max-w-md mx-auto">
+                {pricingDesc}
               </p>
             </motion.div>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              className="grid md:grid-cols-3 gap-6"
+            >
+              {packages.map((pkg, i) => (
+                <PackageCard key={pkg.name || i} pkg={pkg} index={i} />
+              ))}
+            </motion.div>
           </div>
-          <div className="md:col-span-3">
-            {processSteps.map((step, i) => (
-              <ProcessStep key={step.title} step={step} index={i} />
-            ))}
-          </div>
-        </div>
+        )}
 
-        <div id="pricing" className="mb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <span className="eyebrow">Pricing</span>
-            <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
-              Transparent <span className="text-gradient">Pricing</span>
-            </h2>
-            <p className="text-sm text-black/50 dark:text-white/50 mt-3 max-w-md mx-auto">
-              No hidden fees. Every project is scoped and quoted upfront based on your specific needs.
-            </p>
-          </motion.div>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            className="grid md:grid-cols-3 gap-6"
-          >
-            {packages.map((pkg, i) => (
-              <PackageCard key={pkg.name} pkg={pkg} index={i} />
-            ))}
-          </motion.div>
-        </div>
-
-        <div id="testimonials" className="mb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <span className="eyebrow">Testimonials</span>
-            <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
-              What People <span className="text-gradient">Say</span>
-            </h2>
-          </motion.div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.author}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="glass-panel rounded-2xl p-6"
-              >
-                <Layers className="w-5 h-5 text-cyan-500/30 mb-4" />
-                <p className="text-sm text-black/60 dark:text-white/60 leading-relaxed mb-6 italic">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="border-t border-black/10 dark:border-white/10 pt-4">
-                  <p className="text-xs font-semibold text-black/80 dark:text-white/80">
-                    {t.author}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30">
-                    {t.role}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 mb-24">
-          <div className="md:col-span-2">
-            <div className="glass-panel rounded-2xl p-6 md:p-8 overflow-hidden relative">
-              <span className="eyebrow text-[10px]">Tech Stack</span>
-              <h2 className="text-xl md:text-2xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-3 mb-1">
-                Technologies I <span className="text-gradient">Use</span>
+        {testimonials.length > 0 && (
+          <div id="testimonials" className="mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <span className="eyebrow">Testimonials</span>
+              <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
+                {testimonialsTitle.split(/(Say)/g).map((part, i) =>
+                  part === 'Say' ? <span key={i} className="text-gradient">{part}</span> : part
+                )}
               </h2>
-              <p className="text-xs text-black/50 dark:text-white/50 mb-6">
-                Modern tools for modern problems.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {techStack.map((tech) => (
-                  <motion.span
-                    key={tech.label}
-                    whileHover={{ scale: 1.05, y: -1 }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 text-[10px] uppercase tracking-wider text-black/50 dark:text-white/50 hover:text-black/80 dark:hover:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  >
-                    <tech.icon className="w-3 h-3" />
-                    {tech.label}
-                  </motion.span>
-                ))}
-              </div>
+            </motion.div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {testimonials.map((t, i) => (
+                <motion.div
+                  key={t.author || i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="glass-panel rounded-2xl p-6"
+                >
+                  <Layers className="w-5 h-5 text-cyan-500/30 mb-4" />
+                  <p className="text-sm text-black/60 dark:text-white/60 leading-relaxed mb-6 italic">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="border-t border-black/10 dark:border-white/10 pt-4">
+                    <p className="text-xs font-semibold text-black/80 dark:text-white/80">
+                      {t.author}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30">
+                      {t.role}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
-          <div className="md:col-span-1">
-            <LiveStatusCard />
-          </div>
-        </div>
+        )}
 
-        <div id="faq" className="mb-24 max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <span className="eyebrow">FAQ</span>
-            <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
-              Frequently Asked <span className="text-gradient">Questions</span>
-            </h2>
-          </motion.div>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <FAQItem key={i} faq={faq} index={i} openIndex={openFAQ} setOpenIndex={setOpenFAQ} />
-            ))}
+        {(techStack.length > 0 || (liveFeed && liveFeed.length > 0)) && (
+          <div className="grid md:grid-cols-3 gap-6 mb-24">
+            <div className="md:col-span-2">
+              <div className="glass-panel rounded-2xl p-6 md:p-8 overflow-hidden relative">
+                <span className="eyebrow text-[10px]">Tech Stack</span>
+                <h2 className="text-xl md:text-2xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-3 mb-1">
+                  {techTitle.split(/(Use)/g).map((part, i) =>
+                    part === 'Use' ? <span key={i} className="text-gradient">{part}</span> : part
+                  )}
+                </h2>
+                <p className="text-xs text-black/50 dark:text-white/50 mb-6">
+                  {techDesc}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {techStack.map((tech) => (
+                    <motion.span
+                      key={tech.label}
+                      whileHover={{ scale: 1.05, y: -1 }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 text-[10px] uppercase tracking-wider text-black/50 dark:text-white/50 hover:text-black/80 dark:hover:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    >
+                      <ResolvedIcon name={tech.icon_name} className="w-3 h-3" />
+                      {tech.label}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="md:col-span-1">
+              <LiveStatusCard items={liveFeed} />
+            </div>
           </div>
-        </div>
+        )}
+
+        {faqs.length > 0 && (
+          <div id="faq" className="mb-24 max-w-2xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <span className="eyebrow">FAQ</span>
+              <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
+                {faqTitle.split(/(Questions)/g).map((part, i) =>
+                  part === 'Questions' ? <span key={i} className="text-gradient">{part}</span> : part
+                )}
+              </h2>
+            </motion.div>
+            <div className="space-y-3">
+              {faqs.map((faq, i) => (
+                <FAQItem key={i} faq={faq} index={i} openIndex={openFAQ} setOpenIndex={setOpenFAQ} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <section id="contact" className="mb-24">
           <motion.div

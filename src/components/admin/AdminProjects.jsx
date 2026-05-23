@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getProjects, updateProject, createProject, deleteProject } from '../../lib/supabase'
+import RichTextEditor from './RichTextEditor'
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([])
@@ -18,32 +19,33 @@ export default function AdminProjects() {
   }
 
   async function handleSave(id) {
-    const payload = { ...editForm }
-    if (typeof payload.technologies === 'string') {
-      payload.technologies = payload.technologies.split(',').map(t => t.trim()).filter(Boolean)
-    }
-    await updateProject(id, payload)
-    setEditingId(null)
-    load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      if (typeof payload.technologies === 'string') {
+        payload.technologies = payload.technologies.split(',').map(t => t.trim()).filter(Boolean)
+      }
+      await updateProject(id, payload)
+      setEditingId(null)
+      load()
+    } catch (err) { alert('Failed to save: ' + err.message) }
   }
 
   async function handleCreate() {
     if (!newForm.title.trim()) return
-    const payload = { ...newForm }
-    if (typeof payload.technologies === 'string') {
-      payload.technologies = payload.technologies.split(',').map(t => t.trim()).filter(Boolean)
-    }
-    await createProject(payload)
-    setShowNew(false)
-    setNewForm({ project_id: '', title: '', description: '', technologies: [], image: '', github: '', link: '', demo: '', display_order: 0 })
-    load()
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = newForm
+      if (typeof payload.technologies === 'string') {
+        payload.technologies = payload.technologies.split(',').map(t => t.trim()).filter(Boolean)
+      }
+      await createProject(payload)
+      setShowNew(false)
+      setNewForm({ project_id: '', title: '', description: '', technologies: [], image: '', github: '', link: '', demo: '', display_order: 0 })
+      load()
+    } catch (err) { alert('Failed to create: ' + err.message) }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this project?')) {
-      await deleteProject(id)
-      load()
-    }
+    if (confirm('Delete this project?')) { try { await deleteProject(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
   function startEdit(project) {
@@ -54,7 +56,6 @@ export default function AdminProjects() {
   const fields = [
     { key: 'project_id', label: 'Project ID' },
     { key: 'title', label: 'Title' },
-    { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'technologies', label: 'Technologies (comma-separated)' },
     { key: 'image', label: 'Image URL' },
     { key: 'github', label: 'GitHub URL' },
@@ -117,6 +118,15 @@ export default function AdminProjects() {
                 )}
               </div>
             ))}
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Description</label>
+              <RichTextEditor
+                value={newForm.description}
+                onChange={(html) => setNewForm({ ...newForm, description: html })}
+                placeholder="Write project description..."
+                minHeight={200}
+              />
+            </div>
           </div>
           <button
             onClick={handleCreate}
@@ -147,6 +157,14 @@ export default function AdminProjects() {
                     )}
                   </div>
                 ))}
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Description</label>
+                  <RichTextEditor
+                    value={editForm.description}
+                    onChange={(html) => setEditForm({ ...editForm, description: html })}
+                    minHeight={200}
+                  />
+                </div>
                 <div className="col-span-2 flex gap-2">
                   <button onClick={() => handleSave(project.id)} className="rounded px-3 py-1.5 text-xs text-white" style={{ background: '#10b981' }}>Save</button>
                   <button onClick={() => setEditingId(null)} className="rounded px-3 py-1.5 text-xs" style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}>Cancel</button>

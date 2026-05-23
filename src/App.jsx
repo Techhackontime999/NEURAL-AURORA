@@ -19,6 +19,7 @@ import More from './components/More'
 import Service from './components/Service'
 import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
+import CaseStudyDetail from './components/CaseStudyDetail'
 import { Footer } from './components/ui/footer-section'
 import Login from './components/admin/Login'
 import ForgotPassword from './components/admin/ForgotPassword'
@@ -83,15 +84,10 @@ function ScrollProgress() {
 }
 
 function AppContent() {
-  const [loaderDone, setLoaderDone] = useState(false)
-  const glowRef = useRef(null)
   const location = useLocation()
-
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin')
-
-  useEffect(() => {
-    if (isAuthRoute) setLoaderDone(true)
-  }, [isAuthRoute])
+  const [loaderDone, setLoaderDone] = useState(isAuthRoute)
+  const glowRef = useRef(null)
 
   useEffect(() => {
     function onMouseMove(e) {
@@ -128,6 +124,7 @@ function AppContent() {
               <Route path="/services" element={<Service />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route

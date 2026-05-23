@@ -11,11 +11,11 @@ export default function AdminContactMessages() {
   }
 
   async function handleMarkRead(id) {
-    await markContactMessageRead(id); load()
+    try { await markContactMessageRead(id); load() } catch (err) { alert('Failed to mark as read: ' + err.message) }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this message?')) { await deleteContactMessage(id); load() }
+    if (confirm('Delete this message?')) { try { await deleteContactMessage(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
   return (

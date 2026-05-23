@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
+import { getActiveAdVideos, incrementAdViewCount } from '../lib/supabase'
+import AdVideoPlayer from './ui/AdVideoPlayer'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -402,6 +404,9 @@ export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
   const [loadingQ, setLoadingQ] = useState(false)
+  const [adVideos, setAdVideos] = useState([])
+  const [currentAd, setCurrentAd] = useState(null)
+  const [adLoading, setAdLoading] = useState(false)
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
@@ -441,6 +446,45 @@ export default function StartingLoader({ onComplete }) {
 
   async function handleMCQWrong() {
     await loadQuestion()
+    setPhase('selecting')
+  }
+
+  async function handleWatchAds() {
+    setAdLoading(true)
+    try {
+      const videos = await getActiveAdVideos()
+      if (videos.length === 0) {
+        handleVoiceSuccess()
+        setAdLoading(false)
+        return
+      }
+      setAdVideos(videos)
+      setCurrentAd(0)
+      setPhase('ad-watching')
+    } catch {
+      handleVoiceSuccess()
+    }
+    setAdLoading(false)
+  }
+
+  async function handleAdComplete() {
+    try {
+      await incrementAdViewCount(adVideos[currentAd].id)
+    } catch {}
+    const next = currentAd + 1
+    if (next < adVideos.length) {
+      setCurrentAd(next)
+    } else {
+      sessionStorage.setItem('neural-aurora-verified', 'true')
+      setPhase('success')
+      setTimeout(() => setPhase('transitioning'), 2200)
+      setTimeout(() => doneRef.current(), 3200)
+    }
+  }
+
+  function handleAdSkip() {
+    setCurrentAd(null)
+    setAdVideos([])
     setPhase('selecting')
   }
 
@@ -548,6 +592,23 @@ export default function StartingLoader({ onComplete }) {
                   </div>
                 </div>
               </button>
+              <button
+                onClick={handleWatchAds}
+                disabled={adLoading}
+                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/50 transition-all duration-300 disabled:opacity-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-4 h-4">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm">Watch Dev Ads</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Video ads to unlock</p>
+                  </div>
+                </div>
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -564,6 +625,40 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'ad-watching' && currentAd !== null && adVideos[currentAd] && (
+          <motion.div
+            key={`ad-${currentAd}`}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-3 px-4 py-1.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <motion.span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#fbbf24', boxShadow: '0 0 6px rgba(251,191,36,0.4)' }}
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <span className="text-[10px] font-mono tracking-wider" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Ad {currentAd + 1} / {adVideos.length}
+              </span>
+            </motion.div>
+            <AdVideoPlayer
+              video={adVideos[currentAd]}
+              onComplete={handleAdComplete}
+              onSkip={handleAdSkip}
+            />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen />
@@ -572,9 +667,12 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setPhase('selecting')}
+            onClick={() => {
+              if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }
+              setPhase('selecting')
+            }}
             className="absolute top-5 left-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">

@@ -521,3 +521,55 @@ export async function incrementAdViewCount(id) {
   const { error } = await supabase.rpc('increment_ad_view_count', { ad_id: id })
   if (error) throw error
 }
+
+export async function getServices() {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createService(data) {
+  const { data: newItem, error } = await supabase
+    .from('services')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateService(id, data) {
+  const { error } = await supabase
+    .from('services')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteService(id) {
+  const { error } = await supabase
+    .from('services')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getServicePage() {
+  const { data, error } = await supabase
+    .from('service_page')
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateServicePage(data) {
+  const { error } = await supabase
+    .from('service_page')
+    .update(data)
+    .eq('id', 1)
+  if (error) throw error
+}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
+import { BrandLogo } from './ui/BrandLogo'
 
 const navLinks = [
   { label: 'Timeline', href: '#timeline' },
@@ -55,12 +56,10 @@ export default function MoreNavbar() {
             : 'glass-panel rounded-full px-6 py-3'
         }`}>
           <div className="flex items-center gap-8">
-            <button
+            <BrandLogo
+              size="small"
               onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              className="text-sm font-medium tracking-tight text-black/70 dark:text-white/80 hover:text-black dark:hover:text-white active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-            >
-              NA
-            </button>
+            />
             <div className="hidden md:flex items-center gap-6">
               {navLinks.map((link) => (
                 <button
@@ -115,7 +114,7 @@ export default function MoreNavbar() {
                 onClick={() => { setOpen(false); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
               >
-                NA
+                Home
               </motion.button>
               {navLinks.map((link, i) => (
                 <motion.button

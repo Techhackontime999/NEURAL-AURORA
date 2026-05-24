@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react'
 import { getAllReviews, approveReview, deleteReview } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminReviews() {
   const [reviews, setReviews] = useState([])
   const [filter, setFilter] = useState('all')
-  const filtered = filter === 'pending' ? reviews.filter(r => !r.approved)
+  const [search, setSearch] = useState('')
+  const statusFiltered = filter === 'pending' ? reviews.filter(r => !r.approved)
     : filter === 'approved' ? reviews.filter(r => r.approved)
     : reviews
+  const filtered = search
+    ? statusFiltered.filter(r =>
+        [r.name, r.email, r.message]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : statusFiltered
 
   const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
@@ -36,7 +44,7 @@ export default function AdminReviews() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Reviews & Feedback
@@ -45,7 +53,9 @@ export default function AdminReviews() {
             Moderate user reviews and testimonials
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg border p-0.5" style={{ borderColor: 'var(--border-color)' }}>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search reviews..." />
+          <div className="flex gap-1 rounded-lg border p-0.5" style={{ borderColor: 'var(--border-color)' }}>
           {filters.map((f) => (
             <button
               key={f}
@@ -59,6 +69,7 @@ export default function AdminReviews() {
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
+        </div>
         </div>
       </div>
 

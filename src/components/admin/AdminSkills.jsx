@@ -2,17 +2,26 @@ import { useState, useEffect } from 'react'
 import { getSkills, updateSkill, createSkill, deleteSkill } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 const categories = ['frontend', 'backend', 'language', 'devops', 'design']
 
 export default function AdminSkills() {
   const [skills, setSkills] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', level: 50, category: 'frontend', display_order: 0 })
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ name: '', level: 50, category: 'frontend', display_order: 0 })
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(skills)
+  const filtered = search
+    ? skills.filter(s =>
+        [s.name, s.category]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : skills
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -59,7 +68,7 @@ export default function AdminSkills() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Skills
@@ -68,13 +77,16 @@ export default function AdminSkills() {
             Manage your technical skills and proficiency levels
           </p>
         </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          {showNew ? 'Cancel' : '+ Add Skill'}
-        </button>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search skills..." />
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
+          >
+            {showNew ? 'Cancel' : '+ Add Skill'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
@@ -129,7 +141,7 @@ export default function AdminSkills() {
         className="rounded-xl border overflow-hidden"
         style={{ borderColor: 'var(--border-color)' }}
       >
-        {allSelected !== undefined && skills.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -138,12 +150,12 @@ export default function AdminSkills() {
             </label>
           </div>
         )}
-        {skills.map((skill, i) => (
+        {filtered.map((skill, i) => (
           <div
             key={skill.id}
             className="flex items-center gap-4 px-4 py-3"
             style={{
-              borderBottom: i < skills.length - 1 ? '1px solid var(--border-color)' : 'none',
+              borderBottom: i < filtered.length - 1 ? '1px solid var(--border-color)' : 'none',
               background: selectedIds.has(skill.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)',
             }}
           >
@@ -190,7 +202,7 @@ export default function AdminSkills() {
             )}
           </div>
         ))}
-        {skills.length === 0 && (
+        {filtered.length === 0 && (
           <p className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No skills yet.</p>
         )}
       </div>

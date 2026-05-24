@@ -60,6 +60,15 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  async function signUp(email, password) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+    if (error) throw error
+    return data
+  }
+
   async function signOut() {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -83,6 +92,7 @@ export function AuthProvider({ children }) {
         profileLoading,
         isAdmin,
         signIn,
+        signUp,
         signOut,
         resetPassword,
         refreshProfile: () => fetchProfile(user?.id),

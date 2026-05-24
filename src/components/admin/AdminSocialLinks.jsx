@@ -2,16 +2,25 @@ import { useState, useEffect } from 'react'
 import { getSocialLinks, updateSocialLink, createSocialLink, deleteSocialLink } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 const iconOptions = ['github', 'linkedin', 'code', 'terminal', 'x', 'youtube', 'instagram', 'facebook', 'link', 'globe', 'mail']
 
 export default function AdminSocialLinks() {
   const [links, setLinks] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ label: '', url: '', icon: 'link', display_order: 0 })
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(links)
+  const filtered = search
+    ? links.filter(l =>
+        [l.label, l.url, l.icon]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : links
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -50,7 +59,7 @@ export default function AdminSocialLinks() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Social Links
@@ -59,13 +68,16 @@ export default function AdminSocialLinks() {
             Manage your social media and external links
           </p>
         </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          {showNew ? 'Cancel' : '+ Add'}
-        </button>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search links..." />
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
+          >
+            {showNew ? 'Cancel' : '+ Add'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
@@ -84,7 +96,7 @@ export default function AdminSocialLinks() {
       <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
 
       <div className="space-y-2">
-        {allSelected !== undefined && links.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 rounded-t-xl border text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -93,7 +105,7 @@ export default function AdminSocialLinks() {
             </label>
           </div>
         )}
-        {links.map((link) => (
+        {filtered.map((link) => (
           <div key={link.id} className="rounded-xl border p-3" style={{ borderColor: selectedIds.has(link.id) ? 'var(--accent)' : 'var(--border-color)', background: selectedIds.has(link.id) ? 'color-mix(in srgb, var(--accent) 8%, var(--card-bg))' : 'var(--card-bg)' }}>
             {editingId === link.id ? (
               <div className="flex items-center gap-3">
@@ -122,7 +134,7 @@ export default function AdminSocialLinks() {
             )}
           </div>
         ))}
-        {links.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No social links yet.</p>
         )}
       </div>

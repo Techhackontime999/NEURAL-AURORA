@@ -144,7 +144,10 @@ export default function Login() {
           </form>
 
           <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Authorized administrators only
+            Don't have an account?{' '}
+            <Link to="/register" className="text-cyan-400 hover:underline">
+              Register here
+            </Link>
           </p>
         </div>
       </motion.div>

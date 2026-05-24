@@ -2,10 +2,19 @@ import { useState, useEffect } from 'react'
 import { getContactMessages, markContactMessageRead, deleteContactMessage } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminContactMessages() {
   const [messages, setMessages] = useState([])
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(messages)
+  const [search, setSearch] = useState('')
+  const filtered = search
+    ? messages.filter(m =>
+        [m.name, m.email, m.message]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : messages
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -31,18 +40,21 @@ export default function AdminContactMessages() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          Contact Messages
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Messages submitted via the contact forms
-        </p>
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Contact Messages
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Messages submitted via the contact forms
+          </p>
+        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search messages..." />
       </div>
 
       <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
       <div className="space-y-3">
-        {messages.length > 0 && (
+        {filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 rounded-t-xl border text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -51,7 +63,7 @@ export default function AdminContactMessages() {
             </label>
           </div>
         )}
-        {messages.map((msg) => (
+        {filtered.map((msg) => (
           <div
             key={msg.id}
             className="rounded-xl border p-4 transition-all"
@@ -102,7 +114,7 @@ export default function AdminContactMessages() {
             </div>
           </div>
         ))}
-        {messages.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
             No contact messages yet.
           </p>

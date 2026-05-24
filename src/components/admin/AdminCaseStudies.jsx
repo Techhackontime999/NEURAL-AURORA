@@ -3,15 +3,25 @@ import { getCaseStudies, updateCaseStudy, createCaseStudy, deleteCaseStudy } fro
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminCaseStudies() {
   const [items, setItems] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ cs_id: '', title: '', slug: '', description: '', outcome: '', content: '', tech: [], display_order: 0 })
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(items)
+  const filtered = search
+    ? items.filter(item =>
+        [item.title, item.slug, item.description, item.cs_id]
+          .concat(item.tech || [])
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : items
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -70,7 +80,7 @@ export default function AdminCaseStudies() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Case Studies
@@ -79,13 +89,16 @@ export default function AdminCaseStudies() {
             Showcase your project case studies
           </p>
         </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          {showNew ? 'Cancel' : '+ Add'}
-        </button>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search case studies..." />
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
+          >
+            {showNew ? 'Cancel' : '+ Add'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
@@ -139,7 +152,7 @@ export default function AdminCaseStudies() {
         onClear={clearSelection}
       />
       <div className="space-y-3">
-        {allSelected !== undefined && items.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -148,7 +161,7 @@ export default function AdminCaseStudies() {
             </label>
           </div>
         )}
-        {items.map((item) => (
+        {filtered.map((item) => (
           <div
             key={item.id}
             className="rounded-xl border p-4"
@@ -210,7 +223,7 @@ export default function AdminCaseStudies() {
             )}
           </div>
         ))}
-        {items.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No case studies yet.</p>
         )}
       </div>

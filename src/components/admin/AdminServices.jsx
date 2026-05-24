@@ -7,6 +7,7 @@ import {
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 const ICON_OPTIONS = [
   'Globe', 'Palette', 'Lightbulb', 'MessageCircle', 'Code', 'Cpu', 'Star',
@@ -130,6 +131,7 @@ function ArrayItemEditor({ items, onChange, fields, itemLabel }) {
 
 export default function AdminServices() {
   const [services, setServices] = useState([])
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -141,7 +143,15 @@ export default function AdminServices() {
   const [saving, setSaving] = useState(false)
   const [pageDirty, setPageDirty] = useState(false)
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(services)
+  const filtered = search
+    ? services.filter(s =>
+        [s.title, s.tagline, s.description, s.service_id]
+          .concat(s.features || [])
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : services
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -320,20 +330,23 @@ export default function AdminServices() {
         </p>
       </div>
 
-      {/* Service Cards */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Service Cards
-          </h2>
-          <button
-            onClick={() => setShowNew(!showNew)}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-            style={{ background: 'var(--accent)' }}
-          >
-            {showNew ? 'Cancel' : '+ New Service'}
-          </button>
-        </div>
+        {/* Service Cards */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <h2 className="font-display text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              Service Cards
+            </h2>
+            <div className="flex items-center gap-3">
+              <SearchBar value={search} onChange={setSearch} placeholder="Search services..." />
+              <button
+                onClick={() => setShowNew(!showNew)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+                style={{ background: 'var(--accent)' }}
+              >
+                {showNew ? 'Cancel' : '+ New Service'}
+              </button>
+            </div>
+          </div>
 
         {showNew && (
           <div className="mb-6 rounded-xl border p-4" style={sectionStyle}>
@@ -396,7 +409,7 @@ export default function AdminServices() {
 
         <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
         <div className="space-y-3">
-          {services.length > 0 && (
+          {filtered.length > 0 && (
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border text-[11px] font-medium uppercase tracking-wider"
               style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -405,7 +418,7 @@ export default function AdminServices() {
               </label>
             </div>
           )}
-          {services.map((item) => (
+          {filtered.map((item) => (
             <div key={item.id} className="rounded-xl border p-4" style={{ ...sectionStyle, background: selectedIds.has(item.id) ? 'rgba(239,68,68,0.04)' : sectionStyle.background }}>
               {editingId === item.id ? (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -469,7 +482,7 @@ export default function AdminServices() {
               )}
             </div>
           ))}
-          {services.length === 0 && (
+          {filtered.length === 0 && (
             <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No services yet.</p>
           )}
         </div>

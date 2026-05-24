@@ -22,6 +22,7 @@ import BlogPost from './components/BlogPost'
 import CaseStudyDetail from './components/CaseStudyDetail'
 import { Footer } from './components/ui/footer-section'
 import Login from './components/admin/Login'
+import Register from './components/admin/Register'
 import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
@@ -126,6 +127,7 @@ function AppContent() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route
                 path="/admin/*"

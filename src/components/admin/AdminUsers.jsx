@@ -3,11 +3,13 @@ import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import {
   getAllProfiles, updateProfileRole, getAdminSettings, updateAdminSettings,
-  adminDeleteUser,
+  setAdminEmail, adminDeleteUser,
 } from '../../lib/supabase'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminUsers() {
   const [profiles, setProfiles] = useState([])
+  const [search, setSearch] = useState('')
   const [settings, setSettings] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [adminEmail, setAdminEmail] = useState('')
@@ -112,25 +114,35 @@ export default function AdminUsers() {
 
   async function handleSaveAdminEmail() {
     try {
-      await updateAdminSettings({ admin_email: adminEmail })
-      showMsg('Admin email saved. Only this email can register as admin.')
+      await setAdminEmail(adminEmail)
+      showMsg('Admin email saved. Existing users with this email promoted to admin.')
       load()
     } catch (err) {
       showMsg('Error: ' + err.message, 'error')
     }
   }
 
-  const allSelected = profiles.length > 0 && selectedIds.size === profiles.length
+  const filtered = search
+    ? profiles.filter(p =>
+        [p.email, p.full_name, p.role]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : profiles
+
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          User Management
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Manage admin access and authorized registration emails
-        </p>
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            User Management
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Manage admin access and authorized registration emails
+          </p>
+        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search users..." />
       </div>
 
       {/* Admin Email Setting */}
@@ -215,7 +227,7 @@ export default function AdminUsers() {
       {/* Users List */}
       <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
         {/* Table Header */}
-        {profiles.length > 0 && (
+        {filtered.length > 0 && (
           <div
             className="flex items-center gap-3 px-5 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{
@@ -236,12 +248,12 @@ export default function AdminUsers() {
           </div>
         )}
         <div style={{ background: 'var(--card-bg)' }}>
-          {profiles.map((profile, i) => (
+          {filtered.map((profile, i) => (
             <div
               key={profile.id}
               className="flex items-center justify-between px-5 py-4 transition-colors"
               style={{
-                borderBottom: i < profiles.length - 1 ? '1px solid var(--border-color)' : 'none',
+                borderBottom: i < filtered.length - 1 ? '1px solid var(--border-color)' : 'none',
                 background: selectedIds.has(profile.id) ? 'rgba(239,68,68,0.04)' : 'transparent',
               }}
             >
@@ -314,7 +326,7 @@ export default function AdminUsers() {
             </div>
           ))}
         </div>
-        {profiles.length === 0 && (
+        {filtered.length === 0 && (
           <p className="px-5 py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
             No users found
           </p>

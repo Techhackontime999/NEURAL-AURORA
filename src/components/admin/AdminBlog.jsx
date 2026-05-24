@@ -3,9 +3,11 @@ import { getBlogPosts, updateBlogPost, createBlogPost, deleteBlogPost } from '..
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -13,7 +15,14 @@ export default function AdminBlog() {
     post_id: '', title: '', slug: '', excerpt: '', content: '', date: '', read_time: '5 min read', tags: [],
   })
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(posts)
+  const filtered = search
+    ? posts.filter(p =>
+        [p.title, p.slug, p.excerpt, p.post_id, ...(p.tags || [])]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : posts
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -77,7 +86,7 @@ export default function AdminBlog() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Blog Posts
@@ -86,13 +95,16 @@ export default function AdminBlog() {
             Write and manage your blog content
           </p>
         </div>
-        <button
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search blog posts..." />
+          <button
           onClick={() => setShowNew(!showNew)}
           className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
           style={{ background: 'var(--accent)' }}
         >
           {showNew ? 'Cancel' : '+ New Post'}
         </button>
+        </div>
       </div>
 
       {showNew && (
@@ -149,7 +161,7 @@ export default function AdminBlog() {
         onClear={clearSelection}
       />
       <div className="space-y-3">
-        {allSelected !== undefined && posts.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -158,7 +170,7 @@ export default function AdminBlog() {
             </label>
           </div>
         )}
-        {posts.map((post) => (
+        {filtered.map((post) => (
           <div
             key={post.id}
             className="rounded-xl border p-4"
@@ -213,7 +225,7 @@ export default function AdminBlog() {
             )}
           </div>
         ))}
-        {posts.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No blog posts yet.</p>
         )}
       </div>

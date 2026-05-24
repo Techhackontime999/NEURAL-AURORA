@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react'
 import { getEducation, updateEducation, createEducation, deleteEducation } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminEducation() {
   const [items, setItems] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ edu_id: '', degree: '', school: '', year: '', description: '', display_order: 0 })
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(items)
+  const filtered = search
+    ? items.filter(item =>
+        [item.degree, item.school, item.year, item.description, item.edu_id]
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : items
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -61,7 +70,7 @@ export default function AdminEducation() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Education
@@ -70,13 +79,16 @@ export default function AdminEducation() {
             Manage your educational background
           </p>
         </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          {showNew ? 'Cancel' : '+ Add'}
-        </button>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search education..." />
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
+          >
+            {showNew ? 'Cancel' : '+ Add'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
@@ -103,7 +115,7 @@ export default function AdminEducation() {
         onClear={clearSelection}
       />
       <div className="space-y-3">
-        {allSelected !== undefined && items.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -112,7 +124,7 @@ export default function AdminEducation() {
             </label>
           </div>
         )}
-        {items.map((item) => (
+        {filtered.map((item) => (
           <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: selectedIds.has(item.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)' }}>
             {editingId === item.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -146,7 +158,7 @@ export default function AdminEducation() {
             )}
           </div>
         ))}
-        {items.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No education entries yet.</p>
         )}
       </div>

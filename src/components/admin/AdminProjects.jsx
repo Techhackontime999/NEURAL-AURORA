@@ -4,9 +4,11 @@ import RichTextEditor from './RichTextEditor'
 import ImageUpload from '../ui/ImageUpload'
 import useBulkSelect from '../../lib/useBulkSelect'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([])
+  const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -15,7 +17,15 @@ export default function AdminProjects() {
     github: '', link: '', demo: '', display_order: 0,
   })
 
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(projects)
+  const filtered = search
+    ? projects.filter(p =>
+        [p.title, p.project_id, p.github, p.link, p.demo, p.description]
+          .concat(p.technologies || [])
+          .some(f => f?.toLowerCase().includes(search.toLowerCase()))
+      )
+    : projects
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -85,7 +95,7 @@ export default function AdminProjects() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             Projects
@@ -94,13 +104,16 @@ export default function AdminProjects() {
             Manage your portfolio projects
           </p>
         </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          {showNew ? 'Cancel' : '+ Add Project'}
-        </button>
+        <div className="flex items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search projects..." />
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
+          >
+            {showNew ? 'Cancel' : '+ Add Project'}
+          </button>
+        </div>
       </div>
 
       {showNew && (
@@ -163,7 +176,7 @@ export default function AdminProjects() {
         onClear={clearSelection}
       />
       <div className="space-y-3">
-        {allSelected !== undefined && projects.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -172,7 +185,7 @@ export default function AdminProjects() {
             </label>
           </div>
         )}
-        {projects.map((project) => (
+        {filtered.map((project) => (
           <div
             key={project.id}
             className="rounded-xl border p-4"
@@ -232,7 +245,7 @@ export default function AdminProjects() {
             )}
           </div>
         ))}
-        {projects.length === 0 && (
+        {filtered.length === 0 && (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No projects yet.</p>
         )}
       </div>

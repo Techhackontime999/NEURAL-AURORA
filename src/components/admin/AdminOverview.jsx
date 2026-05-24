@@ -4,14 +4,14 @@ import { supabase } from '../../lib/supabase'
 import { generateTestData } from '../../lib/supabase'
 
 const categoryConfig = [
-  { key: 'projects', label: 'Projects', color: '#3b82f6' },
-  { key: 'skills', label: 'Skills', color: '#10b981' },
-  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6' },
-  { key: 'reviews', label: 'Reviews', color: '#f59e0b' },
-  { key: 'education', label: 'Education', color: '#ec4899' },
-  { key: 'experience', label: 'Experience', color: '#f97316' },
-  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4' },
-  { key: 'services', label: 'Services', color: '#14b8a6' },
+  { key: 'projects', label: 'Projects', color: '#3b82f6', table: 'projects' },
+  { key: 'skills', label: 'Skills', color: '#10b981', table: 'skills' },
+  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6', table: 'blog_posts' },
+  { key: 'reviews', label: 'Reviews', color: '#f59e0b', table: 'reviews' },
+  { key: 'education', label: 'Education', color: '#ec4899', table: 'education' },
+  { key: 'experience', label: 'Experience', color: '#f97316', table: 'experience' },
+  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4', table: 'case_studies' },
+  { key: 'services', label: 'Services', color: '#14b8a6', table: 'services' },
 ]
 
 export default function AdminOverview() {
@@ -26,8 +26,8 @@ export default function AdminOverview() {
 
   async function fetchStats() {
     const results = await Promise.all(
-      categoryConfig.map(({ key }) =>
-        supabase.from(key).select('*', { count: 'exact', head: true })
+      categoryConfig.map(({ table }) =>
+        supabase.from(table).select('*', { count: 'exact', head: true })
       )
     )
     const statsMap = {}

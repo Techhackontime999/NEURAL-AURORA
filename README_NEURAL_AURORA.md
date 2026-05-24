@@ -19,6 +19,10 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 | **Admin User Roles** | User management at `/admin/users` — promote/demote between admin and user roles. |
 | **Enhanced Supabase Migrations** | New migrations for `dev_ads`, `visitor_stats`, contact RLS fixes — all managed via `supabase db push`. |
 | **Vercel Deployment** | Migrated from Netlify to Vercel with auto CI/CD on every push. |
+| **CRM Dashboard Link** | Navbar login dropdown offers both Admin Dashboard and CRM Dashboard options. CRM URL is configurable from the admin panel. |
+| **BrandLogo on Auth Pages** | Neural Aurora animated logo appears on Login and Register pages. |
+| **CRM URL Configuration** | New admin panel page at `/admin/crm-config` to set the hosted wacrm CRM URL. Saved to both localStorage and Supabase. |
+| **Taste-Skill Login Dropdown** | Premium login dropdown with lucide-react icons, Liquid Glass refraction, spring physics, and tactile feedback. |
 
 [Full Changelog](#changelog)
 
@@ -40,6 +44,8 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 - **Dark/Light Theme** — Custom curtain-animation theme toggle
 - **Glassmorphism Design** — Glass panels, diffusion shadows, noise overlay, animated gradients
 - **Taste-Skill Aesthetics** — Liquid Glass design language with `cubic-bezier(0.16, 1, 0.3, 1)` easing, spring physics, perpetual micro-interactions, and cyan/purple/gold accent palette
+- **CRM Dashboard Integration** — Navbar login dropdown with Admin Dashboard and CRM Dashboard options; CRM URL configurable from admin panel
+- **BrandLogo Component** — Animated neural SVG logo used across auth pages and sidebar
 - **Responsive** — Fully responsive with mobile hamburger navigation
 
 ---
@@ -132,6 +138,7 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 | `/admin/messages` | View and manage visitor contact submissions |
 | `/admin/ads` | Manage Dev Ads (Google AdSense + YouTube with Short/Video format, configurable aspect ratio) |
 | `/admin/users` | Manage user roles (promote/demote) |
+| `/admin/crm-config` | Configure the hosted wacrm CRM dashboard URL |
 
 ## Dev Ads (Gateway Verification)
 
@@ -201,10 +208,12 @@ NEURAL-AURORA/
 │   │   │   ├── AdminOverview.jsx
 │   │   │   ├── Login.jsx
 │   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── AdminCrmConfig.jsx # CRM URL configuration
 │   │   │   ├── RichTextEditor.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── ui/              # Reusable UI primitives
 │   │   │   ├── auto-traverse-effect.jsx # Auto Traverse visual cursor & navigation
+│   │   │   ├── BrandLogo.jsx # Animated neural SVG logo
 │   │   │   └── AdVideoPlayer.jsx # Ad player (Google AdSense + YouTube Short/Video)
 │   │   ├── ReviewForm.jsx   # Public review submission form
 │   │   ├── ReviewsList.jsx  # Public approved reviews display
@@ -215,6 +224,7 @@ NEURAL-AURORA/
 │   │   └── AutoTraverseContext.jsx # Auto Traverse toggle state
 │   ├── lib/
 │   │   ├── supabase.js      # Supabase client + all CRUD functions (incl. dev_ads)
+│   │   ├── crm-config.js    # localStorage utility for CRM URL
 │   │   ├── usePortfolioData.js # Dynamic data hooks with static fallback
 │   │   ├── gemini.js        # Gemini API client
 │   │   └── utils.js         # Utility helpers
@@ -380,12 +390,18 @@ MIT License — see [LICENSE](LICENSE).
 - Vercel deployment configuration with SPA rewrites
 - Supabase migrations: `dev_ads`, `visitor_stats`, contact RLS fixes
 - `_redirects` file for Netlify SPA fallback
+- CRM Dashboard link in navbar login dropdown — configurable CRM URL from admin panel
+- BrandLogo component on Login and Register pages
+- CRM URL Configuration page (`/admin/crm-config`) — saves to localStorage + Supabase
+- Premium taste-skill styled login dropdown with lucide-react icons and Liquid Glass design
 
 **Changed**
 - Migrated hosting from Netlify to Vercel with auto CI/CD
 - Updated all OG/Twitter URLs to Vercel domain
 - Enhanced admin overview with Test Data Generator
 - Improved theme toggle with curtain animation
+- Navbar lock icon replaced with dropdown (Admin Dashboard + optional CRM Dashboard)
+- Mobile menu updated with Admin + CRM dashboard icons
 
 ### v1.0.0
 

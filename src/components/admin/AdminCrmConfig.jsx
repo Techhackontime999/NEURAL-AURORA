@@ -36,9 +36,8 @@ export default function AdminCrmConfig() {
     try {
       await updateAdminSettings({ crm_url: trimmed })
       setMessage({ type: 'success', text: 'CRM URL saved successfully.' })
-    } catch {
-      // Saved to localStorage at least
-      setMessage({ type: 'success', text: 'Saved locally (Supabase sync failed).' })
+    } catch (err) {
+      setMessage({ type: 'error', text: `Saved locally (Supabase: ${err.message || err})` })
     }
     setSaving(false)
   }
@@ -111,7 +110,7 @@ export default function AdminCrmConfig() {
         </div>
 
         {message && (
-          <p className="text-sm" style={{ color: message.type === 'success' ? '#10b981' : '#f59e0b' }}>
+          <p className="text-sm" style={{ color: message.type === 'success' ? '#10b981' : message.type === 'error' ? '#ef4444' : '#f59e0b' }}>
             {message.text}
           </p>
         )}

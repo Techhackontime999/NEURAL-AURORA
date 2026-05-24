@@ -18,6 +18,7 @@ const navItems = [
   { path: '/admin/messages', label: 'Messages', icon: '✉' },
   { path: '/admin/ads', label: 'Dev Ads', icon: '⊡' },
   { path: '/admin/users', label: 'Users', icon: '◎' },
+  { path: '/admin/crm-config', label: 'CRM Config', icon: '⚙' },
 ]
 
 export default function AdminLayout({ children }) {

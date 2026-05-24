@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Lock, Shield, ExternalLink } from 'lucide-react'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
+import { getCrmUrl } from '../lib/crm-config'
 
 const navLinks = [
   { label: 'About', href: '#about' },
@@ -26,9 +28,26 @@ const staggerItem = {
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [crmUrl, setCrmUrl] = useState('')
+  const loginRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
   const { scrollY } = useScroll()
+
+  useEffect(() => {
+    setCrmUrl(getCrmUrl())
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (loginRef.current && !loginRef.current.contains(e.target)) {
+        setLoginOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 80)
@@ -81,17 +100,60 @@ export default function Navbar() {
                   {link.label}
                 </button>
               ))}
-              <div className="flex items-center gap-2">
-                <a
-                  href="/login"
-                  onClick={(e) => { e.preventDefault(); navigate('/login') }}
-                  className="text-xs text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors"
-                  title="Admin Login"
+              <div className="flex items-center gap-2 relative" ref={loginRef}>
+                <button
+                  onClick={() => setLoginOpen(!loginOpen)}
+                  className="relative flex items-center justify-center w-7 h-7 rounded-lg text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 active:scale-[0.92] transition-all duration-300"
+                  title="Login"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                  </svg>
-                </a>
+                  <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </button>
+                <AnimatePresence>
+                  {loginOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
+                      className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-2xl border shadow-xl"
+                      style={{
+                        background: 'var(--card-bg)',
+                        borderColor: 'var(--border-color)',
+                        boxShadow: '0 20px 40px -15px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      <div className="p-1.5">
+                        <button
+                          onClick={() => { setLoginOpen(false); navigate('/login') }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[11px] font-medium tracking-wider uppercase active:scale-[0.98] transition-all duration-300"
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <Shield className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
+                          <span>Admin Dashboard</span>
+                        </button>
+                        {crmUrl && (
+                          <>
+                            <div className="mx-3 my-1 h-px" style={{ background: 'var(--border-color)' }} />
+                            <a
+                              href={crmUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[11px] font-medium tracking-wider uppercase active:scale-[0.98] transition-all duration-300"
+                              style={{ color: 'var(--text-secondary)' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
+                              <span>CRM Dashboard</span>
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
@@ -148,10 +210,29 @@ export default function Navbar() {
                 initial="hidden"
                 animate="visible"
                 onClick={() => { setOpen(false); navigate('/login') }}
-                className="text-2xl tracking-tight text-neural-500 hover:text-neural-400 transition-colors"
+                className="flex items-center gap-3 text-xl tracking-tight transition-colors"
+                style={{ color: 'var(--accent)' }}
               >
-                Admin
+                <Shield className="w-4 h-4" strokeWidth={1.5} />
+                Admin Dashboard
               </motion.button>
+              {crmUrl && (
+                <motion.a
+                  custom={navLinks.length + 1}
+                  variants={staggerItem}
+                  initial="hidden"
+                  animate="visible"
+                  href={crmUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 text-xl tracking-tight transition-colors"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  <ExternalLink className="w-4 h-4" strokeWidth={1.5} />
+                  CRM Dashboard
+                </motion.a>
+              )}
             </div>
           </motion.div>
         )}

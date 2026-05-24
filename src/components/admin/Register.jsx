@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import { BrandLogo } from '../ui/BrandLogo'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -68,7 +69,10 @@ export default function Register() {
           }}
         >
           {success ? (
-            <div className="text-center">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4">
+                <BrandLogo size="large" showWordmark />
+              </div>
               <h1 className="mb-2 font-display text-2xl font-bold tracking-tighter" style={{ color: 'var(--text-primary)' }}>
                 Check Your Email
               </h1>
@@ -85,7 +89,10 @@ export default function Register() {
             </div>
           ) : (
             <>
-              <div className="mb-8 text-center">
+              <div className="mb-8 flex flex-col items-center text-center">
+                <div className="mb-4">
+                  <BrandLogo size="large" showWordmark />
+                </div>
                 <h1 className="mb-2 font-display text-3xl font-bold tracking-tighter" style={{ color: 'var(--text-primary)' }}>
                   Create Account
                 </h1>

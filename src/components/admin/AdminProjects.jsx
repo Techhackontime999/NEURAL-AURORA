@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { getProjects, updateProject, createProject, deleteProject } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
+import ImageUpload from '../ui/ImageUpload'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([])
@@ -11,6 +14,8 @@ export default function AdminProjects() {
     project_id: '', title: '', description: '', technologies: [], image: '',
     github: '', link: '', demo: '', display_order: 0,
   })
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(projects)
 
   useEffect(() => { load() }, [])
 
@@ -48,6 +53,14 @@ export default function AdminProjects() {
     if (confirm('Delete this project?')) { try { await deleteProject(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteProject)
+    clearSelection()
+    load()
+  }
+
   function startEdit(project) {
     setEditingId(project.id)
     setEditForm({ ...project, technologies: project.technologies?.join(', ') || '' })
@@ -57,7 +70,7 @@ export default function AdminProjects() {
     { key: 'project_id', label: 'Project ID' },
     { key: 'title', label: 'Title' },
     { key: 'technologies', label: 'Technologies (comma-separated)' },
-    { key: 'image', label: 'Image URL' },
+    { key: 'image', label: 'Image', type: 'image' },
     { key: 'github', label: 'GitHub URL' },
     { key: 'link', label: 'Link URL' },
     { key: 'demo', label: 'Demo URL' },
@@ -97,7 +110,7 @@ export default function AdminProjects() {
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {fields.map(({ key, label, type }) => (
-              <div key={key} className={type === 'textarea' ? 'sm:col-span-2' : ''}>
+              <div key={key} className={type === 'textarea' || type === 'image' ? 'sm:col-span-2' : ''}>
                 <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                 {type === 'textarea' ? (
                   <textarea
@@ -106,6 +119,12 @@ export default function AdminProjects() {
                     rows={3}
                     className="w-full rounded border px-3 py-2 text-sm outline-none"
                     style={inputStyle}
+                  />
+                ) : type === 'image' ? (
+                  <ImageUpload
+                    value={newForm.image}
+                    onChange={(url) => setNewForm({ ...newForm, image: url })}
+                    label="Project Image"
                   />
                 ) : (
                   <input
@@ -138,20 +157,43 @@ export default function AdminProjects() {
         </div>
       )}
 
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onDelete={handleBulkDeleteWrapper}
+        onClear={clearSelection}
+      />
       <div className="space-y-3">
+        {allSelected !== undefined && projects.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {projects.map((project) => (
           <div
             key={project.id}
             className="rounded-xl border p-4"
-            style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}
+            style={{
+              borderColor: 'var(--border-color)',
+              background: selectedIds.has(project.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)',
+            }}
           >
             {editingId === project.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {fields.map(({ key, label, type }) => (
-                  <div key={key} className={type === 'textarea' ? 'sm:col-span-2' : ''}>
+                  <div key={key} className={type === 'textarea' || type === 'image' ? 'sm:col-span-2' : ''}>
                     <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                     {type === 'textarea' ? (
                       <textarea value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })} rows={3} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
+                    ) : type === 'image' ? (
+                      <ImageUpload
+                        value={editForm.image}
+                        onChange={(url) => setEditForm({ ...editForm, image: url })}
+                        label="Project Image"
+                      />
                     ) : (
                       <input type={type || 'text'} value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
                     )}
@@ -171,7 +213,8 @@ export default function AdminProjects() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <input type="checkbox" checked={selectedIds.has(project.id)} onChange={() => toggleSelect(project.id)} className="rounded shrink-0 mt-1" />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
                   <p className="mt-1 text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{project.description}</p>

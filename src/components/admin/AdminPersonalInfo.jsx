@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getPersonalInfo, updatePersonalInfo } from '../../lib/supabase'
+import ImageUpload from '../ui/ImageUpload'
 
 export default function AdminPersonalInfo() {
   const [form, setForm] = useState(null)
@@ -27,12 +28,11 @@ export default function AdminPersonalInfo() {
     return <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
   }
 
-  const fields = [
+  const textFields = [
     { key: 'name', label: 'Name' },
     { key: 'handle', label: 'Handle' },
     { key: 'title', label: 'Title' },
     { key: 'tagline', label: 'Tagline' },
-    { key: 'avatar', label: 'Avatar URL' },
     { key: 'resume', label: 'Resume URL' },
   ]
 
@@ -55,7 +55,7 @@ export default function AdminPersonalInfo() {
             background: 'var(--card-bg)',
           }}
         >
-          {fields.map(({ key, label }) => (
+          {textFields.map(({ key, label }) => (
             <div key={key}>
               <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                 {label}
@@ -73,6 +73,17 @@ export default function AdminPersonalInfo() {
               />
             </div>
           ))}
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              Avatar
+            </label>
+            <ImageUpload
+              value={form.avatar || ''}
+              onChange={(url) => setForm({ ...form, avatar: url })}
+              label="Avatar"
+            />
+          </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

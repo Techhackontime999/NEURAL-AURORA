@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getAdVideos, addAdVideo, updateAdVideo, deleteAdVideo } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 const AD_TYPES = [
   { value: 'google', label: 'Google AdSense', desc: 'Auto-served by Google' },
@@ -29,6 +31,7 @@ export default function AdminAds() {
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ ...defaultForm })
   const [urlError, setUrlError] = useState('')
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(ads)
 
   useEffect(() => { load() }, [])
 
@@ -73,6 +76,14 @@ export default function AdminAds() {
       await deleteAdVideo(id)
       load()
     }
+  }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected ads permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteAdVideo)
+    clearSelection()
+    load()
   }
 
   const inputStyle = {
@@ -189,19 +200,32 @@ export default function AdminAds() {
         </div>
       )}
 
+      <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
+
       <div
         className="rounded-xl border overflow-hidden"
         style={{ borderColor: 'var(--border-color)' }}
       >
+        {allSelected !== undefined && ads.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {ads.map((ad, i) => (
           <div
             key={ad.id}
             className="flex items-center gap-4 px-4 py-3"
             style={{
               borderBottom: i < ads.length - 1 ? '1px solid var(--border-color)' : 'none',
-              background: 'var(--card-bg)',
+              background: selectedIds.has(ad.id) ? 'color-mix(in srgb, var(--accent) 8%, var(--card-bg))' : 'var(--card-bg)',
+              borderLeft: selectedIds.has(ad.id) ? '3px solid var(--accent)' : '3px solid transparent',
             }}
           >
+            <input type="checkbox" checked={selectedIds.has(ad.id)} onChange={() => toggleSelect(ad.id)} className="rounded shrink-0" />
             {editingId === ad.id ? (
               <>
                 <input

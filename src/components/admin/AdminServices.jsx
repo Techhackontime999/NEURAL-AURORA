@@ -5,6 +5,8 @@ import {
   getServicePage, updateServicePage,
 } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 const ICON_OPTIONS = [
   'Globe', 'Palette', 'Lightbulb', 'MessageCircle', 'Code', 'Cpu', 'Star',
@@ -139,6 +141,8 @@ export default function AdminServices() {
   const [saving, setSaving] = useState(false)
   const [pageDirty, setPageDirty] = useState(false)
 
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(services)
+
   useEffect(() => { load() }, [])
 
   async function load() {
@@ -174,6 +178,14 @@ export default function AdminServices() {
       await deleteService(id)
       load()
     }
+  }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected services permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteService)
+    clearSelection()
+    load()
   }
 
   function startEdit(item) {
@@ -382,9 +394,19 @@ export default function AdminServices() {
           </div>
         )}
 
+        <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
         <div className="space-y-3">
+          {services.length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border text-[11px] font-medium uppercase tracking-wider"
+              style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+                Select All
+              </label>
+            </div>
+          )}
           {services.map((item) => (
-            <div key={item.id} className="rounded-xl border p-4" style={sectionStyle}>
+            <div key={item.id} className="rounded-xl border p-4" style={{ ...sectionStyle, background: selectedIds.has(item.id) ? 'rgba(239,68,68,0.04)' : sectionStyle.background }}>
               {editingId === item.id ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {serviceFields.map(({ key, label, type }) => (
@@ -419,7 +441,8 @@ export default function AdminServices() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} className="rounded shrink-0 mt-1" />
                   <div className="flex-1 flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
                       <IconPreview name={item.icon_name} className="w-4 h-4 text-cyan-500" />

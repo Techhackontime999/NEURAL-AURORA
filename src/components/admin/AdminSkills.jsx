@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getSkills, updateSkill, createSkill, deleteSkill } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 const categories = ['frontend', 'backend', 'language', 'devops', 'design']
 
@@ -9,6 +11,8 @@ export default function AdminSkills() {
   const [editForm, setEditForm] = useState({ name: '', level: 50, category: 'frontend', display_order: 0 })
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ name: '', level: 50, category: 'frontend', display_order: 0 })
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(skills)
 
   useEffect(() => { load() }, [])
 
@@ -37,6 +41,14 @@ export default function AdminSkills() {
 
   async function handleDelete(id) {
     if (confirm('Delete this skill?')) { try { await deleteSkill(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+  }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteSkill)
+    clearSelection()
+    load()
   }
 
   const inputStyle = {
@@ -108,19 +120,34 @@ export default function AdminSkills() {
         </div>
       )}
 
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onDelete={handleBulkDeleteWrapper}
+        onClear={clearSelection}
+      />
       <div
         className="rounded-xl border overflow-hidden"
         style={{ borderColor: 'var(--border-color)' }}
       >
+        {allSelected !== undefined && skills.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {skills.map((skill, i) => (
           <div
             key={skill.id}
             className="flex items-center gap-4 px-4 py-3"
             style={{
               borderBottom: i < skills.length - 1 ? '1px solid var(--border-color)' : 'none',
-              background: 'var(--card-bg)',
+              background: selectedIds.has(skill.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)',
             }}
           >
+            <input type="checkbox" checked={selectedIds.has(skill.id)} onChange={() => toggleSelect(skill.id)} className="rounded shrink-0" />
             {editingId === skill.id ? (
               <>
                 <input

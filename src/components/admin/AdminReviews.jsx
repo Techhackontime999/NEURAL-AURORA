@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react'
 import { getAllReviews, approveReview, deleteReview } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 export default function AdminReviews() {
   const [reviews, setReviews] = useState([])
   const [filter, setFilter] = useState('all')
+  const filtered = filter === 'pending' ? reviews.filter(r => !r.approved)
+    : filter === 'approved' ? reviews.filter(r => r.approved)
+    : reviews
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered)
 
   useEffect(() => { load() }, [])
 
@@ -17,9 +24,13 @@ export default function AdminReviews() {
     if (confirm('Delete this review?')) { try { await deleteReview(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
-  const filtered = filter === 'pending' ? reviews.filter(r => !r.approved)
-    : filter === 'approved' ? reviews.filter(r => r.approved)
-    : reviews
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected reviews permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteReview)
+    clearSelection()
+    load()
+  }
 
   const filters = ['all', 'pending', 'approved']
 
@@ -51,17 +62,28 @@ export default function AdminReviews() {
         </div>
       </div>
 
+      <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
       <div className="space-y-3">
+        {filtered.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-t-xl border text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {filtered.map((review) => (
           <div
             key={review.id}
             className="rounded-xl border p-4"
             style={{
-              borderColor: review.approved ? 'var(--border-color)' : 'rgba(251,191,36,0.2)',
-              background: 'var(--card-bg)',
+              borderColor: selectedIds.has(review.id) ? 'var(--accent)' : (review.approved ? 'var(--border-color)' : 'rgba(251,191,36,0.2)'),
+              background: selectedIds.has(review.id) ? 'rgba(99,102,241,0.06)' : 'var(--card-bg)',
             }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <input type="checkbox" checked={selectedIds.has(review.id)} onChange={() => toggleSelect(review.id)} className="rounded shrink-0 mt-1" />
               <div className="flex-1">
                 <div className="flex items-center gap-3">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{review.name}</h3>

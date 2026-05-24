@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getContactMessages, markContactMessageRead, deleteContactMessage } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 export default function AdminContactMessages() {
   const [messages, setMessages] = useState([])
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(messages)
 
   useEffect(() => { load() }, [])
 
@@ -18,6 +21,14 @@ export default function AdminContactMessages() {
     if (confirm('Delete this message?')) { try { await deleteContactMessage(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
   }
 
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected messages permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteContactMessage)
+    clearSelection()
+    load()
+  }
+
   return (
     <div>
       <div className="mb-8">
@@ -29,17 +40,28 @@ export default function AdminContactMessages() {
         </p>
       </div>
 
+      <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
       <div className="space-y-3">
+        {messages.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-t-xl border text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
             className="rounded-xl border p-4 transition-all"
             style={{
-              borderColor: msg.read ? 'var(--border-color)' : 'rgba(59,130,246,0.2)',
-              background: msg.read ? 'var(--card-bg)' : 'rgba(59,130,246,0.03)',
+              borderColor: selectedIds.has(msg.id) ? 'var(--accent)' : (msg.read ? 'var(--border-color)' : 'rgba(59,130,246,0.2)'),
+              background: selectedIds.has(msg.id) ? 'rgba(99,102,241,0.06)' : (msg.read ? 'var(--card-bg)' : 'rgba(59,130,246,0.03)'),
             }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <input type="checkbox" checked={selectedIds.has(msg.id)} onChange={() => toggleSelect(msg.id)} className="rounded shrink-0 mt-1" />
               <div className="flex-1">
                 <div className="flex items-center gap-3">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

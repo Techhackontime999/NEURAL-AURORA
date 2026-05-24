@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getExperience, updateExperience, createExperience, deleteExperience } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 export default function AdminExperience() {
   const [items, setItems] = useState([])
@@ -7,6 +9,8 @@ export default function AdminExperience() {
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ exp_id: '', role: '', company: '', year: '', description: '', display_order: 0 })
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(items)
 
   useEffect(() => { load() }, [])
 
@@ -31,6 +35,14 @@ export default function AdminExperience() {
   }
 
   async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteExperience(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteExperience)
+    clearSelection()
+    load()
+  }
 
   const fields = [
     { key: 'exp_id', label: 'ID' },
@@ -85,9 +97,23 @@ export default function AdminExperience() {
         </div>
       )}
 
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onDelete={handleBulkDeleteWrapper}
+        onClear={clearSelection}
+      />
       <div className="space-y-3">
+        {allSelected !== undefined && items.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {items.map((item) => (
-          <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
+          <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: selectedIds.has(item.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)' }}>
             {editingId === item.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {fields.map(({ key, label, type }) => (
@@ -106,7 +132,8 @@ export default function AdminExperience() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} className="rounded shrink-0 mt-1" />
                 <div>
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.role}</h3>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.company} — {item.year}</p>

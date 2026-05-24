@@ -440,6 +440,15 @@ export async function updateProfileRole(userId, role) {
   if (error) throw error
 }
 
+export async function uploadImage(file, bucket = 'portfolio-images') {
+  const ext = file.name.split('.').pop()
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const { error } = await supabase.storage.from(bucket).upload(path, file)
+  if (error) throw error
+  const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path)
+  return publicUrl
+}
+
 export async function submitContactMessage({ name, email, message }) {
   const { error } = await supabase
     .from('contact_messages')
@@ -554,6 +563,11 @@ export async function deleteService(id) {
     .from('services')
     .delete()
     .eq('id', id)
+  if (error) throw error
+}
+
+export async function adminDeleteUser(userId) {
+  const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId })
   if (error) throw error
 }
 

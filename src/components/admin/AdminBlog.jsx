@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getBlogPosts, updateBlogPost, createBlogPost, deleteBlogPost } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([])
@@ -10,6 +12,8 @@ export default function AdminBlog() {
   const [newForm, setNewForm] = useState({
     post_id: '', title: '', slug: '', excerpt: '', content: '', date: '', read_time: '5 min read', tags: [],
   })
+
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(posts)
 
   useEffect(() => { load() }, [])
 
@@ -40,6 +44,14 @@ export default function AdminBlog() {
 
   async function handleDelete(id) {
     if (confirm('Delete this post?')) { try { await deleteBlogPost(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+  }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteBlogPost)
+    clearSelection()
+    load()
   }
 
   function startEdit(post) {
@@ -131,12 +143,29 @@ export default function AdminBlog() {
         </div>
       )}
 
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onDelete={handleBulkDeleteWrapper}
+        onClear={clearSelection}
+      />
       <div className="space-y-3">
+        {allSelected !== undefined && posts.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {posts.map((post) => (
           <div
             key={post.id}
             className="rounded-xl border p-4"
-            style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}
+            style={{
+              borderColor: 'var(--border-color)',
+              background: selectedIds.has(post.id) ? 'rgba(239,68,68,0.04)' : 'var(--card-bg)',
+            }}
           >
             {editingId === post.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -164,7 +193,8 @@ export default function AdminBlog() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <input type="checkbox" checked={selectedIds.has(post.id)} onChange={() => toggleSelect(post.id)} className="rounded shrink-0 mt-1" />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{post.title}</h3>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{post.date} — {post.read_time}</p>

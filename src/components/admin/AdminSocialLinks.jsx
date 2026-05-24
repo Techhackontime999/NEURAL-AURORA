@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getSocialLinks, updateSocialLink, createSocialLink, deleteSocialLink } from '../../lib/supabase'
+import useBulkSelect from '../../lib/useBulkSelect'
+import BulkActionsBar from '../ui/BulkActionsBar'
 
 const iconOptions = ['github', 'linkedin', 'code', 'terminal', 'x', 'youtube', 'instagram', 'facebook', 'link', 'globe', 'mail']
 
@@ -9,6 +11,7 @@ export default function AdminSocialLinks() {
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ label: '', url: '', icon: 'link', display_order: 0 })
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(links)
 
   useEffect(() => { load() }, [])
 
@@ -30,6 +33,14 @@ export default function AdminSocialLinks() {
   }
 
   async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteSocialLink(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
+
+  async function handleBulkDeleteWrapper() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} selected links permanently?`)) return
+    const { deleted, errors } = await handleBulkDelete(deleteSocialLink)
+    clearSelection()
+    load()
+  }
 
   const inputStyle = {
     borderColor: 'var(--border-color)',
@@ -70,11 +81,23 @@ export default function AdminSocialLinks() {
         </div>
       )}
 
+      <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
+
       <div className="space-y-2">
+        {allSelected !== undefined && links.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-t-xl border text-[11px] font-medium uppercase tracking-wider"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
+              Select All
+            </label>
+          </div>
+        )}
         {links.map((link) => (
-          <div key={link.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
+          <div key={link.id} className="rounded-xl border p-3" style={{ borderColor: selectedIds.has(link.id) ? 'var(--accent)' : 'var(--border-color)', background: selectedIds.has(link.id) ? 'color-mix(in srgb, var(--accent) 8%, var(--card-bg))' : 'var(--card-bg)' }}>
             {editingId === link.id ? (
               <div className="flex items-center gap-3">
+                <input type="checkbox" checked={selectedIds.has(link.id)} onChange={() => toggleSelect(link.id)} className="rounded shrink-0" />
                 <input type="text" value={editForm.label} onChange={(e) => setEditForm({ ...editForm, label: e.target.value })} className="flex-1 rounded border px-2 py-1 text-sm outline-none" style={inputStyle} />
                 <input type="text" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="flex-[2] rounded border px-2 py-1 text-sm outline-none" style={inputStyle} />
                 <select value={editForm.icon} onChange={(e) => setEditForm({ ...editForm, icon: e.target.value })} className="rounded border px-2 py-1 text-sm outline-none" style={inputStyle}>
@@ -86,6 +109,7 @@ export default function AdminSocialLinks() {
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <input type="checkbox" checked={selectedIds.has(link.id)} onChange={() => toggleSelect(link.id)} className="rounded shrink-0" />
                   <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{link.icon}</span>
                   <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{link.label}</span>
                   <span className="text-xs truncate max-w-[200px]" style={{ color: 'var(--text-tertiary)' }}>{link.url}</span>

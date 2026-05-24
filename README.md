@@ -1,398 +1,307 @@
-# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v2.0.0 — Neural Reverie Release</sup>
+# Project Monorepo — NEURAL AURORA + wacrm
 
-**A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
+This repository contains two independent projects:
 
-Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 11**, **Tailwind CSS 3**, **Vite 6**, and **Supabase**.
+| Project | Directory | Type | Stack |
+|---------|-----------|------|-------|
+| **NEURAL AURORA** | `NEURAL-AURORA/` | SPA Portfolio | React 18, Vite 6, JavaScript, Tailwind v3, Three.js, Supabase |
+| **wacrm** | `wacrm/` | Full-Stack CRM | Next.js 16, React 19, TypeScript 6, Tailwind v4, Supabase |
 
----
-
-## What's New in v2.0.0
-
-| Feature | Description |
-|---------|-------------|
-| **Watch Dev Ads** | Alternative gateway — visitors watch Google AdSense ads or YouTube videos (landscape/Short) to unlock the portfolio. Ad queue system with animated transitions and view tracking. |
-| **Auto Traverse** | One-click full-site demo tour. A glowing cyan cursor autonomously navigates through all pages with spring-based smooth scrolling. |
-| **Live Visitor Count** | Real-time visitor counter synced to Supabase, glowing in the footer with animated number transitions. |
-| **Taste-Skill Aesthetics** | Liquid Glass design language — `cubic-bezier(0.16, 1, 0.3, 1)` easing, perpetual micro-interactions, cyan/purple/gold accent palette. |
-| **SEO & Discoverability** | Google Search Console verified, sitemap.xml, robots.txt, OG/Twitter cards, canonical URLs, and Vercel deployment. |
-| **Admin Ads Panel** | Full CRUD for Dev Ads at `/admin/ads` — manage Google AdSense + YouTube ads with configurable aspect ratios and duration. |
-| **Admin User Roles** | User management at `/admin/users` — promote/demote between admin and user roles. |
-| **Enhanced Supabase Migrations** | New migrations for `dev_ads`, `visitor_stats`, contact RLS fixes — all managed via `supabase db push`. |
-| **Vercel Deployment** | Migrated from Netlify to Vercel with auto CI/CD on every push. |
-
-[Full Changelog](#changelog)
+> **Detailed documentation:**
+> - [NEURAL AURORA README](./NEURAL-AURORA/README_NEURAL_AURORA.md) — full project docs, features, architecture
+> - [wacrm README](./NEURAL-AURORA/README_WACRM.md) — CRM setup, WhatsApp integration, deployment
 
 ---
 
-## Features
+## Prerequisites
 
-- **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), Gemini API-generated logic puzzles, and celebratory access-granted animation.
-- **Watch Dev Ads** — Alternative gateway method: watch Google AdSense ads or custom YouTube videos (landscape or Shorts format) to unlock the site. Ads are queued and played sequentially with animated transitions.
-- **Auto Traverse** — One-click full-site demo tour. A visual cursor automatically navigates through all pages (`/` → `/services` → `/more` → `/blog`) with configurable dwell time, spring-based smooth scrolling, and a glowing cyan cursor that follows the reading position.
-- **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
-- **Spline 3D Hero** — Embedded Spline interactive 3D scene in the hero section (preloaded during gateway for instant reveal)
-- **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
-- **Extended Pages** — `/services` (consulting/pricing), `/more` (experience, education, blog, case studies), `/blog` (blog listing + individual posts)
-- **Dynamic Data** — All portfolio content is loaded from **Supabase** (PostgreSQL), with automatic fallback to static data when Supabase is not configured.
-- **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, reviews, contact messages, user roles, and dev ads.
-- **Authentication & Authorization** — Email/password auth via Supabase Auth. First user to register gets the `admin` role; subsequent registrations are blocked from admin routes.
-- **Reviews & Feedback** — Public visitors can submit reviews with star ratings. Reviews appear after admin approval in the admin panel.
-- **Dark/Light Theme** — Custom curtain-animation theme toggle
-- **Glassmorphism Design** — Glass panels, diffusion shadows, noise overlay, animated gradients
-- **Taste-Skill Aesthetics** — Liquid Glass design language with `cubic-bezier(0.16, 1, 0.3, 1)` easing, spring physics, perpetual micro-interactions, and cyan/purple/gold accent palette
-- **Responsive** — Fully responsive with mobile hamburger navigation
+- **Node.js** >= 20.0.0
+- **npm** >= 10
+- **Supabase** account (free tier) — [supabase.com](https://supabase.com)
+- **Git** (optional, for version control)
 
 ---
 
-## Quick Start
+## NEURAL AURORA — Setup
+
+Immersive 3D portfolio with AI-powered gateway, auto-traverse site tour, and full admin dashboard.
+
+### Quick Start
 
 ```bash
-git clone https://github.com/Techhackontime999/NEURAL-AURORA.git
 cd NEURAL-AURORA
 npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:5173](http://localhost:5173).
+
+### Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GEMINI_API_KEY=your_gemini_api_key   # optional — AI puzzle generation
+```
+
+### Supabase Setup
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Run the schema in `NEURAL-AURORA/supabase-schema.sql` via SQL Editor
+3. Or apply migrations via Supabase CLI:
+   ```bash
+   cd NEURAL-AURORA
+   supabase login
+   supabase link --project-ref your-project-ref
+   supabase db push
+   ```
+4. (Optional) Seed test data:
+   ```bash
+   node NEURAL-AURORA/scripts/seed.cjs
+   ```
 
 ### Build for Production
 
 ```bash
+cd NEURAL-AURORA
 npm run build
 npm run preview
 ```
 
----
+### Key Scripts
 
-## Supabase Setup
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server (Vite) |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
 
-The app uses Supabase for dynamic data storage, authentication, and file storage.
+### Deployment
 
-### 1. Create a Supabase project
+Deploy `NEURAL-AURORA/` to Vercel (recommended), Netlify, or Cloudflare Pages.
 
-Go to [supabase.com](https://supabase.com) and create a new project.
-
-### 2. Run the database schema
-
-Open the Supabase SQL Editor and paste the contents of `supabase-schema.sql`, or apply migrations via the Supabase CLI:
-
-```bash
-# Login and link your project
-supabase login
-supabase link --project-ref your-project-ref
-
-# Apply all pending migrations
-supabase db push
-```
-
-Migrations are stored in `supabase/migrations/` and are applied in order. The full schema is also available in `supabase-schema.sql` for manual execution.
-
-### 3. Seed initial data (optional)
-
-```bash
-node scripts/seed.cjs
-```
-
-Test data can also be generated from the admin dashboard Overview page (supports projects, skills, blog, reviews, education, experience, case studies). Test projects automatically receive unique placeholder images via picsum.photos.
-
-### 4. Configure environment
-
-Copy `.env.example` to `.env` and fill in your Supabase project URL and anon key:
-
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GEMINI_API_KEY=your_gemini_api_key
-```
-
-### 5. Create your admin account
-
-1. Start the dev server and navigate to `/login`
-2. Click the **Register** tab
-3. Create an account — the first user is automatically assigned the `admin` role
-4. Sign in and visit `/admin` to manage your portfolio
-5. Forgot your password? Visit `/forgot-password` to reset it
+- **Vercel:** Import repo — Vite is auto-detected. Add env vars in dashboard.
+- The `vercel.json` includes SPA rewrites: `/* → /index.html`
 
 ---
 
-## Admin Dashboard
+## wacrm — Setup
 
-| Route | Description |
-|---|---|
-| `/admin` | Overview with counts of all portfolio items + Test Data Generator |
-| `/admin/personal-info` | Edit name, title, bio, avatar, resume link |
-| `/admin/skills` | Add/edit/delete skills with category and level |
-| `/admin/projects` | Manage project entries with technologies, links, image |
-| `/admin/education` | Manage education history |
-| `/admin/experience` | Manage work experience |
-| `/admin/blog` | Create/edit blog posts |
-| `/admin/case-studies` | Manage case studies |
-| `/admin/social-links` | Manage social media links |
-| `/admin/reviews` | Approve/reject public reviews |
-| `/admin/messages` | View and manage visitor contact submissions |
-| `/admin/ads` | Manage Dev Ads (Google AdSense + YouTube with Short/Video format, configurable aspect ratio) |
-| `/admin/users` | Manage user roles (promote/demote) |
+Self-hostable CRM template for WhatsApp Business API — shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.
 
-## Dev Ads (Gateway Verification)
+### Quick Start
 
-Dev Ads provide an alternative gateway verification method — visitors watch ads to unlock the portfolio.
+```bash
+cd wacrm
+npm install
+cp .env.local.example .env.local   # fill in credentials
+npm run dev
+```
 
-### Ad Types
+Open [http://localhost:3000](http://localhost:3000).
 
-| Type | Source | Format | Description |
-|------|--------|--------|-------------|
-| **Google AdSense** | Auto-served by Google | Responsive auto-display | Generates ad revenue while unlocking the site |
-| **YouTube Video** | Custom URL | Landscape (16:9, 4:3, 21:9, 1:1, 3:2, 16:10) | Specific YouTube video with configurable aspect ratio |
-| **YouTube Short** | Custom URL | Vertical 9:16 | Phone-style Shorts player with animated side progress bar |
+### Environment Variables
 
-### Ad Queue System
+Required in `.env.local`:
 
-- Active ads are loaded from Supabase and played sequentially
-- Each ad has its own timer based on `duration_seconds`
-- Animated slide transitions between ads with "Ad X / Y" counter
-- View count is incremented after each ad completes
-- After all ads finish, the visitor gains access to the portfolio
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ENCRYPTION_KEY=your_64_hex_char_key    # AES-256-GCM — generate: openssl rand -hex 32
+META_APP_SECRET=your_meta_app_secret
+```
 
-### Managing Ads
+Recommended:
 
-Admins can manage ads at `/admin/ads`:
-- Add/Edit/Delete ad entries
-- Choose ad type (Google AdSense or YouTube)
-- For YouTube: choose format (Landscape/Short) and aspect ratio
-- Toggle active status, set duration, track view counts
+```env
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+```
 
-## Reviews
+### Supabase Setup
 
-- Visitors can submit a review (name, email, rating, message) at the bottom of the homepage
-- Reviews are stored in Supabase and require admin approval before public display
-- Admins approve/reject reviews in the `/admin/reviews` panel
-- Approved reviews appear in the "What People Say" section on the homepage
+1. Create a Supabase project
+2. Apply migrations in order:
+   ```bash
+   cd wacrm
+   supabase login
+   supabase link --project-ref your-project-ref
+   supabase db push
+   ```
+3. Migrations live in `wacrm/supabase/migrations/001` through `012`
+
+### Key Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server (Next.js Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check |
+| `npm test` | Run tests (Vitest) |
+
+### Deployment
+
+- **Hostinger** (recommended) — click the "Deploy on Hostinger" badge in the wacrm README
+- **Vercel** — create a separate project, set root directory to `wacrm/`
+- Full deployment docs at [wacrm.tech/docs](https://wacrm.tech/docs)
+
+---
+
+## Combined Development Workflow
+
+Run both projects simultaneously from the root:
+
+```bash
+# Terminal 1 — NEURAL AURORA
+cd NEURAL-AURORA
+npm run dev        # → http://localhost:5173
+
+# Terminal 2 — wacrm
+cd wacrm
+npm run dev        # → http://localhost:3000
+```
+
+Or set up npm workspaces at root level for combined commands (see [Integration Guide](#integration)).
+
+---
+
+## Integration Approaches
+
+Since the two projects use **different frameworks, React versions, and build tools**, a full code-level merge is not recommended.
+
+### Option A: Subdomain Link (Recommended)
+
+Deploy each project independently and link them:
+
+```
+NEURAL-AURORA → neural-aurora.vercel.app
+wacrm         → crm.neural-aurora.vercel.app
+```
+
+Add a CRM link in NEURAL AURORA's navbar or admin panel.
+
+### Option B: Iframe Embed
+
+Embed wacrm inside NEURAL AURORA under a `/crm` route with SSO via token exchange.
+
+### Option C: Monorepo Workspaces
+
+Use npm workspaces for shared tooling:
+
+```json
+{
+  "workspaces": ["NEURAL-AURORA", "wacrm"],
+  "scripts": {
+    "dev:portfolio": "npm run dev --workspace=NEURAL-AURORA",
+    "dev:crm": "npm run dev --workspace=wacrm",
+    "build": "npm run build --workspace=NEURAL-AURORA && npm run build --workspace=wacrm"
+  }
+}
+```
+
+> For detailed integration steps (auth, theming, schema merge, CI/CD), refer to the original integration guide in the git history or see the individual project docs.
 
 ---
 
 ## Project Structure
 
 ```
-NEURAL-AURORA/
-├── public/                  # Static assets (images, resume PDF)
-├── scripts/
-│   ├── migrate.cjs          # Supabase schema migration runner
-│   ├── seed.cjs             # Initial portfolio data seeder
-│   ├── complete-migration.sql  # Schema additions
-│   ├── fix-contact-rls.sql     # Contact message RLS fix
-│   └── fix-contact-rls-v2.sql  # Contact message RLS v2 fix
-├── src/
-│   ├── components/
-│   │   ├── admin/           # Admin dashboard CRUD pages
-│   │   │   ├── AdminDashboard.jsx
-│   │   │   ├── AdminLayout.jsx
-│   │   │   ├── AdminPersonalInfo.jsx
-│   │   │   ├── AdminSkills.jsx
-│   │   │   ├── AdminProjects.jsx
-│   │   │   ├── AdminEducation.jsx
-│   │   │   ├── AdminExperience.jsx
-│   │   │   ├── AdminBlog.jsx
-│   │   │   ├── AdminCaseStudies.jsx
-│   │   │   ├── AdminSocialLinks.jsx
-│   │   │   ├── AdminReviews.jsx
-│   │   │   ├── AdminContactMessages.jsx
-│   │   │   ├── AdminAds.jsx # Dev Ads CRUD
-│   │   │   ├── AdminUsers.jsx
-│   │   │   ├── AdminOverview.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── ForgotPassword.jsx
-│   │   │   ├── RichTextEditor.jsx
-│   │   │   └── ProtectedRoute.jsx
-│   │   ├── ui/              # Reusable UI primitives
-│   │   │   ├── auto-traverse-effect.jsx # Auto Traverse visual cursor & navigation
-│   │   │   └── AdVideoPlayer.jsx # Ad player (Google AdSense + YouTube Short/Video)
-│   │   ├── ReviewForm.jsx   # Public review submission form
-│   │   ├── ReviewsList.jsx  # Public approved reviews display
-│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, and ad verification
-│   │   └── ...              # Portfolio section components
-│   ├── context/
-│   │   ├── AuthContext.jsx  # Supabase Auth provider + role management
-│   │   └── AutoTraverseContext.jsx # Auto Traverse toggle state
-│   ├── lib/
-│   │   ├── supabase.js      # Supabase client + all CRUD functions (incl. dev_ads)
-│   │   ├── usePortfolioData.js # Dynamic data hooks with static fallback
-│   │   ├── gemini.js        # Gemini API client
-│   │   └── utils.js         # Utility helpers
-│   ├── App.jsx              # Router setup + AuthProvider + AutoTraverseProvider
-│   ├── main.jsx             # Entry point
-│   └── index.css            # Tailwind + custom CSS
-├── supabase/                # Supabase CLI configuration
-│   ├── config.toml
-│   └── migrations/          # Database migrations
-│       ├── 20260522150218_create_dev_ads.sql
-│       ├── 20260522152424_add_ad_type_to_dev_ads.sql
-│       └── 20260522153455_add_aspect_ratio_to_dev_ads.sql
-├── .env                     # API keys (gitignored)
-├── .env.example             # Environment variable template
-├── supabase-schema.sql      # Full database schema with RLS policies
-├── index.html
-├── package.json
-├── tailwind.config.js
-├── vite.config.js
-├── postcss.config.js
-└── README.md
+root/
+├── README.md                       ← this file
+├── NEURAL-AURORA/                  ← Portfolio SPA
+│   ├── README_NEURAL_AURORA.md     ← full project docs
+│   ├── README_WACRM.md             ← wacrm info within portfolio context
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── supabase-schema.sql
+│   ├── supabase/
+│   │   └── migrations/
+│   ├── src/
+│   │   ├── main.jsx
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   ├── components/
+│   │   │   ├── admin/              ← Admin dashboard CRUD
+│   │   │   └── ui/                 ← Reusable UI components
+│   │   ├── context/                ← Auth, AutoTraverse
+│   │   ├── lib/                    ← Supabase client, Gemini, hooks
+│   │   └── data/                   ← Static fallback data
+│   ├── scripts/
+│   ├── public/
+│   └── vercel.json
+│
+└── wacrm/                          ← WhatsApp CRM
+    ├── README.md                   ← full project docs
+    ├── package.json
+    ├── next.config.ts
+    ├── postcss.config.mjs
+    ├── tsconfig.json
+    ├── src/
+    │   ├── app/
+    │   │   ├── (auth)/             ← Login, Signup, Forgot Password
+    │   │   ├── (dashboard)/        ← Dashboard, Inbox, Contacts, Pipelines, etc.
+    │   │   └── api/                ← WhatsApp, Automations, Flows API
+    │   ├── components/
+    │   │   ├── inbox/
+    │   │   ├── pipelines/
+    │   │   ├── broadcasts/
+    │   │   ├── automations/
+    │   │   ├── flows/
+    │   │   ├── contacts/
+    │   │   ├── settings/
+    │   │   ├── dashboard/
+    │   │   └── ui/                 ← shadcn-style components
+    │   ├── lib/
+    │   │   ├── supabase/           ← Server & client clients
+    │   │   ├── whatsapp/           ← Meta API, encryption
+    │   │   ├── automations/        ← Engine, validation
+    │   │   ├── flows/              ← Engine, validation
+    │   │   └── dashboard/          ← Queries, types
+    │   ├── hooks/                  ← useAuth, useTheme, useRealtime
+    │   └── types/                  ← Data model interfaces
+    ├── supabase/
+    │   └── migrations/             ← 001 through 012
+    └── .github/
+        └── workflows/ci.yml
 ```
 
 ---
 
-## Configuration
+## Comparison
 
-### Adding a Project (Static Fallback)
-
-If Supabase is not configured, edit `src/data/portfolio.js` and add an object to the `projects` array:
-
-```js
-{
-  id: "my-project",
-  title: "My Project",
-  description: "What it does.",
-  technologies: ["React", "Three.js"],
-  image: "/images/project-image.png",
-  github: "https://github.com/...",
-  link: "https://..."
-}
-```
-
-### Customizing Colors
-
-Edit the CSS custom properties in `src/index.css` (the `:root` and `.dark` blocks) to adjust the light/dark theme palette. The Tailwind config in `tailwind.config.js` extends the `neural` color family.
-
-### Gemini API Setup (Dynamic Puzzles)
-
-The puzzle generator uses Google Gemini API. To enable it:
-
-1. Get an API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Create a `.env` file in the project root:
-   ```
-   VITE_GEMINI_API_KEY=your_key_here
-   ```
-3. Restart the dev server
-
-If no key is provided, the app falls back to a built-in pool of 12 static questions.
-
-### Adding Skills (Static Fallback)
-
-Add entries to the `skills` array in `src/data/portfolio.js`. Skills are grouped by category (Frontend, Backend, Languages, DevOps, Design).
+| Aspect | NEURAL AURORA | wacrm |
+|--------|---------------|-------|
+| **Framework** | Vite + React 18 | Next.js 16 + React 19 |
+| **Language** | JavaScript (JSX) | TypeScript 6 |
+| **Styling** | Tailwind v3 (JS config) | Tailwind v4 (CSS `@theme`) |
+| **Auth** | `@supabase/supabase-js` (browser) | `@supabase/ssr` (cookie) |
+| **Routing** | React Router v7 (SPA) | Next.js App Router (SSR) |
+| **Testing** | None | Vitest (unit tests) |
+| **Hosting** | Vercel / Netlify / CF Pages | Hostinger / Vercel |
 
 ---
 
-## Deployment
+## Shared Supabase Instance
 
-### Option 1: Vercel (Recommended)
+Both projects can share a single Supabase project with separate schemas or table prefixes.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTechhackontime999%2FNEURAL-AURORA)
+| Project | Key Tables |
+|---------|------------|
+| **NEURAL AURORA** | `profiles`, `personal_info`, `skills`, `projects`, `education`, `experience`, `blog_posts`, `case_studies`, `contact_messages`, `reviews`, `social_links`, `admin_settings`, `dev_ads`, `visitor_stats` |
+| **wacrm** | `profiles`, `contacts`, `tags`, `conversations`, `messages`, `pipelines`, `deals`, `broadcasts`, `automations`, `flows`, `whatsapp_config` |
 
-1. Push your repo to GitHub
-2. Go to [vercel.com](https://vercel.com) and import your repository
-3. Vercel auto-detects Vite — no build config needed
-4. Add environment variables in Vercel dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_GEMINI_API_KEY` (optional)
-5. Deploy — your site is live with automatic CI/CD on every push
-
-### Option 2: Netlify
-
-1. Push to GitHub
-2. Go to [netlify.com](https://netlify.com) and import your repository
-3. Build command: `npm run build`
-4. Publish directory: `dist`
-5. Add environment variables as above
-6. Deploy
-
-### Option 3: Cloudflare Pages
-
-1. Push to GitHub
-2. Go to [Cloudflare Pages](https://pages.cloudflare.com) and connect your repo
-3. Build command: `npm run build`
-4. Build output: `dist`
-5. Add environment variables as above
-6. Deploy
-
-### Environment Variables
-
-All three platforms require these in your deployment dashboard:
-
-| Variable | Required | Description |
-|---|---|---|
-| `VITE_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Your Supabase anon/public key |
-| `VITE_GEMINI_API_KEY` | No | Gemini API key for dynamic puzzles |
-
-**Never commit your `.env` file.** The `.env.example` file serves as a template.
-
----
-
-## Tech Stack
-
-- **Framework:** React 18 with Vite 6
-- **Backend & Auth:** Supabase (PostgreSQL, Auth, Storage)
-- **CLI:** Supabase CLI (`supabase db push` for migrations)
-- **AI:** Google Gemini API (`gemini-2.0-flash`) — dynamic puzzle generation
-- **Speech:** Web SpeechRecognition API — voice verification
-- **Ads:** Google AdSense (auto-served) + YouTube IFrame Player API
-- **3D Graphics:** React Three Fiber, Drei, Three.js
-- **3D Embed:** Spline (`@splinetool/react-spline`)
-- **Animation:** Framer Motion 11
-- **Styling:** Tailwind CSS 3, PostCSS, Autoprefixer
-- **Routing:** React Router DOM 7
-- **Icons:** Lucide React
-- **Utilities:** clsx
-
----
-
-## Performance Notes
-
-- The 3D background (AuroraBackground) uses **GPU-accelerated** Three.js rendering
-- Spline scene is **lazy-loaded** with React Suspense and **preloaded** during the AI gateway for instant hero reveal
-- All animations use Framer Motion's spring physics for optimal frame rate
-- Auto Traverse cursor uses `useMotionValue` + `useSpring` (zero re-renders during 60fps animation)
-- Google AdSense script is loaded only when the ad-watching phase is entered (not on page load)
-- Tailwind CSS is purged in production builds
-- Gemini API calls use `temperature: 1.0` with random topic rotation for diverse questions
-- Admin routes are lazy-loadable and separate from the public site
+> **Note:** Both use a `profiles` table. Merge by using wacrm's profile schema as base and adding NEURAL AURORA's `role` column.
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE).
+- **NEURAL AURORA** — MIT © 2026 Amit Kumar
+- **wacrm** — MIT © Arnas Donauskas
 
----
-
-## Changelog
-
-### v2.0.0 (Neural Reverie Release)
-
-**Added**
-- Dev Ads gateway — Google AdSense + YouTube (landscape/Short) with ad queue, timers, view counting
-- Auto Traverse — full-site autonomous tour with spring cursor
-- Live Visitor Count — real-time Supabase-backed visitor counter in footer
-- Taste-Skill design language — Liquid Glass aesthetics with custom easing
-- SEO metadata — Google Search Console verification, sitemap.xml, robots.txt, OG/Twitter cards
-- Admin Ads CRUD panel (`/admin/ads`) — manage ads with type, format, aspect ratio, duration
-- Admin User Roles panel (`/admin/users`) — role management (admin/user)
-- Vercel deployment configuration with SPA rewrites
-- Supabase migrations: `dev_ads`, `visitor_stats`, contact RLS fixes
-- `_redirects` file for Netlify SPA fallback
-
-**Changed**
-- Migrated hosting from Netlify to Vercel with auto CI/CD
-- Updated all OG/Twitter URLs to Vercel domain
-- Enhanced admin overview with Test Data Generator
-- Improved theme toggle with curtain animation
-
-### v1.0.0
-
-**Initial release** — AI-powered gateway, 3D aurora background, Spline hero, full portfolio with Supabase CRUD admin, authentication, reviews, dark/light theme, glassmorphism design.
-
----
-
-## Support & Feedback
-
-Open an [issue](https://github.com/Techhackontime999/NEURAL-AURORA/issues) or reach out!
+See individual project `LICENSE` files for details.

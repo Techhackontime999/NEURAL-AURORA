@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.0",
     "@splinetool/react-spline": "^4.1.0",

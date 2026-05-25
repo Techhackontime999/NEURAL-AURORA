@@ -1,5 +1,7 @@
-const MODEL = 'gemini-2.0-flash'
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const MODEL = 'gemini-2.0-flash'
+
+let cachedQuestions = []
 
 const TOPICS = [
   'number patterns and sequences',
@@ -16,8 +18,55 @@ function randomTopic() {
   return TOPICS[Math.floor(Math.random() * TOPICS.length)]
 }
 
+function popCached() {
+  if (cachedQuestions.length === 0) return null
+  const idx = Math.floor(Math.random() * cachedQuestions.length)
+  const q = cachedQuestions[idx]
+  cachedQuestions.splice(idx, 1)
+  return q
+}
+
+async function fetchFromGemini(prompt) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 1.0, topP: 0.95, maxOutputTokens: 200 },
+      }),
+    }
+  )
+
+  if (res.status === 429) {
+    const data = await res.json().catch(() => ({}))
+    const msg = data?.error?.message || 'API quota exceeded'
+    const retryMatch = msg.match(/retry in ([\d.]+)s/)
+    const retryAfter = retryMatch ? Math.ceil(parseFloat(retryMatch[1]) * 1000) : 5000
+    throw { retryable: true, retryAfter, message: msg }
+  }
+
+  if (!res.ok) throw { retryable: false, message: `Gemini API error: ${res.status}` }
+
+  const data = await res.json()
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+  const parsed = JSON.parse(cleaned)
+
+  if (!parsed.q || !Array.isArray(parsed.opts) || parsed.opts.length !== 4 || typeof parsed.ans !== 'number') {
+    throw { retryable: false, message: 'Invalid question format from API' }
+  }
+
+  return parsed
+}
+
 export async function generateQuestion() {
+  const cached = popCached()
+  if (cached) return cached
+
   if (!API_KEY) {
+    console.warn('[Gemini] No API key found. Using fallback questions.')
     return fallbackQuestion()
   }
 
@@ -33,34 +82,15 @@ Rules:
 - Seed: ${seed}`
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 1.0, topP: 0.95, maxOutputTokens: 200 },
-        }),
-      }
-    )
-
-    if (!res.ok) throw new Error(`Gemini API error: ${res.status}`)
-
-    const data = await res.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-    const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
-    const parsed = JSON.parse(cleaned)
-
-    if (!parsed.q || !Array.isArray(parsed.opts) || parsed.opts.length !== 4 || typeof parsed.ans !== 'number') {
-      throw new Error('Invalid question format')
-    }
-
-    return parsed
-  } catch {
-    return fallbackQuestion()
+    const q = await fetchFromGemini(prompt)
+    cachedQuestions.push(q)
+    return q
+  } catch (err) {
+    console.error('[Gemini] API call failed:', err.message || err)
   }
+
+  console.warn('[Gemini] Using fallback question.')
+  return fallbackQuestion()
 }
 
 const FALLBACKS = [

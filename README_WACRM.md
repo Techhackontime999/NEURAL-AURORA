@@ -7,10 +7,10 @@
 [![Deploy on Hostinger](https://img.shields.io/badge/Deploy_on-Hostinger-673DE6?style=for-the-badge&logo=hostinger&logoColor=white)](https://www.hostinger.com/web-apps-hosting)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-violet.svg)](./LICENSE)
-[![CI](https://github.com/ArnasDon/wacrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Techhackontime999/wacrm/actions/workflows/ci.yml)
+[![CI](https://github.com/Techhackontime999/wacrm/actions/workflows/ci.yml/badge.svg)](https://github.com/Techhackontime999/wacrm/actions/workflows/ci.yml)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ecf8e?logo=supabase)](https://supabase.com)
-[![Stars](https://img.shields.io/github/stars/ArnasDon/wacrm?style=social)](https://github.com/Techhackontime999/wacrm/stargazers)
+[![Stars](https://img.shields.io/github/stars/Techhackontime999/wacrm?style=social)](https://github.com/Techhackontime999/wacrm/stargazers)
 
 The marketing site and self-host docs live in a separate repo:
 [Techhackontime999/wacrm-site](https://github.com/Techhackontime999/wacrm-site)

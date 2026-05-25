@@ -23,10 +23,10 @@ export default function SplineHero() {
           </p>
         </div>
 
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-[300px]">
           <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full"
+            className="w-full h-full min-h-[300px]"
           />
         </div>
       </div>

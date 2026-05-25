@@ -2,11 +2,10 @@ import { motion } from 'framer-motion'
 import { usePersonalInfo, useSocialLinks } from '../lib/usePortfolioData'
 
 const staggerItem = {
-  hidden: { opacity: 0, y: 40, filter: 'blur(6px)' },
+  hidden: { opacity: 0, y: 40 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { type: 'spring', stiffness: 80, damping: 20 },
   },
 }

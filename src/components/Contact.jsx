@@ -84,8 +84,8 @@ export default function Contact() {
 
           <motion.div
             variants={{
-              hidden: { opacity: 0, y: 30, filter: 'blur(4px)' },
-              visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 60, damping: 20 } },
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 60, damping: 20 } },
             }}
           >
             <form onSubmit={handleSubmit} className="glass-panel rounded-[2rem] p-8 md:p-10 space-y-6">

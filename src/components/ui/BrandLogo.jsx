@@ -195,8 +195,8 @@ export function BrandLogo({ size = 'default', showWordmark = true, asLink = fals
 export function BrandLogoFull({ className = '' }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
       className={`flex flex-col items-center gap-2 ${className}`}
     >

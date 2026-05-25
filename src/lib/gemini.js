@@ -1,4 +1,5 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const API_VERSION = 'v1'
 const MODEL = 'gemini-2.0-flash'
 
 let cachedQuestions = []
@@ -28,7 +29,7 @@ function popCached() {
 
 async function fetchFromGemini(prompt) {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+    `https://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL}:generateContent?key=${API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,15 +40,21 @@ async function fetchFromGemini(prompt) {
     }
   )
 
-  if (res.status === 429) {
-    const data = await res.json().catch(() => ({}))
-    const msg = data?.error?.message || 'API quota exceeded'
-    const retryMatch = msg.match(/retry in ([\d.]+)s/)
-    const retryAfter = retryMatch ? Math.ceil(parseFloat(retryMatch[1]) * 1000) : 5000
-    throw { retryable: true, retryAfter, message: msg }
-  }
+  if (!res.ok) {
+    let errorBody = ''
+    try { errorBody = await res.text() } catch {}
 
-  if (!res.ok) throw { retryable: false, message: `Gemini API error: ${res.status}` }
+    if (res.status === 429) {
+      let data
+      try { data = JSON.parse(errorBody) } catch { data = {} }
+      const msg = data?.error?.message || 'API quota exceeded'
+      const retryMatch = msg.match(/retry in ([\d.]+)s/)
+      const retryAfter = retryMatch ? Math.ceil(parseFloat(retryMatch[1]) * 1000) : 5000
+      throw { retryable: true, retryAfter, message: msg }
+    }
+
+    throw { retryable: false, message: `Gemini API error: ${res.status} - ${errorBody.slice(0, 500)}` }
+  }
 
   const data = await res.json()
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
@@ -61,12 +68,19 @@ async function fetchFromGemini(prompt) {
   return parsed
 }
 
+let rateLimitedUntil = 0
+
 export async function generateQuestion() {
   const cached = popCached()
   if (cached) return cached
 
   if (!API_KEY) {
     console.warn('[Gemini] No API key found. Using fallback questions.')
+    return fallbackQuestion()
+  }
+
+  if (Date.now() < rateLimitedUntil) {
+    console.warn(`[Gemini] API is rate-limited, skipping. Cooldown ends in ${Math.round((rateLimitedUntil - Date.now()) / 1000)}s.`)
     return fallbackQuestion()
   }
 
@@ -87,6 +101,11 @@ Rules:
     return q
   } catch (err) {
     console.error('[Gemini] API call failed:', err.message || err)
+    if (err.retryable) {
+      rateLimitedUntil = Date.now() + (err.retryAfter || 30000)
+    } else {
+      rateLimitedUntil = Date.now() + 30000
+    }
   }
 
   console.warn('[Gemini] Using fallback question.')

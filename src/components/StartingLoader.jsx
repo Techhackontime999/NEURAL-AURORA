@@ -329,10 +329,10 @@ function SuccessScreen() {
         </div>
       </motion.div>
       <AnimatePresence>
-        {showAccess && (
+          {showAccess && (
           <motion.h1
-            initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             className="text-5xl md:text-7xl font-display font-bold tracking-tighter text-center"
             style={{
               background: 'linear-gradient(135deg, #00f0ff, #b829dd, #f0c040)',
@@ -492,7 +492,7 @@ export default function StartingLoader({ onComplete }) {
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'radial-gradient(ellipse at center, #0a0a12 0%, #050508 100%)' }}
-      animate={phase === 'transitioning' ? { opacity: 0, scale: 1.05, filter: 'blur(6px)' } : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
+      animate={phase === 'transitioning' ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 }}
       transition={{ duration: 1.2, ease: 'easeInOut' }}
     >
       <Particles />

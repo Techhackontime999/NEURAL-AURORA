@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 
-export default function MagneticButton({ children, className = '', as: Tag = motion.a, ...props }) {
+export default function MagneticButton({ children, className = '', as: Tag = 'a', ...props }) {
   const ref = useRef(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -28,16 +28,17 @@ export default function MagneticButton({ children, className = '', as: Tag = mot
   }
 
   return (
-    <Tag
-      ref={ref}
-      onMouseMove={handleMouse}
-      onMouseLeave={handleLeave}
-      style={{ rotateX, rotateY, translateX, translateY }}
-      className={className}
-      whileTap={{ scale: 0.97 }}
-      {...props}
-    >
-      {children}
-    </Tag>
+    <motion.div whileTap={{ scale: 0.97 }} style={{ display: 'contents' }}>
+      <Tag
+        ref={ref}
+        onMouseMove={handleMouse}
+        onMouseLeave={handleLeave}
+        style={{ rotateX, rotateY, translateX, translateY }}
+        className={className}
+        {...props}
+      >
+        {children}
+      </Tag>
+    </motion.div>
   )
 }

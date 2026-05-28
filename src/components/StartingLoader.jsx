@@ -434,14 +434,14 @@ export default function StartingLoader({ onComplete }) {
     sessionStorage.setItem('neural-aurora-verified', 'true')
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
-    setTimeout(() => doneRef.current(), 3200)
+    setTimeout(() => doneRef.current(), 3500)
   }
 
   async function handleMCQCorrect() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
-    setTimeout(() => doneRef.current(), 3200)
+    setTimeout(() => doneRef.current(), 3500)
   }
 
   async function handleMCQWrong() {
@@ -478,7 +478,7 @@ export default function StartingLoader({ onComplete }) {
       sessionStorage.setItem('neural-aurora-verified', 'true')
       setPhase('success')
       setTimeout(() => setPhase('transitioning'), 2200)
-      setTimeout(() => doneRef.current(), 3200)
+      setTimeout(() => doneRef.current(), 3500)
     }
   }
 

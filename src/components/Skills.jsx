@@ -78,7 +78,7 @@ export default function Skills() {
                 <div className="space-y-5">
                   {catSkills.map((skill, i) => (
                     <SkillBar
-                      key={skill.name}
+                      key={`${cat.key}-${skill.name}-${i}`}
                       {...skill}
                       color={cat.color}
                       index={i}

@@ -102,6 +102,18 @@ function GoogleAdUnit() {
     if (adMounted.current) return
     adMounted.current = true
 
+    if (!document.querySelector('script[src*="adsbygoogle"]')) {
+      const s = document.createElement('script')
+      s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2699270619596438'
+      s.crossOrigin = 'anonymous'
+      s.async = true
+      s.onerror = () => {
+        console.warn('[Ad] AdSense script blocked or failed to load')
+        setLoaded(true)
+      }
+      document.head.appendChild(s)
+    }
+
     const tryPush = () => {
       try {
         (adsbygoogle = window.adsbygoogle || []).push({})

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from './supabase'
 import {
   getPersonalInfo,
   getSocialLinks,
@@ -38,12 +39,20 @@ async function fetchWithFallback(fetchFn, staticData) {
   return staticData
 }
 
+let channelId = 0
+
 export function usePersonalInfo() {
   const [data, setData] = useState(staticPersonalInfo)
   useEffect(() => {
-    if (supabaseConfigured) {
-      getPersonalInfo().then(setData).catch(() => {})
-    }
+    if (!supabaseConfigured) return
+    getPersonalInfo().then(setData).catch(() => {})
+    const id = ++channelId
+    const channel = supabase.channel(`personal-info-changes-${id}`)
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'personal_info' }, (payload) => {
+      if (payload.new) setData(payload.new)
+    })
+    channel.subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [])
   return data
 }

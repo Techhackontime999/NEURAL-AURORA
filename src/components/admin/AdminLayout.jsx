@@ -18,6 +18,7 @@ const navItems = [
   { path: '/admin/messages', label: 'Messages', icon: '✉' },
   { path: '/admin/ads', label: 'Dev Ads', icon: '⊡' },
   { path: '/admin/users', label: 'Users', icon: '◎' },
+  { path: '/admin/ai-automation', label: 'AI Automation', icon: '✦' },
   { path: '/admin/crm-config', label: 'CRM Config', icon: '⚙' },
 ]
 
@@ -48,7 +49,7 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -143,9 +144,9 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
-          className="sticky top-0 z-30 border-b backdrop-blur-lg"
+          className="shrink-0 border-b backdrop-blur-lg"
           style={{
             background: 'var(--glass-bg)',
             borderColor: 'var(--border-color)',
@@ -183,7 +184,7 @@ export default function AdminLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

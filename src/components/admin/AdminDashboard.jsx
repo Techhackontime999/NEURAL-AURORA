@@ -15,6 +15,7 @@ import AdminContactMessages from './AdminContactMessages'
 import AdminAds from './AdminAds'
 import AdminServices from './AdminServices'
 import AdminCrmConfig from './AdminCrmConfig'
+import AdminAiAutomation from './AdminAiAutomation'
 export default function AdminDashboard() {
   return (
     <AdminLayout>
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
         <Route path="messages" element={<AdminContactMessages />} />
         <Route path="ads" element={<AdminAds />} />
         <Route path="crm-config" element={<AdminCrmConfig />} />
+        <Route path="ai-automation" element={<AdminAiAutomation />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

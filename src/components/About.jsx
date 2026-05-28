@@ -11,7 +11,7 @@ const staggerItem = {
 }
 
 export default function About() {
-  const personalInfo = usePersonalInfo()
+  const { data: personalInfo } = usePersonalInfo()
   const socialLinks = useSocialLinks()
   return (
     <section id="about" className="relative z-10 py-32 md:py-40">

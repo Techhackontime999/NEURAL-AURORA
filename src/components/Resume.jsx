@@ -31,7 +31,7 @@ function ParallaxBlur({ className, color, scrollOffset }) {
 }
 
 export default function Resume() {
-  const personalInfo = usePersonalInfo()
+  const { data: personalInfo } = usePersonalInfo()
   return (
     <section id="resume" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

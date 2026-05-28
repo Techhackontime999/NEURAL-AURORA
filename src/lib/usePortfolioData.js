@@ -40,19 +40,19 @@ async function fetchWithFallback(fetchFn, staticData) {
 
 export function usePersonalInfo() {
   const [data, setData] = useState(staticPersonalInfo)
+  const [loaded, setLoaded] = useState(!supabaseConfigured)
   useEffect(() => {
     if (!supabaseConfigured) return
-    const refetch = () => getPersonalInfo().then(setData).catch(() => {})
+    const refetch = () =>
+      getPersonalInfo().then(setData).catch(() => {}).finally(() => setLoaded(true))
     refetch()
     window.addEventListener('focus', refetch)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refetch()
     })
-    return () => {
-      window.removeEventListener('focus', refetch)
-    }
+    return () => window.removeEventListener('focus', refetch)
   }, [])
-  return data
+  return { data, loaded }
 }
 
 export function useSocialLinks() {

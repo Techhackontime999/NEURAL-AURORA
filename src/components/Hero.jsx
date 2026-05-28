@@ -54,8 +54,9 @@ const itemVariants = {
 }
 
 export default function Hero() {
-  const personalInfo = usePersonalInfo()
+  const { data: personalInfo, loaded: personalInfoLoaded } = usePersonalInfo()
   const socialLinks = useSocialLinks()
+  if (!personalInfoLoaded) return null
   return (
     <section
       id="hero"

@@ -77,7 +77,8 @@ export default function Hero() {
               variants={itemVariants}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tighter leading-none"
             >
-              <span className="text-black/80 dark:text-white">{personalInfo.name}</span>
+              <span className="text-black/80 dark:text-white">{personalInfo.name.split(' ').slice(0, -1).join(' ')}</span>{' '}
+              <span className="text-gradient">{personalInfo.name.split(' ').pop()}</span>
             </motion.h1>
 
             <motion.p

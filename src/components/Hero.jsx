@@ -70,15 +70,14 @@ export default function Hero() {
         >
           <div className="space-y-8">
             <motion.div variants={itemVariants}>
-              <span className="eyebrow">Full-Stack Developer</span>
+              <span className="eyebrow">{personalInfo.title}</span>
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tighter leading-none"
             >
-              <span className="text-black/80 dark:text-white">Mr. Amit</span>{' '}
-              <span className="text-gradient">Kumar</span>
+              <span className="text-black/80 dark:text-white">{personalInfo.name}</span>
             </motion.h1>
 
             <motion.p

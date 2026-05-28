@@ -114,6 +114,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ENCRYPTION_KEY=your_64_hex_char_key    # AES-256-GCM — generate: openssl rand -hex 32
 META_APP_SECRET=your_meta_app_secret
+VITE_AI_API_BASE=https://openrouter.ai/api/v1   # optional — any OpenAI-compatible API
+VITE_AI_API_KEY=your_api_key                     # optional — Neural Aurora CRM Assistant for AI - Automation
+VITE_AI_MODEL=openai/gpt-4o-mini                 # optional — model name
 ```
 
 Recommended:
@@ -303,7 +306,7 @@ Both projects can share a single Supabase project with separate schemas or table
 
 ## License
 
-- **NEURAL AURORA** — MIT © 2026 Amit Kumar
-- **wacrm** — MIT © Arnas Donauskas
+- **NEURAL AURORA** — MIT © 2026 Amit Kumar - Techhackontime999
+- **wacrm** — MIT © 2026 Amit Kumar - Techhackontime999
 
 See individual project `LICENSE` files for details.

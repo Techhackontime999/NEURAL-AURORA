@@ -27,6 +27,7 @@ import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import BottomToTop from './components/ui/bottom-to-top'
+import { usePersonalInfo } from './lib/usePortfolioData'
 
 function SectionSeparator() {
   return (
@@ -37,6 +38,7 @@ function SectionSeparator() {
 }
 
 function HomePage() {
+  const { loaded } = usePersonalInfo()
   const mouse = useRef({ x: 0, y: 0 })
 
   const handleMouseMove = (e) => {
@@ -44,6 +46,10 @@ function HomePage() {
       x: (e.clientX / window.innerWidth) * 2 - 1,
       y: (e.clientY / window.innerHeight) * 2 - 1,
     }
+  }
+
+  if (!loaded) {
+    return <div className="relative min-h-[100dvh] overflow-hidden" />
   }
 
   return (

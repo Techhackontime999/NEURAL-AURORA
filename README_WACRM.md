@@ -29,6 +29,7 @@ clone or fork it to run your own CRM.
 - **No-code automations** — triggers on inbound messages, new
   contacts, keywords, or schedule; conditional branches, waits,
   tags, webhooks. Visual builder.
+- **AI Automation** (Beta) — natural-language CRM control via OpenAI-compatible LLMs, with automatic fallback to regex parsing.
 - **Real-time dashboard** — response times, daily volume, pipeline
   value, cross-module activity feed.
 - **Account management** — email, password, avatar, global sign-out.
@@ -87,6 +88,7 @@ Key pages:
 - **App** — Next.js 16 (App Router), React 19, TypeScript, Tailwind v4.
 - **Data** — Supabase (Postgres + Auth + Storage + RLS).
 - **WhatsApp** — Meta Cloud API (official WhatsApp Business API).
+- **AI** — OpenAI-compatible API (OpenAI, OpenRouter, Groq, Together, etc.) via function calling.
 
 ## Contributing
 

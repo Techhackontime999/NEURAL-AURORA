@@ -30,7 +30,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ## Features
 
-- **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), Gemini API-generated logic puzzles, and celebratory access-granted animation.
+- **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), AI-generated logic puzzles (OpenRouter/OpenAI-compatible API), and celebratory access-granted animation.
 - **Watch Dev Ads** — Alternative gateway method: watch Google AdSense ads or custom YouTube videos (landscape or Shorts format) to unlock the site. Ads are queued and played sequentially with animated transitions.
 - **Auto Traverse** — One-click full-site demo tour. A visual cursor automatically navigates through all pages (`/` → `/services` → `/more` → `/blog`) with configurable dwell time, spring-based smooth scrolling, and a glowing cyan cursor that follows the reading position.
 - **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
@@ -108,7 +108,9 @@ Copy `.env.example` to `.env` and fill in your Supabase project URL and anon key
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GEMINI_API_KEY=your_gemini_api_key
+VITE_AI_API_BASE=https://openrouter.ai/api/v1
+VITE_AI_API_KEY=your_api_key_here
+VITE_AI_MODEL=openai/gpt-4o-mini
 ```
 
 ### 5. Create your admin account
@@ -226,7 +228,7 @@ NEURAL-AURORA/
 │   │   ├── supabase.js      # Supabase client + all CRUD functions (incl. dev_ads)
 │   │   ├── crm-config.js    # localStorage utility for CRM URL
 │   │   ├── usePortfolioData.js # Dynamic data hooks with static fallback
-│   │   ├── gemini.js        # Gemini API client
+│   │   ├── gemini.js        # AI question generator (OpenRouter/OpenAI-compatible)
 │   │   └── utils.js         # Utility helpers
 │   ├── App.jsx              # Router setup + AuthProvider + AutoTraverseProvider
 │   ├── main.jsx             # Entry point
@@ -272,14 +274,16 @@ If Supabase is not configured, edit `src/data/portfolio.js` and add an object to
 
 Edit the CSS custom properties in `src/index.css` (the `:root` and `.dark` blocks) to adjust the light/dark theme palette. The Tailwind config in `tailwind.config.js` extends the `neural` color family.
 
-### Gemini API Setup (Dynamic Puzzles)
+### AI Gateway Setup (Dynamic Puzzles)
 
-The puzzle generator uses Google Gemini API. To enable it:
+The puzzle generator uses any OpenAI-compatible API (OpenRouter, OpenAI, Groq, Together, etc). To enable it:
 
-1. Get an API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+1. Get an API key from your preferred provider (e.g. [OpenRouter](https://openrouter.ai))
 2. Create a `.env` file in the project root:
    ```
-   VITE_GEMINI_API_KEY=your_key_here
+   VITE_AI_API_BASE=https://openrouter.ai/api/v1
+   VITE_AI_API_KEY=your_api_key_here
+   VITE_AI_MODEL=openai/gpt-4o-mini
    ```
 3. Restart the dev server
 
@@ -303,7 +307,9 @@ Add entries to the `skills` array in `src/data/portfolio.js`. Skills are grouped
 4. Add environment variables in Vercel dashboard:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_GEMINI_API_KEY` (optional)
+   - `VITE_AI_API_BASE` (optional)
+   - `VITE_AI_API_KEY` (optional)
+   - `VITE_AI_MODEL` (optional)
 5. Deploy — your site is live with automatic CI/CD on every push
 
 ### Option 2: Netlify
@@ -332,7 +338,9 @@ All three platforms require these in your deployment dashboard:
 |---|---|---|
 | `VITE_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Your Supabase anon/public key |
-| `VITE_GEMINI_API_KEY` | No | Gemini API key for dynamic puzzles |
+| `VITE_AI_API_BASE` | No | OpenAI-compatible API base URL (default: `https://api.openai.com/v1`) |
+| `VITE_AI_API_KEY` | No | API key for AI puzzle generation |
+| `VITE_AI_MODEL` | No | Model name (default: `gpt-4o-mini`) |
 
 **Never commit your `.env` file.** The `.env.example` file serves as a template.
 
@@ -343,7 +351,7 @@ All three platforms require these in your deployment dashboard:
 - **Framework:** React 18 with Vite 6
 - **Backend & Auth:** Supabase (PostgreSQL, Auth, Storage)
 - **CLI:** Supabase CLI (`supabase db push` for migrations)
-- **AI:** Google Gemini API (`gemini-2.0-flash`) — dynamic puzzle generation
+- **AI:** OpenAI-compatible API (OpenRouter, OpenAI, Groq, etc.) — dynamic puzzle generation
 - **Speech:** Web SpeechRecognition API — voice verification
 - **Ads:** Google AdSense (auto-served) + YouTube IFrame Player API
 - **3D Graphics:** React Three Fiber, Drei, Three.js
@@ -364,7 +372,7 @@ All three platforms require these in your deployment dashboard:
 - Auto Traverse cursor uses `useMotionValue` + `useSpring` (zero re-renders during 60fps animation)
 - Google AdSense script is loaded only when the ad-watching phase is entered (not on page load)
 - Tailwind CSS is purged in production builds
-- Gemini API calls use `temperature: 1.0` with random topic rotation for diverse questions
+- AI API calls use `temperature: 1.0` with random topic rotation for diverse questions
 - Admin routes are lazy-loadable and separate from the public site
 
 ---

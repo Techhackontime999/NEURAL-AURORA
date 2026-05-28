@@ -24,7 +24,7 @@ This repository contains two independent projects:
 
 ## NEURAL AURORA — Setup
 
-Immersive 3D portfolio with AI-powered gateway, auto-traverse site tour, and full admin dashboard.
+Immersive 3D portfolio with AI-powered gateway (OpenRouter/OpenAI-compatible puzzles), auto-traverse site tour, and full admin dashboard.
 
 ### Quick Start
 
@@ -43,7 +43,9 @@ Copy `.env.example` to `.env`:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GEMINI_API_KEY=your_gemini_api_key   # optional — AI puzzle generation
+VITE_AI_API_BASE=https://openrouter.ai/api/v1   # optional — any OpenAI-compatible API
+VITE_AI_API_KEY=your_api_key                     # optional — AI puzzle generation
+VITE_AI_MODEL=openai/gpt-4o-mini                 # optional — model name
 ```
 
 ### Supabase Setup
@@ -229,7 +231,7 @@ root/
 │   │   │   ├── admin/              ← Admin dashboard CRUD
 │   │   │   └── ui/                 ← Reusable UI components
 │   │   ├── context/                ← Auth, AutoTraverse
-│   │   ├── lib/                    ← Supabase client, Gemini, hooks
+│   │   ├── lib/                    ← Supabase client, AI gateway, hooks
 │   │   └── data/                   ← Static fallback data
 │   ├── scripts/
 │   ├── public/

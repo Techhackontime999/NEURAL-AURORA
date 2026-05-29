@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
-import { getActiveAdVideos, incrementAdViewCount } from '../lib/supabase'
+import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
@@ -714,18 +714,18 @@ function CaseStudyCards() {
   )
 }
 
-function BlogCards() {
+function BlogCards({ blogs }) {
   return (
     <div className="space-y-3 py-1">
-      {blogPosts.map((b, i) => (
-        <motion.div key={b.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+      {blogs.map((b, i) => (
+        <motion.div key={b.id || b.post_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
           <div className="text-white font-bold text-xs mb-1">{b.title}</div>
           <div className="text-white/40 text-[11px] leading-relaxed mb-1">{b.excerpt}</div>
           <div className="flex gap-3 text-[10px] font-mono">
-            <span className="text-neural-blue/50">{b.date}</span>
-            <span className="text-emerald-400/50">{b.readTime}</span>
+            <span className="text-neural-blue/50">{b.date || b.created_at?.slice(0, 10)}</span>
+            <span className="text-emerald-400/50">{b.readTime || b.read_time}</span>
           </div>
         </motion.div>
       ))}
@@ -733,7 +733,9 @@ function BlogCards() {
   )
 }
 
-const CMD_SYSTEM_PROMPT = `You are ${personalInfo.name} (@${personalInfo.handle}) himself, speaking through a terminal. A visitor is exploring your portfolio. Respond as YOU — a real person, not an AI assistant.
+function getSystemPrompt(blogs) {
+  const blogLines = blogs.map(b => `- ${b.title} (${b.date || b.created_at?.slice(0, 10)}, ${b.readTime || b.read_time})`).join('\n')
+  return `You are ${personalInfo.name} (@${personalInfo.handle}) himself, speaking through a terminal. A visitor is exploring your portfolio. Respond as YOU — a real person, not an AI assistant.
 
 PERSONALITY: Friendly, passionate about coding, slightly humble but proud of your work. Use first-person ("I built this", "I specialize in", "my favorite project"). Be conversational like you're chatting with a fellow developer.
 
@@ -762,7 +764,7 @@ SERVICES:
 ${services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
 
 BLOG POSTS:
-${blogPosts.map(b => `- ${b.title} (${b.date}, ${b.readTime})`).join('\n')}
+${blogLines}
 
 SOCIAL LINKS:
 ${socialLinks.map(s => `- ${s.label}: ${s.url}`).join('\n')}
@@ -779,6 +781,7 @@ RULES:
 6. Do NOT offer to create/update/delete anything
 7. Suggest the visitor type "help" if they seem stuck
 8. Be yourself — a coder who happens to be chatting through a terminal. Casual, not salesy.`
+}
 
 function CmdExplorer({ onBack }) {
   const [history, setHistory] = useState([{ id: genId(), type: 'welcome' }])
@@ -788,12 +791,21 @@ function CmdExplorer({ onBack }) {
   const [typingId, setTypingId] = useState(null)
   const [typingText, setTypingText] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
+  const [dynamicBlogs, setDynamicBlogs] = useState(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const typingTimer = useRef(null)
   const typingFull = useRef('')
   const typingEntry = useRef(null)
   const convRef = useRef([])
+
+  const blogData = dynamicBlogs || blogPosts
+
+  useEffect(() => {
+    getBlogPostsFromDB().then(d => {
+      if (d && d.length) setDynamicBlogs(d)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -871,7 +883,7 @@ function CmdExplorer({ onBack }) {
     try {
       convRef.current.push({ role: 'user', content: query })
       const res = await callAi([
-        { role: 'system', content: CMD_SYSTEM_PROMPT },
+        { role: 'system', content: getSystemPrompt(blogData) },
         ...convRef.current.slice(-6),
       ])
       const reply = res.choices?.[0]?.message?.content || 'No response generated.'
@@ -951,7 +963,7 @@ function CmdExplorer({ onBack }) {
         addJSX(<ServicesCards />)
         break
       case 'blog':
-        addJSX(<BlogCards />)
+        addJSX(<BlogCards blogs={blogData} />)
         break
       case 'social':
         addText(socialLinks.map(s => `  ${s.label.padEnd(18)} \u2192 ${s.url}`).join('\n'))
@@ -1001,6 +1013,9 @@ function CmdExplorer({ onBack }) {
       default: {
         const matched = matchIntent(lower)
         if (matched && matched !== cmd) {
+          convRef.current.push({ role: 'user', content: raw.trim() })
+          convRef.current.push({ role: 'assistant', content: `[Showing ${matched}]` })
+          if (convRef.current.length > 12) convRef.current = convRef.current.slice(-12)
           processCommand(matched)
         } else {
           processWithAI(raw.trim())

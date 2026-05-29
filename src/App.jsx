@@ -93,7 +93,7 @@ function ScrollProgress() {
 }
 
 function MoodMusicToggle() {
-  const { selectedMood, mood, musicPlaying, toggleMusic, stopMusic } = useMood()
+  const { selectedMood, mood, musicPlaying, musicLoading, musicMode, toggleMusic, stopMusic } = useMood()
   const [expanded, setExpanded] = useState(false)
   const hoverRef = useRef(null)
   const timeoutRef = useRef(null)
@@ -124,7 +124,15 @@ function MoodMusicToggle() {
           onClick={toggleMusic}
           className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 hover:bg-white/5 transition-colors"
         >
-          {musicPlaying ? (
+          {musicLoading ? (
+            <motion.svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="w-4 h-4"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </motion.svg>
+          ) : musicPlaying ? (
             <motion.svg viewBox="0 0 24 24" fill="none" stroke={mood?.textColor || '#00f0ff'} strokeWidth="1.5" className="w-4 h-4"
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
@@ -153,6 +161,11 @@ function MoodMusicToggle() {
             >
               <span className="text-sm">{mood?.emoji}</span>
               <span className="text-[10px] font-mono text-white/50 whitespace-nowrap">{mood?.label}</span>
+              {!musicLoading && musicMode && (
+                <span className={`text-[8px] font-mono ${musicMode === 'api' ? 'text-emerald-400/50' : 'text-amber-400/50'} uppercase tracking-wider whitespace-nowrap`}>
+                  {musicMode === 'api' ? 'Jamendo' : 'Synth'}
+                </span>
+              )}
               <button
                 onClick={stopMusic}
                 className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"

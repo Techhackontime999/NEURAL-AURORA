@@ -1,3 +1,5 @@
+import { searchTracksByMood, hasApiKey } from './musicApi'
+
 export const MOODS = [
   {
     id: 'energetic',
@@ -9,7 +11,8 @@ export const MOODS = [
     glowColor: 'rgba(249,115,22,0.15)',
     borderColor: 'border-orange-500/30',
     textColor: 'text-orange-400',
-    audio: {
+    jamendoTags: 'energetic rock electronic upbeat powerful',
+    synth: {
       masterVolume: 0.08,
       layers: [
         { type: 'sawtooth', freq: 220, volume: 0.04, detune: 5, filterFreq: 1200 },
@@ -29,7 +32,8 @@ export const MOODS = [
     glowColor: 'rgba(6,182,212,0.15)',
     borderColor: 'border-cyan-500/30',
     textColor: 'text-cyan-400',
-    audio: {
+    jamendoTags: 'calm ambient chill relaxation peaceful',
+    synth: {
       masterVolume: 0.07,
       layers: [
         { type: 'sine', freq: 110, volume: 0.04, modRate: 0.3, modDepth: 20 },
@@ -50,7 +54,8 @@ export const MOODS = [
     glowColor: 'rgba(250,204,21,0.15)',
     borderColor: 'border-yellow-500/30',
     textColor: 'text-yellow-400',
-    audio: {
+    jamendoTags: 'happy cheerful uplifting joyful fun',
+    synth: {
       masterVolume: 0.06,
       layers: [
         { type: 'triangle', freq: 262, volume: 0.03, modRate: 3, modDepth: 8 },
@@ -70,7 +75,8 @@ export const MOODS = [
     glowColor: 'rgba(147,51,234,0.15)',
     borderColor: 'border-purple-500/30',
     textColor: 'text-purple-400',
-    audio: {
+    jamendoTags: 'melancholic sad piano emotional dreamy',
+    synth: {
       masterVolume: 0.07,
       layers: [
         { type: 'sine', freq: 98, volume: 0.04, modRate: 0.2, modDepth: 25 },
@@ -91,7 +97,8 @@ export const MOODS = [
     glowColor: 'rgba(16,185,129,0.15)',
     borderColor: 'border-emerald-500/30',
     textColor: 'text-emerald-400',
-    audio: {
+    jamendoTags: 'ambient study focus concentration atmospheric',
+    synth: {
       masterVolume: 0.05,
       layers: [
         { type: 'sine', freq: 220, volume: 0.03, modRate: 0.8, modDepth: 5 },
@@ -110,7 +117,8 @@ export const MOODS = [
     glowColor: 'rgba(99,102,241,0.15)',
     borderColor: 'border-indigo-500/30',
     textColor: 'text-indigo-400',
-    audio: {
+    jamendoTags: 'dark ambient nocturnal mysterious cinematic',
+    synth: {
       masterVolume: 0.06,
       layers: [
         { type: 'sine', freq: 65, volume: 0.04, modRate: 0.15, modDepth: 30 },
@@ -123,7 +131,7 @@ export const MOODS = [
   },
 ]
 
-class MoodMusicEngine {
+class MoodSynthEngine {
   constructor() {
     this.ctx = null
     this.nodes = []
@@ -133,7 +141,6 @@ class MoodMusicEngine {
     this.noiseGain = null
     this.noiseFilter = null
     this.active = false
-    this.currentMoodId = null
     this.rhythmInterval = null
     this.rhythmGain = null
   }
@@ -147,24 +154,17 @@ class MoodMusicEngine {
     }
   }
 
-  findMood(id) {
-    return MOODS.find(m => m.id === id) || MOODS[0]
-  }
-
-  start(id) {
+  start(config) {
     this.ensureContext()
-    this.stop()
-    this.currentMoodId = id
+    this.stopNodes()
     this.active = true
 
-    const mood = this.findMood(id)
-    const config = mood.audio
     const masterGain = this.ctx.createGain()
     masterGain.gain.value = config.masterVolume
     masterGain.connect(this.ctx.destination)
     this.gains.push(masterGain)
 
-    config.layers.forEach((layer, i) => {
+    config.layers.forEach(layer => {
       const osc = this.ctx.createOscillator()
       const gain = this.ctx.createGain()
       const filter = this.ctx.createBiquadFilter()
@@ -176,7 +176,6 @@ class MoodMusicEngine {
       filter.type = 'lowpass'
       filter.frequency.value = layer.filterFreq || 2000
       filter.Q.value = 0.5
-
       gain.gain.value = layer.volume
 
       if (layer.modRate) {
@@ -244,12 +243,9 @@ class MoodMusicEngine {
     rhythmGain.connect(dest)
     this.rhythmGain = rhythmGain
 
-    let beat = 0
     const tick = () => {
       if (!this.active) return
-      const freq = this.currentMoodId === 'energetic'
-        ? 800 + Math.random() * 400
-        : 500 + Math.random() * 200
+      const freq = 600 + Math.random() * 300
       const osc = this.ctx.createOscillator()
       const g = this.ctx.createGain()
       osc.type = 'sine'
@@ -261,15 +257,12 @@ class MoodMusicEngine {
       osc.start(this.ctx.currentTime)
       osc.stop(this.ctx.currentTime + 0.08)
 
-      beat++
       this.rhythmInterval = setTimeout(tick, interval * 1000)
     }
     this.rhythmInterval = setTimeout(tick, 500)
   }
 
-  stop() {
-    this.active = false
-
+  stopNodes() {
     if (this.rhythmInterval) {
       clearTimeout(this.rhythmInterval)
       this.rhythmInterval = null
@@ -303,9 +296,121 @@ class MoodMusicEngine {
       this.noiseFilter = null
       this.noiseGain = null
     }
-
     this.rhythmGain = null
+  }
+
+  stop() {
+    this.active = false
+    this.stopNodes()
+  }
+
+  isActive() {
+    return this.active
+  }
+}
+
+class MoodMusicPlayer {
+  constructor() {
+    this.synth = new MoodSynthEngine()
+    this.audioElements = []
+    this.currentTrackIndex = 0
+    this.tracks = []
+    this.active = false
     this.currentMoodId = null
+    this.volume = 0.25
+    this.mode = null
+    this.currentAudio = null
+  }
+
+  async start(moodId) {
+    this.stop()
+    this.currentMoodId = moodId
+    this.active = true
+    this.tracks = []
+    this.currentTrackIndex = 0
+
+    if (hasApiKey()) {
+      try {
+        const tracks = await searchTracksByMood(moodId)
+        if (tracks && tracks.length > 0) {
+          this.tracks = tracks
+          this.mode = 'api'
+          if (this.tryPlayTrack(0)) return
+        }
+      } catch (e) {
+        console.warn('[MoodMusic] Jamendo API error:', e)
+      }
+    }
+
+    this.mode = 'synth'
+    const mood = MOODS.find(m => m.id === moodId) || MOODS[0]
+    this.synth.start(mood.synth)
+  }
+
+  tryPlayTrack(index) {
+    if (!this.active) return false
+
+    if (index >= this.tracks.length) {
+      return this.tryPlayTrack(0)
+    }
+
+    this.cleanupAudio()
+
+    const track = this.tracks[index]
+    if (!track || !track.audioUrl) {
+      return this.tryPlayTrack(index + 1)
+    }
+
+    this.currentTrackIndex = index
+
+    const audio = new Audio()
+    audio.crossOrigin = 'anonymous'
+    audio.src = track.audioUrl
+    audio.volume = this.volume
+    audio.preload = 'auto'
+
+    const playNext = () => {
+      this.tryPlayTrack(index + 1)
+    }
+
+    audio.addEventListener('ended', playNext, { once: true })
+    audio.addEventListener('error', playNext, { once: true })
+
+    const playPromise = audio.play()
+
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('[MoodMusic] Audio play error:', err.message)
+        playNext()
+      })
+    }
+
+    this.currentAudio = audio
+    this.audioElements.push(audio)
+    return true
+  }
+
+  cleanupAudio() {
+    if (this.currentAudio) {
+      this.currentAudio.pause()
+      this.currentAudio.src = ''
+    }
+    this.audioElements.forEach(a => {
+      a.pause()
+      a.src = ''
+    })
+    this.audioElements = []
+    this.currentAudio = null
+  }
+
+  stop() {
+    this.active = false
+    this.cleanupAudio()
+    this.tracks = []
+    this.currentTrackIndex = 0
+    this.mode = null
+    this.currentMoodId = null
+    this.synth.stop()
   }
 
   isActive() {
@@ -315,9 +420,20 @@ class MoodMusicEngine {
   getCurrentMoodId() {
     return this.currentMoodId
   }
+
+  getMode() {
+    return this.mode
+  }
+
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v))
+    if (this.currentAudio) {
+      this.currentAudio.volume = this.volume
+    }
+  }
 }
 
-export const moodEngine = new MoodMusicEngine()
+export const moodPlayer = new MoodMusicPlayer()
 
 export function getMoodById(id) {
   return MOODS.find(m => m.id === id) || MOODS[0]

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MOODS } from '../lib/moodMusic'
+import { hasApiKey } from '../lib/musicApi'
 
 function MoodParticles({ moodColors }) {
   const ref = useRef(null)
@@ -65,7 +66,7 @@ export default function MoodSwing({ onSelect }) {
   function handleSelect(id) {
     setSelected(id)
     setExiting(true)
-    setTimeout(() => onSelect(id), 600)
+    onSelect(id)
   }
 
   return (
@@ -206,6 +207,21 @@ export default function MoodSwing({ onSelect }) {
         >
           Pick your mood {'\u2192'} music sets the vibe for exploring
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="flex items-center gap-2"
+        >
+          <span className={`text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+            hasApiKey()
+              ? 'text-emerald-400/50 border-emerald-500/20 bg-emerald-500/5'
+              : 'text-amber-400/40 border-amber-500/20 bg-amber-500/5'
+          }`}>
+            {hasApiKey() ? 'Jamendo API' : 'Web Audio Synth'}
+          </span>
+        </motion.div>
       </motion.div>
     </div>
   )

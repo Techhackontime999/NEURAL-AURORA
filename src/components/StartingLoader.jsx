@@ -6,6 +6,7 @@ import { useMood } from '../context/MoodContext'
 import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
 import MoodSwing from './MoodSwing'
+import { getMoodById } from '../lib/moodMusic'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
 
@@ -1213,7 +1214,7 @@ export default function StartingLoader({ onComplete }) {
   const [currentAd, setCurrentAd] = useState(null)
   const [adLoading, setAdLoading] = useState(false)
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
-  const { selectMood, startMusic } = useMood()
+  const { selectedMood, selectMood, startMusic } = useMood()
   const firstName = 'Amit'
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
@@ -1239,12 +1240,13 @@ export default function StartingLoader({ onComplete }) {
 
   function handleMoodSelect(moodId) {
     selectMood(moodId)
-    setPhase('selecting')
+    startMusic(moodId)
+    setPhase('mood-set')
+    setTimeout(() => setPhase('selecting'), 1500)
   }
 
   function handleVoiceSuccess() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
-    startMusic()
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3500)
@@ -1252,7 +1254,6 @@ export default function StartingLoader({ onComplete }) {
 
   async function handleMCQCorrect() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
-    startMusic()
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3500)
@@ -1290,7 +1291,6 @@ export default function StartingLoader({ onComplete }) {
       setCurrentAd(next)
     } else {
       sessionStorage.setItem('neural-aurora-verified', 'true')
-      startMusic()
       setPhase('success')
       setTimeout(() => setPhase('transitioning'), 2200)
       setTimeout(() => doneRef.current(), 3500)
@@ -1464,6 +1464,66 @@ export default function StartingLoader({ onComplete }) {
             <MoodSwing onSelect={handleMoodSelect} />
           </motion.div>
         )}
+
+        {phase === 'mood-set' && (() => {
+          const m = selectedMood ? getMoodById(selectedMood) : null
+          return (
+            <motion.div key="mood-set" initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="relative z-10 flex flex-col items-center gap-5 px-4"
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 150, damping: 14 }}
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{
+                  background: m ? `radial-gradient(circle, ${m.glowColor}, transparent 70%)` : undefined,
+                  border: m ? `2px solid ${m.glowColor.replace('0.15', '0.4')}` : '2px solid rgba(0,240,255,0.3)',
+                }}
+              >
+                <span className="text-4xl">{m?.emoji || '\uD83C\uDFB5'}</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col items-center gap-1"
+              >
+                <motion.h2
+                  className="text-xl font-display font-bold text-white text-center"
+                  animate={{ scale: [1, 1.03, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Mood Set {'\u2713'}
+                </motion.h2>
+                <p className="text-sm text-white/50 font-mono">
+                  {m?.emoji} {m?.label || 'Mood selected'} {'\u2192'} music is playing
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-2"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  className="w-4 h-4 rounded-full border-2 border-transparent"
+                  style={{
+                    borderTopColor: m?.textColor?.replace('text-', '') || '#00f0ff',
+                    borderRightColor: 'transparent',
+                  }}
+                />
+                <span className="text-[10px] font-mono text-white/20">Now verify to explore</span>
+              </motion.div>
+            </motion.div>
+          )
+        })()}
 
         {phase === 'voice' && (
           <motion.div key="voice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

@@ -1,6 +1,51 @@
-import { useState, useEffect } from 'react'
-import { getPersonalInfo, updatePersonalInfo } from '../../lib/supabase'
+import { useState, useEffect, useRef } from 'react'
+import { getPersonalInfo, updatePersonalInfo, uploadImage } from '../../lib/supabase'
 import ImageUpload from '../ui/ImageUpload'
+
+function ResumeUpload({ value, onChange }) {
+  const inputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadImage(file, 'portfolio-images')
+      if (onChange) onChange(url)
+    } catch (err) {
+      alert('Upload failed: ' + err.message)
+    }
+    setUploading(false)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleFile} />
+      <div className="flex gap-2">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ background: 'var(--accent)' }}
+        >
+          {uploading ? 'Uploading...' : value ? 'Replace Resume' : 'Upload Resume'}
+        </button>
+        {value && (
+          <>
+            <a href={value} target="_blank" rel="noopener noreferrer"
+              className="rounded-lg px-3 py-1.5 text-xs"
+              style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}
+            >View</a>
+            <button type="button" onClick={() => onChange?.('')}
+              className="rounded-lg px-3 py-1.5 text-xs"
+              style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}
+            >Remove</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AdminPersonalInfo() {
   const [form, setForm] = useState(null)
@@ -33,7 +78,6 @@ export default function AdminPersonalInfo() {
     { key: 'handle', label: 'Handle' },
     { key: 'title', label: 'Title' },
     { key: 'tagline', label: 'Tagline' },
-    { key: 'resume', label: 'Resume URL' },
   ]
 
   return (
@@ -73,6 +117,16 @@ export default function AdminPersonalInfo() {
               />
             </div>
           ))}
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              Resume
+            </label>
+            <ResumeUpload
+              value={form.resume || ''}
+              onChange={(url) => setForm({ ...form, resume: url })}
+            />
+          </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

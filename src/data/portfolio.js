@@ -1,9 +1,9 @@
 export const personalInfo = {
-  name: 'Amit Kumar',
+  name: 'Mr. Amit Kumar',
   handle: 'Techhackontime999',
-  title: 'Full-Stack Developer & UI/UX Architect',
+  title: 'Full-Stack Developer',
   tagline: 'Crafting digital experiences where neural networks meet aurora light',
-  bio: 'A passionate developer who builds immersive digital experiences at the intersection of creative design and engineering. I architect systems that breathe, think, and respond in real-time.',
+  bio: 'A passionate developer who builds immersive digital experiences at the intersection of creative design and engineering.',
   avatar: '/images/profile.jpg',
   resume: '/resume.pdf',
 }

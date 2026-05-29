@@ -1373,7 +1373,7 @@ export default function StartingLoader({ onComplete }) {
                         <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Say "{firstName}"</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Voice recognition</p></div>
+                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Say "{firstName}"</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Voice recognition</p></div>
                   </div>
                 </button>
                 <button
@@ -1390,7 +1390,7 @@ export default function StartingLoader({ onComplete }) {
                         <path d="M2 17l10 5 10-5" strokeLinecap="round" /><path d="M2 12l10 5 10-5" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Solve Puzzle</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">One question</p></div>
+                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Solve Puzzle</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">One question</p></div>
                   </div>
                 </button>
                 <button
@@ -1413,10 +1413,10 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-[11px] sm:text-xs md:text-sm truncate leading-tight ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
+                      <p className={`text-[11px] sm:text-xs md:text-sm leading-tight ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
                         {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
                       </p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">
                         {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
                       </p>
                     </div>
@@ -1436,8 +1436,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Watch Dev Ads</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Video ads to unlock</p>
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Watch Dev Ads</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Video ads to unlock</p>
                     </div>
                   </div>
                 </button>
@@ -1452,8 +1452,8 @@ export default function StartingLoader({ onComplete }) {
                       <span className="text-[13px] sm:text-base md:text-lg">{'\uD83C\uDFB5'}</span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Mood Swing</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Set vibe & music</p>
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Mood Swing</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Set vibe & music</p>
                     </div>
                   </div>
                 </button>
@@ -1471,8 +1471,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Neural Aurora CMD</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Explore via terminal</p>
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Neural Aurora CMD</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Explore via terminal</p>
                     </div>
                   </div>
                 </button>

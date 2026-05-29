@@ -448,12 +448,12 @@ const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const INTENT_MAP = [
   { pattern: /\b(about|who|bio|introduce|yourself|tell)\b/i, cmd: 'about' },
   { pattern: /\b(skill|tech|technolog|stack|language|tool|expertise)\b/i, cmd: 'skills' },
-  { pattern: /\b(project|work|portfolio|build|made|create|github|repo)\b/i, cmd: 'projects' },
-  { pattern: /\b(education|edu|college|university|degree|school|study|academic)\b/i, cmd: 'education' },
-  { pattern: /\b(experience|job|work|career|profession|intern|employed|company)\b/i, cmd: 'experience' },
-  { pattern: /\b(service|offer|provide|consult|freelance|pricing|package)\b/i, cmd: 'services' },
+  { pattern: /\b(?:case.?stud|casestudy|case\s*study)\b/i, cmd: 'case-studies' },
+  { pattern: /\b(education|edu|college|university|degree|school|academic)\b/i, cmd: 'education' },
+  { pattern: /\b(experience|job|career|profession|intern|employed)\b/i, cmd: 'experience' },
+  { pattern: /\b(project|portfolio|build|made|create|github|repo)\b/i, cmd: 'projects' },
+  { pattern: /\b(service|offer|provide|freelance|pricing|package)\b/i, cmd: 'services' },
   { pattern: /\b(blog|post|article|write|content)\b/i, cmd: 'blog' },
-  { pattern: /\b(case.?stud|casestudy|case.study)\b/i, cmd: 'case-studies' },
   { pattern: /\b(social|link|connect|follow|twitter|github|linkedin|instagram|youtube)\b/i, cmd: 'social' },
   { pattern: /\b(contact|email|reach|message|hire|get.?in.?touch)\b/i, cmd: 'contact' },
   { pattern: /\b(resume|cv|download|hire|job)\b/i, cmd: 'resume' },
@@ -463,7 +463,7 @@ function matchIntent(text) {
   for (const { pattern, cmd } of INTENT_MAP) {
     if (pattern.test(text)) return cmd
   }
-  const greetings = /\b(hi|hello|hey|sup|howdy|namaste|good morning|good evening)\b/i
+  const greetings = /\b(hi+|hello|hey|sup|howdy|namaste|good morning|good evening)\b/i
   if (greetings.test(text)) return 'about'
   return null
 }
@@ -772,12 +772,13 @@ ${caseStudies.map(c => `- ${c.title}: ${c.description}`).join('\n')}
 
 RULES:
 1. Talk like a real person — use "I", "my", "me"
-2. Keep responses short and punchy (under 150 words)
-3. If asked something outside the portfolio, say "That's not in my portfolio, but ask me about my projects, skills, or experience!"
-4. Do NOT mention browsing the internet or researching
-5. Do NOT offer to create/update/delete anything
-6. Suggest the visitor type "help" if they seem stuck
-7. Be yourself — enthusiastic coder who loves what they do`
+2. Keep it SHORT — 2-3 sentences max, under 60 words. If listing, use bullet points.
+3. NEVER use emojis, emoticons, or exclamation marks — plain text only like a real terminal.
+4. If asked something outside the portfolio, say "That's not something I have in my portfolio — ask me about my projects, skills, or experience."
+5. Do NOT mention browsing the internet or researching
+6. Do NOT offer to create/update/delete anything
+7. Suggest the visitor type "help" if they seem stuck
+8. Be yourself — a coder who happens to be chatting through a terminal. Casual, not salesy.`
 
 function CmdExplorer({ onBack }) {
   const [history, setHistory] = useState([{ id: genId(), type: 'welcome' }])
@@ -792,6 +793,7 @@ function CmdExplorer({ onBack }) {
   const typingTimer = useRef(null)
   const typingFull = useRef('')
   const typingEntry = useRef(null)
+  const convRef = useRef([])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -867,11 +869,13 @@ function CmdExplorer({ onBack }) {
     setHistory(prev => [...prev, { id: loadingId, type: 'loading' }])
     setAiBusy(true)
     try {
+      convRef.current.push({ role: 'user', content: query })
       const res = await callAi([
         { role: 'system', content: CMD_SYSTEM_PROMPT },
-        { role: 'user', content: query },
+        ...convRef.current.slice(-6),
       ])
       const reply = res.choices?.[0]?.message?.content || 'No response generated.'
+      convRef.current.push({ role: 'assistant', content: reply.trim() })
       const textId = genId()
       setHistory(prev => prev.map(e => e.id === loadingId ? { id: textId, type: 'text', content: '' } : e))
       beginTyping(textId, reply.trim())
@@ -883,10 +887,20 @@ function CmdExplorer({ onBack }) {
     }
   }
 
+  const BUILT_IN = ['help','about','skills','projects','case-studies','cs','education','experience','services','blog','social','contact','resume','clear','exit']
+
   function processCommand(raw) {
-    if (aiBusy) return
     const trimmed = raw.trim()
     if (!trimmed) return
+
+    const lower = trimmed.toLowerCase()
+    const parts = lower.split(/\s+/)
+    const cmd = parts[0]
+
+    if (aiBusy && !BUILT_IN.includes(cmd)) {
+      addText('  Still typing... wait a moment.')
+      return
+    }
 
     cancelTyping()
 
@@ -897,10 +911,6 @@ function CmdExplorer({ onBack }) {
 
     addDivider()
     addCmd(raw)
-
-    const lower = trimmed.toLowerCase()
-    const parts = lower.split(/\s+/)
-    const cmd = parts[0]
 
     switch (cmd) {
       case 'help':

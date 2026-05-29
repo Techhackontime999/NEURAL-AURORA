@@ -1349,59 +1349,59 @@ export default function StartingLoader({ onComplete }) {
             >Prove your identity to access the system.</motion.p>
 
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-3"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 sm:gap-3 w-full max-w-4xl mx-auto"
             >
               <button
                 onClick={() => setPhase('voice')}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-blue/50 transition-all duration-300"
+                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-blue/50 transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-neural-blue/10 flex items-center justify-center group-hover:bg-neural-blue/20 transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-4 h-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neural-blue/10 flex items-center justify-center group-hover:bg-neural-blue/20 transition-colors shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                       <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
                       <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div><p className="text-white text-sm">Say "{firstName}"</p><p className="text-[10px] text-white/30 mt-0.5">Voice recognition</p></div>
+                  <div className="min-w-0"><p className="text-white text-xs sm:text-sm truncate">Say "{firstName}"</p><p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Voice recognition</p></div>
                 </div>
               </button>
               <button
                 onClick={async () => { await loadQuestion(); setPhase('mcq') }}
                 disabled={loadingQ}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-purple/50 transition-all duration-300 disabled:opacity-50"
+                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-purple/50 transition-all duration-300 disabled:opacity-50"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-4 h-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 transition-colors shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                       <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinecap="round" />
                       <path d="M2 17l10 5 10-5" strokeLinecap="round" /><path d="M2 12l10 5 10-5" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div><p className="text-white text-sm">Solve Puzzle</p><p className="text-[10px] text-white/30 mt-0.5">One question</p></div>
+                  <div className="min-w-0"><p className="text-white text-xs sm:text-sm truncate">Solve Puzzle</p><p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">One question</p></div>
                 </div>
               </button>
               <button
                 onClick={toggleAutoTraverse}
-                className={`group px-6 py-4 rounded-xl border transition-all duration-300 ${
+                className={`group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border transition-all duration-300 ${
                   autoTraverse
                     ? 'border-emerald-500/50 bg-emerald-500/10'
                     : 'border-white/10 bg-white/5 hover:border-neural-blue/50'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
                     autoTraverse ? 'bg-emerald-500/20' : 'bg-neural-blue/10 group-hover:bg-neural-blue/20'
                   }`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-4 h-4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                       <circle cx="12" cy="12" r="10" strokeLinecap="round" />
                       <polyline points="12 6 12 12 16 14" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div>
-                    <p className={`text-sm ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
+                  <div className="min-w-0">
+                    <p className={`text-xs sm:text-sm truncate ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
                       {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
                     </p>
-                    <p className="text-[10px] text-white/30 mt-0.5">
+                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">
                       {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
                     </p>
                   </div>
@@ -1410,48 +1410,48 @@ export default function StartingLoader({ onComplete }) {
               <button
                 onClick={handleWatchAds}
                 disabled={adLoading}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/50 transition-all duration-300 disabled:opacity-50"
+                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/50 transition-all duration-300 disabled:opacity-50"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-4 h-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
                   </div>
-                  <div>
-                    <p className="text-white text-sm">Watch Dev Ads</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Video ads to unlock</p>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs sm:text-sm truncate">Watch Dev Ads</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Video ads to unlock</p>
                   </div>
                 </div>
               </button>
               <button
                 onClick={() => setPhase('mood-swing')}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-pink-500/50 transition-all duration-300"
+                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-pink-500/50 transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors">
-                    <span className="text-lg">{'\uD83C\uDFB5'}</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors shrink-0">
+                    <span className="text-base sm:text-lg">{'\uD83C\uDFB5'}</span>
                   </div>
-                  <div>
-                    <p className="text-white text-sm">Mood Swing</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Set vibe & music</p>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs sm:text-sm truncate">Mood Swing</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Set vibe & music</p>
                   </div>
                 </div>
               </button>
               <button
                 onClick={() => setPhase('cmd')}
-                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-emerald-500/50 transition-all duration-300"
+                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-emerald-500/50 transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-4 h-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                       <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
                       <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div>
-                    <p className="text-white text-sm">Neural Aurora CMD</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Explore via terminal</p>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs sm:text-sm truncate">Neural Aurora CMD</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Explore via terminal</p>
                   </div>
                 </div>
               </button>

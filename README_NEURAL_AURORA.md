@@ -6,6 +6,13 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ---
 
+## What's New in v2.1.0
+
+| Feature | Description |
+|---------|-------------|
+| **Mood Swing** | Choose your vibe before entering — 6 moods (Energetic ⚡, Calm 🌊, Happy 😊, Melancholic 🌧️, Focused 🎯, Night Owl 🌙) with emoji cards and a swinging animation. Background music plays based on your selected mood. |
+| **Neural Aurora CMD** | Interactive AI-powered terminal within the gateway loader. Natural language intent matching for portfolio exploration — type "about", "skills", "projects", or ask questions conversationally. AI responds with full portfolio context via OpenRouter/OpenAI. |
+
 ## What's New in v2.0.0
 
 | Feature | Description |
@@ -30,6 +37,8 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ## Features
 
+- **Mood Swing** — Choose your vibe before entering from 6 moods (Energetic ⚡, Calm 🌊, Happy 😊, Melancholic 🌧️, Focused 🎯, Night Owl 🌙) with emoji cards and swing animations. Background music plays based on your selected mood via Jamendo API (or Web Audio synth fallback).
+- **Neural Aurora CMD** — Interactive AI-powered terminal inside the gateway loader. Visitors can explore the portfolio by typing natural language queries or commands (`about`, `skills`, `projects`, `blog`, `social`, etc.). AI intent matching converses with full portfolio context via OpenRouter/OpenAI, all inside a retro terminal UI with boot sequence, command history, and autocomplete.
 - **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), AI-generated logic puzzles (OpenRouter/OpenAI-compatible API), and celebratory access-granted animation.
 - **Watch Dev Ads** — Alternative gateway method: watch Google AdSense ads or custom YouTube videos (landscape or Shorts format) to unlock the site. Ads are queued and played sequentially with animated transitions.
 - **Auto Traverse** — One-click full-site demo tour. A visual cursor automatically navigates through all pages (`/` → `/services` → `/more` → `/blog`) with configurable dwell time, spring-based smooth scrolling, and a glowing cyan cursor that follows the reading position.
@@ -219,18 +228,22 @@ NEURAL-AURORA/
 │   │   │   └── AdVideoPlayer.jsx # Ad player (Google AdSense + YouTube Short/Video)
 │   │   ├── ReviewForm.jsx   # Public review submission form
 │   │   ├── ReviewsList.jsx  # Public approved reviews display
-│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, and ad verification
+│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, ad, and Mood Swing verification
+│   │   ├── MoodSwing.jsx    # Mood selection UI with emoji cards and swing animations
 │   │   └── ...              # Portfolio section components
 │   ├── context/
 │   │   ├── AuthContext.jsx  # Supabase Auth provider + role management
-│   │   └── AutoTraverseContext.jsx # Auto Traverse toggle state
+│   │   ├── AutoTraverseContext.jsx # Auto Traverse toggle state
+│   │   └── MoodContext.jsx  # Mood Swing state + Jamendo API music playback control
 │   ├── lib/
 │   │   ├── supabase.js      # Supabase client + all CRUD functions (incl. dev_ads)
 │   │   ├── crm-config.js    # localStorage utility for CRM URL
 │   │   ├── usePortfolioData.js # Dynamic data hooks with static fallback
 │   │   ├── gemini.js        # AI question generator (OpenRouter/OpenAI-compatible)
+│   │   ├── moodMusic.js     # Mood definitions + hybrid music player (Jamendo API / Web Audio synth)
+│   │   ├── musicApi.js      # Jamendo API client for mood-based background music search
 │   │   └── utils.js         # Utility helpers
-│   ├── App.jsx              # Router setup + AuthProvider + AutoTraverseProvider
+│   ├── App.jsx              # Router setup + AuthProvider + AutoTraverseProvider + MoodProvider
 │   ├── main.jsx             # Entry point
 │   └── index.css            # Tailwind + custom CSS
 ├── supabase/                # Supabase CLI configuration
@@ -384,6 +397,18 @@ MIT License — see [LICENSE](LICENSE).
 ---
 
 ## Changelog
+
+### v2.1.0
+
+**Added**
+- Mood Swing — mood selection with emoji cards, swing animations, and Jamendo API background music (Web Audio synth fallback)
+- Neural Aurora CMD — interactive AI-powered terminal with intent matching, command history, and full portfolio context via OpenRouter/OpenAI
+- MoodContext, MoodSwing component, moodMusic hybrid player, musicApi Jamendo client, MoodMusicToggle floating controller
+- `.env.example` entry for `VITE_JAMENDO_CLIENT_ID`
+
+**Changed**
+- StartingLoader extended with `cmd` and `mood-swing` phases
+- App.jsx wrapped with MoodProvider
 
 ### v2.0.0 (Neural Reverie Release)
 

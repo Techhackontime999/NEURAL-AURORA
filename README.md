@@ -24,7 +24,7 @@ This repository contains two independent projects:
 
 ## NEURAL AURORA — Setup
 
-Immersive 3D portfolio with AI-powered gateway (OpenRouter/OpenAI-compatible puzzles), auto-traverse site tour, and full admin dashboard.
+Immersive 3D portfolio with AI-powered gateway (OpenRouter/OpenAI-compatible puzzles), Neural Aurora CMD interactive terminal, Mood Swing vibe selector with Jamendo API background music, auto-traverse site tour, and full admin dashboard.
 
 ### Quick Start
 
@@ -46,6 +46,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_AI_API_BASE=https://openrouter.ai/api/v1   # optional — any OpenAI-compatible API
 VITE_AI_API_KEY=your_api_key                     # optional — AI puzzle generation
 VITE_AI_MODEL=openai/gpt-4o-mini                 # optional — model name
+VITE_JAMENDO_CLIENT_ID=your_jamendo_client_id    # optional — free Jamendo API key for mood-based background music (get at https://devportal.jamendo.com)
 ```
 
 ### Supabase Setup
@@ -233,8 +234,8 @@ root/
 │   │   ├── components/
 │   │   │   ├── admin/              ← Admin dashboard CRUD
 │   │   │   └── ui/                 ← Reusable UI components
-│   │   ├── context/                ← Auth, AutoTraverse
-│   │   ├── lib/                    ← Supabase client, AI gateway, hooks
+│   │   ├── context/                ← Auth, AutoTraverse, MoodContext
+│   │   ├── lib/                    ← Supabase client, AI gateway, moodMusic, musicApi, hooks
 │   │   └── data/                   ← Static fallback data
 │   ├── scripts/
 │   ├── public/

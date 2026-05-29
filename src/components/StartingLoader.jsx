@@ -1358,7 +1358,7 @@ export default function StartingLoader({ onComplete }) {
               >Prove your identity to access the system.</motion.p>
 
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 sm:gap-2.5 md:gap-3 w-full"
+                className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-2.5 md:gap-3 w-full"
               >
                 <button
                   onClick={() => setPhase('voice')}

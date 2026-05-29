@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { moodPlayer, getMoodById } from '../lib/moodMusic'
 
 const MoodContext = createContext(null)
@@ -9,13 +9,15 @@ export function MoodProvider({ children }) {
   const [musicLoading, setMusicLoading] = useState(false)
   const [musicMode, setMusicMode] = useState(null)
   const startedRef = useRef(false)
+  const moodIdRef = useRef(null)
 
   const selectMood = useCallback((moodId) => {
+    moodIdRef.current = moodId
     setSelectedMood(moodId)
   }, [])
 
   const startMusic = useCallback(async (moodId) => {
-    const id = moodId || selectedMood
+    const id = moodId || moodIdRef.current
     if (!id) return
     if (startedRef.current) {
       moodPlayer.stop()
@@ -32,7 +34,7 @@ export function MoodProvider({ children }) {
     } finally {
       setMusicLoading(false)
     }
-  }, [selectedMood])
+  }, [])
 
   const stopMusic = useCallback(() => {
     moodPlayer.stop()
@@ -44,10 +46,10 @@ export function MoodProvider({ children }) {
   const toggleMusic = useCallback(() => {
     if (musicPlaying) {
       stopMusic()
-    } else if (selectedMood) {
-      startMusic(selectedMood)
+    } else if (moodIdRef.current) {
+      startMusic(moodIdRef.current)
     }
-  }, [musicPlaying, selectedMood, startMusic, stopMusic])
+  }, [musicPlaying, startMusic, stopMusic])
 
   const setVolume = useCallback((v) => {
     moodPlayer.setVolume(v)
@@ -61,19 +63,21 @@ export function MoodProvider({ children }) {
 
   const mood = selectedMood ? getMoodById(selectedMood) : null
 
+  const value = useMemo(() => ({
+    selectedMood,
+    mood,
+    selectMood,
+    startMusic,
+    stopMusic,
+    toggleMusic,
+    setVolume,
+    musicPlaying,
+    musicLoading,
+    musicMode,
+  }), [selectedMood, mood, selectMood, startMusic, stopMusic, toggleMusic, setVolume, musicPlaying, musicLoading, musicMode])
+
   return (
-    <MoodContext.Provider value={{
-      selectedMood,
-      mood,
-      selectMood,
-      startMusic,
-      stopMusic,
-      toggleMusic,
-      setVolume,
-      musicPlaying,
-      musicLoading,
-      musicMode,
-    }}>
+    <MoodContext.Provider value={value}>
       {children}
     </MoodContext.Provider>
   )

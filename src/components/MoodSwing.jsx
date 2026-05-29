@@ -6,18 +6,19 @@ import { hasApiKey } from '../lib/musicApi'
 function MoodParticles({ moodColors }) {
   const ref = useRef(null)
   const animRef = useRef(null)
+  const skipRef = useRef(0)
 
   useEffect(() => {
     const c = ref.current
     if (!c || !moodColors) return
     const ctx = c.getContext('2d')
     let w, h
-    const pts = Array.from({ length: 40 }, () => ({
+    const pts = Array.from({ length: 20 }, () => ({
       x: Math.random() * innerWidth,
       y: Math.random() * innerHeight,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 2 + 0.5,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      r: Math.random() * 1.5 + 0.5,
     }))
     function resize() { w = c.width = innerWidth; h = c.height = innerHeight }
     resize()
@@ -25,24 +26,37 @@ function MoodParticles({ moodColors }) {
     addEventListener('resize', onResize)
 
     function draw() {
+      skipRef.current++
+      if (skipRef.current % 2 !== 0) {
+        animRef.current = requestAnimationFrame(draw)
+        return
+      }
       ctx.clearRect(0, 0, w, h)
-      pts.forEach(p => {
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i]
         p.x += p.vx; p.y += p.vy
         if (p.x < 0 || p.x > w) p.vx *= -1
         if (p.y < 0 || p.y > h) p.vy *= -1
+      }
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i]
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = moodColors; ctx.fill()
-      })
-      pts.forEach((a, i) => {
+        ctx.fillStyle = moodColors
+        ctx.fill()
+      }
+      for (let i = 0; i < pts.length; i++) {
         for (let j = i + 1; j < pts.length; j++) {
-          const b = pts[j], dx = a.x - b.x, dy = a.y - b.y, d = Math.sqrt(dx*dx+dy*dy)
-          if (d < 120) {
+          const a = pts[i], b = pts[j]
+          const dx = a.x - b.x, dy = a.y - b.y
+          if (dx > 120 || dy > 120) continue
+          const d = dx * dx + dy * dy
+          if (d < 14400) {
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y)
-            ctx.strokeStyle = moodColors.replace('0.15', `${(1-d/120)*0.08}`)
+            ctx.strokeStyle = moodColors.replace('0.15', `${(1 - Math.sqrt(d) / 120) * 0.06}`)
             ctx.stroke()
           }
         }
-      })
+      }
       animRef.current = requestAnimationFrame(draw)
     }
     draw()

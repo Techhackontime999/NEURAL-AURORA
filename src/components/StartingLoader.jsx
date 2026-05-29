@@ -1321,141 +1321,163 @@ export default function StartingLoader({ onComplete }) {
         )}
 
         {phase === 'selecting' && (
-          <motion.div key="select" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
-            className="relative z-10 flex flex-col items-center gap-6 px-4"
+          <motion.div key="select"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 w-full max-w-5xl mx-auto px-3 sm:px-6"
           >
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}>
-              <div className="w-20 h-20 rounded-full relative flex items-center justify-center">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 rounded-full border-2 border-transparent"
-                  style={{ borderTopColor: '#00f0ff', borderRightColor: '#b829dd', borderBottomColor: '#f0c040' }}
-                />
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neural-blue/20 to-neural-purple/20 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-6 h-6">
-                    <path d="M12 2a4 4 0 014 4c0 2-2 3-2 5h-4c0-2-2-3-2-5a4 4 0 014-4z" strokeLinecap="round" />
-                    <path d="M12 13v3" strokeLinecap="round" /><path d="M8 20h8" strokeLinecap="round" />
-                    <path d="M12 16a2 2 0 00-2 2h4a2 2 0 00-2-2z" strokeLinecap="round" />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-              className="text-xl font-display font-bold text-white text-center"
-            >Verification Required</motion.h2>
-
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-              className="text-xs text-white/30 font-mono text-center max-w-sm"
-            >Prove your identity to access the system.</motion.p>
-
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 sm:gap-3 w-full max-w-4xl mx-auto"
+            <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-6"
+              style={{ background: 'rgba(10,10,18,0.6)', backdropFilter: 'blur(24px)' }}
             >
-              <button
-                onClick={() => setPhase('voice')}
-                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-blue/50 transition-all duration-300"
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
               >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neural-blue/10 flex items-center justify-center group-hover:bg-neural-blue/20 transition-colors shrink-0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
-                      <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
-                      <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
+                <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full relative flex items-center justify-center">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 rounded-full border-2 border-transparent"
+                    style={{ borderTopColor: '#00f0ff', borderRightColor: '#b829dd', borderBottomColor: '#f0c040' }}
+                  />
+                  <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-gradient-to-br from-neural-blue/20 to-neural-purple/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-5 sm:w-6 h-5 sm:h-6">
+                      <path d="M12 2a4 4 0 014 4c0 2-2 3-2 5h-4c0-2-2-3-2-5a4 4 0 014-4z" strokeLinecap="round" />
+                      <path d="M12 13v3" strokeLinecap="round" /><path d="M8 20h8" strokeLinecap="round" />
+                      <path d="M12 16a2 2 0 00-2 2h4a2 2 0 00-2-2z" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="min-w-0"><p className="text-white text-xs sm:text-sm truncate">Say "{firstName}"</p><p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Voice recognition</p></div>
                 </div>
-              </button>
-              <button
-                onClick={async () => { await loadQuestion(); setPhase('mcq') }}
-                disabled={loadingQ}
-                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-neural-purple/50 transition-all duration-300 disabled:opacity-50"
+              </motion.div>
+
+              <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                className="text-lg sm:text-xl md:text-2xl font-display font-bold text-white text-center tracking-tight"
+              >Verification Required</motion.h2>
+
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                className="text-[10px] sm:text-xs text-white/30 font-mono text-center max-w-xs sm:max-w-sm"
+              >Prove your identity to access the system.</motion.p>
+
+              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 sm:gap-2.5 md:gap-3 w-full"
               >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 transition-colors shrink-0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinecap="round" />
-                      <path d="M2 17l10 5 10-5" strokeLinecap="round" /><path d="M2 12l10 5 10-5" strokeLinecap="round" />
-                    </svg>
+                <button
+                  onClick={() => setPhase('voice')}
+                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-neural-blue/40 hover:bg-white/[0.06] transition-all duration-300"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-neural-blue/10 flex items-center justify-center group-hover:bg-neural-blue/20 shrink-0 transition-colors duration-300"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
+                        <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Say "{firstName}"</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Voice recognition</p></div>
                   </div>
-                  <div className="min-w-0"><p className="text-white text-xs sm:text-sm truncate">Solve Puzzle</p><p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">One question</p></div>
-                </div>
-              </button>
-              <button
-                onClick={toggleAutoTraverse}
-                className={`group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border transition-all duration-300 ${
-                  autoTraverse
-                    ? 'border-emerald-500/50 bg-emerald-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-neural-blue/50'
-                }`}
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
-                    autoTraverse ? 'bg-emerald-500/20' : 'bg-neural-blue/10 group-hover:bg-neural-blue/20'
-                  }`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
-                      <circle cx="12" cy="12" r="10" strokeLinecap="round" />
-                      <polyline points="12 6 12 12 16 14" strokeLinecap="round" />
-                    </svg>
+                </button>
+                <button
+                  onClick={async () => { await loadQuestion(); setPhase('mcq') }}
+                  disabled={loadingQ}
+                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-neural-purple/40 hover:bg-white/[0.06] transition-all duration-300 disabled:opacity-50"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 shrink-0 transition-colors duration-300"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinecap="round" />
+                        <path d="M2 17l10 5 10-5" strokeLinecap="round" /><path d="M2 12l10 5 10-5" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Solve Puzzle</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">One question</p></div>
                   </div>
-                  <div className="min-w-0">
-                    <p className={`text-xs sm:text-sm truncate ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
-                      {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
-                    </p>
-                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">
-                      {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
-                    </p>
+                </button>
+                <button
+                  onClick={toggleAutoTraverse}
+                  className={`group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border transition-all duration-300 ${
+                    autoTraverse
+                      ? 'border-emerald-500/40 bg-emerald-500/10'
+                      : 'border-white/[0.06] bg-white/[0.03] hover:border-neural-blue/40 hover:bg-white/[0.06]'
+                  }`}
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                      autoTraverse ? 'bg-emerald-500/20' : 'bg-neural-blue/10 group-hover:bg-neural-blue/20'
+                    }`}
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                        <circle cx="12" cy="12" r="10" strokeLinecap="round" />
+                        <polyline points="12 6 12 12 16 14" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-[11px] sm:text-xs md:text-sm truncate leading-tight ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
+                        {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
+                      </p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">
+                        {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
-              <button
-                onClick={handleWatchAds}
-                disabled={adLoading}
-                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/50 transition-all duration-300 disabled:opacity-50"
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 transition-colors shrink-0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
+                </button>
+                <button
+                  onClick={handleWatchAds}
+                  disabled={adLoading}
+                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-amber-400/40 hover:bg-white/[0.06] transition-all duration-300 disabled:opacity-50"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 shrink-0 transition-colors duration-300"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Watch Dev Ads</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Video ads to unlock</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-white text-xs sm:text-sm truncate">Watch Dev Ads</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Video ads to unlock</p>
+                </button>
+                <button
+                  onClick={() => setPhase('mood-swing')}
+                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-pink-500/40 hover:bg-white/[0.06] transition-all duration-300"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 shrink-0 transition-colors duration-300"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <span className="text-[13px] sm:text-base md:text-lg">{'\uD83C\uDFB5'}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Mood Swing</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Set vibe & music</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-              <button
-                onClick={() => setPhase('mood-swing')}
-                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-pink-500/50 transition-all duration-300"
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors shrink-0">
-                    <span className="text-base sm:text-lg">{'\uD83C\uDFB5'}</span>
+                </button>
+                <button
+                  onClick={() => setPhase('cmd')}
+                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-emerald-500/40 hover:bg-white/[0.06] transition-all duration-300"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 shrink-0 transition-colors duration-300"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                        <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-[11px] sm:text-xs md:text-sm truncate leading-tight">Neural Aurora CMD</p>
+                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5 truncate">Explore via terminal</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-white text-xs sm:text-sm truncate">Mood Swing</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Set vibe & music</p>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => setPhase('cmd')}
-                className="group w-full px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 rounded-xl border border-white/10 bg-white/5 hover:border-emerald-500/50 transition-all duration-300"
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors shrink-0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
-                      <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
-                      <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-white text-xs sm:text-sm truncate">Neural Aurora CMD</p>
-                    <p className="text-[9px] sm:text-[10px] text-white/30 mt-0.5 truncate">Explore via terminal</p>
-                  </div>
-                </div>
-              </button>
-            </motion.div>
+                </button>
+              </motion.div>
+            </div>
           </motion.div>
         )}
 

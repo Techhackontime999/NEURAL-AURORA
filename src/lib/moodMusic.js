@@ -143,6 +143,9 @@ class MoodSynthEngine {
     this.active = false
     this.rhythmInterval = null
     this.rhythmGain = null
+    this.noiseBuffer = null
+    this.rhythmOscPool = []
+    this.rhythmPoolIndex = 0
   }
 
   ensureContext() {
@@ -209,15 +212,18 @@ class MoodSynthEngine {
   }
 
   startNoise(volume, filterFreq, dest) {
-    const bufferSize = this.ctx.sampleRate * 2
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate)
-    const data = buffer.getChannelData(0)
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1
+    if (!this.noiseBuffer) {
+      const bufferSize = this.ctx.sampleRate * 2
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1
+      }
+      this.noiseBuffer = buffer
     }
 
     this.noiseNode = this.ctx.createBufferSource()
-    this.noiseNode.buffer = buffer
+    this.noiseNode.buffer = this.noiseBuffer
     this.noiseNode.loop = true
 
     this.noiseFilter = this.ctx.createBiquadFilter()
@@ -243,19 +249,39 @@ class MoodSynthEngine {
     rhythmGain.connect(dest)
     this.rhythmGain = rhythmGain
 
+    this.rhythmOscPool = []
+    this.rhythmPoolIndex = 0
+
     const tick = () => {
       if (!this.active) return
+      const now = this.ctx.currentTime
       const freq = 600 + Math.random() * 300
-      const osc = this.ctx.createOscillator()
-      const g = this.ctx.createGain()
+
+      let osc, g
+      if (this.rhythmPoolIndex < this.rhythmOscPool.length) {
+        const pooled = this.rhythmOscPool[this.rhythmPoolIndex]
+        osc = pooled.osc
+        g = pooled.gain
+        try { osc.disconnect() } catch {}
+        try { g.disconnect() } catch {}
+        osc = this.ctx.createOscillator()
+        g = this.ctx.createGain()
+        this.rhythmOscPool[this.rhythmPoolIndex] = { osc, gain: g }
+      } else {
+        osc = this.ctx.createOscillator()
+        g = this.ctx.createGain()
+        this.rhythmOscPool.push({ osc, gain: g })
+      }
+      this.rhythmPoolIndex = (this.rhythmPoolIndex + 1) % 8
+
       osc.type = 'sine'
       osc.frequency.value = freq
-      g.gain.setValueAtTime(0.03, this.ctx.currentTime)
-      g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08)
+      g.gain.setValueAtTime(0.03, now)
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
       osc.connect(g)
       g.connect(rhythmGain)
-      osc.start(this.ctx.currentTime)
-      osc.stop(this.ctx.currentTime + 0.08)
+      osc.start(now)
+      osc.stop(now + 0.04)
 
       this.rhythmInterval = setTimeout(tick, interval * 1000)
     }
@@ -296,6 +322,13 @@ class MoodSynthEngine {
       this.noiseFilter = null
       this.noiseGain = null
     }
+
+    this.rhythmOscPool.forEach(({ osc, gain }) => {
+      try { osc.disconnect() } catch {}
+      try { gain.disconnect() } catch {}
+    })
+    this.rhythmOscPool = []
+    this.rhythmPoolIndex = 0
     this.rhythmGain = null
   }
 
@@ -312,14 +345,13 @@ class MoodSynthEngine {
 class MoodMusicPlayer {
   constructor() {
     this.synth = new MoodSynthEngine()
-    this.audioElements = []
-    this.currentTrackIndex = 0
-    this.tracks = []
     this.active = false
     this.currentMoodId = null
     this.volume = 0.25
     this.mode = null
     this.currentAudio = null
+    this.tracks = []
+    this.currentTrackIndex = 0
   }
 
   async start(moodId) {
@@ -354,7 +386,7 @@ class MoodMusicPlayer {
       return this.tryPlayTrack(0)
     }
 
-    this.cleanupAudio()
+    this.destroyAudio()
 
     const track = this.tracks[index]
     if (!track || !track.audioUrl) {
@@ -367,9 +399,11 @@ class MoodMusicPlayer {
     audio.crossOrigin = 'anonymous'
     audio.src = track.audioUrl
     audio.volume = this.volume
-    audio.preload = 'auto'
+    audio.preload = 'none'
 
     const playNext = () => {
+      if (!this.active) return
+      this.destroyAudio()
       this.tryPlayTrack(index + 1)
     }
 
@@ -377,35 +411,32 @@ class MoodMusicPlayer {
     audio.addEventListener('error', playNext, { once: true })
 
     const playPromise = audio.play()
-
     if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn('[MoodMusic] Audio play error:', err.message)
+      playPromise.catch(() => {
+        if (!this.active) return
+        this.destroyAudio()
         playNext()
       })
     }
 
     this.currentAudio = audio
-    this.audioElements.push(audio)
     return true
   }
 
-  cleanupAudio() {
+  destroyAudio() {
     if (this.currentAudio) {
-      this.currentAudio.pause()
-      this.currentAudio.src = ''
+      try {
+        this.currentAudio.pause()
+        this.currentAudio.removeAttribute('src')
+        this.currentAudio.load()
+      } catch {}
+      this.currentAudio = null
     }
-    this.audioElements.forEach(a => {
-      a.pause()
-      a.src = ''
-    })
-    this.audioElements = []
-    this.currentAudio = null
   }
 
   stop() {
     this.active = false
-    this.cleanupAudio()
+    this.destroyAudio()
     this.tracks = []
     this.currentTrackIndex = 0
     this.mode = null

@@ -4,7 +4,8 @@ import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { getActiveAdVideos, incrementAdViewCount } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
-import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts } from '../data/portfolio'
+import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
+import { callAi } from '../lib/ai/provider'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -704,6 +705,51 @@ function BlogCards() {
   )
 }
 
+const CMD_SYSTEM_PROMPT = `You are Neural Aurora CMD, an AI terminal assistant for the portfolio of ${personalInfo.name} (@${personalInfo.handle}).
+
+PORTFOLIO DATA:
+---
+Name: ${personalInfo.name}
+Handle: ${personalInfo.handle}
+Title: ${personalInfo.title}
+Tagline: ${personalInfo.tagline}
+Bio: ${personalInfo.bio}
+Resume: ${personalInfo.resume}
+
+SKILLS:
+${skills.map(s => `- ${s.name} (${s.level}%) — ${s.category}`).join('\n')}
+
+PROJECTS:
+${projects.map(p => `- ${p.title}: ${p.description} [${p.technologies.join(', ')}]${p.github ? ` (${p.github})` : ''}`).join('\n')}
+
+EDUCATION:
+${education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')}
+
+EXPERIENCE:
+${experience.map(e => `- ${e.role} @ ${e.company} (${e.year})`).join('\n')}
+
+SERVICES:
+${services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
+
+BLOG POSTS:
+${blogPosts.map(b => `- ${b.title} (${b.date}, ${b.readTime})`).join('\n')}
+
+SOCIAL LINKS:
+${socialLinks.map(s => `- ${s.label}: ${s.url}`).join('\n')}
+
+CASE STUDIES:
+${caseStudies.map(c => `- ${c.title}: ${c.description}`).join('\n')}
+
+RULES:
+1. Answer questions about the portfolio naturally and conversationally
+2. Keep responses concise (under 200 words)
+3. Use bullet points, bold text, and clear formatting
+4. If asked something not in the portfolio, say "I can only answer questions about this portfolio."
+5. Do NOT mention browsing the internet or researching
+6. Do NOT offer to create/update/delete anything — this is read-only
+7. Suggest the user type "help" to see available commands
+8. Be friendly and enthusiastic about the portfolio`
+
 function CmdExplorer({ onBack }) {
   const [history, setHistory] = useState([{ id: genId(), type: 'welcome' }])
   const [input, setInput] = useState('')
@@ -711,6 +757,7 @@ function CmdExplorer({ onBack }) {
   const [cmdHistory, setCmdHistory] = useState([])
   const [typingId, setTypingId] = useState(null)
   const [typingText, setTypingText] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const typingTimer = useRef(null)
@@ -786,8 +833,29 @@ function CmdExplorer({ onBack }) {
     setHistory(prev => [...prev, { id: genId(), type: 'jsx', content: jsx }])
   }
 
+  async function processWithAI(query) {
+    const loadingId = genId()
+    setHistory(prev => [...prev, { id: loadingId, type: 'loading' }])
+    setAiBusy(true)
+    try {
+      const res = await callAi([
+        { role: 'system', content: CMD_SYSTEM_PROMPT },
+        { role: 'user', content: query },
+      ])
+      const reply = res.choices?.[0]?.message?.content || 'No response generated.'
+      setHistory(prev => prev.map(e => e.id === loadingId ? { id: genId(), type: 'text', content: '' } : e))
+      beginTyping(genId(), reply.trim())
+    } catch {
+      setHistory(prev => prev.filter(e => e.id !== loadingId))
+      addText('  AI unavailable. Try a simple command like help, about, skills, or projects.')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
   function processCommand(raw) {
-    const trimmed = raw.trim().toLowerCase()
+    if (aiBusy) return
+    const trimmed = raw.trim()
     if (!trimmed) return
 
     cancelTyping()
@@ -800,7 +868,8 @@ function CmdExplorer({ onBack }) {
     addDivider()
     addCmd(raw)
 
-    const parts = trimmed.split(/\s+/)
+    const lower = trimmed.toLowerCase()
+    const parts = lower.split(/\s+/)
     const cmd = parts[0]
 
     switch (cmd) {
@@ -886,11 +955,11 @@ function CmdExplorer({ onBack }) {
         onBack()
         break
       default: {
-        const matched = matchIntent(trimmed)
+        const matched = matchIntent(lower)
         if (matched && matched !== cmd) {
           processCommand(matched)
         } else {
-          addText(`  Unknown command: '${cmd}'. Type 'help' for available commands.`)
+          processWithAI(raw.trim())
         }
         break
       }
@@ -986,6 +1055,17 @@ function CmdExplorer({ onBack }) {
                   </div>
                 )
               }
+              if (entry.type === 'loading') {
+                return (
+                  <div key={entry.id} className="ml-1 pl-2 border-l border-white/[0.03] flex items-center gap-2 py-2">
+                    <svg className="h-3 w-3 animate-spin text-neural-blue" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-white/30 text-[11px] font-mono">AI processing...</span>
+                  </div>
+                )
+              }
               if (entry.type === 'jsx') {
                 return <div key={entry.id} className="ml-1">{entry.content}</div>
               }
@@ -1013,8 +1093,9 @@ function CmdExplorer({ onBack }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-xs font-mono text-white/90 outline-none placeholder-white/15 tracking-wide"
-            placeholder="Type a command..."
+            className="flex-1 bg-transparent text-xs font-mono text-white/90 outline-none placeholder-white/15 tracking-wide disabled:cursor-not-allowed disabled:opacity-30"
+            placeholder={aiBusy ? 'AI processing...' : 'Type a command or ask anything...'}
+            disabled={aiBusy}
             autoFocus
             spellCheck={false}
             autoComplete="off"

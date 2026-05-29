@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { useMood } from '../context/MoodContext'
-import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB } from '../lib/supabase'
+import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
 import MoodSwing from './MoodSwing'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
@@ -1252,6 +1252,7 @@ export default function StartingLoader({ onComplete }) {
 
   async function handleMCQCorrect() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
+    startMusic()
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3500)
@@ -1289,6 +1290,7 @@ export default function StartingLoader({ onComplete }) {
       setCurrentAd(next)
     } else {
       sessionStorage.setItem('neural-aurora-verified', 'true')
+      startMusic()
       setPhase('success')
       setTimeout(() => setPhase('transitioning'), 2200)
       setTimeout(() => doneRef.current(), 3500)
@@ -1457,6 +1459,12 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'mood-swing' && (
+          <motion.div key="mood-swing" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
+            <MoodSwing onSelect={handleMoodSelect} />
+          </motion.div>
+        )}
+
         {phase === 'voice' && (
           <motion.div key="voice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <VoiceChallenge onSuccess={handleVoiceSuccess} name={firstName} />
@@ -1517,7 +1525,7 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }

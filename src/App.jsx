@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
+import { MoodProvider } from './context/MoodContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
@@ -28,6 +29,7 @@ import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import BottomToTop from './components/ui/bottom-to-top'
 import { usePersonalInfo } from './lib/usePortfolioData'
+import { useMood } from './context/MoodContext'
 
 function SectionSeparator() {
   return (
@@ -90,6 +92,83 @@ function ScrollProgress() {
   )
 }
 
+function MoodMusicToggle() {
+  const { selectedMood, mood, musicPlaying, toggleMusic, stopMusic } = useMood()
+  const [expanded, setExpanded] = useState(false)
+  const hoverRef = useRef(null)
+  const timeoutRef = useRef(null)
+
+  if (!selectedMood) return null
+
+  return (
+    <motion.div
+      initial={{ x: 100, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 100, opacity: 0 }}
+      className="fixed bottom-24 right-4 z-[100]"
+      ref={hoverRef}
+      onMouseEnter={() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        setExpanded(true)
+      }}
+      onMouseLeave={() => {
+        timeoutRef.current = setTimeout(() => setExpanded(false), 1500)
+      }}
+    >
+      <motion.div
+        animate={{ width: expanded ? 'auto' : 44 }}
+        className="flex items-center gap-2 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 overflow-hidden"
+        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+      >
+        <button
+          onClick={toggleMusic}
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 hover:bg-white/5 transition-colors"
+        >
+          {musicPlaying ? (
+            <motion.svg viewBox="0 0 24 24" fill="none" stroke={mood?.textColor || '#00f0ff'} strokeWidth="1.5" className="w-4 h-4"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <path d="M9 18V5l12-2v13" strokeLinecap="round" />
+              <circle cx="6" cy="18" r="3" strokeLinecap="round" />
+              <circle cx="18" cy="16" r="3" strokeLinecap="round" />
+            </motion.svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="w-4 h-4 opacity-50">
+              <path d="M9 18V5l12-2v13" strokeLinecap="round" />
+              <circle cx="6" cy="18" r="3" strokeLinecap="round" />
+              <circle cx="18" cy="16" r="3" strokeLinecap="round" />
+              <line x1="1" y1="1" x2="23" y2="23" strokeLinecap="round" />
+            </svg>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              className="flex items-center gap-2 overflow-hidden pr-3"
+            >
+              <span className="text-sm">{mood?.emoji}</span>
+              <span className="text-[10px] font-mono text-white/50 whitespace-nowrap">{mood?.label}</span>
+              <button
+                onClick={stopMusic}
+                className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="w-3 h-3 opacity-40">
+                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 function AppContent() {
   const location = useLocation()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin')
@@ -116,6 +195,7 @@ function AppContent() {
       <ScrollProgress />
       <AutoTraverseEffect />
       <BottomToTop />
+      {loaderDone && <MoodMusicToggle />}
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
@@ -153,7 +233,9 @@ export default function App() {
   return (
     <AuthProvider>
       <AutoTraverseProvider>
-        <AppContent />
+        <MoodProvider>
+          <AppContent />
+        </MoodProvider>
       </AutoTraverseProvider>
     </AuthProvider>
   )

@@ -403,21 +403,27 @@ function Confetti() {
 }
 
 const CMD_HELP_TEXT = `Available Commands:
-  about     \u2192 Who I am
-  skills    \u2192 Technologies I work with
-  projects  \u2192 Featured projects
-  education \u2192 Academic background
-  experience \u2192 Professional experience
-  services  \u2192 What I offer
-  blog      \u2192 Latest blog posts
-  social    \u2192 Social links
-  contact   \u2192 Get in touch
-  resume    \u2192 Download my resume
-  clear     \u2192 Clear terminal
-  exit      \u2192 Return to verification`
+  about       \u2192 Who I am
+  skills      \u2192 Technologies I work with
+  projects    \u2192 Featured projects
+  case-studies\u2192 Case studies
+  education   \u2192 Academic background
+  experience  \u2192 Professional experience
+  services    \u2192 What I offer
+  blog        \u2192 Latest blog posts
+  social      \u2192 Social links
+  contact     \u2192 Get in touch
+  resume      \u2192 Download my resume
+  clear       \u2192 Clear terminal
+  exit        \u2192 Return to verification`
 
-const CMD_WELCOME = `
-    \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+const CMD_WELCOME_MOBILE =
+`  NEURAL AURORA CMD
+  Interactive Portfolio Terminal
+  Type 'help' to explore`
+
+const CMD_WELCOME_DESKTOP =
+`    \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
     \u2502  ███╗   ██╗███████╗██╗   ██╗██████╗  █████╗ ██╗        \u2502
     \u2502  ████╗  ██║██╔════╝██║   ██║██╔══██╗██╔══██╗██║        \u2502
     \u2502  ██╔██╗ ██║█████╗  ██║   ██║██████╔╝███████║██║        \u2502
@@ -447,6 +453,7 @@ const INTENT_MAP = [
   { pattern: /\b(experience|job|work|career|profession|intern|employed|company)\b/i, cmd: 'experience' },
   { pattern: /\b(service|offer|provide|consult|freelance|pricing|package)\b/i, cmd: 'services' },
   { pattern: /\b(blog|post|article|write|content)\b/i, cmd: 'blog' },
+  { pattern: /\b(case.?stud|casestudy|case.study)\b/i, cmd: 'case-studies' },
   { pattern: /\b(social|link|connect|follow|twitter|github|linkedin|instagram|youtube)\b/i, cmd: 'social' },
   { pattern: /\b(contact|email|reach|message|hire|get.?in.?touch)\b/i, cmd: 'contact' },
   { pattern: /\b(resume|cv|download|hire|job)\b/i, cmd: 'resume' },
@@ -686,6 +693,27 @@ function ServicesCards() {
   )
 }
 
+function CaseStudyCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {caseStudies.map((c, i) => (
+        <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+        >
+          <div className="text-white font-bold text-xs mb-1">{c.title}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed mb-1">{c.description}</div>
+          <div className="flex flex-wrap gap-1.5 mb-1">
+            {c.tech.map(t => (
+              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
+            ))}
+          </div>
+          <div className="text-emerald-400/60 text-[10px] font-mono">{c.outcome}</div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 function BlogCards() {
   return (
     <div className="space-y-3 py-1">
@@ -705,9 +733,11 @@ function BlogCards() {
   )
 }
 
-const CMD_SYSTEM_PROMPT = `You are Neural Aurora CMD, an AI terminal assistant for the portfolio of ${personalInfo.name} (@${personalInfo.handle}).
+const CMD_SYSTEM_PROMPT = `You are ${personalInfo.name} (@${personalInfo.handle}) himself, speaking through a terminal. A visitor is exploring your portfolio. Respond as YOU — a real person, not an AI assistant.
 
-PORTFOLIO DATA:
+PERSONALITY: Friendly, passionate about coding, slightly humble but proud of your work. Use first-person ("I built this", "I specialize in", "my favorite project"). Be conversational like you're chatting with a fellow developer.
+
+YOUR PORTFOLIO DATA (this is YOU):
 ---
 Name: ${personalInfo.name}
 Handle: ${personalInfo.handle}
@@ -741,14 +771,13 @@ CASE STUDIES:
 ${caseStudies.map(c => `- ${c.title}: ${c.description}`).join('\n')}
 
 RULES:
-1. Answer questions about the portfolio naturally and conversationally
-2. Keep responses concise (under 200 words)
-3. Use bullet points, bold text, and clear formatting
-4. If asked something not in the portfolio, say "I can only answer questions about this portfolio."
-5. Do NOT mention browsing the internet or researching
-6. Do NOT offer to create/update/delete anything — this is read-only
-7. Suggest the user type "help" to see available commands
-8. Be friendly and enthusiastic about the portfolio`
+1. Talk like a real person — use "I", "my", "me"
+2. Keep responses short and punchy (under 150 words)
+3. If asked something outside the portfolio, say "That's not in my portfolio, but ask me about my projects, skills, or experience!"
+4. Do NOT mention browsing the internet or researching
+5. Do NOT offer to create/update/delete anything
+6. Suggest the visitor type "help" if they seem stuck
+7. Be yourself — enthusiastic coder who loves what they do`
 
 function CmdExplorer({ onBack }) {
   const [history, setHistory] = useState([{ id: genId(), type: 'welcome' }])
@@ -843,8 +872,9 @@ function CmdExplorer({ onBack }) {
         { role: 'user', content: query },
       ])
       const reply = res.choices?.[0]?.message?.content || 'No response generated.'
-      setHistory(prev => prev.map(e => e.id === loadingId ? { id: genId(), type: 'text', content: '' } : e))
-      beginTyping(genId(), reply.trim())
+      const textId = genId()
+      setHistory(prev => prev.map(e => e.id === loadingId ? { id: textId, type: 'text', content: '' } : e))
+      beginTyping(textId, reply.trim())
     } catch {
       setHistory(prev => prev.filter(e => e.id !== loadingId))
       addText('  AI unavailable. Try a simple command like help, about, skills, or projects.')
@@ -902,6 +932,10 @@ function CmdExplorer({ onBack }) {
         break
       case 'experience':
         addJSX(<ExperienceCards />)
+        break
+      case 'case-studies':
+      case 'cs':
+        addJSX(<CaseStudyCards />)
         break
       case 'services':
         addJSX(<ServicesCards />)
@@ -1024,10 +1058,16 @@ function CmdExplorer({ onBack }) {
             {history.map(entry => {
               if (entry.type === 'welcome') {
                 return (
-                  <pre key={entry.id}
-                    className="text-emerald-400/70 whitespace-pre-wrap font-mono text-[10px] leading-relaxed mb-2"
-                    style={{ textShadow: '0 0 4px rgba(16,185,129,0.1)' }}
-                  >{CMD_WELCOME}</pre>
+                  <div key={entry.id}>
+                    <pre
+                      className="hidden sm:block text-emerald-400/70 whitespace-pre-wrap font-mono text-[10px] leading-relaxed mb-2"
+                      style={{ textShadow: '0 0 4px rgba(16,185,129,0.1)' }}
+                    >{CMD_WELCOME_DESKTOP}</pre>
+                    <pre
+                      className="sm:hidden text-emerald-400/70 whitespace-pre-wrap font-mono text-[11px] leading-relaxed mb-3"
+                      style={{ textShadow: '0 0 4px rgba(16,185,129,0.1)' }}
+                    >{CMD_WELCOME_MOBILE}</pre>
+                  </div>
                 )
               }
               if (entry.type === 'divider') {

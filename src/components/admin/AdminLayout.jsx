@@ -20,6 +20,7 @@ const navItems = [
   { path: '/admin/users', label: 'Users', icon: '◎' },
   { path: '/admin/ai-automation', label: 'AI Automation', icon: '✦' },
   { path: '/admin/crm-config', label: 'CRM Config', icon: '⚙' },
+  { path: '/admin/youtube-config', label: 'YouTube Config', icon: '⊡' },
 ]
 
 export default function AdminLayout({ children }) {

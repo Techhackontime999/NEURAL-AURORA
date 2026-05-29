@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { useMood } from '../context/MoodContext'
-import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
+import { getActiveAdVideos, incrementAdViewCount, getAdminSettings, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
+import YouTubeBrowse from './ui/YouTubeBrowse'
 import MoodSwing from './MoodSwing'
 import { getMoodById } from '../lib/moodMusic'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
@@ -1793,6 +1794,7 @@ RULES:
 }
 
 function NeuralPatternLock({ onSuccess }) {
+  const [gridSize] = useState(() => [3, 4, 5][Math.floor(Math.random() * 3)])
   const [phase, setPhase] = useState('generating')
   const [pattern, setPattern] = useState([])
   const [userPattern, setUserPattern] = useState([])
@@ -1800,17 +1802,16 @@ function NeuralPatternLock({ onSuccess }) {
   const [round, setRound] = useState(0)
   const [wrongNode, setWrongNode] = useState(null)
 
-  const GRID = 3
-  const NODES = 9
-  const PATTERN_LEN = [3, 4, 5]
-
   useEffect(() => {
     if (phase === 'generating') generatePattern()
   }, [phase])
 
   function generatePattern() {
-    const nums = Array.from({ length: NODES }, (_, i) => i)
-    const len = PATTERN_LEN[Math.min(round, PATTERN_LEN.length - 1)]
+    const g = gridSize
+    const nodes = g * g
+    const baseLen = [g, g + 1, g + 2]
+    const len = baseLen[Math.min(round, baseLen.length - 1)]
+    const nums = Array.from({ length: nodes }, (_, i) => i)
     const selected = []
     for (let i = 0; i < len; i++) {
       const idx = Math.floor(Math.random() * nums.length)
@@ -1862,9 +1863,12 @@ function NeuralPatternLock({ onSuccess }) {
   }
 
   function pos(i) {
+    const g = gridSize
+    const margin = g === 3 ? 22 : g === 4 ? 16 : 12
+    const spacing = g === 3 ? 28 : g === 4 ? 22 : 18
     return {
-      x: 26 + (i % GRID) * 24,
-      y: 26 + Math.floor(i / GRID) * 24,
+      x: margin + (i % g) * spacing,
+      y: margin + Math.floor(i / g) * spacing,
     }
   }
 
@@ -1894,11 +1898,18 @@ function NeuralPatternLock({ onSuccess }) {
     generating: 'Generating pattern',
   }
 
+  const viewBox = gridSize === 3 ? '0 0 100 100' : gridSize === 4 ? '0 0 100 100' : '0 0 100 100'
+  const containerSize = gridSize === 3 ? 190 : gridSize === 4 ? 210 : 230
+
   return (
     <div className="relative z-10 flex flex-col items-center gap-6 px-4">
-      <p className="text-xs font-mono text-white/30 uppercase tracking-[0.2em]">{phaseLabel[phase]}</p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-mono text-white/30 uppercase tracking-[0.2em]">{phaseLabel[phase]}</p>
+        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/10 text-white/20"
+        >{gridSize}x{gridSize}</span>
+      </div>
 
-      <div className="relative" style={{ width: 190, height: 190 }}>
+      <div className="relative" style={{ width: containerSize, height: containerSize }}>
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
           {/* Demo path (glowing) */}
           {phase === 'demonstrating' && activeDemoIdx > 0 && (
@@ -1950,7 +1961,7 @@ function NeuralPatternLock({ onSuccess }) {
           )}
 
           {/* Nodes */}
-          {Array.from({ length: NODES }, (_, i) => {
+          {Array.from({ length: gridSize * gridSize }, (_, i) => {
             const p = pos(i)
             const isActive = phase === 'demonstrating' && activeDemoIdx >= 0 && pattern.slice(0, activeDemoIdx).includes(i)
             const isLastActive = phase === 'demonstrating' && pattern[activeDemoIdx - 1] === i
@@ -2040,6 +2051,7 @@ export default function StartingLoader({ onComplete }) {
   const [adVideos, setAdVideos] = useState([])
   const [currentAd, setCurrentAd] = useState(null)
   const [adLoading, setAdLoading] = useState(false)
+  const [ytChannelId, setYtChannelId] = useState(null)
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
   const { selectedMood, selectMood, startMusic } = useMood()
   const firstName = 'Amit'
@@ -2062,6 +2074,10 @@ export default function StartingLoader({ onComplete }) {
 
   async function handleBootDone() {
     await loadQuestion()
+    try {
+      const settings = await getAdminSettings()
+      if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
+    } catch {}
     setPhase('selecting')
   }
 
@@ -2092,6 +2108,13 @@ export default function StartingLoader({ onComplete }) {
   }
 
   function handlePatternLockSuccess() {
+    sessionStorage.setItem('neural-aurora-verified', 'true')
+    setPhase('success')
+    setTimeout(() => setPhase('transitioning'), 2200)
+    setTimeout(() => doneRef.current(), 3500)
+  }
+
+  function handleYoutubeBrowseSuccess() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
@@ -2219,10 +2242,22 @@ export default function StartingLoader({ onComplete }) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 80, damping: 18 }}
-                className="grid w-full"
+                className="grid grid-cols-2 md:flex overflow-auto md:overflow-x-auto w-full pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 md:max-h-none"
                 style={{
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
                   gap: 'clamp(0.375rem, 1.5vw, 0.75rem)',
+                  maxHeight: 'clamp(280px, 55vh, 450px)',
+                  scrollSnapType: 'x mandatory',
+                  WebkitOverflowScrolling: 'touch',
+                  WebkitMaskImage: 'linear-gradient(to right, black 95%, transparent 100%), linear-gradient(to bottom, black 95%, transparent 100%)',
+                  WebkitMaskComposite: 'source-in',
+                  maskImage: 'linear-gradient(to right, black 95%, transparent 100%), linear-gradient(to bottom, black 95%, transparent 100%)',
+                  maskComposite: 'intersect',
+                }}
+                onWheel={e => {
+                  if (window.innerWidth >= 768 && e.deltaY !== 0) {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                  }
                 }}
               >
                 <motion.button
@@ -2230,8 +2265,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2260,8 +2297,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={loadingQ ? {} : { scale: 1.02, y: -1 }}
                   whileTap={loadingQ ? {} : { scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4 disabled:opacity-50"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2290,8 +2329,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: autoTraverse ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)',
                     background: autoTraverse ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2324,8 +2365,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={adLoading ? {} : { scale: 1.02, y: -1 }}
                   whileTap={adLoading ? {} : { scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4 disabled:opacity-50"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2352,8 +2395,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2378,8 +2423,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2407,8 +2454,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2437,8 +2486,10 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2461,6 +2512,71 @@ export default function StartingLoader({ onComplete }) {
                     </div>
                   </div>
                 </motion.button>
+
+                {ytChannelId && (
+                  <motion.button
+                    onClick={() => setPhase('youtube-browse')}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                    style={{
+                      scrollSnapAlign: 'start',
+                      minWidth: 'clamp(120px, 30vw, 160px)',
+                      borderColor: 'rgba(255,255,255,0.06)',
+                      background: 'rgba(255,255,255,0.02)',
+                      transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.4)'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                  >
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(239,68,68,0.1)' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
+                          <path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 001.94-2A29 29 0 0023 12a29 29 0 00-.46-5.58z" strokeLinecap="round" />
+                          <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Channel Stream</p>
+                        <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Browse my videos</p>
+                      </div>
+                    </div>
+                  </motion.button>
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, type: 'spring', stiffness: 80, damping: 18 }}
+                className="flex items-center justify-center mt-1"
+              >
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.04)',
+                    background: 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <span className="text-[9px] font-mono text-white/15 tracking-[0.2em] uppercase">more</span>
+                  <motion.svg
+                    className="w-2.5 h-2.5 text-white/20 hidden md:block"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </motion.svg>
+                  <motion.svg
+                    className="w-2.5 h-2.5 text-white/20 md:hidden"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    animate={{ y: [0, 3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </motion.svg>
+                </div>
               </motion.div>
             </div>
           </motion.div>
@@ -2596,6 +2712,12 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'youtube-browse' && ytChannelId && (
+          <motion.div key="youtube-browse" className="w-full max-w-6xl mx-auto px-2 sm:px-6" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
+            <YouTubeBrowse channelId={ytChannelId} onComplete={handleYoutubeBrowseSuccess} onBack={() => setPhase('selecting')} />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
@@ -2604,7 +2726,7 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview' || phase === 'pattern-lock') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview' || phase === 'pattern-lock' || phase === 'youtube-browse') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }

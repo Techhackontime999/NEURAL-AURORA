@@ -6,6 +6,14 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ---
 
+## What's New in v2.3.0
+
+| Feature | Description |
+|---------|-------------|
+| **Neural Pattern Lock** | A memory-sequence gateway verification challenge. Visitors must watch and repeat a glowing neural path across a randomly-sized grid (3×3, 4×5, or 5×5). Three consecutive rounds of increasing difficulty must be passed to unlock the portfolio. Each round features spring-animated cyan node traversal, green confirmed-path feedback, and red error flash with auto-reset. |
+| **YouTube Channel Stream** | Browse a YouTube channel's videos, Shorts, and playlists directly inside the gateway — no navigation away from the portfolio. Visitors select a video, watch it in an embedded YouTube IFrame Player, and gain access when the video ends. Features real video duration badges, a live watch progress bar, distinct card styling for videos vs shorts, horizontal Shorts snap-scroll, playlist accordions, keyword search, infinite-scroll pagination, and an error-resilient player with retry support. |
+| **Admin YouTube Config** | Manage your YouTube Channel ID from the admin panel at `/admin/youtube-config`. Test the connection to preview channel name and subscriber count before saving. Includes a built-in 4-step setup guide covering API key creation, `.env` configuration, and channel ID discovery. |
+
 ## What's New in v2.2.0
 
 | Feature | Description |
@@ -44,9 +52,11 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ## Features
 
+- **Neural Pattern Lock** — Memory-sequence gateway verification. A random 3×3, 4×4, or 5×5 grid of glowing nodes displays a neural path that the visitor must memorize and repeat. Three rounds of increasing difficulty must be passed to unlock the portfolio. Features spring-animated node traversal, pulsing demo highlights, numbered click feedback (green confirm / red error), and round progress indicators.
+- **YouTube Channel Stream** — Gateway verification via content browsing. Visitors can browse a YouTube channel's videos (grid layout with video duration badges), Shorts (horizontal snap-scroll with tall 9:16 cards), and playlists (expandable accordions with lazy-loaded items). Selecting a video opens an embedded YouTube IFrame Player with autoplay, live watch timer, and progress bar. Access is granted when the video ends, or visitors can close the player to browse further. Supports keyword search, Load More pagination, and error-resilient playback with retry.
 - **Mood Swing** — Choose your vibe before entering from 6 moods (Energetic ⚡, Calm 🌊, Happy 😊, Melancholic 🌧️, Focused 🎯, Night Owl 🌙) with emoji cards and swing animations. Background music plays based on your selected mood via Jamendo API (or Web Audio synth fallback).
 - **Neural Aurora CMD** — Interactive AI-powered terminal inside the gateway loader. Visitors can explore the portfolio by typing natural language queries or commands (`about`, `skills`, `projects`, `blog`, `social`, etc.). AI intent matching converses with full portfolio context via OpenRouter/OpenAI, all inside a retro terminal UI with boot sequence, command history, and autocomplete.
-- **AI-Powered Gateway** — Visitors must pass a voice or logic challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), AI-generated logic puzzles (OpenRouter/OpenAI-compatible API), and celebratory access-granted animation.
+- **AI-Powered Gateway** — Visitors must pass a voice, logic, pattern-memory, or content-browsing challenge to unlock the portfolio. Features terminal boot sequence, Web SpeechRecognition voice verification (say "Amit"), AI-generated logic puzzles (OpenRouter/OpenAI-compatible API), Neural Pattern Lock memory-sequence challenge, YouTube Channel Stream content browsing, and celebratory access-granted animation.
 - **Watch Dev Ads** — Alternative gateway method: watch Google AdSense ads or custom YouTube videos (landscape or Shorts format) to unlock the site. Ads are queued and played sequentially with animated transitions.
 - **Auto Traverse** — One-click full-site demo tour. A visual cursor automatically navigates through all pages (`/` → `/services` → `/more` → `/blog`) with configurable dwell time, spring-based smooth scrolling, and a glowing cyan cursor that follows the reading position.
 - **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
@@ -155,6 +165,7 @@ VITE_AI_MODEL=openai/gpt-4o-mini
 | `/admin/reviews` | Approve/reject public reviews |
 | `/admin/messages` | View and manage visitor contact submissions |
 | `/admin/ads` | Manage Dev Ads (Google AdSense + YouTube with Short/Video format, configurable aspect ratio) |
+| `/admin/youtube-config` | Configure YouTube Channel ID for Channel Stream gateway verification (with Test Connection and setup guide) |
 | `/admin/users` | Manage user roles (promote/demote) |
 | `/admin/crm-config` | Configure the hosted wacrm CRM dashboard URL |
 
@@ -227,15 +238,17 @@ NEURAL-AURORA/
 │   │   │   ├── Login.jsx
 │   │   │   ├── ForgotPassword.jsx
 │   │   │   ├── AdminCrmConfig.jsx # CRM URL configuration
+│   │   │   ├── AdminYouTubeConfig.jsx # YouTube Channel ID configuration
 │   │   │   ├── RichTextEditor.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── ui/              # Reusable UI primitives
 │   │   │   ├── auto-traverse-effect.jsx # Auto Traverse visual cursor & navigation
 │   │   │   ├── BrandLogo.jsx # Animated neural SVG logo
+│   │   │   ├── YouTubeBrowse.jsx # YouTube channel browser (videos, shorts, playlists)
 │   │   │   └── AdVideoPlayer.jsx # Ad player (Google AdSense + YouTube Short/Video)
 │   │   ├── ReviewForm.jsx   # Public review submission form
 │   │   ├── ReviewsList.jsx  # Public approved reviews display
-│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, ad, and Mood Swing verification
+│   │   ├── StartingLoader.jsx # AI gateway with voice, puzzle, pattern-lock, YouTube browse, ad, cmd, interview, and Mood Swing verification
 │   │   ├── MoodSwing.jsx    # Mood selection UI with emoji cards and swing animations
 │   │   └── ...              # Portfolio section components
 │   ├── context/
@@ -258,7 +271,8 @@ NEURAL-AURORA/
 │   └── migrations/          # Database migrations
 │       ├── 20260522150218_create_dev_ads.sql
 │       ├── 20260522152424_add_ad_type_to_dev_ads.sql
-│       └── 20260522153455_add_aspect_ratio_to_dev_ads.sql
+│       ├── 20260522153455_add_aspect_ratio_to_dev_ads.sql
+│       └── 20260529120000_add_youtube_channel_id_to_admin_settings.sql
 ├── .env                     # API keys (gitignored)
 ├── .env.example             # Environment variable template
 ├── supabase-schema.sql      # Full database schema with RLS policies
@@ -308,6 +322,23 @@ The puzzle generator uses any OpenAI-compatible API (OpenRouter, OpenAI, Groq, T
 3. Restart the dev server
 
 If no key is provided, the app falls back to a built-in pool of 12 static questions.
+
+### YouTube Channel Stream Setup
+
+The YouTube Channel Stream gateway lets visitors browse and watch videos from a YouTube channel to verify. Two configuration steps are required:
+
+1. **YouTube Data API Key** — Add to your `.env` file:
+   ```
+   VITE_YOUTUBE_API_KEY=your_youtube_api_key_here
+   ```
+   Get an API key from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) by enabling the YouTube Data API v3.
+
+2. **YouTube Channel ID** — Set in the admin panel at `/admin/youtube-config`:
+   - Enter the channel ID (e.g. `UC_x5XG1OV2P6uZZ5FSM9Ttw`)
+   - Click **Test Connection** to verify the channel name and subscriber count
+   - Click **Save** to persist to Supabase
+
+   The Channel Stream button appears in the gateway verification selection screen only when a valid channel ID is configured.
 
 ### Adding Skills (Static Fallback)
 
@@ -361,6 +392,7 @@ All three platforms require these in your deployment dashboard:
 | `VITE_AI_API_BASE` | No | OpenAI-compatible API base URL (default: `https://api.openai.com/v1`) |
 | `VITE_AI_API_KEY` | No | API key for AI puzzle generation |
 | `VITE_AI_MODEL` | No | Model name (default: `gpt-4o-mini`) |
+| `VITE_YOUTUBE_API_KEY` | No | YouTube Data API v3 key for Channel Stream gateway |
 
 **Never commit your `.env` file.** The `.env.example` file serves as a template.
 
@@ -374,6 +406,7 @@ All three platforms require these in your deployment dashboard:
 - **AI:** OpenAI-compatible API (OpenRouter, OpenAI, Groq, etc.) — dynamic puzzle generation
 - **Speech:** Web SpeechRecognition API — voice verification
 - **Ads:** Google AdSense (auto-served) + YouTube IFrame Player API
+- **YouTube:** YouTube Data API v3 (channel content, video durations) + YouTube IFrame Player API (embedded playback)
 - **3D Graphics:** React Three Fiber, Drei, Three.js
 - **3D Embed:** Spline (`@splinetool/react-spline`)
 - **Animation:** Framer Motion 11
@@ -405,7 +438,20 @@ MIT License — see [LICENSE](LICENSE).
 
 ## Changelog
 
-### v2.1.0
+### v2.3.0
+
+**Added**
+- Neural Pattern Lock — memory-sequence gateway with 3×3/4×4/5×5 grids, 3 rounds of increasing difficulty, spring-animated node path, numbered click feedback, and round progress tracking
+- YouTube Channel Stream — full YouTube channel browser embedded in the gateway with Videos (grid), Shorts (horizontal snap-scroll), and Playlists (accordion) tabs; YouTube IFrame Player with autoplay, live watch timer, progress bar, video-end detection; real duration badges from Videos API; distinct card styling for videos vs shorts; keyword search; Load More pagination; player error handling with retry
+- Admin YouTube Config page (`/admin/youtube-config`) — YouTube Channel ID management with Test Connection, animated toasts, and 4-step setup guide
+- Supabase migration `20260529120000_add_youtube_channel_id_to_admin_settings.sql` for `youtube_channel_id` column
+- `VITE_YOUTUBE_API_KEY` environment variable for YouTube Data API v3 access
+
+**Changed**
+- Gateway verification selection screen shows "Channel Stream" button only when a YouTube Channel ID is configured
+- Video end now returns to browse list (not portfolio); back button returns to verification options
+- Taste-skill design applied across all new components (liquid glass, spring physics, shimmer skeletons)
+- Responsive content area heights with mobile-optimized `max-h-[calc(100dvh-260px)]`
 
 **Added**
 - Mood Swing — mood selection with emoji cards, swing animations, and Jamendo API background music (Web Audio synth fallback)

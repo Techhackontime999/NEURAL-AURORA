@@ -209,6 +209,7 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   theme TEXT DEFAULT 'dark',
   maintenance_mode BOOLEAN DEFAULT FALSE,
   crm_url TEXT DEFAULT '',
+  youtube_channel_id TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)

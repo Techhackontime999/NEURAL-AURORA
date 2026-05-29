@@ -10,6 +10,7 @@ ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE visitor_stats ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read visitor_stats" ON visitor_stats;
 CREATE POLICY "Anyone can read visitor_stats"
   ON visitor_stats FOR SELECT
   USING (true);

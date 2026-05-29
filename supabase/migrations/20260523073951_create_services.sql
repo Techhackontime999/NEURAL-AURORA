@@ -16,12 +16,16 @@ CREATE TABLE IF NOT EXISTS services (
 
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read services" ON services;
 CREATE POLICY "Anyone can read services"
   ON services FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "Admin can insert services" ON services;
 CREATE POLICY "Admin can insert services"
   ON services FOR INSERT WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "Admin can update services" ON services;
 CREATE POLICY "Admin can update services"
   ON services FOR UPDATE USING (is_admin());
+DROP POLICY IF EXISTS "Admin can delete services" ON services;
 CREATE POLICY "Admin can delete services"
   ON services FOR DELETE USING (is_admin());
 
@@ -56,12 +60,16 @@ CREATE TABLE IF NOT EXISTS service_page (
 
 ALTER TABLE service_page ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read service_page" ON service_page;
 CREATE POLICY "Anyone can read service_page"
   ON service_page FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "Admin can insert service_page" ON service_page;
 CREATE POLICY "Admin can insert service_page"
   ON service_page FOR INSERT WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "Admin can update service_page" ON service_page;
 CREATE POLICY "Admin can update service_page"
   ON service_page FOR UPDATE USING (is_admin());
+DROP POLICY IF EXISTS "Admin can delete service_page" ON service_page;
 CREATE POLICY "Admin can delete service_page"
   ON service_page FOR DELETE USING (is_admin());
 

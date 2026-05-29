@@ -1206,6 +1206,570 @@ function CmdExplorer({ onBack }) {
   )
 }
 
+function InterviewMe({ onSuccess, name }) {
+  const [step, setStep] = useState('intro')
+  const [visitorQuestion, setVisitorQuestion] = useState('')
+  const [aiResponse, setAiResponse] = useState('')
+  const [questionNum, setQuestionNum] = useState(0)
+  const [listening, setListening] = useState(false)
+  const [thinking, setThinking] = useState(false)
+  const [transcript, setTranscript] = useState('')
+  const [history, setHistory] = useState([])
+  const [finalNote, setFinalNote] = useState('')
+  const [textInput, setTextInput] = useState('')
+  const [showTextFallback, setShowTextFallback] = useState(false)
+  const recRef = useRef(null)
+  const busyRef = useRef(false)
+  const mountedRef = useRef(true)
+  const transcriptRef = useRef('')
+  const listeningRef = useRef(false)
+  const silenceTimerRef = useRef(null)
+  const fallbackTimerRef = useRef(null)
+  const voiceIndexRef = useRef(0)
+  const syncingRef = useRef(false)
+  const ttsVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+
+  const synth = typeof window !== 'undefined' ? window.speechSynthesis : null
+  const voiceApiBase = (import.meta.env.VITE_VOICE_API_BASE || import.meta.env.VITE_AI_API_BASE || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
+  const voiceModel = import.meta.env.VITE_VOICE_MODEL || ''
+  const apiKey = import.meta.env.VITE_AI_API_KEY
+
+  async function tts(text, model) {
+    const voice = ttsVoices[voiceIndexRef.current % ttsVoices.length]
+    voiceIndexRef.current++
+    const res = await fetch(`${voiceApiBase}/audio/speech`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, input: text, voice, response_format: 'mp3' }),
+    })
+    if (!res.ok) return false
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url)
+      audio.onended = () => { URL.revokeObjectURL(url); resolve(true) }
+      audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('playback failed')) }
+      audio.play().catch(() => { URL.revokeObjectURL(url); reject(new Error('playback failed')) })
+    })
+  }
+
+  async function speak(text) {
+    if (!mountedRef.current) return
+    if (voiceModel && apiKey) {
+      try {
+        const ok = await tts(text, voiceModel)
+        if (ok) return
+      } catch {}
+      try { if (await tts(text, 'openai/tts-1-hd')) return } catch {}
+    }
+    if (!synth) return
+    try { synth.cancel() } catch {}
+    const u = new SpeechSynthesisUtterance(text)
+    const voices = synth.getVoices()
+    if (voices.length) {
+      const premium = voices.find(v => /natural|premium|google|microsoft/i.test(v.name))
+      u.voice = premium || voices[voiceIndexRef.current % voices.length]
+      voiceIndexRef.current++
+    }
+    u.rate = 0.8
+    u.pitch = 1.0
+    return new Promise(resolve => {
+      u.onend = resolve
+      try { synth.speak(u) } catch { resolve() }
+      setTimeout(resolve, text.length * 15 + 200)
+    })
+  }
+
+  const data = { skills, projects, education, experience, services, caseStudies, blogPosts, personalInfo, socialLinks }
+
+  useEffect(() => {
+    if (step !== 'intro') return
+    ;(async () => {
+      await speak(`Hi, I am Neural Aurora. I represent ${name}. Ask me anything about his work and I answer as him. Go ahead.`)
+      if (mountedRef.current) setStep('listening')
+    })()
+  }, [step])
+
+  function startListening() {
+    if (busyRef.current || listening || !mountedRef.current) return
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+    if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+    setShowTextFallback(false)
+    setTextInput('')
+    listeningRef.current = true
+    setListening(true)
+    setTranscript('')
+    transcriptRef.current = ''
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      listeningRef.current = false
+      setListening(false)
+      setShowTextFallback(true)
+      return
+    }
+    try {
+      const rec = new SpeechRecognition()
+      rec.lang = 'en-US'
+      rec.interimResults = true
+      rec.continuous = true
+      rec.maxAlternatives = 1
+      recRef.current = rec
+      rec.onresult = (e) => {
+        let full = ''
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          try { full += e.results[i][0].transcript } catch {}
+        }
+        if (e.results[e.results.length - 1]?.isFinal) {
+          transcriptRef.current = full
+        }
+        setTranscript(full)
+        if (full.trim()) {
+          if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+          setShowTextFallback(false)
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+          silenceTimerRef.current = setTimeout(() => {
+            if (listeningRef.current && transcriptRef.current.trim()) {
+              const q = transcriptRef.current.trim()
+              listeningRef.current = false
+              if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+              if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+              setListening(false)
+              if (recRef.current) { try { recRef.current.abort() } catch {}; recRef.current = null }
+              setVisitorQuestion(q)
+              setHistory(prev => [...prev, { role: 'visitor', text: q }])
+              setStep('thinking')
+              generateResponse(q)
+            }
+          }, 1800)
+        }
+      }
+      rec.onend = () => {
+        if (listeningRef.current && mountedRef.current) {
+          if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+          setShowTextFallback(false)
+          try {
+            const r = new SpeechRecognition()
+            r.lang = 'en-US'
+            r.interimResults = true
+            r.continuous = true
+            r.maxAlternatives = 1
+            r.onresult = rec.onresult
+            r.onend = rec.onend
+            r.onerror = rec.onerror
+            recRef.current = r
+            r.start()
+          } catch {}
+        }
+      }
+      rec.onerror = () => {
+        if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+      }
+      rec.start()
+    } catch {
+      listeningRef.current = false
+      setListening(false)
+      setShowTextFallback(true)
+    }
+  }
+
+  function submitText() {
+    const q = textInput.trim()
+    if (!q) return
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+    if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+    listeningRef.current = false
+    setListening(false)
+    if (recRef.current) { try { recRef.current.abort() } catch {}; recRef.current = null }
+    setVisitorQuestion(q)
+    setHistory(prev => [...prev, { role: 'visitor', text: q }])
+    setStep('thinking')
+    generateResponse(q)
+  }
+
+  function stopListening() {
+    if (busyRef.current || !listeningRef.current) return
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+    if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
+    listeningRef.current = false
+    setListening(false)
+    if (recRef.current) {
+      try { recRef.current.abort() } catch {}
+      recRef.current = null
+    }
+    const q = textInput.trim() || transcriptRef.current.trim() || 'no question'
+    setVisitorQuestion(q)
+    setHistory(prev => [...prev, { role: 'visitor', text: q }])
+    setStep('thinking')
+    generateResponse(q)
+  }
+
+  async function generateResponse(q) {
+    if (!mountedRef.current) return
+    setThinking(true)
+    const conv = (history || []).map(h => `${h.role === 'visitor' ? 'Visitor' : name}: ${h.text}`).join('\n')
+    try {
+      const systemContent = `You are ${name}, a founder and creator. A visitor is asking you questions. Respond as YOURSELF: direct, confident, warm, professional. Use "I", "my", "me". Keep responses to 1-2 crisp sentences. Never use emojis or exclamation marks. Sound like a CEO — concise, assured, genuine.
+
+You learn and adapt from every interaction. Use the conversation history to build context, recall previous topics, and respond naturally.
+
+Your FULL portfolio data (this is YOU):
+Name: ${data.personalInfo.name}
+Title: ${data.personalInfo.title}
+Bio: ${data.personalInfo.bio}
+Tagline: ${data.personalInfo.tagline}
+Resume: ${data.personalInfo.resume}
+
+Skills:
+${data.skills.map(s => `- ${s.name} (${s.level}%)`).join('\n')}
+
+Projects:
+${data.projects.map(p => `- ${p.title}: ${p.description} [${p.technologies?.join(', ') || ''}]`).join('\n')}
+
+Experience:
+${data.experience.map(e => `- ${e.role} @ ${e.company} (${e.year})`).join('\n')}
+
+Education:
+${data.education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')}
+
+Services:
+${data.services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
+
+Blog Posts:
+${data.blogPosts.map(b => `- ${b.title} (${b.date || b.created_at?.slice(0, 10) || ''})`).join('\n')}
+
+Case Studies:
+${data.caseStudies.map(c => `- ${c.title}: ${c.description || ''}`).join('\n')}
+
+Social Links:
+${data.socialLinks.map(s => `- ${s.label || s.platform}: ${s.url}`).join('\n')}
+
+RULES:
+1. Talk as ${name} — use "I", "my", "me"
+2. Keep responses to 1-2 crisp sentences. Be direct.
+3. Never use emojis or exclamation marks
+4. Learn from the conversation. Refer back to what the visitor asked earlier.
+5. If asked something outside your portfolio: "I do not have that in my portfolio. Ask me about my projects or experience."
+6. Be a CEO — professional, warm, never rattled, always in command`
+
+      const res = await callAi([
+        { role: 'system', content: systemContent },
+        { role: 'user', content: conv ? `Conversation so far:\n${conv}\n\nVisitor now asks: ${q}` : `The visitor asks: ${q}` },
+      ])
+      const reply = (res.choices?.[0]?.message?.content || '').trim() || 'That is a great question. Here is what I can tell you about my work.'
+      if (!mountedRef.current) return
+      setAiResponse(reply)
+      setHistory(prev => [...prev, { role: name, text: reply }])
+      setThinking(false)
+      setStep('answering')
+      busyRef.current = false
+      speak(reply).catch(() => {})
+    } catch {
+      if (!mountedRef.current) return
+      const fallback = 'I appreciate you asking. Let me share a bit about what I do and what drives me.'
+      setAiResponse(fallback)
+      setHistory(prev => [...prev, { role: name, text: fallback }])
+      setThinking(false)
+      setStep('answering')
+      busyRef.current = false
+      speak(fallback).catch(() => {})
+    }
+  }
+
+  function handleNext() {
+    if (busyRef.current || !mountedRef.current) return
+    busyRef.current = true
+    try { synth.cancel() } catch {}
+    setQuestionNum(p => p + 1)
+    setTranscript('')
+    setVisitorQuestion('')
+    setAiResponse('')
+    setStep('listening')
+    busyRef.current = false
+    startListening()
+  }
+
+  async function endInterview() {
+    if (busyRef.current || !mountedRef.current) return
+    busyRef.current = true
+    try { synth.cancel() } catch {}
+    setThinking(true)
+    const conv = (history || []).map(h => `${h.role}: ${h.text}`).join('\n')
+    try {
+      const res = await callAi([{
+        role: 'system',
+        content: `You are ${name}. Give a brief warm closing (2-3 sentences) thanking the visitor for their time and genuine interest. Be friendly and natural. Here is the full conversation:\n${conv}`,
+      }])
+      const note = (res.choices?.[0]?.message?.content || '').trim() || 'It was great talking with you. You are welcome here anytime.'
+      if (!mountedRef.current) return
+      setFinalNote(note)
+      busyRef.current = false
+      await speak(note)
+    } catch {
+      if (!mountedRef.current) return
+      setFinalNote('It was great talking with you. You are welcome here anytime.')
+      busyRef.current = false
+      await speak('It was great talking with you. You are welcome here anytime.')
+    }
+    setThinking(false)
+    setStep('complete')
+    busyRef.current = false
+  }
+
+  useEffect(() => {
+    return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current)
+      if (synth) try { synth.cancel() } catch {}
+      if (recRef.current) try { recRef.current.abort() } catch {}
+    }
+  }, [])
+
+  return (
+    <div className="relative z-10 w-full max-w-lg mx-auto px-4">
+      <div className="p-[1.5px] rounded-[2rem] bg-gradient-to-b from-white/[0.06] to-transparent">
+        <div className="rounded-[calc(2rem-1.5px)] bg-[#050508] border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
+          <div className="p-8 sm:p-10">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neural-blue/[0.12] to-neural-purple/[0.12] border border-white/[0.06] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 8px rgba(0,240,255,0.3))' }}>
+                  <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
+                  <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
+                  <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
+                  <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold tracking-tight">Chat with {name}</p>
+                <p className="text-[10px] text-white/20 font-mono tracking-wide">Ask me anything</p>
+              </div>
+              <div className="ml-auto flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
+                <span className="text-[9px] font-mono text-white/20 tracking-wider uppercase">Live</span>
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+              {step === 'intro' && (
+                <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="flex items-center justify-center py-10"
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.03, 1], opacity: [0.4, 0.8, 0.4] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="flex flex-col items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full border-2 border-neural-blue/30 border-t-neural-blue animate-spin" />
+                    <span className="text-[11px] font-mono text-white/30 tracking-widest uppercase">Getting ready...</span>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {thinking && (
+                <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="flex items-center gap-3 py-6"
+                >
+                  <div className="w-5 h-5 rounded-full border border-neural-blue/30 border-t-neural-blue animate-spin" />
+                  <span className="text-[11px] font-mono text-white/30 tracking-wide">{name} is thinking...</span>
+                </motion.div>
+              )}
+
+              {step === 'listening' && !thinking && (
+                <motion.div key="listening"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                  className="space-y-6"
+                >
+                  {history.length > 0 && (
+                    <div className="space-y-3 max-h-[180px] overflow-y-auto scrollbar-thin pr-1">
+                      {history.map((h, i) => (
+                        <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                          className={`text-[11px] leading-relaxed font-mono rounded-xl p-3 ${
+                            h.role === 'visitor'
+                              ? 'bg-white/[0.02] border border-white/[0.04] ml-6'
+                              : 'bg-neural-blue/[0.03] border border-neural-blue/10 mr-6'
+                          }`}
+                        >
+                          <span className={`text-[8px] font-mono uppercase tracking-wider block mb-1 ${
+                            h.role === 'visitor' ? 'text-white/20' : 'text-neural-blue/40'
+                          }`}>
+                            {h.role === 'visitor' ? 'You' : name}
+                          </span>
+                          {h.text}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-col items-center gap-4 py-2">
+                    <button
+                      onClick={listening ? stopListening : startListening}
+                      disabled={!mountedRef.current}
+                      className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500 ${
+                        listening
+                          ? 'bg-neural-blue/[0.08] border-2 border-neural-blue/60 shadow-[0_0_24px_rgba(0,240,255,0.15)]'
+                          : 'bg-white/[0.02] border border-white/[0.08] hover:border-neural-blue/40 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <motion.div
+                        animate={listening ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                        transition={{ duration: 1.5, repeat: listening ? Infinity : 0, ease: 'easeInOut' }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke={listening ? '#00f0ff' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" className="w-8 h-8">
+                          <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
+                          <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
+                          <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
+                          <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round" />
+                        </svg>
+                      </motion.div>
+                      {listening && (
+                        <motion.div
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="absolute inset-0 rounded-full border-2 border-neural-blue/20"
+                          style={{ boxShadow: '0 0 16px rgba(0,240,255,0.08), 0 0 40px rgba(0,240,255,0.04)' }}
+                        />
+                      )}
+                    </button>
+                    <p className="text-[10px] font-mono tracking-widest uppercase text-white/20">
+                      {listening ? 'Listening... go ahead, ask me anything' : 'Tap the mic, then ask your question'}
+                    </p>
+                  </div>
+                  {transcript && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[11px] font-mono text-neural-blue/60 bg-white/[0.02] rounded-xl p-3 border border-white/[0.04]"
+                    >
+                      {transcript}
+                    </motion.div>
+                  )}
+                  {showTextFallback && (
+                    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+                      <input
+                        value={textInput}
+                        onChange={e => setTextInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') submitText() }}
+                        placeholder="Type your question..."
+                        className="flex-1 bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-[11px] font-mono text-white/70 outline-none placeholder-white/15 focus:border-neural-blue/30 transition-colors"
+                        autoFocus
+                      />
+                      <button
+                        onClick={submitText}
+                        disabled={!textInput.trim()}
+                        className="px-4 rounded-xl bg-neural-blue/[0.08] border border-neural-blue/20 text-[11px] font-mono text-neural-blue/70 hover:bg-neural-blue/[0.12] hover:text-neural-blue transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        Ask
+                      </button>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+
+              {step === 'answering' && !thinking && (
+                <motion.div key="answering"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                  className="space-y-5"
+                >
+                  <div className="space-y-2">
+                    <span className="inline-block px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-mono text-white/20 uppercase tracking-[0.15em]">
+                      You asked
+                    </span>
+                    <div className="text-white/60 text-[11px] leading-relaxed font-mono bg-white/[0.02] rounded-xl p-4 border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                      {visitorQuestion}
+                    </div>
+                  </div>
+                  <div className="relative p-[1px] rounded-xl bg-gradient-to-b from-neural-blue/20 to-transparent">
+                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-4">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-neural-blue/[0.06] border border-neural-blue/10 text-[9px] font-mono text-neural-blue/60 uppercase tracking-[0.15em] mb-2">
+                        {name} says
+                      </span>
+                      <div className="text-white/80 text-[11px] leading-relaxed font-mono">
+                        {aiResponse}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <motion.button
+                      onClick={handleNext}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="group relative flex-1 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-3 text-[11px] font-mono tracking-wide text-white/70 transition-all duration-300 hover:border-neural-blue/30 hover:text-neural-blue hover:bg-neural-blue/[0.04]"
+                    >
+                      <span className="relative z-10">Ask another question</span>
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-neural-blue/0 via-neural-blue/[0.03] to-neural-blue/0"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </motion.button>
+                    <motion.button
+                      onClick={endInterview}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="group relative rounded-xl border border-white/[0.04] bg-white/[0.01] px-4 py-3 text-[10px] font-mono tracking-wide text-white/30 transition-all duration-300 hover:border-white/[0.08] hover:text-white/50"
+                    >
+                      <span className="relative z-10">End interview</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 'complete' && (
+                <motion.div key="complete"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 16 }}
+                  className="py-6 space-y-6"
+                >
+                  <div className="flex flex-col items-center gap-4">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
+                      className="w-14 h-14 rounded-full bg-emerald-500/[0.06] border border-emerald-500/20 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-7 h-7" style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.3))' }}>
+                        <polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </motion.div>
+                    <span className="inline-block px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
+                      All done
+                    </span>
+                  </div>
+                  <div className="relative p-[1px] rounded-xl bg-gradient-to-b from-white/[0.06] to-transparent">
+                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-5 text-center">
+                      <div className="text-white/70 text-xs leading-relaxed font-mono">
+                        {finalNote}
+                      </div>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={onSuccess}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-5 py-3 text-[11px] font-mono tracking-wide text-emerald-400/80 transition-all duration-300 hover:border-emerald-500/40 hover:bg-emerald-500/[0.08] hover:text-emerald-400"
+                  >
+                    <span className="relative z-10">Enter Portfolio</span>
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.04] to-emerald-500/0"
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    />
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
@@ -1328,154 +1892,275 @@ export default function StartingLoader({ onComplete }) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 w-full max-w-5xl mx-auto px-3 sm:px-6"
           >
-            <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-6"
-              style={{ background: 'rgba(10,10,18,0.6)', backdropFilter: 'blur(24px)' }}
+            <div className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-5 sm:gap-5 md:gap-6"
+              style={{
+                background: 'rgba(10,10,18,0.6)',
+                backdropFilter: 'blur(32px)',
+                WebkitBackdropFilter: 'blur(32px)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px -15px rgba(0,0,0,0.4)',
+              }}
             >
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 120, damping: 14, delay: 0.15 }}
               >
-                <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full relative flex items-center justify-center">
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                    className="absolute inset-0 rounded-full border-2 border-transparent"
-                    style={{ borderTopColor: '#00f0ff', borderRightColor: '#b829dd', borderBottomColor: '#f0c040' }}
+                <div className="w-14 sm:w-20 h-14 sm:h-20 rounded-full relative flex items-center justify-center">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent, #00f0ff, #b829dd, #f0c040, transparent)',
+                      mask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))',
+                      WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))',
+                    }}
                   />
-                  <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-gradient-to-br from-neural-blue/20 to-neural-purple/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-5 sm:w-6 h-5 sm:h-6">
+                  <div className="w-9 sm:w-12 h-9 sm:h-12 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(0,240,255,0.08)' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-[18px] sm:w-6 h-[18px] sm:h-6">
                       <path d="M12 2a4 4 0 014 4c0 2-2 3-2 5h-4c0-2-2-3-2-5a4 4 0 014-4z" strokeLinecap="round" />
-                      <path d="M12 13v3" strokeLinecap="round" /><path d="M8 20h8" strokeLinecap="round" />
+                      <path d="M12 13v3" strokeLinecap="round" />
+                      <path d="M8 20h8" strokeLinecap="round" />
                       <path d="M12 16a2 2 0 00-2 2h4a2 2 0 00-2-2z" strokeLinecap="round" />
                     </svg>
                   </div>
                 </div>
               </motion.div>
 
-              <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-                className="text-lg sm:text-xl md:text-2xl font-display font-bold text-white text-center tracking-tight"
+              <motion.h2
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 100, damping: 20 }}
+                className="font-display font-bold text-white text-center tracking-tight"
+                style={{ fontSize: 'clamp(1.125rem, 4vw, 1.75rem)' }}
               >Verification Required</motion.h2>
 
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                className="text-[10px] sm:text-xs text-white/30 font-mono text-center max-w-xs sm:max-w-sm"
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-white/30 font-mono text-center max-w-[28ch]"
+                style={{ fontSize: 'clamp(0.625rem, 2vw, 0.75rem)' }}
               >Prove your identity to access the system.</motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-2.5 md:gap-3 w-full"
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, type: 'spring', stiffness: 80, damping: 18 }}
+                className="grid w-full"
+                style={{
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
+                  gap: 'clamp(0.375rem, 1.5vw, 0.75rem)',
+                }}
               >
-                <button
+                <motion.button
                   onClick={() => setPhase('voice')}
-                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-neural-blue/40 hover:bg-white/[0.06] transition-all duration-300"
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.4)'; e.currentTarget.style.background = 'rgba(0,240,255,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-neural-blue/10 flex items-center justify-center group-hover:bg-neural-blue/20 shrink-0 transition-colors duration-300"
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(0,240,255,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
                         <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
                         <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Say "{firstName}"</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Voice recognition</p></div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Say &ldquo;{firstName}&rdquo;</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Voice recognition</p>
+                    </div>
                   </div>
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
                   onClick={async () => { await loadQuestion(); setPhase('mcq') }}
                   disabled={loadingQ}
-                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-neural-purple/40 hover:bg-white/[0.06] transition-all duration-300 disabled:opacity-50"
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={loadingQ ? {} : { scale: 1.02, y: -1 }}
+                  whileTap={loadingQ ? {} : { scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(184,41,221,0.4)'; e.currentTarget.style.background = 'rgba(184,41,221,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-neural-purple/10 flex items-center justify-center group-hover:bg-neural-purple/20 shrink-0 transition-colors duration-300"
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(184,41,221,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#b829dd" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
                         <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinecap="round" />
-                        <path d="M2 17l10 5 10-5" strokeLinecap="round" /><path d="M2 12l10 5 10-5" strokeLinecap="round" />
+                        <path d="M2 17l10 5 10-5" strokeLinecap="round" />
+                        <path d="M2 12l10 5 10-5" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="min-w-0"><p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Solve Puzzle</p><p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">One question</p></div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Solve Puzzle</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>One question</p>
+                    </div>
                   </div>
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
                   onClick={toggleAutoTraverse}
-                  className={`group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border transition-all duration-300 ${
-                    autoTraverse
-                      ? 'border-emerald-500/40 bg-emerald-500/10'
-                      : 'border-white/[0.06] bg-white/[0.03] hover:border-neural-blue/40 hover:bg-white/[0.06]'
-                  }`}
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: autoTraverse ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)',
+                    background: autoTraverse ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { if (!autoTraverse) { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.4)'; e.currentTarget.style.background = 'rgba(0,240,255,0.06)' } }}
+                  onMouseLeave={e => { if (!autoTraverse) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' } }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className={`w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
-                      autoTraverse ? 'bg-emerald-500/20' : 'bg-neural-blue/10 group-hover:bg-neural-blue/20'
-                    }`}
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: autoTraverse ? 'rgba(16,185,129,0.15)' : 'rgba(0,240,255,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={autoTraverse ? '#10b981' : '#00f0ff'} strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
                         <circle cx="12" cy="12" r="10" strokeLinecap="round" />
                         <polyline points="12 6 12 12 16 14" strokeLinecap="round" />
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-[11px] sm:text-xs md:text-sm leading-tight ${autoTraverse ? 'text-emerald-400' : 'text-white'}`}>
+                      <p className="font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)', color: autoTraverse ? '#10b981' : 'white' }}>
                         {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
                       </p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>
                         {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
                       </p>
                     </div>
                   </div>
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
                   onClick={handleWatchAds}
                   disabled={adLoading}
-                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-amber-400/40 hover:bg-white/[0.06] transition-all duration-300 disabled:opacity-50"
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={adLoading ? {} : { scale: 1.02, y: -1 }}
+                  whileTap={adLoading ? {} : { scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(251,191,36,0.4)'; e.currentTarget.style.background = 'rgba(251,191,36,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400/20 shrink-0 transition-colors duration-300"
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(251,191,36,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
                         <polygon points="5 3 19 12 5 21 5 3" />
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Watch Dev Ads</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Video ads to unlock</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Watch Dev Ads</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Video ads to unlock</p>
                     </div>
                   </div>
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
                   onClick={() => setPhase('mood-swing')}
-                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-pink-500/40 hover:bg-white/[0.06] transition-all duration-300"
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(236,72,153,0.4)'; e.currentTarget.style.background = 'rgba(236,72,153,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 shrink-0 transition-colors duration-300"
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <span className="text-[13px] sm:text-base md:text-lg">{'\uD83C\uDFB5'}</span>
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(236,72,153,0.1)' }}>
+                      <span style={{ fontSize: 'clamp(0.8125rem, 2.5vw, 1.125rem)' }}>{'\uD83C\uDFB5'}</span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Mood Swing</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Set vibe & music</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Mood Swing</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Set vibe & music</p>
                     </div>
                   </div>
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
                   onClick={() => setPhase('cmd')}
-                  className="group w-full px-2.5 py-2.5 sm:px-3.5 sm:py-3 md:px-4 md:py-3.5 lg:px-5 lg:py-4 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:border-emerald-500/40 hover:bg-white/[0.06] transition-all duration-300"
-                  style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'; e.currentTarget.style.background = 'rgba(16,185,129,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 shrink-0 transition-colors duration-300"
-                      style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(16,185,129,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
                         <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
                         <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" />
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] sm:text-xs md:text-sm leading-tight">Neural Aurora CMD</p>
-                      <p className="text-[8px] sm:text-[9px] md:text-[10px] text-white/30 mt-0.5">Explore via terminal</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Neural Aurora CMD</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Explore via terminal</p>
                     </div>
                   </div>
-                </button>
+                </motion.button>
+
+                <motion.button
+                  onClick={() => setPhase('interview')}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)'; e.currentTarget.style.background = 'rgba(139,92,246,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                >
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(139,92,246,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="9" y1="10" x2="15" y2="10" strokeLinecap="round" />
+                        <line x1="12" y1="7" x2="12" y2="13" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Take My Interview</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Voice AI interview</p>
+                    </div>
+                  </div>
+                </motion.button>
               </motion.div>
             </div>
           </motion.div>
@@ -1599,6 +2284,12 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'interview' && (
+          <motion.div key="interview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <InterviewMe onSuccess={handleVoiceSuccess} name={firstName} />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
@@ -1607,10 +2298,11 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }
+              if (phase === 'interview') { window.speechSynthesis?.cancel() }
               setPhase('selecting')
             }}
             className="absolute top-5 left-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all"

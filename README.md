@@ -24,7 +24,7 @@ This repository contains two independent projects:
 
 ## NEURAL AURORA — Setup
 
-Immersive 3D portfolio with AI-powered gateway (OpenRouter/OpenAI-compatible puzzles), Neural Aurora CMD interactive terminal, Mood Swing vibe selector with Jamendo API background music, auto-traverse site tour, and full admin dashboard.
+Immersive 3D portfolio with AI-powered gateway (OpenRouter/OpenAI-compatible puzzles), Neural Aurora CMD interactive terminal, Mood Swing vibe selector with Jamendo API background music, auto-traverse site tour, full admin dashboard, and a **responsive taste-skill verification entry screen** that auto-arranges on any device.
 
 ### Quick Start
 

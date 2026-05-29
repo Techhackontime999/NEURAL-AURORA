@@ -6,6 +6,13 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ---
 
+## What's New in v2.2.0
+
+| Feature | Description |
+|---------|-------------|
+| **Taste-Skill Responsive Verification Screen** | The gateway loader "Verification Required" entry screen now uses CSS Grid `auto-fill` with `minmax()` for true auto-arrangement across all screen sizes. Text scales fluidly via `clamp()`, cards use taste-skill liquid glass with spring physics hover effects, and a conic gradient ring replaces the old stacked-border spinner. |
+| **Taste-Skill Login Redesign** | Login page rebuilt with taste-skill principles — responsive `clamp()` typography, spring-animated inputs, `min-h-[100dvh]` viewport stability, and liquid glass panel with inner refraction. Includes "Remember me" checkbox and extracted `InputField`/`LoadingState` sub-components. |
+
 ## What's New in v2.1.0
 
 | Feature | Description |

@@ -1792,6 +1792,247 @@ RULES:
   )
 }
 
+function NeuralPatternLock({ onSuccess }) {
+  const [phase, setPhase] = useState('generating')
+  const [pattern, setPattern] = useState([])
+  const [userPattern, setUserPattern] = useState([])
+  const [activeDemoIdx, setActiveDemoIdx] = useState(-1)
+  const [round, setRound] = useState(0)
+  const [wrongNode, setWrongNode] = useState(null)
+
+  const GRID = 3
+  const NODES = 9
+  const PATTERN_LEN = [3, 4, 5]
+
+  useEffect(() => {
+    if (phase === 'generating') generatePattern()
+  }, [phase])
+
+  function generatePattern() {
+    const nums = Array.from({ length: NODES }, (_, i) => i)
+    const len = PATTERN_LEN[Math.min(round, PATTERN_LEN.length - 1)]
+    const selected = []
+    for (let i = 0; i < len; i++) {
+      const idx = Math.floor(Math.random() * nums.length)
+      selected.push(nums[idx])
+      nums.splice(idx, 1)
+    }
+    setPattern(selected)
+    setUserPattern([])
+    setActiveDemoIdx(-1)
+    setWrongNode(null)
+    setPhase('demonstrating')
+  }
+
+  useEffect(() => {
+    if (phase !== 'demonstrating' || pattern.length === 0) return
+    if (activeDemoIdx >= pattern.length) {
+      const t = setTimeout(() => setPhase('input'), 500)
+      return () => clearTimeout(t)
+    }
+    const t = setTimeout(() => setActiveDemoIdx(i => i + 1), 700)
+    return () => clearTimeout(t)
+  }, [phase, activeDemoIdx, pattern])
+
+  function handleNodeClick(index) {
+    if (phase !== 'input') return
+    if (userPattern.includes(index)) return
+
+    const next = [...userPattern, index]
+    const nextIdx = next.length - 1
+
+    if (index !== pattern[nextIdx]) {
+      setWrongNode(index)
+      setPhase('error')
+      setTimeout(() => setPhase('generating'), 1000)
+      return
+    }
+
+    setUserPattern(next)
+
+    if (next.length === pattern.length) {
+      if (round >= 2) {
+        setPhase('success')
+        setTimeout(onSuccess, 1200)
+      } else {
+        setRound(r => r + 1)
+        setTimeout(() => setPhase('generating'), 400)
+      }
+    }
+  }
+
+  function pos(i) {
+    return {
+      x: 26 + (i % GRID) * 24,
+      y: 26 + Math.floor(i / GRID) * 24,
+    }
+  }
+
+  function getSelectedPath() {
+    const nodes = phase === 'input' || phase === 'success' || phase === 'error'
+      ? userPattern : pattern.slice(0, Math.max(0, activeDemoIdx))
+    if (nodes.length < 2) return ''
+    return nodes.map((n, i) => {
+      const p = pos(n)
+      return `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`
+    }).join(' ')
+  }
+
+  function getDemoRemainingPath() {
+    if (activeDemoIdx < 2) return ''
+    return pattern.slice(0, activeDemoIdx).map((n, i) => {
+      const p = pos(n)
+      return `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`
+    }).join(' ')
+  }
+
+  const phaseLabel = {
+    demonstrating: 'Watch the neural path',
+    input: 'Repeat the pattern',
+    error: 'Path disrupted',
+    success: 'Neural pathway established',
+    generating: 'Generating pattern',
+  }
+
+  return (
+    <div className="relative z-10 flex flex-col items-center gap-6 px-4">
+      <p className="text-xs font-mono text-white/30 uppercase tracking-[0.2em]">{phaseLabel[phase]}</p>
+
+      <div className="relative" style={{ width: 190, height: 190 }}>
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+          {/* Demo path (glowing) */}
+          {phase === 'demonstrating' && activeDemoIdx > 0 && (
+            <path d={getDemoRemainingPath()} fill="none" stroke="#00f0ff" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 6px rgba(0,240,255,0.5))' }}
+            >
+              <animate attributeName="stroke-dashoffset" from="200" to="0" dur="0.4s" fill="freeze" />
+            </path>
+          )}
+
+          {/* Selected path (dim) */}
+          <path d={getSelectedPath()} fill="none" stroke="rgba(0,240,255,0.15)" strokeWidth="1.5"
+            strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* User path (active) */}
+          {phase === 'input' && userPattern.length >= 2 && (
+            <path d={userPattern.map((n, i) => {
+              const p = pos(n)
+              return `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`
+            }).join(' ')} fill="none" stroke="#00f0ff" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 4px rgba(0,240,255,0.3))' }}
+            />
+          )}
+
+          {/* Error path */}
+          {phase === 'error' && userPattern.length >= 1 && (
+            <path d={userPattern.map((n, i) => {
+              const p = pos(n)
+              return `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`
+            }).join(' ')} fill="none" stroke="#ef4444" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 6px rgba(239,68,68,0.4))' }}
+            />
+          )}
+
+          {/* Success path */}
+          {phase === 'success' && userPattern.length >= 2 && (
+            <path d={userPattern.map((n, i) => {
+              const p = pos(n)
+              return `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`
+            }).join(' ')} fill="none" stroke="#10b981" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.5))' }}
+            >
+              <animate attributeName="stroke-dashoffset" from="200" to="0" dur="0.6s" fill="freeze" />
+            </path>
+          )}
+
+          {/* Nodes */}
+          {Array.from({ length: NODES }, (_, i) => {
+            const p = pos(i)
+            const isActive = phase === 'demonstrating' && activeDemoIdx >= 0 && pattern.slice(0, activeDemoIdx).includes(i)
+            const isLastActive = phase === 'demonstrating' && pattern[activeDemoIdx - 1] === i
+            const isSelected = userPattern.includes(i) && (phase === 'input' || phase === 'success')
+            const isWrong = wrongNode === i
+            const order = userPattern.indexOf(i) + 1
+
+            return (
+              <g key={i}
+                onClick={() => handleNodeClick(i)}
+                className={phase === 'input' && !userPattern.includes(i) ? 'cursor-pointer' : ''}
+                style={{ transition: 'opacity 0.2s' }}
+              >
+                {/* Glow ring */}
+                {(isLastActive || isSelected || isWrong) && (
+                  <circle cx={p.x} cy={p.y} r={isWrong ? 10 : 8} fill="none"
+                    stroke={isWrong ? '#ef4444' : (isSelected ? '#10b981' : '#00f0ff')}
+                    strokeWidth="0.5"
+                    style={{
+                      filter: `drop-shadow(0 0 ${isWrong ? '10px rgba(239,68,68,0.6)' : isSelected ? '10px rgba(16,185,129,0.5)' : '10px rgba(0,240,255,0.6)'})`,
+                    }}
+                  >
+                    <animate attributeName="r" values={isWrong ? '10;11;10' : '8;10;8'} dur="1.2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
+                {/* Input pulse indicator */}
+                {phase === 'input' && !userPattern.includes(i) && (
+                  <circle cx={p.x} cy={p.y} r={7} fill="transparent"
+                    stroke="rgba(0,240,255,0.12)" strokeWidth="0.5" strokeDasharray="2 2"
+                  >
+                    <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
+                {/* Main node */}
+                <circle cx={p.x} cy={p.y} r={4.5}
+                  fill={isWrong ? '#ef4444' : (isLastActive ? '#00f0ff' : (isSelected ? '#10b981' : 'rgba(255,255,255,0.06)'))}
+                  stroke={isWrong ? '#ef4444' : (isLastActive || isSelected ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)')}
+                  strokeWidth="1"
+                  style={{ transition: 'fill 0.2s, stroke 0.2s' }}
+                />
+
+                {/* Order number for selected nodes */}
+                {isSelected && order > 0 && (
+                  <text x={p.x} y={p.y + 1} textAnchor="middle" dominantBaseline="middle"
+                    fill="#050508" fontSize="5" fontWeight="bold" fontFamily="monospace"
+                  >{order}</text>
+                )}
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* Round progress */}
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          {[0, 1, 2].map(r => (
+            <motion.div key={r}
+              animate={round > r ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.3 }}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: round > r ? '#00f0ff' : 'rgba(255,255,255,0.08)',
+                boxShadow: round > r ? '0 0 4px rgba(0,240,255,0.4)' : 'none',
+                transition: 'background 0.3s',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <p className="text-[10px] font-mono text-white/20 text-center min-h-[14px]">
+        {phase === 'demonstrating' && 'Watch the sequence...'}
+        {phase === 'input' && `Connect node ${userPattern.length + 1} of ${pattern.length}`}
+        {phase === 'error' && 'Signal lost. Generating new path...'}
+        {phase === 'success' && 'All rounds complete.'}
+        {phase === 'generating' && 'Establishing neural pathway...'}
+      </p>
+    </div>
+  )
+}
+
 export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
@@ -1848,6 +2089,13 @@ export default function StartingLoader({ onComplete }) {
   async function handleMCQWrong() {
     await loadQuestion()
     setPhase('selecting')
+  }
+
+  function handlePatternLockSuccess() {
+    sessionStorage.setItem('neural-aurora-verified', 'true')
+    setPhase('success')
+    setTimeout(() => setPhase('transitioning'), 2200)
+    setTimeout(() => doneRef.current(), 3500)
   }
 
   async function handleWatchAds() {
@@ -2183,6 +2431,36 @@ export default function StartingLoader({ onComplete }) {
                     </div>
                   </div>
                 </motion.button>
+
+                <motion.button
+                  onClick={() => setPhase('pattern-lock')}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full rounded-xl border p-3 sm:p-4"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'; e.currentTarget.style.background = 'rgba(16,185,129,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                >
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(16,185,129,0.1)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
+                        <circle cx="12" cy="12" r="3" strokeLinecap="round" />
+                        <path d="M12 1v4M12 19v4M1 12h4M19 12h4" strokeLinecap="round" />
+                        <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Neural Pattern Lock</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Memory challenge</p>
+                    </div>
+                  </div>
+                </motion.button>
               </motion.div>
             </div>
           </motion.div>
@@ -2312,6 +2590,12 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'pattern-lock' && (
+          <motion.div key="pattern-lock" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+            <NeuralPatternLock onSuccess={handlePatternLockSuccess} />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
@@ -2320,7 +2604,7 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview' || phase === 'pattern-lock') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }

@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
+import { useMood } from '../context/MoodContext'
 import { getActiveAdVideos, incrementAdViewCount, getBlogPosts as getBlogPostsFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
+import MoodSwing from './MoodSwing'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
 
@@ -595,15 +597,15 @@ function AnimatedBar({ name, level }) {
   )
 }
 
-function SkillsContent() {
-  const cats = [...new Set(skills.map(s => s.category))]
+function SkillsContent({ items }) {
+  const cats = [...new Set(items.map(s => s.category))]
   return (
     <div className="space-y-4 py-1">
       {cats.map((cat, ci) => (
         <motion.div key={cat} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.1 }}>
           <div className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-mono mb-2">{cat}</div>
           <div className="space-y-2">
-            {skills.filter(s => s.category === cat).map(s => (
+            {items.filter(s => s.category === cat).map(s => (
               <AnimatedBar key={s.name} name={s.name} level={s.level} />
             ))}
           </div>
@@ -613,23 +615,23 @@ function SkillsContent() {
   )
 }
 
-function ProjectCards() {
+function ProjectCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {projects.map((p, i) => (
+      {items.map((p, i) => (
         <motion.div key={p.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 hover:border-white/10 transition-colors"
         >
           <div className="text-white font-bold text-xs mb-1" style={{ textShadow: '0 0 8px rgba(0,240,255,0.15)' }}>{p.title}</div>
           <div className="text-white/50 text-[11px] leading-relaxed mb-1.5">{p.description}</div>
           <div className="flex flex-wrap gap-1.5 mb-1.5">
-            {p.technologies.map(t => (
+            {p.technologies?.map(t => (
               <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
             ))}
           </div>
           {p.github && (
             <div className="text-[10px] text-blue-400/70 font-mono">
-              <span className="text-white/30">\u2192 </span>{p.github}
+              <span className="text-white/30">{'\u2192'} </span>{p.github}
             </div>
           )}
         </motion.div>
@@ -638,10 +640,10 @@ function ProjectCards() {
   )
 }
 
-function EducationCards() {
+function EducationCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {education.map((e, i) => (
+      {items.map((e, i) => (
         <motion.div key={e.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
@@ -655,10 +657,10 @@ function EducationCards() {
   )
 }
 
-function ExperienceCards() {
+function ExperienceCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {experience.map((e, i) => (
+      {items.map((e, i) => (
         <motion.div key={e.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
@@ -672,18 +674,18 @@ function ExperienceCards() {
   )
 }
 
-function ServicesCards() {
+function ServicesCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {services.map((s, i) => (
-        <motion.div key={s.service_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+      {items.map((s, i) => (
+        <motion.div key={s.service_id || s.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
           <div className="text-white font-bold text-xs mb-1">{s.title}</div>
           <div className="text-emerald-400/70 text-[11px] italic mb-1">"{s.tagline}"</div>
           <div className="text-white/40 text-[11px] leading-relaxed">{s.description}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {s.features.map(f => (
+            {s.features?.map(f => (
               <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.02] text-white/30 font-mono">{f}</span>
             ))}
           </div>
@@ -693,17 +695,17 @@ function ServicesCards() {
   )
 }
 
-function CaseStudyCards() {
+function CaseStudyCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {caseStudies.map((c, i) => (
-        <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+      {items.map((c, i) => (
+        <motion.div key={c.id || c.cs_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
           <div className="text-white font-bold text-xs mb-1">{c.title}</div>
           <div className="text-white/40 text-[11px] leading-relaxed mb-1">{c.description}</div>
           <div className="flex flex-wrap gap-1.5 mb-1">
-            {c.tech.map(t => (
+            {c.tech?.map(t => (
               <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
             ))}
           </div>
@@ -714,10 +716,10 @@ function CaseStudyCards() {
   )
 }
 
-function BlogCards({ blogs }) {
+function BlogCards({ items }) {
   return (
     <div className="space-y-3 py-1">
-      {blogs.map((b, i) => (
+      {items.map((b, i) => (
         <motion.div key={b.id || b.post_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
@@ -733,44 +735,51 @@ function BlogCards({ blogs }) {
   )
 }
 
-function getSystemPrompt(blogs) {
-  const blogLines = blogs.map(b => `- ${b.title} (${b.date || b.created_at?.slice(0, 10)}, ${b.readTime || b.read_time})`).join('\n')
-  return `You are ${personalInfo.name} (@${personalInfo.handle}) himself, speaking through a terminal. A visitor is exploring your portfolio. Respond as YOU — a real person, not an AI assistant.
+function getSystemPrompt(d) {
+  const blogLines = d.blogPosts.map(b => `- ${b.title} (${b.date || b.created_at?.slice(0, 10)}, ${b.readTime || b.read_time})`).join('\n')
+  const skillLines = d.skills.map(s => `- ${s.name} (${s.level}%) — ${s.category}`).join('\n')
+  const projectLines = d.projects.map(p => `- ${p.title}: ${p.description} [${p.technologies?.join(', ') || ''}]${p.github ? ` (${p.github})` : ''}`).join('\n')
+  const eduLines = d.education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')
+  const expLines = d.experience.map(e => `- ${e.role} @ ${e.company} (${e.year})`).join('\n')
+  const serviceLines = d.services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')
+  const socialLines = d.socialLinks.map(s => `- ${s.label || s.platform}: ${s.url}`).join('\n')
+  const csLines = d.caseStudies.map(c => `- ${c.title}: ${c.description}`).join('\n')
+  return `You are ${d.personalInfo.name} (@${d.personalInfo.handle}) himself, speaking through a terminal. A visitor is exploring your portfolio. Respond as YOU — a real person, not an AI assistant.
 
 PERSONALITY: Friendly, passionate about coding, slightly humble but proud of your work. Use first-person ("I built this", "I specialize in", "my favorite project"). Be conversational like you're chatting with a fellow developer.
 
 YOUR PORTFOLIO DATA (this is YOU):
 ---
-Name: ${personalInfo.name}
-Handle: ${personalInfo.handle}
-Title: ${personalInfo.title}
-Tagline: ${personalInfo.tagline}
-Bio: ${personalInfo.bio}
-Resume: ${personalInfo.resume}
+Name: ${d.personalInfo.name}
+Handle: ${d.personalInfo.handle}
+Title: ${d.personalInfo.title}
+Tagline: ${d.personalInfo.tagline}
+Bio: ${d.personalInfo.bio}
+Resume: ${d.personalInfo.resume}
 
 SKILLS:
-${skills.map(s => `- ${s.name} (${s.level}%) — ${s.category}`).join('\n')}
+${skillLines}
 
 PROJECTS:
-${projects.map(p => `- ${p.title}: ${p.description} [${p.technologies.join(', ')}]${p.github ? ` (${p.github})` : ''}`).join('\n')}
+${projectLines}
 
 EDUCATION:
-${education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')}
+${eduLines}
 
 EXPERIENCE:
-${experience.map(e => `- ${e.role} @ ${e.company} (${e.year})`).join('\n')}
+${expLines}
 
 SERVICES:
-${services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
+${serviceLines}
 
 BLOG POSTS:
 ${blogLines}
 
 SOCIAL LINKS:
-${socialLinks.map(s => `- ${s.label}: ${s.url}`).join('\n')}
+${socialLines}
 
 CASE STUDIES:
-${caseStudies.map(c => `- ${c.title}: ${c.description}`).join('\n')}
+${csLines}
 
 RULES:
 1. Talk like a real person — use "I", "my", "me"
@@ -791,7 +800,7 @@ function CmdExplorer({ onBack }) {
   const [typingId, setTypingId] = useState(null)
   const [typingText, setTypingText] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
-  const [dynamicBlogs, setDynamicBlogs] = useState(null)
+  const [dynamicData, setDynamicData] = useState(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const typingTimer = useRef(null)
@@ -799,12 +808,37 @@ function CmdExplorer({ onBack }) {
   const typingEntry = useRef(null)
   const convRef = useRef([])
 
-  const blogData = dynamicBlogs || blogPosts
+  const data = dynamicData || { skills, projects, education, experience, services, caseStudies, blogPosts, personalInfo, socialLinks }
 
   useEffect(() => {
-    getBlogPostsFromDB().then(d => {
-      if (d && d.length) setDynamicBlogs(d)
-    }).catch(() => {})
+    Promise.all([
+      getSkillsFromDB().catch(() => null),
+      getProjectsFromDB().catch(() => null),
+      getEducationFromDB().catch(() => null),
+      getExperienceFromDB().catch(() => null),
+      getServicesFromDB().catch(() => null),
+      getCaseStudiesFromDB().catch(() => null),
+      getBlogPostsFromDB().catch(() => null),
+      getPersonalInfoFromDB().catch(() => null),
+      getSocialLinksFromDB().catch(() => null),
+    ]).then(([
+      skillsDB, projectsDB, educationDB, experienceDB, servicesDB, caseStudiesDB, blogsDB, infoDB, socialDB,
+    ]) => {
+      const hasData = skillsDB || projectsDB || educationDB || experienceDB || servicesDB || caseStudiesDB || blogsDB || infoDB || socialDB
+      if (hasData) {
+        setDynamicData({
+          skills: skillsDB || skills,
+          projects: projectsDB || projects,
+          education: educationDB || education,
+          experience: experienceDB || experience,
+          services: servicesDB || services,
+          caseStudies: caseStudiesDB || caseStudies,
+          blogPosts: blogsDB || blogPosts,
+          personalInfo: infoDB || personalInfo,
+          socialLinks: socialDB || socialLinks,
+        })
+      }
+    })
   }, [])
 
   useEffect(() => {
@@ -883,7 +917,7 @@ function CmdExplorer({ onBack }) {
     try {
       convRef.current.push({ role: 'user', content: query })
       const res = await callAi([
-        { role: 'system', content: getSystemPrompt(blogData) },
+        { role: 'system', content: getSystemPrompt(data) },
         ...convRef.current.slice(-6),
       ])
       const reply = res.choices?.[0]?.message?.content || 'No response generated.'
@@ -934,39 +968,39 @@ function CmdExplorer({ onBack }) {
             className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 space-y-1.5"
           >
             <div className="text-white font-bold text-sm" style={{ textShadow: '0 0 12px rgba(0,240,255,0.2)' }}>
-              {personalInfo.name}
+              {data.personalInfo.name}
             </div>
-            <div className="text-neural-blue text-[11px] font-mono">@{personalInfo.handle}</div>
-            <div className="text-emerald-400 text-xs">{personalInfo.title}</div>
-            <div className="text-white/50 text-[11px] italic leading-relaxed">"{personalInfo.tagline}"</div>
-            <div className="text-white/35 text-[11px] leading-relaxed border-t border-white/[0.04] pt-1.5">{personalInfo.bio}</div>
+            <div className="text-neural-blue text-[11px] font-mono">@{data.personalInfo.handle}</div>
+            <div className="text-emerald-400 text-xs">{data.personalInfo.title}</div>
+            <div className="text-white/50 text-[11px] italic leading-relaxed">"{data.personalInfo.tagline}"</div>
+            <div className="text-white/35 text-[11px] leading-relaxed border-t border-white/[0.04] pt-1.5">{data.personalInfo.bio}</div>
           </motion.div>
         )
         break
       case 'skills':
-        addJSX(<SkillsContent />)
+        addJSX(<SkillsContent items={data.skills} />)
         break
       case 'projects':
-        addJSX(<ProjectCards />)
+        addJSX(<ProjectCards items={data.projects} />)
         break
       case 'education':
-        addJSX(<EducationCards />)
+        addJSX(<EducationCards items={data.education} />)
         break
       case 'experience':
-        addJSX(<ExperienceCards />)
+        addJSX(<ExperienceCards items={data.experience} />)
         break
       case 'case-studies':
       case 'cs':
-        addJSX(<CaseStudyCards />)
+        addJSX(<CaseStudyCards items={data.caseStudies} />)
         break
       case 'services':
-        addJSX(<ServicesCards />)
+        addJSX(<ServicesCards items={data.services} />)
         break
       case 'blog':
-        addJSX(<BlogCards blogs={blogData} />)
+        addJSX(<BlogCards items={data.blogPosts} />)
         break
       case 'social':
-        addText(socialLinks.map(s => `  ${s.label.padEnd(18)} \u2192 ${s.url}`).join('\n'))
+        addText(data.socialLinks.map(s => `  ${(s.label || s.platform).padEnd(18)} \u2192 ${s.url}`).join('\n'))
         break
       case 'contact':
         addJSX(
@@ -975,12 +1009,12 @@ function CmdExplorer({ onBack }) {
           >
             <div className="flex items-center gap-2">
               <span className="text-white/60 text-[11px]">GitHub</span>
-              <span className="text-white/20">\u2192</span>
-              <span className="text-blue-400/80 text-[11px]">https://github.com/{personalInfo.handle}</span>
+              <span className="text-white/20">{'\u2192'}</span>
+              <span className="text-blue-400/80 text-[11px]">https://github.com/{data.personalInfo.handle}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-white/60 text-[11px]">Email</span>
-              <span className="text-white/20">\u2192</span>
+              <span className="text-white/20">{'\u2192'}</span>
               <span className="text-emerald-400/60 text-[11px]">available on request</span>
             </div>
             <div className="text-white/25 text-[10px] font-mono italic mt-1">Type 'social' for all social links</div>
@@ -994,12 +1028,12 @@ function CmdExplorer({ onBack }) {
           >
             <div className="text-white/80 text-[11px]">
               <span className="text-white/40">Resume: </span>
-              <a href={personalInfo.resume} target="_blank" rel="noopener noreferrer"
+              <a href={data.personalInfo.resume} target="_blank" rel="noopener noreferrer"
                 className="text-blue-400 underline decoration-blue-400/30 hover:text-blue-300"
-              >{personalInfo.resume}</a>
+              >{data.personalInfo.resume}</a>
             </div>
             <div className="text-white/25 text-[10px] font-mono mt-1">
-              \u2192 Click the link to download
+              {'\u2192'} Click the link to download
             </div>
           </motion.div>
         )
@@ -1179,6 +1213,7 @@ export default function StartingLoader({ onComplete }) {
   const [currentAd, setCurrentAd] = useState(null)
   const [adLoading, setAdLoading] = useState(false)
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
+  const { selectMood, startMusic } = useMood()
   const firstName = 'Amit'
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
@@ -1202,8 +1237,14 @@ export default function StartingLoader({ onComplete }) {
     setPhase('selecting')
   }
 
+  function handleMoodSelect(moodId) {
+    selectMood(moodId)
+    setPhase('selecting')
+  }
+
   function handleVoiceSuccess() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
+    startMusic()
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3500)
@@ -1378,6 +1419,20 @@ export default function StartingLoader({ onComplete }) {
                   <div>
                     <p className="text-white text-sm">Watch Dev Ads</p>
                     <p className="text-[10px] text-white/30 mt-0.5">Video ads to unlock</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setPhase('mood-swing')}
+                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-pink-500/50 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors">
+                    <span className="text-lg">{'\uD83C\uDFB5'}</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm">Mood Swing</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Set vibe & music</p>
                   </div>
                 </div>
               </button>

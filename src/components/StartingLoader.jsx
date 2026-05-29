@@ -1226,7 +1226,6 @@ function InterviewMe({ onSuccess, name }) {
   const silenceTimerRef = useRef(null)
   const fallbackTimerRef = useRef(null)
   const voiceIndexRef = useRef(0)
-  const syncingRef = useRef(false)
   const ttsVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : null
@@ -1525,51 +1524,51 @@ RULES:
   }, [])
 
   return (
-    <div className="relative z-10 w-full max-w-lg mx-auto px-4">
-      <div className="p-[1.5px] rounded-[2rem] bg-gradient-to-b from-white/[0.06] to-transparent">
-        <div className="rounded-[calc(2rem-1.5px)] bg-[#050508] border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
-          <div className="p-8 sm:p-10">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neural-blue/[0.12] to-neural-purple/[0.12] border border-white/[0.06] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 8px rgba(0,240,255,0.3))' }}>
+    <div className="relative z-10 w-full max-w-lg mx-auto px-3 sm:px-4">
+      <div className="p-[1.5px] rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-b from-white/[0.06] to-transparent">
+        <div className="rounded-[calc(1.5rem-1.5px)] sm:rounded-[calc(2rem-1.5px)] bg-[#050508] border border-white/[0.04]" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 20px 60px -15px rgba(0,0,0,0.4)' }}>
+          <div className="p-5 sm:p-8 md:p-10">
+            <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-[18px] sm:w-5 h-[18px] sm:h-5" style={{ filter: 'drop-shadow(0 0 8px rgba(0,240,255,0.3))' }}>
                   <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
                   <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                   <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
                   <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round" />
                 </svg>
               </div>
-              <div>
-                <p className="text-white text-sm font-bold tracking-tight">Chat with {name}</p>
-                <p className="text-[10px] text-white/20 font-mono tracking-wide">Ask me anything</p>
+              <div className="min-w-0">
+                <p className="text-white font-bold tracking-tight" style={{ fontSize: 'clamp(0.8125rem, 2.5vw, 0.875rem)' }}>Chat with {name}</p>
+                <p className="text-white/20 font-mono tracking-wide" style={{ fontSize: 'clamp(0.5625rem, 1.5vw, 0.625rem)' }}>Ask me anything</p>
               </div>
-              <div className="ml-auto flex items-center gap-1.5">
+              <div className="ml-auto flex items-center gap-1.5 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
-                <span className="text-[9px] font-mono text-white/20 tracking-wider uppercase">Live</span>
+                <span className="font-mono text-white/20 tracking-wider uppercase" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>Live</span>
               </div>
             </div>
 
             <AnimatePresence mode="wait">
               {step === 'intro' && (
                 <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="flex items-center justify-center py-10"
+                  className="flex items-center justify-center py-8 sm:py-10"
                 >
                   <motion.div
                     animate={{ scale: [1, 1.03, 1], opacity: [0.4, 0.8, 0.4] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                     className="flex flex-col items-center gap-3"
                   >
-                    <div className="w-10 h-10 rounded-full border-2 border-neural-blue/30 border-t-neural-blue animate-spin" />
-                    <span className="text-[11px] font-mono text-white/30 tracking-widest uppercase">Getting ready...</span>
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-neural-blue/30 border-t-neural-blue animate-spin" />
+                    <span className="font-mono text-white/30 tracking-widest uppercase" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>Getting ready...</span>
                   </motion.div>
                 </motion.div>
               )}
 
               {thinking && (
                 <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="flex items-center gap-3 py-6"
+                  className="flex items-center gap-3 py-4 sm:py-6"
                 >
-                  <div className="w-5 h-5 rounded-full border border-neural-blue/30 border-t-neural-blue animate-spin" />
-                  <span className="text-[11px] font-mono text-white/30 tracking-wide">{name} is thinking...</span>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-neural-blue/30 border-t-neural-blue animate-spin" />
+                  <span className="font-mono text-white/30 tracking-wide" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>{name} is thinking...</span>
                 </motion.div>
               )}
 
@@ -1579,43 +1578,52 @@ RULES:
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  className="space-y-6"
+                  className="space-y-4 sm:space-y-6"
                 >
                   {history.length > 0 && (
-                    <div className="space-y-3 max-h-[180px] overflow-y-auto scrollbar-thin pr-1">
+                    <div className="space-y-2 sm:space-y-3 max-h-[160px] sm:max-h-[180px] overflow-y-auto pr-1"
+                      style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,240,255,0.15) transparent' }}>
                       {history.map((h, i) => (
                         <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                          className={`text-[11px] leading-relaxed font-mono rounded-xl p-3 ${
+                          className={`leading-relaxed font-mono rounded-xl p-2.5 sm:p-3 ${
                             h.role === 'visitor'
-                              ? 'bg-white/[0.02] border border-white/[0.04] ml-6'
-                              : 'bg-neural-blue/[0.03] border border-neural-blue/10 mr-6'
+                              ? 'bg-white/[0.02] border border-white/[0.04] ml-4 sm:ml-6'
+                              : 'bg-neural-blue/[0.03] border border-neural-blue/10 mr-4 sm:mr-6'
                           }`}
+                          style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                         >
-                          <span className={`text-[8px] font-mono uppercase tracking-wider block mb-1 ${
+                          <span className={`font-mono uppercase tracking-wider block mb-1 ${
                             h.role === 'visitor' ? 'text-white/20' : 'text-neural-blue/40'
-                          }`}>
+                          }`} style={{ fontSize: 'clamp(0.4375rem, 1.25vw, 0.5rem)' }}>
                             {h.role === 'visitor' ? 'You' : name}
                           </span>
-                          {h.text}
+                          <span className="break-words">{h.text}</span>
                         </motion.div>
                       ))}
                     </div>
                   )}
-                  <div className="flex flex-col items-center gap-4 py-2">
-                    <button
+                  <div className="flex flex-col items-center gap-3 sm:gap-4 py-1 sm:py-2">
+                    <motion.button
                       onClick={listening ? stopListening : startListening}
                       disabled={!mountedRef.current}
-                      className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500 ${
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-colors duration-500 ${
                         listening
-                          ? 'bg-neural-blue/[0.08] border-2 border-neural-blue/60 shadow-[0_0_24px_rgba(0,240,255,0.15)]'
-                          : 'bg-white/[0.02] border border-white/[0.08] hover:border-neural-blue/40 hover:bg-white/[0.04]'
+                          ? 'border-2 border-neural-blue/60'
+                          : 'border border-white/[0.08] hover:border-neural-blue/40 hover:bg-white/[0.04]'
                       }`}
+                      style={{
+                        background: listening ? 'rgba(0,240,255,0.08)' : 'rgba(255,255,255,0.02)',
+                        boxShadow: listening ? '0 0 24px rgba(0,240,255,0.15)' : undefined,
+                      }}
                     >
                       <motion.div
                         animate={listening ? { scale: [1, 1.08, 1] } : { scale: 1 }}
                         transition={{ duration: 1.5, repeat: listening ? Infinity : 0, ease: 'easeInOut' }}
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke={listening ? '#00f0ff' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" className="w-8 h-8">
+                        <svg viewBox="0 0 24 24" fill="none" stroke={listening ? '#00f0ff' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" className="w-7 h-7 sm:w-8 sm:h-8">
                           <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" />
                           <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                           <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
@@ -1630,8 +1638,8 @@ RULES:
                           style={{ boxShadow: '0 0 16px rgba(0,240,255,0.08), 0 0 40px rgba(0,240,255,0.04)' }}
                         />
                       )}
-                    </button>
-                    <p className="text-[10px] font-mono tracking-widest uppercase text-white/20">
+                    </motion.button>
+                    <p className="font-mono tracking-widest uppercase text-white/20 text-center px-2" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>
                       {listening ? 'Listening... go ahead, ask me anything' : 'Tap the mic, then ask your question'}
                     </p>
                   </div>
@@ -1639,7 +1647,8 @@ RULES:
                     <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-[11px] font-mono text-neural-blue/60 bg-white/[0.02] rounded-xl p-3 border border-white/[0.04]"
+                      className="font-mono text-neural-blue/60 bg-white/[0.02] rounded-xl p-2.5 sm:p-3 border border-white/[0.04] break-words"
+                      style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                     >
                       {transcript}
                     </motion.div>
@@ -1651,16 +1660,20 @@ RULES:
                         onChange={e => setTextInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') submitText() }}
                         placeholder="Type your question..."
-                        className="flex-1 bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-[11px] font-mono text-white/70 outline-none placeholder-white/15 focus:border-neural-blue/30 transition-colors"
+                        className="flex-1 bg-white/[0.02] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 font-mono text-white/70 outline-none placeholder-white/15 focus:border-neural-blue/30 transition-colors"
+                        style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                         autoFocus
                       />
-                      <button
+                      <motion.button
                         onClick={submitText}
                         disabled={!textInput.trim()}
-                        className="px-4 rounded-xl bg-neural-blue/[0.08] border border-neural-blue/20 text-[11px] font-mono text-neural-blue/70 hover:bg-neural-blue/[0.12] hover:text-neural-blue transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="px-3 sm:px-4 rounded-xl font-mono text-neural-blue/70 hover:text-neural-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        style={{ background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(0,240,255,0.2)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                       >
                         Ask
-                      </button>
+                      </motion.button>
                     </motion.div>
                   )}
                 </motion.div>
@@ -1672,22 +1685,22 @@ RULES:
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  className="space-y-5"
+                  className="space-y-4 sm:space-y-5"
                 >
-                  <div className="space-y-2">
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-mono text-white/20 uppercase tracking-[0.15em]">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <span className="inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/[0.03] border border-white/[0.06] font-mono text-white/20 uppercase tracking-[0.15em]" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
                       You asked
                     </span>
-                    <div className="text-white/60 text-[11px] leading-relaxed font-mono bg-white/[0.02] rounded-xl p-4 border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="text-white/60 leading-relaxed font-mono bg-white/[0.02] rounded-xl p-3 sm:p-4 border border-white/[0.04] break-words" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)' }}>
                       {visitorQuestion}
                     </div>
                   </div>
-                  <div className="relative p-[1px] rounded-xl bg-gradient-to-b from-neural-blue/20 to-transparent">
-                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-4">
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-neural-blue/[0.06] border border-neural-blue/10 text-[9px] font-mono text-neural-blue/60 uppercase tracking-[0.15em] mb-2">
+                  <div className="relative p-[1px] rounded-xl" style={{ background: 'linear-gradient(to bottom, rgba(0,240,255,0.2), transparent)' }}>
+                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-3 sm:p-4">
+                      <span className="inline-block px-1.5 sm:px-2 py-0.5 rounded-full font-mono text-neural-blue/60 uppercase tracking-[0.15em] mb-1.5 sm:mb-2" style={{ background: 'rgba(0,240,255,0.06)', border: '1px solid rgba(0,240,255,0.1)', fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
                         {name} says
                       </span>
-                      <div className="text-white/80 text-[11px] leading-relaxed font-mono">
+                      <div className="text-white/80 leading-relaxed font-mono break-words" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>
                         {aiResponse}
                       </div>
                     </div>
@@ -1695,22 +1708,27 @@ RULES:
                   <div className="flex gap-2">
                     <motion.button
                       onClick={handleNext}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="group relative flex-1 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-3 text-[11px] font-mono tracking-wide text-white/70 transition-all duration-300 hover:border-neural-blue/30 hover:text-neural-blue hover:bg-neural-blue/[0.04]"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      className="group relative flex-1 overflow-hidden rounded-xl border border-white/[0.06] px-4 sm:px-5 py-2.5 sm:py-3 font-mono tracking-wide text-white/70 transition-colors duration-300 hover:border-neural-blue/30 hover:text-neural-blue"
+                      style={{ background: 'rgba(255,255,255,0.02)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                     >
                       <span className="relative z-10">Ask another question</span>
                       <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-neural-blue/0 via-neural-blue/[0.03] to-neural-blue/0"
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,240,255,0.03), transparent)' }}
                         animate={{ x: ['-100%', '200%'] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                       />
                     </motion.button>
                     <motion.button
                       onClick={endInterview}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="group relative rounded-xl border border-white/[0.04] bg-white/[0.01] px-4 py-3 text-[10px] font-mono tracking-wide text-white/30 transition-all duration-300 hover:border-white/[0.08] hover:text-white/50"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      className="relative rounded-xl border border-white/[0.04] px-3 sm:px-4 py-2.5 sm:py-3 font-mono tracking-wide text-white/30 transition-colors duration-300 hover:border-white/[0.08] hover:text-white/50"
+                      style={{ background: 'rgba(255,255,255,0.01)', fontSize: 'clamp(0.5625rem, 1.5vw, 0.625rem)' }}
                     >
                       <span className="relative z-10">End interview</span>
                     </motion.button>
@@ -1723,39 +1741,43 @@ RULES:
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: 'spring', stiffness: 120, damping: 16 }}
-                  className="py-6 space-y-6"
+                  className="py-4 sm:py-6 space-y-4 sm:space-y-6"
                 >
-                  <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-col items-center gap-3 sm:gap-4">
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
-                      className="w-14 h-14 rounded-full bg-emerald-500/[0.06] border border-emerald-500/20 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-7 h-7" style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.3))' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-6 h-6 sm:w-7 sm:h-7" style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.3))' }}>
                         <polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </motion.div>
-                    <span className="inline-block px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
+                    <span className="inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.03] border border-white/[0.06] font-mono text-white/20 uppercase tracking-[0.2em]" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
                       All done
                     </span>
                   </div>
-                  <div className="relative p-[1px] rounded-xl bg-gradient-to-b from-white/[0.06] to-transparent">
-                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-5 text-center">
-                      <div className="text-white/70 text-xs leading-relaxed font-mono">
+                  <div className="relative p-[1px] rounded-xl" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.06), transparent)' }}>
+                    <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-4 sm:p-5 text-center">
+                      <div className="text-white/70 leading-relaxed font-mono" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.75rem)' }}>
                         {finalNote}
                       </div>
                     </div>
                   </div>
                   <motion.button
                     onClick={onSuccess}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-5 py-3 text-[11px] font-mono tracking-wide text-emerald-400/80 transition-all duration-300 hover:border-emerald-500/40 hover:bg-emerald-500/[0.08] hover:text-emerald-400"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className="group relative w-full overflow-hidden rounded-xl border px-4 sm:px-5 py-2.5 sm:py-3 font-mono tracking-wide transition-colors duration-300"
+                    style={{ borderColor: 'rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.04)', color: 'rgba(16,185,129,0.8)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                   >
                     <span className="relative z-10">Enter Portfolio</span>
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.04] to-emerald-500/0"
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.04), transparent)' }}
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     />

@@ -4,6 +4,7 @@ import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { getActiveAdVideos, incrementAdViewCount } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
+import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts } from '../data/portfolio'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -400,6 +401,630 @@ function Confetti() {
   return <canvas ref={ref} className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }} />
 }
 
+const CMD_HELP_TEXT = `Available Commands:
+  about     \u2192 Who I am
+  skills    \u2192 Technologies I work with
+  projects  \u2192 Featured projects
+  education \u2192 Academic background
+  experience \u2192 Professional experience
+  services  \u2192 What I offer
+  blog      \u2192 Latest blog posts
+  social    \u2192 Social links
+  contact   \u2192 Get in touch
+  resume    \u2192 Download my resume
+  clear     \u2192 Clear terminal
+  exit      \u2192 Return to verification`
+
+const CMD_WELCOME = `
+    \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+    \u2502  ███╗   ██╗███████╗██╗   ██╗██████╗  █████╗ ██╗        \u2502
+    \u2502  ████╗  ██║██╔════╝██║   ██║██╔══██╗██╔══██╗██║        \u2502
+    \u2502  ██╔██╗ ██║█████╗  ██║   ██║██████╔╝███████║██║        \u2502
+    \u2502  ██║╚██╗██║██╔══╝  ██║   ██║██╔══██╗██╔══██║██║        \u2502
+    \u2502  ██║ ╚████║███████╗╚██████╔╝██║  ██║██║  ██║███████╗   \u2502
+    \u2502  ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   \u2502
+    \u2502                                                      \u2502
+    \u2502  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗     \u2502
+    \u2502  ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗    \u2502
+    \u2502  ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║    \u2502
+    \u2502  ██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║    \u2502
+    \u2502  ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║    \u2502
+    \u2502  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    \u2502
+    \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+
+  \u25b8 Interactive Portfolio Terminal \u2219 v2.0 \u25c2
+
+Type 'help' to explore. Type 'exit' to return.`
+
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+const INTENT_MAP = [
+  { pattern: /\b(about|who|bio|introduce|yourself|tell)\b/i, cmd: 'about' },
+  { pattern: /\b(skill|tech|technolog|stack|language|tool|expertise)\b/i, cmd: 'skills' },
+  { pattern: /\b(project|work|portfolio|build|made|create|github|repo)\b/i, cmd: 'projects' },
+  { pattern: /\b(education|edu|college|university|degree|school|study|academic)\b/i, cmd: 'education' },
+  { pattern: /\b(experience|job|work|career|profession|intern|employed|company)\b/i, cmd: 'experience' },
+  { pattern: /\b(service|offer|provide|consult|freelance|pricing|package)\b/i, cmd: 'services' },
+  { pattern: /\b(blog|post|article|write|content)\b/i, cmd: 'blog' },
+  { pattern: /\b(social|link|connect|follow|twitter|github|linkedin|instagram|youtube)\b/i, cmd: 'social' },
+  { pattern: /\b(contact|email|reach|message|hire|get.?in.?touch)\b/i, cmd: 'contact' },
+  { pattern: /\b(resume|cv|download|hire|job)\b/i, cmd: 'resume' },
+]
+
+function matchIntent(text) {
+  for (const { pattern, cmd } of INTENT_MAP) {
+    if (pattern.test(text)) return cmd
+  }
+  const greetings = /\b(hi|hello|hey|sup|howdy|namaste|good morning|good evening)\b/i
+  if (greetings.test(text)) return 'about'
+  return null
+}
+
+function playKeystroke() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 600 + Math.random() * 400
+    osc.type = 'square'
+    gain.gain.setValueAtTime(0.015, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04)
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.04)
+  } catch {}
+}
+
+function MatrixRain() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let animId; let drops = []; let cols = 0; const fontSize = 10
+    const init = () => {
+      const w = canvas.offsetWidth; const h = canvas.offsetHeight
+      canvas.width = w; canvas.height = h
+      cols = Math.floor(w / fontSize)
+      if (drops.length !== cols) drops = Array.from({ length: cols }, () => Math.floor(Math.random() * -60))
+    }
+    init()
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0,0,0,0.04)'; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = 'rgba(0,240,255,0.06)'; ctx.font = `${fontSize}px monospace`
+      for (let i = 0; i < drops.length; i++) {
+        const char = String.fromCharCode(0x30A0 + Math.random() * 96)
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize)
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0
+        drops[i]++
+      }
+      animId = requestAnimationFrame(draw)
+    }
+    draw()
+    const onResize = () => init()
+    window.addEventListener('resize', onResize)
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', onResize) }
+  }, [])
+  return <canvas ref={ref} className="absolute inset-0 pointer-events-none" />
+}
+
+function HighlightedText({ text }) {
+  const lines = text.split('\n')
+  return (
+    <span>
+      {lines.map((line, i) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g
+        const arrowMatch = line.match(/^(\s*)(\S[\S\s]*?\S?)\s*(\u2192)\s*(.*)/)
+        if (arrowMatch && arrowMatch[2].length < 30) {
+          const valueParts = arrowMatch[4].split(urlRegex)
+          return (
+            <div key={i} className="flex gap-2 leading-relaxed">
+              <span className="text-white/70 shrink-0">{arrowMatch[1]}{arrowMatch[2]}</span>
+              <span className="text-white/20 shrink-0">{arrowMatch[3]}</span>
+              <span className="text-emerald-400/80">
+                {valueParts.map((p, j) =>
+                  p.match(urlRegex)
+                    ? <span key={j} className="text-blue-400 underline decoration-blue-400/30">{p}</span>
+                    : <span key={j}>{p}</span>
+                )}
+              </span>
+            </div>
+          )
+        }
+        const fieldMatch = line.match(/^(\s*)([A-Za-z][A-Za-z0-9\s\/.#()_-]+?)(\s*[:—]\s*)(.*)/)
+        if (fieldMatch && fieldMatch[2].trim().length < 45 && fieldMatch[2].trim().length > 0) {
+          const valParts = fieldMatch[4].split(urlRegex)
+          return (
+            <div key={i} className="leading-relaxed">
+              <span className="text-white/80">{fieldMatch[1]}{fieldMatch[2]}</span>
+              <span className="text-white/30">{fieldMatch[3]}</span>
+              <span className="text-emerald-400">
+                {valParts.map((p, j) =>
+                  p.match(urlRegex)
+                    ? <span key={j} className="text-blue-400 underline decoration-blue-400/30">{p}</span>
+                    : <span key={j}>{p}</span>
+                )}
+              </span>
+            </div>
+          )
+        }
+        const segs = line.split(urlRegex)
+        return (
+          <div key={i} className="leading-relaxed">
+            {segs.map((seg, j) =>
+              seg.match(urlRegex)
+                ? <span key={j} className="text-blue-400 underline decoration-blue-400/30">{seg}</span>
+                : <span key={j} className="text-white/60">{seg}</span>
+            )}
+          </div>
+        )
+      })}
+    </span>
+  )
+}
+
+function AnimatedBar({ name, level }) {
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] mb-1 font-mono">
+        <span className="text-white/80">{name}</span>
+        <motion.span
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+          className="text-emerald-400 font-bold"
+        >{level}%</motion.span>
+      </div>
+      <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${level}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+          className="h-full rounded-full relative"
+          style={{
+            background: 'linear-gradient(90deg, #00f0ff, #10b981)',
+            boxShadow: '0 0 8px rgba(0,240,255,0.25)',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function SkillsContent() {
+  const cats = [...new Set(skills.map(s => s.category))]
+  return (
+    <div className="space-y-4 py-1">
+      {cats.map((cat, ci) => (
+        <motion.div key={cat} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.1 }}>
+          <div className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-mono mb-2">{cat}</div>
+          <div className="space-y-2">
+            {skills.filter(s => s.category === cat).map(s => (
+              <AnimatedBar key={s.name} name={s.name} level={s.level} />
+            ))}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function ProjectCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {projects.map((p, i) => (
+        <motion.div key={p.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 hover:border-white/10 transition-colors"
+        >
+          <div className="text-white font-bold text-xs mb-1" style={{ textShadow: '0 0 8px rgba(0,240,255,0.15)' }}>{p.title}</div>
+          <div className="text-white/50 text-[11px] leading-relaxed mb-1.5">{p.description}</div>
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {p.technologies.map(t => (
+              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
+            ))}
+          </div>
+          {p.github && (
+            <div className="text-[10px] text-blue-400/70 font-mono">
+              <span className="text-white/30">\u2192 </span>{p.github}
+            </div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function EducationCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {education.map((e, i) => (
+        <motion.div key={e.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+        >
+          <div className="text-white font-bold text-xs">{e.degree}</div>
+          <div className="text-white/40 text-[11px] mt-0.5">{e.school}</div>
+          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1">{e.year}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed">{e.description}</div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function ExperienceCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {experience.map((e, i) => (
+        <motion.div key={e.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+        >
+          <div className="text-white font-bold text-xs">{e.role}</div>
+          <div className="text-white/40 text-[11px] mt-0.5">{e.company}</div>
+          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1">{e.year}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed">{e.description}</div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function ServicesCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {services.map((s, i) => (
+        <motion.div key={s.service_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+        >
+          <div className="text-white font-bold text-xs mb-1">{s.title}</div>
+          <div className="text-emerald-400/70 text-[11px] italic mb-1">"{s.tagline}"</div>
+          <div className="text-white/40 text-[11px] leading-relaxed">{s.description}</div>
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {s.features.map(f => (
+              <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.02] text-white/30 font-mono">{f}</span>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function BlogCards() {
+  return (
+    <div className="space-y-3 py-1">
+      {blogPosts.map((b, i) => (
+        <motion.div key={b.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+          className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+        >
+          <div className="text-white font-bold text-xs mb-1">{b.title}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed mb-1">{b.excerpt}</div>
+          <div className="flex gap-3 text-[10px] font-mono">
+            <span className="text-neural-blue/50">{b.date}</span>
+            <span className="text-emerald-400/50">{b.readTime}</span>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+function CmdExplorer({ onBack }) {
+  const [history, setHistory] = useState([{ id: genId(), type: 'welcome' }])
+  const [input, setInput] = useState('')
+  const [cmdIndex, setCmdIndex] = useState(-1)
+  const [cmdHistory, setCmdHistory] = useState([])
+  const [typingId, setTypingId] = useState(null)
+  const [typingText, setTypingText] = useState('')
+  const scrollRef = useRef(null)
+  const inputRef = useRef(null)
+  const typingTimer = useRef(null)
+  const typingFull = useRef('')
+  const typingEntry = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    }
+  }, [history, typingText])
+
+  function beginTyping(id, fullText) {
+    if (typingTimer.current) {
+      clearInterval(typingTimer.current)
+      if (typingEntry.current) {
+        setHistory(prev => prev.map(e => e.id === typingEntry.current ? { ...e, content: typingFull.current, type: 'text' } : e))
+      }
+    }
+    typingEntry.current = id
+    typingFull.current = fullText
+    let idx = 0
+    setTypingId(id)
+    setTypingText('')
+    typingTimer.current = setInterval(() => {
+      idx++
+      const current = fullText.slice(0, idx)
+      setTypingText(current)
+      if (idx >= fullText.length) {
+        clearInterval(typingTimer.current)
+        typingTimer.current = null
+        setHistory(prev => prev.map(e => e.id === id ? { ...e, content: fullText, type: 'text' } : e))
+        setTypingId(null)
+        setTypingText('')
+        typingEntry.current = null
+      }
+    }, 14)
+  }
+
+  function cancelTyping() {
+    if (typingTimer.current) {
+      clearInterval(typingTimer.current)
+      typingTimer.current = null
+    }
+    if (typingEntry.current) {
+      const partial = typingText || ''
+      setHistory(prev => prev.map(e => e.id === typingEntry.current ? { ...e, content: partial || typingFull.current, type: 'text' } : e))
+    }
+    setTypingId(null)
+    setTypingText('')
+    typingEntry.current = null
+  }
+
+  function addDivider() {
+    setHistory(prev => [...prev, { id: genId(), type: 'divider' }])
+  }
+
+  function addCmd(raw) {
+    setHistory(prev => [...prev, { id: genId(), type: 'cmd', content: raw }])
+  }
+
+  function addText(text) {
+    const id = genId()
+    setHistory(prev => [...prev, { id, type: 'text', content: '' }])
+    beginTyping(id, text)
+  }
+
+  function addJSX(jsx) {
+    setHistory(prev => [...prev, { id: genId(), type: 'jsx', content: jsx }])
+  }
+
+  function processCommand(raw) {
+    const trimmed = raw.trim().toLowerCase()
+    if (!trimmed) return
+
+    cancelTyping()
+
+    const newHistoryList = [...cmdHistory, raw]
+    setCmdHistory(newHistoryList)
+    setCmdIndex(-1)
+    setInput('')
+
+    addDivider()
+    addCmd(raw)
+
+    const parts = trimmed.split(/\s+/)
+    const cmd = parts[0]
+
+    switch (cmd) {
+      case 'help':
+        addText(CMD_HELP_TEXT)
+        break
+      case 'about':
+        addJSX(
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 space-y-1.5"
+          >
+            <div className="text-white font-bold text-sm" style={{ textShadow: '0 0 12px rgba(0,240,255,0.2)' }}>
+              {personalInfo.name}
+            </div>
+            <div className="text-neural-blue text-[11px] font-mono">@{personalInfo.handle}</div>
+            <div className="text-emerald-400 text-xs">{personalInfo.title}</div>
+            <div className="text-white/50 text-[11px] italic leading-relaxed">"{personalInfo.tagline}"</div>
+            <div className="text-white/35 text-[11px] leading-relaxed border-t border-white/[0.04] pt-1.5">{personalInfo.bio}</div>
+          </motion.div>
+        )
+        break
+      case 'skills':
+        addJSX(<SkillsContent />)
+        break
+      case 'projects':
+        addJSX(<ProjectCards />)
+        break
+      case 'education':
+        addJSX(<EducationCards />)
+        break
+      case 'experience':
+        addJSX(<ExperienceCards />)
+        break
+      case 'services':
+        addJSX(<ServicesCards />)
+        break
+      case 'blog':
+        addJSX(<BlogCards />)
+        break
+      case 'social':
+        addText(socialLinks.map(s => `  ${s.label.padEnd(18)} \u2192 ${s.url}`).join('\n'))
+        break
+      case 'contact':
+        addJSX(
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 space-y-1.5"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-white/60 text-[11px]">GitHub</span>
+              <span className="text-white/20">\u2192</span>
+              <span className="text-blue-400/80 text-[11px]">https://github.com/{personalInfo.handle}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-white/60 text-[11px]">Email</span>
+              <span className="text-white/20">\u2192</span>
+              <span className="text-emerald-400/60 text-[11px]">available on request</span>
+            </div>
+            <div className="text-white/25 text-[10px] font-mono italic mt-1">Type 'social' for all social links</div>
+          </motion.div>
+        )
+        break
+      case 'resume':
+        addJSX(
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
+          >
+            <div className="text-white/80 text-[11px]">
+              <span className="text-white/40">Resume: </span>
+              <a href={personalInfo.resume} target="_blank" rel="noopener noreferrer"
+                className="text-blue-400 underline decoration-blue-400/30 hover:text-blue-300"
+              >{personalInfo.resume}</a>
+            </div>
+            <div className="text-white/25 text-[10px] font-mono mt-1">
+              \u2192 Click the link to download
+            </div>
+          </motion.div>
+        )
+        break
+      case 'clear':
+        setHistory([{ id: genId(), type: 'welcome' }])
+        break
+      case 'exit':
+        onBack()
+        break
+      default: {
+        const matched = matchIntent(trimmed)
+        if (matched && matched !== cmd) {
+          processCommand(matched)
+        } else {
+          addText(`  Unknown command: '${cmd}'. Type 'help' for available commands.`)
+        }
+        break
+      }
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') {
+      if (input.trim()) playKeystroke()
+      processCommand(input)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (cmdHistory.length > 0) {
+        const idx = cmdIndex === -1 ? cmdHistory.length - 1 : Math.max(0, cmdIndex - 1)
+        setCmdIndex(idx)
+        setInput(cmdHistory[idx])
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (cmdIndex !== -1) {
+        const idx = cmdIndex + 1
+        if (idx >= cmdHistory.length) {
+          setCmdIndex(-1); setInput('')
+        } else { setCmdIndex(idx); setInput(cmdHistory[idx]) }
+      }
+    } else if (e.key.length === 1 && e.key !== ' ') {
+      playKeystroke()
+    }
+  }
+
+  return (
+    <div className="relative z-10 w-full max-w-3xl mx-auto px-2 sm:px-4">
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{
+          border: '1px solid rgba(0,240,255,0.1)',
+          boxShadow: '0 4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+          background: 'rgba(2,6,23,0.85)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-black/30 border-b border-neural-blue/10"
+          style={{ boxShadow: 'inset 0 -1px 0 rgba(0,240,255,0.05)' }}>
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" style={{ boxShadow: '0 0 4px rgba(239,68,68,0.3)' }} />
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" style={{ boxShadow: '0 0 4px rgba(234,179,8,0.3)' }} />
+          <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" style={{ boxShadow: '0 0 4px rgba(34,197,94,0.3)' }} />
+          <span className="ml-2 text-[9px] uppercase tracking-widest text-white/20 font-mono"
+            style={{ textShadow: '0 0 6px rgba(0,240,255,0.2)' }}
+          >Neural Aurora CMD</span>
+          <span className="ml-auto text-[8px] font-mono text-neural-blue/30 tracking-wider">v2.0</span>
+        </div>
+        <div className="relative">
+          <MatrixRain />
+          <div
+            ref={scrollRef}
+            className="h-[50dvh] min-h-[260px] max-h-[600px] overflow-y-auto p-3 sm:p-4 font-mono text-xs leading-relaxed space-y-[3px] relative z-[1]"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(0,240,255,0.15) transparent',
+            }}
+          >
+            {history.map(entry => {
+              if (entry.type === 'welcome') {
+                return (
+                  <pre key={entry.id}
+                    className="text-emerald-400/70 whitespace-pre-wrap font-mono text-[10px] leading-relaxed mb-2"
+                    style={{ textShadow: '0 0 4px rgba(16,185,129,0.1)' }}
+                  >{CMD_WELCOME}</pre>
+                )
+              }
+              if (entry.type === 'divider') {
+                return <div key={entry.id} className="border-t border-white/[0.03] my-1.5" />
+              }
+              if (entry.type === 'cmd') {
+                return (
+                  <div key={entry.id} className="flex items-center gap-1.5">
+                    <span className="text-neural-blue/60 text-xs font-mono shrink-0"
+                      style={{ textShadow: '0 0 6px rgba(0,240,255,0.25)' }}
+                    >$</span>
+                    <span className="inline-block w-1.5 h-3.5 bg-neural-blue/50 animate-pulse mr-0.5" />
+                    <span className="text-white font-bold text-[12px] tracking-wide">{entry.content}</span>
+                  </div>
+                )
+              }
+              if (entry.type === 'text') {
+                const display = entry.id === typingId ? typingText : entry.content
+                return (
+                  <div key={entry.id} className="ml-1 pl-2 border-l border-white/[0.03]">
+                    <HighlightedText text={display} />
+                    {entry.id === typingId && typingText.length < typingFull.current.length && (
+                      <span className="inline-block w-1.5 h-3 bg-emerald-400/60 ml-0.5 animate-pulse" />
+                    )}
+                  </div>
+                )
+              }
+              if (entry.type === 'jsx') {
+                return <div key={entry.id} className="ml-1">{entry.content}</div>
+              }
+              return null
+            })}
+            {history.length === 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-neural-blue/60 text-xs font-mono"
+                  style={{ textShadow: '0 0 6px rgba(0,240,255,0.25)' }}
+                >$</span>
+                <span className="inline-block w-1.5 h-3.5 bg-neural-blue/50 animate-pulse" />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 border-t border-neural-blue/10 px-3 py-2.5 bg-black/30"
+          style={{ boxShadow: 'inset 0 1px 0 rgba(0,240,255,0.03)' }}>
+          <span className="text-neural-blue/60 text-xs font-mono shrink-0"
+            style={{ textShadow: '0 0 6px rgba(0,240,255,0.2)' }}
+          >$</span>
+          <span className="inline-block w-1.5 h-3.5 bg-neural-blue/50 animate-pulse mr-0.5" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 bg-transparent text-xs font-mono text-white/90 outline-none placeholder-white/15 tracking-wide"
+            placeholder="Type a command..."
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function StartingLoader({ onComplete }) {
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
@@ -610,6 +1235,23 @@ export default function StartingLoader({ onComplete }) {
                   </div>
                 </div>
               </button>
+              <button
+                onClick={() => setPhase('cmd')}
+                className="group px-6 py-4 rounded-xl border border-white/10 bg-white/5 hover:border-emerald-500/50 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" className="w-4 h-4">
+                      <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm">Neural Aurora CMD</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Explore via terminal</p>
+                  </div>
+                </div>
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -660,6 +1302,12 @@ export default function StartingLoader({ onComplete }) {
           </motion.div>
         )}
 
+        {phase === 'cmd' && (
+          <motion.div key="cmd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <CmdExplorer onBack={() => setPhase('selecting')} />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
@@ -668,7 +1316,7 @@ export default function StartingLoader({ onComplete }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }

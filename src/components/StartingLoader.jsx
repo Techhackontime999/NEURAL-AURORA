@@ -121,11 +121,11 @@ function TerminalBoot({ onDone }) {
   )
 }
 
-function VoiceChallenge({ onSuccess }) {
+function VoiceChallenge({ onSuccess, name }) {
   const [listening, setListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [confidence, setConfidence] = useState(0)
-  const [msg, setMsg] = useState('Click the mic and say "Amit"')
+  const [msg, setMsg] = useState(`Click the mic and say "${name}"`)
   const recRef = useRef(null)
   const maxConfidence = useRef(0)
 
@@ -181,10 +181,10 @@ function VoiceChallenge({ onSuccess }) {
           maxConfidence.current = conf
           setConfidence(conf)
         }
-        if (text.includes('amit')) {
+        if (text.includes(name.toLowerCase())) {
           rec.stop()
-          speak('Welcome to Amit\'s world.')
-          setMsg('Amit detected!')
+          speak(`Welcome to ${name}'s world.`)
+          setMsg(`${name} detected!`)
           setTimeout(() => {
             setListening(false)
             onSuccess()
@@ -305,7 +305,7 @@ function MCQChallenge({ question, onCorrect, onWrong }) {
   )
 }
 
-function SuccessScreen() {
+function SuccessScreen({ name }) {
   const [showAccess, setShowAccess] = useState(false)
   const [showText, setShowText] = useState(false)
   useEffect(() => {
@@ -346,7 +346,7 @@ function SuccessScreen() {
         {showText && (
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
             className="text-base text-white/40 font-mono tracking-wider"
-          >Welcome to Amit&apos;s world.</motion.p>
+          >Welcome to {name}&apos;s world.</motion.p>
         )}
       </AnimatePresence>
       {Array.from({ length: 16 }).map((_, i) => (
@@ -408,6 +408,7 @@ export default function StartingLoader({ onComplete }) {
   const [currentAd, setCurrentAd] = useState(null)
   const [adLoading, setAdLoading] = useState(false)
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
+  const firstName = 'Amit'
   const doneRef = useRef(onComplete)
   doneRef.current = onComplete
 
@@ -547,7 +548,7 @@ export default function StartingLoader({ onComplete }) {
                       <path d="M19 10v2a7 7 0 01-14 0v-2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div><p className="text-white text-sm">Say "Amit"</p><p className="text-[10px] text-white/30 mt-0.5">Voice recognition</p></div>
+                  <div><p className="text-white text-sm">Say "{firstName}"</p><p className="text-[10px] text-white/30 mt-0.5">Voice recognition</p></div>
                 </div>
               </button>
               <button
@@ -615,7 +616,7 @@ export default function StartingLoader({ onComplete }) {
 
         {phase === 'voice' && (
           <motion.div key="voice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <VoiceChallenge onSuccess={handleVoiceSuccess} />
+            <VoiceChallenge onSuccess={handleVoiceSuccess} name={firstName} />
           </motion.div>
         )}
 
@@ -661,7 +662,7 @@ export default function StartingLoader({ onComplete }) {
 
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <SuccessScreen />
+            <SuccessScreen name={firstName} />
           </motion.div>
         )}
       </AnimatePresence>

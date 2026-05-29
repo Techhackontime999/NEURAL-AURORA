@@ -91,7 +91,7 @@ export default function About() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-black/80 dark:text-white/80">{personalInfo.name}</p>
-                  <p className="text-xs text-black/40 dark:text-white/30">Full-Stack Developer</p>
+                  <p className="text-xs text-black/40 dark:text-white/30">{personalInfo.title}</p>
                 </div>
               </div>
               <p className="text-xs text-black/40 dark:text-white/30 leading-relaxed">

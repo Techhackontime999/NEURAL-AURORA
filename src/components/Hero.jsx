@@ -54,9 +54,8 @@ const itemVariants = {
 }
 
 export default function Hero() {
-  const { data: personalInfo, loaded: personalInfoLoaded } = usePersonalInfo()
+  const { data: personalInfo } = usePersonalInfo()
   const socialLinks = useSocialLinks()
-  if (!personalInfoLoaded) return null
   return (
     <section
       id="hero"
@@ -150,7 +149,7 @@ export default function Hero() {
                     style={{ background: 'var(--glass-bg)' }}
                   >
                     <span className="text-xs md:text-sm font-display font-bold tracking-[0.15em] dark:text-[#00f0ff] text-[#00a0ff] ">
-                      Techhackontime999
+                      {personalInfo.handle}
                     </span>
                   </motion.div>
                 </div>

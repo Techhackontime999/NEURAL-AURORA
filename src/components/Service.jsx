@@ -102,9 +102,10 @@ function ServiceCard({ service, index }) {
         <p className="text-xs uppercase tracking-widest text-cyan-500 mb-3">
           {service.tagline}
         </p>
-        <p className="text-sm text-black/50 dark:text-white/50 leading-relaxed mb-5">
-          {service.description}
-        </p>
+        <div
+          className="text-sm text-black/50 dark:text-white/50 leading-relaxed mb-5"
+          dangerouslySetInnerHTML={{ __html: service.description }}
+        />
         <ul className="space-y-2 mb-6">
           {service.features.map((feat) => (
             <li key={feat} className="flex items-start gap-2.5 text-xs text-black/50 dark:text-white/50">

@@ -2,7 +2,7 @@ const API_BASE = (import.meta.env.VITE_AI_API_BASE || 'https://api.openai.com/v1
 const API_KEY = import.meta.env.VITE_AI_API_KEY
 const MODEL = import.meta.env.VITE_AI_MODEL || 'gpt-4o-mini'
 
-export async function callAi(messages, tools) {
+export async function callAi(messages, tools, opts) {
   if (!API_KEY) {
     throw new Error(
       'VITE_AI_API_KEY environment variable is not set. ' +
@@ -11,10 +11,10 @@ export async function callAi(messages, tools) {
   }
 
   const body = {
-    model: MODEL,
+    model: opts?.model || MODEL,
     messages,
-    temperature: 0.1,
-    max_tokens: 1024,
+    temperature: opts?.temperature ?? 0.1,
+    max_tokens: opts?.max_tokens ?? 1024,
   }
 
   if (tools && tools.length > 0) {

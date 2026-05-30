@@ -53,9 +53,10 @@ export default function CaseStudyDetail() {
             {study.title}
           </h1>
 
-          <p className="text-sm text-black/50 dark:text-white/50 mt-4 leading-relaxed max-w-[65ch]">
-            {study.description}
-          </p>
+          <div
+            className="text-sm text-black/50 dark:text-white/50 mt-4 leading-relaxed max-w-[65ch]"
+            dangerouslySetInnerHTML={{ __html: study.description }}
+          />
 
           <div className="flex flex-wrap gap-1.5 mt-4">
             {study.tech.map((t) => (

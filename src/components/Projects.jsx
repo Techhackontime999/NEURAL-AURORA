@@ -87,14 +87,13 @@ function ProjectCard({ project, index }) {
         <motion.h3 layout className="text-lg font-display font-bold text-black/80 dark:text-white/90 tracking-tight">
           {project.title}
         </motion.h3>
-        <motion.p
+        <motion.div
           layout
           className={`text-sm text-black/50 dark:text-white/40 leading-relaxed ${
             expanded ? '' : 'line-clamp-2'
           }`}
-        >
-          {project.description}
-        </motion.p>
+          dangerouslySetInnerHTML={{ __html: project.description }}
+        />
 
         <AnimatePresence>
           {expanded && (

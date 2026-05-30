@@ -22,12 +22,14 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
   const fileInputRef = useRef(null)
   const [activeCmds, setActiveCmds] = useState(new Set())
   const [uploading, setUploading] = useState(false)
+  const isInternalRef = useRef(false)
 
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== (value || '')) {
+    if (editorRef.current && !isInternalRef.current) {
       editorRef.current.innerHTML = value || ''
     }
-  })
+    isInternalRef.current = false
+  }, [value])
 
   const updateState = useCallback(() => {
     const cmds = new Set()
@@ -46,6 +48,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
     }
     editorRef.current?.focus()
     updateState()
+    isInternalRef.current = true
     if (onChange) {
       onChange(editorRef.current?.innerHTML || '')
     }
@@ -59,6 +62,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
       const url = await uploadImage(file)
       if (url) {
         document.execCommand('insertImage', false, url)
+        isInternalRef.current = true
         if (onChange) {
           onChange(editorRef.current?.innerHTML || '')
         }
@@ -71,6 +75,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
   }, [onChange])
 
   const handleInput = useCallback(() => {
+    isInternalRef.current = true
     if (onChange) {
       onChange(editorRef.current?.innerHTML || '')
     }
@@ -80,7 +85,11 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
     e.preventDefault()
     const text = e.clipboardData?.getData('text/plain') || ''
     document.execCommand('insertText', false, text)
-  }, [])
+    isInternalRef.current = true
+    if (onChange) {
+      onChange(editorRef.current?.innerHTML || '')
+    }
+  }, [onChange])
 
   const handleToolbarAction = useCallback((item) => {
     if (item.needsUpload) {

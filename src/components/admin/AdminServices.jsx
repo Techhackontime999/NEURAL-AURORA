@@ -6,6 +6,7 @@ import {
 } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { stripHtml } from '../../lib/utils'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
@@ -463,7 +464,7 @@ export default function AdminServices() {
                     <div>
                       <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{item.tagline}</p>
-                      <p className="text-xs mt-1 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>{item.description}</p>
+                      <p className="text-xs mt-1 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>{stripHtml(item.description)}</p>
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {(item.features || []).slice(0, 3).map((f) => (
                           <span key={f} className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'var(--hover-bg)', color: 'var(--text-tertiary)' }}>{f}</span>

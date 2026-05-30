@@ -1226,8 +1226,79 @@ function InterviewMe({ onSuccess, name }) {
   const listeningRef = useRef(false)
   const silenceTimerRef = useRef(null)
   const fallbackTimerRef = useRef(null)
+  const [liveData, setLiveData] = useState(null)
+  const [dataLoading, setDataLoading] = useState(true)
+  const dataRef = useRef(null)
   const voiceIndexRef = useRef(0)
   const ttsVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+
+  useEffect(() => {
+    let cancelled = false
+    setDataLoading(true)
+    Promise.all([
+      getPersonalInfoFromDB().catch(() => personalInfo),
+      getSkillsFromDB().catch(() => skills),
+      getProjectsFromDB().catch(() => projects),
+      getEducationFromDB().catch(() => education),
+      getExperienceFromDB().catch(() => experience),
+      getServicesFromDB().catch(() => services),
+      getCaseStudiesFromDB().catch(() => caseStudies),
+      getBlogPostsFromDB().catch(() => blogPosts),
+      getSocialLinksFromDB().catch(() => socialLinks),
+    ]).then(([pi, sk, pr, ed, ex, sv, cs, bp, sl]) => {
+      if (cancelled) return
+      const d = {
+        personalInfo: pi || personalInfo,
+        skills: sk || skills,
+        projects: pr || projects,
+        education: ed || education,
+        experience: ex || experience,
+        services: sv || services,
+        caseStudies: cs || caseStudies,
+        blogPosts: bp || blogPosts,
+        socialLinks: sl || socialLinks,
+      }
+      setLiveData(d)
+      dataRef.current = d
+      setDataLoading(false)
+    })
+    const onVisible = () => {
+      const current = dataRef.current
+      if (document.visibilityState === 'visible' && current) {
+        Promise.all([
+          getPersonalInfoFromDB().catch(() => null),
+          getSkillsFromDB().catch(() => null),
+          getProjectsFromDB().catch(() => null),
+          getEducationFromDB().catch(() => null),
+          getExperienceFromDB().catch(() => null),
+          getServicesFromDB().catch(() => null),
+          getCaseStudiesFromDB().catch(() => null),
+          getBlogPostsFromDB().catch(() => null),
+          getSocialLinksFromDB().catch(() => null),
+        ]).then(([pi, sk, pr, ed, ex, sv, cs, bp, sl]) => {
+          if (cancelled) return
+          const d = {
+            personalInfo: pi || current.personalInfo,
+            skills: sk || current.skills,
+            projects: pr || current.projects,
+            education: ed || current.education,
+            experience: ex || current.experience,
+            services: sv || current.services,
+            caseStudies: cs || current.caseStudies,
+            blogPosts: bp || current.blogPosts,
+            socialLinks: sl || current.socialLinks,
+          }
+          setLiveData(d)
+          dataRef.current = d
+        })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
 
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : null
   const voiceApiBase = (import.meta.env.VITE_VOICE_API_BASE || import.meta.env.VITE_AI_API_BASE || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
@@ -1280,15 +1351,29 @@ function InterviewMe({ onSuccess, name }) {
     })
   }
 
-  const data = { skills, projects, education, experience, services, caseStudies, blogPosts, personalInfo, socialLinks }
+  async function autoCorrect(t) {
+    try {
+      const res = await callAi([
+        { role: 'system', content: 'Fix spelling, grammar, and speech-to-text errors. Return only the corrected text. Preserve meaning. No explanation.' },
+        { role: 'user', content: t },
+      ], null, 150)
+      const c = (res.choices?.[0]?.message?.content || '').trim()
+      if (c && c.length > 0 && c.length < t.length * 3) return c.charAt(0).toUpperCase() + c.slice(1)
+    } catch {}
+    return t.charAt(0).toUpperCase() + t.slice(1)
+  }
+
+  const data = liveData || { skills, projects, education, experience, services, caseStudies, blogPosts, personalInfo, socialLinks }
 
   useEffect(() => {
     if (step !== 'intro') return
+    if (dataLoading) return
     ;(async () => {
-      await speak(`Hi, I am Neural Aurora. I represent ${name}. Ask me anything about his work and I answer as him. Go ahead.`)
+      const title = data.personalInfo.title || 'creator'
+      await speak(`I am Neural Aurora. I speak for ${name}, ${title}. Ask me anything.`)
       if (mountedRef.current) setStep('listening')
     })()
-  }, [step])
+  }, [step, dataLoading])
 
   function startListening() {
     if (busyRef.current || listening || !mountedRef.current) return
@@ -1327,9 +1412,10 @@ function InterviewMe({ onSuccess, name }) {
           if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
           setShowTextFallback(false)
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-          silenceTimerRef.current = setTimeout(() => {
+          silenceTimerRef.current = setTimeout(async () => {
             if (listeningRef.current && transcriptRef.current.trim()) {
-              const q = transcriptRef.current.trim()
+              const raw = transcriptRef.current.trim()
+              const q = await autoCorrect(raw)
               listeningRef.current = false
               if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
               if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
@@ -1372,9 +1458,10 @@ function InterviewMe({ onSuccess, name }) {
     }
   }
 
-  function submitText() {
-    const q = textInput.trim()
-    if (!q) return
+  async function submitText() {
+    const raw = textInput.trim()
+    if (!raw) return
+    const q = await autoCorrect(raw)
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
     if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
     listeningRef.current = false
@@ -1386,7 +1473,7 @@ function InterviewMe({ onSuccess, name }) {
     generateResponse(q)
   }
 
-  function stopListening() {
+  async function stopListening() {
     if (busyRef.current || !listeningRef.current) return
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
     if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null }
@@ -1396,7 +1483,8 @@ function InterviewMe({ onSuccess, name }) {
       try { recRef.current.abort() } catch {}
       recRef.current = null
     }
-    const q = textInput.trim() || transcriptRef.current.trim() || 'no question'
+    const raw = textInput.trim() || transcriptRef.current.trim() || 'no question'
+    const q = await autoCorrect(raw)
     setVisitorQuestion(q)
     setHistory(prev => [...prev, { role: 'visitor', text: q }])
     setStep('thinking')
@@ -1408,54 +1496,66 @@ function InterviewMe({ onSuccess, name }) {
     setThinking(true)
     const conv = (history || []).map(h => `${h.role === 'visitor' ? 'Visitor' : name}: ${h.text}`).join('\n')
     try {
-      const systemContent = `You are ${name}, a founder and creator. A visitor is asking you questions. Respond as YOURSELF: direct, confident, warm, professional. Use "I", "my", "me". Keep responses to 1-2 crisp sentences. Never use emojis or exclamation marks. Sound like a CEO — concise, assured, genuine.
+      const currentData = dataRef.current || data
+      const systemContent = `You are ${name}, a founder, creator, and ${currentData.personalInfo.title || 'builder'}. A visitor is interviewing you. Respond as YOURSELF — direct, confident, warm, professional. Use "I", "my", "me". Keep responses to 1-2 crisp sentences. Never use emojis or exclamation marks. Sound like a CEO: concise, assured, genuine.
 
-You learn and adapt from every interaction. Use the conversation history to build context, recall previous topics, and respond naturally.
+You learn and adapt from every interaction. Use conversation history to build context, recall previous topics, and respond naturally.
 
-Your FULL portfolio data (this is YOU):
-Name: ${data.personalInfo.name}
-Title: ${data.personalInfo.title}
-Bio: ${data.personalInfo.bio}
-Tagline: ${data.personalInfo.tagline}
-Resume: ${data.personalInfo.resume}
+YOUR PORTFOLIO (live data synced in real-time):
+Name: ${currentData.personalInfo.name}
+Title: ${currentData.personalInfo.title}
+Bio: ${currentData.personalInfo.bio}
+Tagline: ${currentData.personalInfo.tagline}
+Resume: ${currentData.personalInfo.resume}
 
-Skills:
-${data.skills.map(s => `- ${s.name} (${s.level}%)`).join('\n')}
+Skills (${currentData.skills.length} total):
+${currentData.skills.map(s => `- ${s.name} (${s.level}% proficiency)`).join('\n')}
 
-Projects:
-${data.projects.map(p => `- ${p.title}: ${p.description} [${p.technologies?.join(', ') || ''}]`).join('\n')}
+Projects (${currentData.projects.length} total):
+${currentData.projects.map(p => `- ${p.title}: ${p.description} [Technologies: ${p.technologies?.join(', ') || 'Various'}]`).join('\n')}
 
-Experience:
-${data.experience.map(e => `- ${e.role} @ ${e.company} (${e.year})`).join('\n')}
+Professional Experience (${currentData.experience.length} total):
+${currentData.experience.map(e => `- ${e.role} @ ${e.company} (${e.year}) — ${e.description || ''}`).join('\n')}
 
-Education:
-${data.education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')}
+Education (${currentData.education.length} total):
+${currentData.education.map(e => `- ${e.degree} @ ${e.school} (${e.year})`).join('\n')}
 
-Services:
-${data.services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
+Services Offered (${currentData.services.length} total):
+${currentData.services.map(s => `- ${s.title}: ${s.tagline}`).join('\n')}
 
-Blog Posts:
-${data.blogPosts.map(b => `- ${b.title} (${b.date || b.created_at?.slice(0, 10) || ''})`).join('\n')}
+Blog Posts (${currentData.blogPosts.length} total):
+${currentData.blogPosts.map(b => `- "${b.title}" (${b.date || b.created_at?.slice(0, 10) || 'Recent'})`).join('\n')}
 
-Case Studies:
-${data.caseStudies.map(c => `- ${c.title}: ${c.description || ''}`).join('\n')}
+Case Studies (${currentData.caseStudies.length} total):
+${currentData.caseStudies.map(c => `- ${c.title}: ${c.description || ''}`).join('\n')}
 
-Social Links:
-${data.socialLinks.map(s => `- ${s.label || s.platform}: ${s.url}`).join('\n')}
+Social / Contact:
+${currentData.socialLinks.map(s => `- ${s.label || s.platform}: ${s.url}`).join('\n')}
+
+PRODUCT — Neural Aurora CRM (wacrm):
+- Description: A self-hostable CRM template for WhatsApp Business API with shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.
+- Tech Stack: Next.js, React, TypeScript, Tailwind CSS, Supabase (Postgres + Auth + Storage + RLS), Meta Cloud API, OpenAI-compatible API.
+- Key Features: Shared inbox with multi-agent support and conversation assignment; contacts with tags, custom fields, CSV import, and deduplication; Kanban sales pipelines with deals linked to conversations; bulk broadcasts using Meta-approved templates with delivery tracking; visual no-code automation builder with triggers, conditions, and webhooks; AI automation for natural-language CRM control; real-time dashboard with response times and pipeline value; AES-256-GCM encryption and RLS on every table.
+- Status: MIT licensed, production-ready, documentation at wacrm.tech/docs.
+- Marketing site: crm-neural-aurora.vercel.app
+- GitHub: https://github.com/Techhackontime999 (source in wacrm-site repo)
 
 RULES:
-1. Talk as ${name} — use "I", "my", "me"
-2. Keep responses to 1-2 crisp sentences. Be direct.
-3. Never use emojis or exclamation marks
+1. Talk as ${name} — always use "I", "my", "me" (never "he", "him", "his", "they")
+2. Keep responses to 1-2 crisp sentences. Be direct and confident.
+3. Never use emojis, exclamation marks, or slang
 4. Learn from the conversation. Refer back to what the visitor asked earlier.
-5. If asked something outside your portfolio: "I do not have that in my portfolio. Ask me about my projects or experience."
-6. Be a CEO — professional, warm, never rattled, always in command`
+5. Your CRM product and portfolio projects are part of your work. Describe them confidently. Only say "I do not have that" for things genuinely outside your work (unrelated topics, personal life details not listed).
+6. Be a CEO — professional, warm, never rattled, always in command
+7. Your portfolio data above is live — it updates in real-time as the portfolio changes
+8. NEVER hesitate or stall. Always answer directly from your portfolio data. If asked something specific, give the specific answer. Do not say "great question" or "let me share" — just answer.
+9. You are a CEO. CEOs answer with conviction. No filler, no warmup, no hedging.`
 
       const res = await callAi([
         { role: 'system', content: systemContent },
         { role: 'user', content: conv ? `Conversation so far:\n${conv}\n\nVisitor now asks: ${q}` : `The visitor asks: ${q}` },
       ])
-      const reply = (res.choices?.[0]?.message?.content || '').trim() || 'That is a great question. Here is what I can tell you about my work.'
+      const reply = (res.choices?.[0]?.message?.content || '').trim() || 'Direct answer: I build full-stack applications with React, TypeScript, and Node.js. My portfolio spans interactive 3D experiences, real-time dashboards, and AI-powered tools.'
       if (!mountedRef.current) return
       setAiResponse(reply)
       setHistory(prev => [...prev, { role: name, text: reply }])
@@ -1465,7 +1565,7 @@ RULES:
       speak(reply).catch(() => {})
     } catch {
       if (!mountedRef.current) return
-      const fallback = 'I appreciate you asking. Let me share a bit about what I do and what drives me.'
+      const fallback = 'I build products that matter. Full-stack applications, immersive 3D experiences, AI-powered tools. That is what I do.'
       setAiResponse(fallback)
       setHistory(prev => [...prev, { role: name, text: fallback }])
       setThinking(false)
@@ -1497,18 +1597,19 @@ RULES:
     try {
       const res = await callAi([{
         role: 'system',
-        content: `You are ${name}. Give a brief warm closing (2-3 sentences) thanking the visitor for their time and genuine interest. Be friendly and natural. Here is the full conversation:\n${conv}`,
+        content: `You are ${name}, a CEO and founder. Close the conversation — brief, confident, professional (2-3 sentences). Thank them for their time. No emojis, no exclamation marks. Full conversation:\n${conv}`,
       }])
-      const note = (res.choices?.[0]?.message?.content || '').trim() || 'It was great talking with you. You are welcome here anytime.'
+      const note = (res.choices?.[0]?.message?.content || '').trim() || 'Good talking with you. You know where to find me when you are ready to build something.'
       if (!mountedRef.current) return
       setFinalNote(note)
       busyRef.current = false
       await speak(note)
     } catch {
       if (!mountedRef.current) return
-      setFinalNote('It was great talking with you. You are welcome here anytime.')
+      const note = 'Good talking with you. You know where to find me when you are ready to build something.'
+      setFinalNote(note)
       busyRef.current = false
-      await speak('It was great talking with you. You are welcome here anytime.')
+      await speak(note)
     }
     setThinking(false)
     setStep('complete')

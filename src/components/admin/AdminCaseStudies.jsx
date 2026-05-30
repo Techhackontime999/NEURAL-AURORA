@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getCaseStudies, updateCaseStudy, createCaseStudy, deleteCaseStudy } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { stripHtml } from '../../lib/utils'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
@@ -208,7 +209,7 @@ export default function AdminCaseStudies() {
                 <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} className="rounded shrink-0 mt-1" />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
-                  <p className="mt-1 text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{item.description}</p>
+                  <p className="mt-1 text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{stripHtml(item.description)}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {(item.tech || []).map((t) => (
                       <span key={t} className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'var(--hover-bg)', color: 'var(--text-tertiary)' }}>{t}</span>

@@ -112,12 +112,13 @@ function CaseStudyCard({ study, index }) {
         <h3 className="text-sm font-semibold text-black/80 dark:text-white/80 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-400 transition-all duration-300">
           {study.title}
         </h3>
-        <p className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed line-clamp-2">
-          {study.description}
-        </p>
+        <div
+          className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed line-clamp-2"
+          dangerouslySetInnerHTML={{ __html: study.description }}
+        />
         <div className="mt-3 p-3 rounded-lg bg-black/5 dark:bg-white/5">
           <span className="text-[9px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">Outcome</span>
-          <p className="text-xs text-black/60 dark:text-white/60 mt-1 line-clamp-2">{study.outcome}</p>
+          <div className="text-xs text-black/60 dark:text-white/60 mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: study.outcome }} />
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3">
           {study.tech.map((t) => (

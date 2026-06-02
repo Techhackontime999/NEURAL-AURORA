@@ -15,7 +15,7 @@ const navLinks = [
   { label: 'Resume', href: '#resume' },
   { label: 'Contact', href: '#contact' },
   { label: 'More', href: '/more', route: true },
-  { label: 'Support', href: '/support', route: true, highlight: true },
+
 ]
 
 const staggerItem = {

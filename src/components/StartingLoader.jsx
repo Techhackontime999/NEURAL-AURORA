@@ -10,7 +10,7 @@ import MoodSwing from './MoodSwing'
 import { getMoodById } from '../lib/moodMusic'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
-import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
+import { getDocsUrl } from '../lib/docs-config'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -2321,14 +2321,12 @@ export default function StartingLoader({ onComplete }) {
   const { selectedMood, selectMood, startMusic } = useMood()
   const firstName = 'Amit'
   const doneRef = useRef(onComplete)
-  const [docsUrl, setDocsUrl] = useState('')
   doneRef.current = onComplete
 
   useEffect(() => {
     if (sessionStorage.getItem('neural-aurora-verified')) {
       doneRef.current()
     }
-    setDocsUrl(getDocsUrl())
   }, [])
 
   async function loadQuestion() {
@@ -2344,10 +2342,6 @@ export default function StartingLoader({ onComplete }) {
     try {
       const settings = await getAdminSettings()
       if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
-      if (settings?.docs_url) {
-        setDocsUrl(settings.docs_url)
-        saveDocsUrl(settings.docs_url)
-      }
     } catch {}
     setPhase('selecting')
   }
@@ -2863,9 +2857,9 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                 </motion.button>
               </motion.div>
 
-              {docsUrl && (
+              {getDocsUrl() && (
                 <motion.a
-                  href={docsUrl}
+                  href={getDocsUrl()}
                   target="_self"
                   rel="noopener noreferrer"
                   initial={{ opacity: 0, y: 8 }}

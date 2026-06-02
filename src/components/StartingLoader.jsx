@@ -10,6 +10,7 @@ import MoodSwing from './MoodSwing'
 import { getMoodById } from '../lib/moodMusic'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
+import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -1123,7 +1124,7 @@ function CmdExplorer({ onBack }) {
           >
             <div className="text-white/80 text-[11px]">
               <span className="text-white/40">Resume: </span>
-               <a href={data.personalInfo.resume} target="_self" rel="noopener noreferrer"
+              <a href={data.personalInfo.resume} target="_self" rel="noopener noreferrer"
                 className="text-blue-400 underline decoration-blue-400/30 hover:text-blue-300"
               >{data.personalInfo.resume}</a>
             </div>
@@ -2320,12 +2321,14 @@ export default function StartingLoader({ onComplete }) {
   const { selectedMood, selectMood, startMusic } = useMood()
   const firstName = 'Amit'
   const doneRef = useRef(onComplete)
+  const [docsUrl, setDocsUrl] = useState('')
   doneRef.current = onComplete
 
   useEffect(() => {
     if (sessionStorage.getItem('neural-aurora-verified')) {
       doneRef.current()
     }
+    setDocsUrl(getDocsUrl())
   }, [])
 
   async function loadQuestion() {
@@ -2341,6 +2344,10 @@ export default function StartingLoader({ onComplete }) {
     try {
       const settings = await getAdminSettings()
       if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
+      if (settings?.docs_url) {
+        setDocsUrl(settings.docs_url)
+        saveDocsUrl(settings.docs_url)
+      }
     } catch {}
     setPhase('selecting')
   }
@@ -2855,6 +2862,38 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   </div>
                 </motion.button>
               </motion.div>
+
+              {docsUrl && (
+                <motion.a
+                  href={docsUrl}
+                  target="_self"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9, type: 'spring', stiffness: 80, damping: 18 }}
+                  className="group w-full max-w-xs rounded-xl border border-white/[0.08] p-3 flex items-center justify-center gap-3 hover:border-neural-blue/40 hover:bg-neural-blue/[0.04] transition-all duration-300"
+                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(0,240,255,0.1)' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-4 h-4">
+                      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8 7h8M8 11h6" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-white font-medium text-sm leading-tight">Get Started</p>
+                    <p className="text-white/30 text-[10px] font-mono truncate">Documentation & guides</p>
+                  </div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-white/20 group-hover:text-neural-blue/60 transition-colors shrink-0 ml-auto">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points="15 3 21 3 21 9" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="10" y1="14" x2="21" y2="3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </motion.a>
+              )}
 
               <motion.div
                 initial={{ opacity: 0, y: 5 }}

@@ -132,7 +132,7 @@ export function Footer() {
                   <a
                     key={link.label}
                     href={link.url}
-                    target="_blank"
+                    target="_self"
                     rel="noopener noreferrer"
                     className="text-black/30 dark:text-white/20 hover:text-black/60 dark:hover:text-white/60 active:scale-90 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                   >

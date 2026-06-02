@@ -19,7 +19,7 @@ function SocialIcon({ name, url }) {
   return (
     <motion.a
       href={url}
-      target="_blank"
+      target="_self"
       rel="noopener noreferrer"
       whileHover={{ scale: 1.1, y: -2 }}
       whileTap={{ scale: 0.95 }}

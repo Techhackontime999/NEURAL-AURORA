@@ -119,7 +119,7 @@ function ProjectCard({ project, index }) {
                   const url = project[type]
                   const Icon = type === 'github' ? GithubIcon : type === 'link' ? LinkIcon : PlayIcon
                   return url ? (
-                    <a key={type} href={url} target="_blank" rel="noopener noreferrer"
+                    <a key={type} href={url} target="_self" rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="group text-xs text-black/50 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors flex items-center gap-1.5"
                     >

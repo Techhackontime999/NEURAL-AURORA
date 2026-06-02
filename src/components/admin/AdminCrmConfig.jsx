@@ -99,7 +99,7 @@ export default function AdminCrmConfig() {
           {crmUrl.trim() && (
             <a
               href={crmUrl.trim()}
-              target="_blank"
+              target="_self"
               rel="noopener noreferrer"
               className="rounded-lg px-5 py-2 text-sm font-medium transition-all"
               style={{ color: 'var(--text-secondary)', background: 'var(--hover-bg)' }}

@@ -116,7 +116,7 @@ export default function ContributorsSection({ className }) {
                 {contributor.github && (
                   <a
                     href={contributor.github}
-                    target="_blank"
+                    target="_self"
                     rel="noopener noreferrer"
                     className="mt-auto inline-flex items-center gap-1.5 text-[10px] text-black/40 dark:text-white/30 hover:text-cyan-400 transition-colors duration-300 pt-3"
                   >

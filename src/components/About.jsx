@@ -63,7 +63,7 @@ export default function About() {
                   <motion.a
                     key={link.label}
                     href={link.url}
-                    target="_blank"
+                    target="_self"
                     rel="noopener noreferrer"
                     whileHover={{ x: 4 }}
                     className="flex items-center gap-3 group"

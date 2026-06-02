@@ -32,7 +32,7 @@ function ResumeUpload({ value, onChange }) {
         </button>
         {value && (
           <>
-            <a href={value} target="_blank" rel="noopener noreferrer"
+            <a href={value} target="_self" rel="noopener noreferrer"
               className="rounded-lg px-3 py-1.5 text-xs"
               style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}
             >View</a>

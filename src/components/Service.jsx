@@ -764,7 +764,7 @@ export default function Service() {
                     <motion.a
                       key={link.label}
                       href={link.url}
-                      target="_blank"
+                      target="_self"
                       rel="noopener noreferrer"
                       whileHover={{ x: 4 }}
                       className="group flex items-center gap-2 text-xs text-black/50 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors duration-300"

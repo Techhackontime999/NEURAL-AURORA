@@ -145,7 +145,7 @@ export default function AdminYouTubeConfig() {
           <div className="flex flex-col gap-1.5">
             <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
               Find your channel ID at{' '}
-              <a href="https://youtube.com/account_advanced" target="_blank" rel="noopener noreferrer"
+              <a href="https://youtube.com/account_advanced" target="_self" rel="noopener noreferrer"
                 className="underline underline-offset-2 decoration-white/10 hover:decoration-white/30 transition-colors" style={{ color: 'var(--accent)' }}
               >youtube.com/account_advanced</a>
               {' '}or in YouTube Studio settings.

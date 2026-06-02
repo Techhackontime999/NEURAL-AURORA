@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="90" fill="#080C14"/>
+  <defs>
+    <linearGradient id="orbFillPwa" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#AFA9EC"/>
+      <stop offset="100%" stopColor="#5DCAA5"/>
+    </linearGradient>
+    <linearGradient id="orbCorePwa" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#EEEDFE"/>
+      <stop offset="100%" stopColor="#9FE1CB"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="190" fill="url(#orbFillPwa)" fillOpacity="0.08"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#7F77DD" strokeOpacity="0.12" strokeWidth="2" strokeDasharray="8 10"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#5DCAA5" strokeOpacity="0.08" strokeWidth="1.5" strokeDasharray="4 8"/>
+  <g stroke="#5DCAA5" strokeOpacity="0.15" strokeWidth="2">
+    <line x1="256" y1="256" x2="130" y2="140"/>
+    <line x1="256" y1="256" x2="100" y2="270"/>
+    <line x1="256" y1="256" x2="145" y2="370"/>
+    <line x1="256" y1="256" x2="320" y2="110"/>
+    <line x1="256" y1="256" x2="400" y2="175"/>
+    <line x1="256" y1="256" x2="412" y2="320"/>
+    <line x1="256" y1="256" x2="340" y2="400"/>
+  </g>
+  <g fill="#AFA9EC" stroke="#7F77DD" strokeWidth="1.5">
+    <circle cx="130" cy="140" r="12"/>
+    <circle cx="100" cy="270" r="10"/>
+    <circle cx="145" cy="370" r="12"/>
+    <circle cx="320" cy="110" r="10"/>
+    <circle cx="400" cy="175" r="14"/>
+    <circle cx="412" cy="320" r="10"/>
+    <circle cx="340" cy="400" r="12"/>
+  </g>
+  <circle cx="256" cy="256" r="70" fill="url(#orbFillPwa)" fillOpacity="0.25"/>
+  <circle cx="256" cy="256" r="40" fill="url(#orbCorePwa)" fillOpacity="0.95"/>
+  <circle cx="246" cy="246" r="12" fill="white" fillOpacity="0.4"/>
+</svg>

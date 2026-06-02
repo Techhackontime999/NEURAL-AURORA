@@ -29,6 +29,7 @@ import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import BottomToTop from './components/ui/bottom-to-top'
+import PwaStatus from './components/ui/PwaStatus'
 import { usePersonalInfo } from './lib/usePortfolioData'
 import { useMood } from './context/MoodContext'
 
@@ -209,6 +210,7 @@ function AppContent() {
       <ScrollProgress />
       <AutoTraverseEffect />
       <BottomToTop />
+      <PwaStatus />
       {loaderDone && <MoodMusicToggle />}
       <div ref={glowRef} className="cursor-glow" />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}

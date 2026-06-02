@@ -372,6 +372,99 @@ function SuccessScreen({ name }) {
   )
 }
 
+function ImpressScreen({ onDone, title, skillsCount, projectsCount, servicesCount }) {
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
+  const items = [
+    { label: title || 'Full-Stack Developer', icon: '⚡' },
+    { label: `${projectsCount || 50}+ Projects Delivered`, icon: '🚀' },
+    { label: `${skillsCount || 10}+ Tech Stack Mastered`, icon: '🛠️' },
+    { label: `${servicesCount || 4} Services Offered`, icon: '🧠' },
+  ]
+  const [visible, setVisible] = useState(0)
+  const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    if (visible < items.length) {
+      const t = setTimeout(() => setVisible(v => v + 1), 350)
+      return () => clearTimeout(t)
+    } else if (!done) {
+      setDone(true)
+      setTimeout(() => onDoneRef.current(), 800)
+    }
+  }, [visible, done])
+
+  return (
+    <div className="relative z-10 flex flex-col items-center justify-center gap-6 px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 12 }}
+        className="text-center"
+      >
+        <motion.h1
+          className="text-3xl md:text-5xl font-display font-bold tracking-tighter"
+          style={{
+            background: 'linear-gradient(135deg, #00f0ff, #b829dd, #f0c040)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            filter: 'drop-shadow(0 0 20px rgba(0,240,255,0.2))',
+          }}
+        >Neural Aurora</motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="text-sm text-white/40 font-mono mt-2 tracking-wider"
+        >A living neural network suspended in an aurora field</motion.p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        className="flex flex-col gap-3 w-full max-w-sm"
+      >
+        {items.map((item, i) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, x: -30, filter: 'blur(8px)' }}
+            animate={visible > i ? { opacity: 1, x: 0, filter: 'blur(0px)' } : {}}
+            transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="text-sm text-white/80 font-medium">{item.label}</span>
+            {visible > i && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+                className="ml-auto text-emerald-400"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </motion.span>
+            )}
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {done && (
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xs text-white/30 font-mono tracking-wider"
+        >Entering the neural network...</motion.p>
+      )}
+    </div>
+  )
+}
+
 function Confetti() {
   const ref = useRef(null)
   useEffect(() => {
@@ -2331,6 +2424,17 @@ export default function StartingLoader({ onComplete }) {
     setPhase('selecting')
   }
 
+  function handleSkipVibes() {
+    setPhase('impress')
+  }
+
+  function handleImpressDone() {
+    sessionStorage.setItem('neural-aurora-verified', 'true')
+    setPhase('success')
+    setTimeout(() => setPhase('transitioning'), 2200)
+    setTimeout(() => doneRef.current(), 3500)
+  }
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
@@ -2716,6 +2820,40 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                     </div>
                   </motion.button>
                 )}
+
+                <motion.button
+                  onClick={handleSkipVibes}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  style={{
+                    scrollSnapAlign: 'start',
+                    minWidth: 'clamp(120px, 30vw, 160px)',
+                    borderColor: 'rgba(0,240,255,0.15)',
+                    background: 'linear-gradient(135deg, rgba(0,240,255,0.06), rgba(184,41,221,0.06))',
+                    transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,240,255,0.12), rgba(184,41,221,0.12))' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.15)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,240,255,0.06), rgba(184,41,221,0.06))' }}
+                >
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <motion.div
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(184,41,221,0.15))' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="1.5" className="w-[14px] sm:w-4 h-[14px] sm:h-4">
+                        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </motion.div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Skip the Vibes</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Direct entry</p>
+                    </div>
+                  </div>
+                </motion.button>
               </motion.div>
 
               <motion.div
@@ -2886,6 +3024,19 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
         {phase === 'youtube-browse' && ytChannelId && (
           <motion.div key="youtube-browse" className="w-full max-w-6xl mx-auto px-2 sm:px-6" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
             <YouTubeBrowse channelId={ytChannelId} onComplete={handleYoutubeBrowseSuccess} onBack={() => setPhase('selecting')} />
+          </motion.div>
+        )}
+
+        {phase === 'impress' && (
+          <motion.div key="impress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ImpressScreen
+              onDone={handleImpressDone}
+              title={personalInfo.title}
+              skillsCount={skills.length}
+              projectsCount={projects.length}
+              servicesCount={services.length}
+
+            />
           </motion.div>
         )}
 

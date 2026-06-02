@@ -1123,7 +1123,7 @@ function CmdExplorer({ onBack }) {
           >
             <div className="text-white/80 text-[11px]">
               <span className="text-white/40">Resume: </span>
-              <a href={data.personalInfo.resume} target="_blank" rel="noopener noreferrer"
+               <a href={data.personalInfo.resume} target="_self" rel="noopener noreferrer"
                 className="text-blue-400 underline decoration-blue-400/30 hover:text-blue-300"
               >{data.personalInfo.resume}</a>
             </div>

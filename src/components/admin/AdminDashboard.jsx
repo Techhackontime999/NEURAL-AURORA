@@ -18,7 +18,6 @@ import AdminServices from './AdminServices'
 import AdminCrmConfig from './AdminCrmConfig'
 import AdminAiAutomation from './AdminAiAutomation'
 import AdminYouTubeConfig from './AdminYouTubeConfig'
-import AdminPaymentSettings from './AdminPaymentSettings'
 export default function AdminDashboard() {
   return (
     <AdminLayout>
@@ -41,7 +40,6 @@ export default function AdminDashboard() {
         <Route path="crm-config" element={<AdminCrmConfig />} />
         <Route path="youtube-config" element={<AdminYouTubeConfig />} />
         <Route path="ai-automation" element={<AdminAiAutomation />} />
-        <Route path="payment-settings" element={<AdminPaymentSettings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

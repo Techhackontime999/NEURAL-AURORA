@@ -22,7 +22,6 @@ import ServiceDetail from './components/ServiceDetail'
 import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
 import CaseStudyDetail from './components/CaseStudyDetail'
-import Support from './components/Support'
 import { Footer } from './components/ui/footer-section'
 import Login from './components/admin/Login'
 import Register from './components/admin/Register'
@@ -186,7 +185,7 @@ function MoodMusicToggle() {
 
 function AppContent() {
   const location = useLocation()
-  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute)
   const glowRef = useRef(null)
 
@@ -226,7 +225,6 @@ function AppContent() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
-              <Route path="/support" element={<Support />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

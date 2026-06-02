@@ -14,7 +14,6 @@ const navLinks = [
   { label: 'Resume', href: '#resume' },
   { label: 'Contact', href: '#contact' },
   { label: 'More', href: '/more', route: true },
-  { label: 'Support', href: '/support', route: true, highlight: true },
 ]
 
 const staggerItem = {
@@ -96,11 +95,7 @@ export default function Navbar() {
                 <button
                   key={link.href}
                   onClick={() => handleClick(link.href, link.route)}
-                  className={`text-xs tracking-wider uppercase active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    link.highlight
-                      ? 'bg-gradient-to-r from-rose-500 to-purple-500 text-transparent bg-clip-text font-semibold hover:from-rose-400 hover:to-purple-400'
-                      : 'text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90'
-                  }`}
+                  className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                 >
                   {link.label}
                 </button>
@@ -204,11 +199,7 @@ export default function Navbar() {
                   initial="hidden"
                   animate="visible"
                   onClick={() => handleClick(link.href, link.route)}
-                  className={`text-2xl tracking-tight transition-colors ${
-                    link.highlight
-                      ? 'bg-gradient-to-r from-rose-400 to-purple-400 text-transparent bg-clip-text font-bold'
-                      : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
-                  }`}
+                  className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
                 >
                   {link.label}
                 </motion.button>

@@ -117,13 +117,10 @@ export async function getReviews() {
 }
 
 export async function submitReview(review) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('reviews')
     .insert([{ ...review, approved: false }])
-    .select()
-    .single()
   if (error) throw error
-  return data
 }
 
 export async function getAllReviews() {

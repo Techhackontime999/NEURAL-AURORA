@@ -73,6 +73,10 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 4000000,
           runtimeCaching: [
             {
+              urlPattern: /^https:\/\/vtbldaytmebyakoukswb\.supabase\.co\/.*/i,
+              handler: 'NetworkOnly',
+            },
+            {
               urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
               handler: 'CacheFirst',
               options: {

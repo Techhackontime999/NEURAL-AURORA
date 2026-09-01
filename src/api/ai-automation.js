@@ -53,11 +53,6 @@ const TOOL_TO_INTENT = {
   create_case_study: 'create_case_study',
 }
 
-function extractNumber(text) {
-  const m = text.match(/\d+/)
-  return m ? parseInt(m[0], 10) : null
-}
-
 function extractQuoted(text) {
   return [...text.matchAll(/[""](.+?)[""]/g)].map((m) => m[1])
 }

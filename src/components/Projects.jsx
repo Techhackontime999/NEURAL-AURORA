@@ -144,7 +144,7 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
 
 export default function Projects() {
   const shouldReduceMotion = useReducedMotion()
-  const projects = useProjects()
+  const { data: projects } = useProjects()
   return (
     <section id="projects" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

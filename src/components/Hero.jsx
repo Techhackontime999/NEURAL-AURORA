@@ -58,7 +58,7 @@ const itemVariants = {
 export default function Hero() {
   const shouldReduceMotion = useReducedMotion()
   const { data: personalInfo } = usePersonalInfo()
-  const socialLinks = useSocialLinks()
+  const { data: socialLinks } = useSocialLinks()
   return (
     <section
       id="hero"

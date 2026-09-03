@@ -8,7 +8,7 @@ import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function Blog() {
-  const blogPosts = useBlogPosts()
+  const { data: blogPosts } = useBlogPosts()
   const [search, setSearch] = useState('')
 
   const filtered = blogPosts.filter((post) =>

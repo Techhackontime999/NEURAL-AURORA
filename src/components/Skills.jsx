@@ -38,7 +38,7 @@ function SkillBar({ name, level, color, index, shouldReduceMotion }) {
 
 export default function Skills() {
   const shouldReduceMotion = useReducedMotion()
-  const skills = useSkills()
+  const { data: skills } = useSkills()
   return (
     <section id="skills" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

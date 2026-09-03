@@ -8,7 +8,7 @@ import { Footer } from './ui/footer-section'
 
 export default function CaseStudyDetail() {
   const { slug } = useParams()
-  const study = useCaseStudyBySlug(slug)
+  const { data: study } = useCaseStudyBySlug(slug)
 
   if (!study) {
     return (

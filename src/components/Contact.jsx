@@ -4,7 +4,7 @@ import { useSocialLinks } from '../lib/usePortfolioData'
 import { submitContactMessage } from '../lib/supabase'
 
 export default function Contact() {
-  const socialLinks = useSocialLinks()
+  const { data: socialLinks } = useSocialLinks()
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')

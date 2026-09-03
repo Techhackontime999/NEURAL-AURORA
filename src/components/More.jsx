@@ -133,10 +133,10 @@ function CaseStudyCard({ study, index }) {
 }
 
 export default function More() {
-  const education = useEducation()
-  const experience = useExperience()
-  const blogPosts = useBlogPosts()
-  const caseStudies = useCaseStudies()
+  const { data: education } = useEducation()
+  const { data: experience } = useExperience()
+  const { data: blogPosts } = useBlogPosts()
+  const { data: caseStudies } = useCaseStudies()
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AuroraBackground />

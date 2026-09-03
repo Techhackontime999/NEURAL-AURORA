@@ -8,7 +8,7 @@ import { Footer } from './ui/footer-section'
 
 export default function BlogPost() {
   const { slug } = useParams()
-  const blogPosts = useBlogPosts()
+  const { data: blogPosts } = useBlogPosts()
   const post = blogPosts.find((p) => p.slug === slug)
 
   if (!post) {

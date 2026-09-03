@@ -68,7 +68,7 @@ function AnimatedContainer({ className, delay = 0.1, children }) {
 
 export function Footer() {
   const { data: personalInfo } = usePersonalInfo()
-  const socialLinks = useSocialLinks()
+  const { data: socialLinks } = useSocialLinks()
   const currentYear = new Date().getFullYear()
 
   const footerSections = [

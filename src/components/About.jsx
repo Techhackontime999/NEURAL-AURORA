@@ -12,7 +12,7 @@ const staggerItem = {
 
 export default function About() {
   const { data: personalInfo } = usePersonalInfo()
-  const socialLinks = useSocialLinks()
+  const { data: socialLinks } = useSocialLinks()
   return (
     <section id="about" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">

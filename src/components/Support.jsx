@@ -128,7 +128,7 @@ function ResolvedIcon({ name, className }) {
 }
 
 export default function Support() {
-  const socialLinks = useSocialLinks()
+  const { data: socialLinks } = useSocialLinks()
   const [settings, setSettings] = useState(defaultSettings)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [selectedAmount, setSelectedAmount] = useState(499)

@@ -106,7 +106,15 @@ function PlaylistCard({ playlist, onSelect }) {
       >
         <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 relative bg-white/[0.04]">
           {playlist.snippet.thumbnails?.default?.url && (
-            <img src={playlist.snippet.thumbnails.default.url} alt="" className="w-full h-full object-cover" />
+            <img 
+              src={playlist.snippet.thumbnails.default.url} 
+              alt="" 
+              width={120} 
+              height={90} 
+              loading="lazy" 
+              decoding="async" 
+              className="w-full h-full object-cover" 
+            />
           )}
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
             <motion.svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 opacity-90"
@@ -163,7 +171,15 @@ function PlaylistCard({ playlist, onSelect }) {
                   >
                     <div className="w-12 h-8 rounded-md overflow-hidden shrink-0 bg-white/[0.04]">
                       {v.snippet.thumbnails?.default?.url && (
-                        <img src={v.snippet.thumbnails.default.url} alt="" className="w-full h-full object-cover" />
+                        <img 
+                          src={v.snippet.thumbnails.default.url} 
+                          alt="" 
+                          width={120} 
+                          height={90} 
+                          loading="lazy" 
+                          decoding="async" 
+                          className="w-full h-full object-cover" 
+                        />
                       )}
                     </div>
                     <span className="text-white/50 group-hover:text-white/70 text-[11px] truncate leading-relaxed transition-colors">{v.snippet.title}</span>
@@ -538,7 +554,11 @@ export default function YouTubeBrowse({ channelId, onComplete, onBack }) {
             {channelInfo.snippet.thumbnails?.default?.url && (
               <motion.img
                 src={channelInfo.snippet.thumbnails.default.url}
-                alt=""
+                alt="Channel avatar"
+                width={88}
+                height={88}
+                loading="eager"
+                decoding="async"
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-white/10 shrink-0"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -760,7 +780,11 @@ export default function YouTubeBrowse({ channelId, onComplete, onBack }) {
                             {v.snippet.thumbnails?.high?.url && (
                               <motion.img
                                 src={v.snippet.thumbnails.high.url}
-                                alt=""
+                                alt={v.snippet.title}
+                                width={480}
+                                height={360}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover"
                                 whileHover={{ scale: 1.06 }}
                                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -869,7 +893,11 @@ export default function YouTubeBrowse({ channelId, onComplete, onBack }) {
                             {v.snippet.thumbnails?.high?.url && (
                               <motion.img
                                 src={v.snippet.thumbnails.high.url}
-                                alt=""
+                                alt={v.snippet.title}
+                                width={480}
+                                height={360}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover"
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}

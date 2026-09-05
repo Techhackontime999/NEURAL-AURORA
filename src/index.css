@@ -70,6 +70,11 @@
     scroll-behavior: smooth;
   }
 
+  /* Fix navbar overlap on anchor scroll */
+  section[id] {
+    scroll-margin-top: 5rem;
+  }
+
   body {
     font-family: 'Satoshi', system-ui, sans-serif;
     overflow-x: hidden;

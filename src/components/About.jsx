@@ -85,7 +85,11 @@ export default function About() {
                 <div className="relative w-12 h-12 rounded-full overflow-hidden glass-panel-strong">
                   <img
                     src={personalInfo.avatar}
-                    alt=""
+                    alt="Profile avatar"
+                    width={48}
+                    height={48}
+                    loading="eager"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </div>

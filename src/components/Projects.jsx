@@ -14,8 +14,12 @@ function ProjectImage({ src, alt, children, shouldReduceMotion }) {
         layout
         src={src}
         alt={alt}
+        width={800}
+        height={600}
+        loading="lazy"
+        decoding="async"
         initial={shouldReduceMotion ? false : { opacity: 0, scale: 1.05 }}
-        animate={shouldReduceMotion ? {opacity: loaded ? 1 : 0, scale: 1 } : { opacity: loaded ? 1 : 0, scale: loaded ? 1 : 1.05 }}
+        animate={shouldReduceMotion ? { opacity: loaded ? 1 : 0, scale: 1 } : { opacity: loaded ? 1 : 0, scale: loaded ? 1 : 1.05 }}
         onLoad={() => setLoaded(true)}
         className="w-full h-full object-cover"
       />

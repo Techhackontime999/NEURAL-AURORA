@@ -55,6 +55,7 @@ function PlayIcon() {
 
 function ProjectCard({ project, index, shouldReduceMotion }) {
   const [expanded, setExpanded] = useState(false)
+  const technologies = project.technologies || []
 
   return (
     <motion.div
@@ -71,7 +72,7 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
       <ProjectImage src={project.image} alt={project.title} shouldReduceMotion={shouldReduceMotion}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#050508] via-transparent to-transparent" />
         <div className="absolute top-4 left-4 flex gap-2">
-          {project.technologies.slice(0, 2).map((tech) => (
+          {technologies.slice(0, 2).map((tech) => (
             <span
               key={tech}
               className="text-[10px] px-2 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-black/50 dark:text-white/40"
@@ -79,9 +80,9 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
               {tech}
             </span>
           ))}
-          {project.technologies.length > 2 && (
+          {technologies.length > 2 && (
             <span className="text-[10px] px-2 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-black/40 dark:text-white/30">
-              +{project.technologies.length - 2}
+              +{technologies.length - 2}
             </span>
           )}
         </div>
@@ -110,7 +111,7 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
               className="space-y-4 pt-2"
             >
               <div className="flex flex-wrap gap-2">
-                {project.technologies.map((tech) => (
+                {technologies.map((tech) => (
                   <span
                     key={tech}
                     className="text-xs px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-black/50 dark:text-white/50"
@@ -160,7 +161,8 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
 
 export default function Projects() {
   const shouldReduceMotion = useReducedMotion()
-  const { data: projects } = useProjects()
+  const { data: projects = [], isLoading, error } = useProjects()
+
   return (
     <section id="projects" className="relative z-10 py-32 md:py-40">
       <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12">
@@ -182,11 +184,39 @@ export default function Projects() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
-          {projects.map((project, i) => (
-            <ProjectCard key={project.id} project={project} index={i} shouldReduceMotion={shouldReduceMotion} />
-          ))}
-        </div>
+        {error && (
+          <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-mono">
+            <span>⚠️</span>
+            <span>Offline mode — displaying cached projects fallback</span>
+          </div>
+        )}
+
+        {isLoading && (!projects || projects.length === 0) ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass-panel rounded-[2rem] overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-black/10 dark:bg-white/10" />
+                <div className="p-6 md:p-8 space-y-4">
+                  <div className="h-5 w-3/4 bg-black/10 dark:bg-white/10 rounded" />
+                  <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
+                  <div className="h-4 w-2/3 bg-black/5 dark:bg-white/5 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : !isLoading && (!projects || projects.length === 0) ? (
+          <div className="glass-panel rounded-[2rem] p-12 text-center max-w-lg mx-auto">
+            <p className="text-sm text-black/50 dark:text-white/40 font-mono">
+              No projects found in the neural repository.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
+            {projects.map((project, i) => (
+              <ProjectCard key={project.id || i} project={project} index={i} shouldReduceMotion={shouldReduceMotion} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

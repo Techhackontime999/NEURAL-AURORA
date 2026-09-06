@@ -11,6 +11,7 @@ import {
   getCaseStudyBySlug,
   getServices,
   getServicePage,
+  getReviews,
 } from './supabase'
 import {
   personalInfo as staticPersonalInfo,
@@ -269,4 +270,8 @@ export function useServices() {
 
 export function useServicePage() {
   return usePortfolioResource('servicePage', getServicePage, staticServicePage, mergeServicePage)
+}
+
+export function useReviews() {
+  return usePortfolioResource('reviews', getReviews, [])
 }

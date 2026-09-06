@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import {
   getPersonalInfo,
   getSocialLinks,
@@ -208,22 +208,48 @@ function mergeServicePage(raw, staticData) {
 
 export function usePersonalInfo() {
   const result = usePortfolioResource('personalInfo', getPersonalInfo, staticPersonalInfo)
+  const isMountedRef = useRef(true)
+  const focusHandlerRef = useRef(null)
+  const visibilityHandlerRef = useRef(null)
 
-  // Preserve the previous refetch-on-focus/visibility behavior. Because the
-  // fetch itself is deduplicated through the shared cache, multiple
-  // mounted components each registering this listener still only ever
-  // triggers a single network call per focus/visibility event.
+  // Preserve the refetch-on-focus/visibility behavior safely with named handler refs
+  // and a mounted guard to prevent state updates/refetches after unmount.
   useEffect(() => {
-    if (!supabaseConfigured) return
-    const refetch = () => ensureFetch('personalInfo', getPersonalInfo, staticPersonalInfo, undefined, { force: true })
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') refetch()
+    isMountedRef.current = true
+
+    if (!supabaseConfigured) {
+      return () => {
+        isMountedRef.current = false
+      }
     }
-    window.addEventListener('focus', refetch)
-    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    const refetch = () => {
+      if (!isMountedRef.current) return
+      ensureFetch('personalInfo', getPersonalInfo, staticPersonalInfo, undefined, { force: true })
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isMountedRef.current) {
+        refetch()
+      }
+    }
+
+    focusHandlerRef.current = refetch
+    visibilityHandlerRef.current = onVisibilityChange
+
+    window.addEventListener('focus', focusHandlerRef.current)
+    document.addEventListener('visibilitychange', visibilityHandlerRef.current)
+
     return () => {
-      window.removeEventListener('focus', refetch)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
+      isMountedRef.current = false
+      if (focusHandlerRef.current) {
+        window.removeEventListener('focus', focusHandlerRef.current)
+        focusHandlerRef.current = null
+      }
+      if (visibilityHandlerRef.current) {
+        document.removeEventListener('visibilitychange', visibilityHandlerRef.current)
+        visibilityHandlerRef.current = null
+      }
     }
   }, [])
 

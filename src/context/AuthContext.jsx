@@ -80,12 +80,24 @@ export function AuthProvider({ children }) {
       await ensureSuperuser(user.email)
       try {
         await supabase.rpc('ensure_my_profile')
-      } catch {}
-      const { data: created } = await supabase
+      } catch (err) {
+        console.warn('[Auth] ensure_my_profile RPC failed or unmigrated:', err.message)
+      }
+      let { data: created } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
+
+      if (!created) {
+        const { data: inserted } = await supabase
+          .from('profiles')
+          .upsert({ id: userId, email: user.email, role: 'viewer' })
+          .select('*')
+          .single()
+        created = inserted
+      }
+
       if (created) {
         setProfile(created)
       } else {

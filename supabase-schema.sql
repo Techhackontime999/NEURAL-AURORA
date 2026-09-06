@@ -39,6 +39,28 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
+-- Backfill profile row for signed-in user if missing
+CREATE OR REPLACE FUNCTION ensure_my_profile()
+RETURNS void AS $$
+DECLARE
+  v_user_id UUID;
+  v_email TEXT;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (v_user_id, v_email, 'viewer')
+  ON CONFLICT (id) DO NOTHING;
+END;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
+
+GRANT EXECUTE ON FUNCTION ensure_my_profile TO authenticated;
+
 -- ============================================================
 -- PERSONAL INFO
 -- ============================================================

@@ -57,7 +57,7 @@ BEGIN
   VALUES (v_user_id, v_email, 'viewer')
   ON CONFLICT (id) DO NOTHING;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION ensure_my_profile TO authenticated;
 
@@ -405,6 +405,11 @@ CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id OR is_admin());
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+CREATE POLICY "Users can insert own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 DROP POLICY IF EXISTS "Admins can update profiles" ON profiles;
 CREATE POLICY "Admins can update profiles"
   ON profiles FOR UPDATE
@@ -687,8 +692,8 @@ GRANT SELECT, UPDATE, DELETE ON TABLE reviews TO authenticated;
 -- Contact messages: authenticated users can manage
 GRANT SELECT, UPDATE, DELETE ON TABLE contact_messages TO authenticated;
 
--- Profiles: authenticated users can read and update
-GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
+-- Profiles: authenticated users can read, insert and update
+GRANT SELECT, INSERT, UPDATE ON TABLE profiles TO authenticated;
 
 -- ============================================================
 -- ADMIN DELETE USER FUNCTION

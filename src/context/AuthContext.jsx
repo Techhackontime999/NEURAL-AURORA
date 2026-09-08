@@ -90,12 +90,21 @@ export function AuthProvider({ children }) {
         .single()
 
       if (!created) {
-        const { data: inserted } = await supabase
-          .from('profiles')
-          .upsert({ id: userId, email: user.email, role: 'viewer' })
-          .select('*')
-          .single()
-        created = inserted
+        try {
+          const { data: inserted, error: upsertErr } = await supabase
+            .from('profiles')
+            .upsert({ id: userId, email: user.email, role: 'viewer' })
+            .select('*')
+            .single()
+
+          if (upsertErr) {
+            console.warn('[Auth] Profile upsert error:', upsertErr.message)
+          } else {
+            created = inserted
+          }
+        } catch (err) {
+          console.warn('[Auth] Profile upsert failed:', err.message)
+        }
       }
 
       if (created) {

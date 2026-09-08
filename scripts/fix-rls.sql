@@ -30,5 +30,5 @@ GRANT INSERT, UPDATE, DELETE ON TABLE case_studies TO authenticated;
 -- Reviews: authenticated users can approve/delete
 GRANT SELECT, UPDATE, DELETE ON TABLE reviews TO authenticated;
 
--- Profiles: authenticated users can read and update
-GRANT SELECT, UPDATE ON TABLE profiles TO authenticated;
+-- Profiles: authenticated users can read, insert and update
+GRANT SELECT, INSERT, UPDATE ON TABLE profiles TO authenticated;

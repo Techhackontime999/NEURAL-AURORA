@@ -125,7 +125,7 @@ BEGIN
   VALUES (v_user_id, v_email, 'viewer')
   ON CONFLICT (id) DO NOTHING;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION ensure_my_profile TO authenticated;
 

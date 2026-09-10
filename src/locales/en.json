@@ -14,6 +14,10 @@
     "getStarted": "Get Started",
     "menu": "Menu"
   },
+  "common": {
+    "home": "Home",
+    "menu": "Menu"
+  },
   "hero": {
     "available": "Available for",
     "collaboration": "Collaboration",
@@ -117,5 +121,229 @@
     "synapticDashboard": "Synaptic Dashboard",
     "auroraEngine": "Aurora Engine",
     "viewAll": "View All"
+  },
+  "loader": {
+    "verificationRequired": "Verification Required",
+    "proveIdentity": "Prove your identity to access the system.",
+    "cards": {
+      "sayName": "Say “{{name}}”",
+      "voiceRecognition": "Voice recognition",
+      "solvePuzzle": "Solve Puzzle",
+      "oneQuestion": "One question",
+      "traverseOn": "Traverse On",
+      "autoTraverse": "Auto Traverse",
+      "traverseActiveDesc": "Auto-demo mode active",
+      "traverseTourDesc": "Full site demo tour",
+      "watchDevAds": "Watch Dev Ads",
+      "videoAdsToUnlock": "Video ads to unlock",
+      "moodSwing": "Mood Swing",
+      "setVibeMusic": "Set vibe & music",
+      "neuralCmd": "Neural Aurora CMD",
+      "exploreTerminal": "Explore via terminal",
+      "takeInterview": "Take My Interview",
+      "voiceAiInterview": "Voice AI interview",
+      "patternLock": "Neural Pattern Lock",
+      "memoryChallenge": "Memory challenge",
+      "channelStream": "Channel Stream",
+      "browseVideos": "Browse my videos",
+      "skipVibes": "Skip the Vibes",
+      "directEntry": "Direct entry",
+      "openDocs": "Open Documentation"
+    },
+    "interview": {
+      "chatWith": "Chat with {{name}}",
+      "askAnything": "Ask me anything",
+      "live": "Live",
+      "gettingReady": "Getting ready...",
+      "thinking": "{{name}} is thinking...",
+      "you": "You",
+      "listening": "Listening... go ahead, ask me anything",
+      "tapMic": "Tap the mic, then ask your question",
+      "typeQuestion": "Type your question...",
+      "ask": "Ask",
+      "youAsked": "You asked",
+      "says": "{{name}} says",
+      "askAnother": "Ask another question",
+      "endInterview": "End interview",
+      "allDone": "All done",
+      "enterPortfolio": "Enter Portfolio"
+    },
+    "voice": {
+      "instruction": "Say “{{name}}” to verify your identity",
+      "listening": "Listening...",
+      "trySaying": "Try saying “{{name}}”",
+      "verified": "Identity Verified"
+    },
+    "success": {
+      "verified": "Identity Verified",
+      "accessGranted": "Access Granted",
+      "welcome": "Welcome to NEURAL AURORA"
+    },
+    "cmd": {
+      "email": "Email",
+      "availableOnRequest": "available on request"
+    }
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "titlePrefix": "Thoughts &",
+    "titleSuffix": "Ideas",
+    "subtitle": "Sharing what I learn, build, and think about.",
+    "searchPlaceholder": "Search posts...",
+    "noPosts": "No posts found. Try a different search.",
+    "postNotFound": "Post not found",
+    "backToBlog": "Back to blog",
+    "blogPostEyebrow": "Blog Post",
+    "readMore": "Read more posts",
+    "allPosts": "All Posts"
+  },
+  "services": {
+    "options": "{{count}} options",
+    "viewDetails": "View Details",
+    "step": "Step {{number}}",
+    "whatIncluded": "What's Included",
+    "selectType": "Select Project Type",
+    "backToServices": "Back to services",
+    "getInTouch": "Get in Touch",
+    "projectPlaceholder": "Tell me about your {{title}} project...",
+    "mostPopular": "Most Popular",
+    "getStarted": "Get Started",
+    "processing": "Processing...",
+    "serviceNotFound": "Service not found",
+    "price": "Price",
+    "delivery": "Delivery",
+    "pay": "Pay",
+    "paymentConfirmed": "Payment Confirmed",
+    "nav": {
+      "services": "Services",
+      "process": "Process",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "contact": "Contact"
+    }
+  },
+  "support": {
+    "eyebrow": "Support",
+    "heroSubtitle": "Open Source & Free Forever",
+    "heroDescription": "This project is 100% free and open-source. Your contribution keeps it alive, funds new features, and helps us compete with paid alternatives — while keeping NEURAL AURORA free for everyone.",
+    "floatingButton": "Support",
+    "sponsorPlaceholder": "Tell me about your project or sponsorship ideas...",
+    "nav": {
+      "contribute": "Contribute",
+      "whySupport": "Why Support",
+      "faq": "FAQ",
+      "contact": "Contact"
+    },
+    "presets": {
+      "coffee": "Buy a coffee",
+      "feature": "Support a feature",
+      "speed": "Speed up dev",
+      "rocket": "Launch booster",
+      "crown": "Premium backer",
+      "legend": "Legend tier"
+    }
+  },
+  "more": {
+    "eyebrow": "More",
+    "titlePrefix": "Beyond the",
+    "titleSuffix": "Code",
+    "subtitle": "My journey through education, experience, ideas, and insights.",
+    "education": "Education",
+    "experience": "Work Experience",
+    "latestPosts": "Latest Blog Posts",
+    "viewAll": "View all",
+    "caseStudies": "Case Studies",
+    "nav": {
+      "timeline": "Timeline",
+      "caseStudies": "Case Studies",
+      "blog": "Blog"
+    }
+  },
+  "caseStudy": {
+    "notFound": "Case study not found",
+    "backToStudies": "Back to case studies",
+    "eyebrow": "Case Study",
+    "outcome": "Outcome",
+    "fullAnalysis": "Full Analysis",
+    "viewAll": "View all case studies"
+  },
+  "contributors": {
+    "eyebrow": "Contributors",
+    "titlePrefix": "People Behind",
+    "subtitle": "Every contributor — developer or donor — helps keep this project free and open-source.",
+    "becomeContributor": "Become a Contributor",
+    "becomeContributorSubtitle": "Support the project & get listed here"
+  },
+  "mood": {
+    "title": "Mood Swing",
+    "subtitle": "Set the vibe before entering",
+    "footnote": "Pick your mood → music sets the vibe for exploring",
+    "moods": {
+      "energetic": {
+        "label": "Energetic",
+        "description": "Pumped up & hyped"
+      },
+      "calm": {
+        "label": "Calm",
+        "description": "Chill & relaxed vibes"
+      },
+      "happy": {
+        "label": "Happy",
+        "description": "Joyful & bright"
+      },
+      "focused": {
+        "label": "Focused",
+        "description": "Deep flow state"
+      },
+      "mysterious": {
+        "label": "Mysterious",
+        "description": "Dark & atmospheric"
+      },
+      "euphoric": {
+        "label": "Euphoric",
+        "description": "Transcendent waves"
+      }
+    }
+  },
+  "ads": {
+    "ad": "Ad",
+    "video": "Video",
+    "short": "Short",
+    "sponsored": "Sponsored",
+    "videoUnavailable": "Video unavailable",
+    "unavailable": "Unavailable",
+    "adComplete": "Ad Complete",
+    "enteringIn": "Entering in {{count}}s",
+    "skip": "Skip",
+    "autoAd": "Auto Ad",
+    "googleAd": "Google Ad",
+    "shortAd": "Short Ad",
+    "videoAd": "Video Ad"
+  },
+  "youtube": {
+    "watchingToVerify": "Watching to verify",
+    "videos": "Videos",
+    "shorts": "Shorts",
+    "playlists": "Playlists",
+    "searchPlaceholder": "Search {{tab}}...",
+    "noVideos": "No videos found",
+    "noShorts": "No shorts found",
+    "noPlaylists": "No public playlists",
+    "loadMore": "Load more",
+    "tryDifferentSearch": "Try a different search or check back later",
+    "shortsAppearHere": "Short-form content will appear here",
+    "playlistsAppearHere": "Channel playlists will appear here",
+    "backToVerification": "Back to verification",
+    "backToVideos": "Back to videos",
+    "browseToVerify": "Browse to verify",
+    "retry": "Retry",
+    "subscribers": "subscribers",
+    "videosCount": "{{count}} videos",
+    "noVideosInPlaylist": "No videos in this playlist"
+  },
+  "theme": {
+    "switchToDark": "Switch to dark mode",
+    "switchToLight": "Switch to light mode",
+    "searchPlaceholder": "Search..."
   }
 }

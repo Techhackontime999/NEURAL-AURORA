@@ -14,6 +14,10 @@
     "getStarted": "Empezar",
     "menu": "Menú"
   },
+  "common": {
+    "home": "Inicio",
+    "menu": "Menú"
+  },
   "hero": {
     "available": "Disponible para",
     "collaboration": "Colaboración",
@@ -117,5 +121,229 @@
     "synapticDashboard": "Panel Sináptico",
     "auroraEngine": "Motor Aurora",
     "viewAll": "Ver Todo"
+  },
+  "loader": {
+    "verificationRequired": "Verificación Requerida",
+    "proveIdentity": "Demuestra tu identidad para acceder al sistema.",
+    "cards": {
+      "sayName": "Di “{{name}}”",
+      "voiceRecognition": "Reconocimiento de voz",
+      "solvePuzzle": "Resolver Acertijo",
+      "oneQuestion": "Una pregunta",
+      "traverseOn": "Recorrido Activo",
+      "autoTraverse": "Recorrido Automático",
+      "traverseActiveDesc": "Modo demo automático activo",
+      "traverseTourDesc": "Tour demo completo del sitio",
+      "watchDevAds": "Ver Anuncios Dev",
+      "videoAdsToUnlock": "Anuncios de video para desbloquear",
+      "moodSwing": "Mood Swing",
+      "setVibeMusic": "Define el ambiente y música",
+      "neuralCmd": "Neural Aurora CMD",
+      "exploreTerminal": "Explorar mediante terminal",
+      "takeInterview": "Hazme una Entrevista",
+      "voiceAiInterview": "Entrevista de voz con IA",
+      "patternLock": "Bloqueo de Patrón Neuronal",
+      "memoryChallenge": "Desafío de memoria",
+      "channelStream": "Transmisión del Canal",
+      "browseVideos": "Explora mis videos",
+      "skipVibes": "Omitir la Introducción",
+      "directEntry": "Entrada directa",
+      "openDocs": "Abrir Documentación"
+    },
+    "interview": {
+      "chatWith": "Chatea con {{name}}",
+      "askAnything": "Pregúntame lo que sea",
+      "live": "En Vivo",
+      "gettingReady": "Preparando...",
+      "thinking": "{{name}} está pensando...",
+      "you": "Tú",
+      "listening": "Escuchando... adelante, pregúntame lo que sea",
+      "tapMic": "Toca el micrófono y haz tu pregunta",
+      "typeQuestion": "Escribe tu pregunta...",
+      "ask": "Preguntar",
+      "youAsked": "Preguntaste",
+      "says": "{{name}} dice",
+      "askAnother": "Hacer otra pregunta",
+      "endInterview": "Terminar entrevista",
+      "allDone": "Completado",
+      "enterPortfolio": "Entrar al Portafolio"
+    },
+    "voice": {
+      "instruction": "Di “{{name}}” para verificar tu identidad",
+      "listening": "Escuchando...",
+      "trySaying": "Intenta decir “{{name}}”",
+      "verified": "Identidad Verificada"
+    },
+    "success": {
+      "verified": "Identidad Verificada",
+      "accessGranted": "Acceso Concedido",
+      "welcome": "Bienvenido a NEURAL AURORA"
+    },
+    "cmd": {
+      "email": "Correo",
+      "availableOnRequest": "disponible a petición"
+    }
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "titlePrefix": "Pensamientos e",
+    "titleSuffix": "Ideas",
+    "subtitle": "Compartiendo lo que aprendo, construyo y pienso.",
+    "searchPlaceholder": "Buscar publicaciones...",
+    "noPosts": "No se encontraron publicaciones. Intenta otra búsqueda.",
+    "postNotFound": "Publicación no encontrada",
+    "backToBlog": "Volver al blog",
+    "blogPostEyebrow": "Publicación de Blog",
+    "readMore": "Leer más publicaciones",
+    "allPosts": "Todas las Publicaciones"
+  },
+  "services": {
+    "options": "{{count}} opciones",
+    "viewDetails": "Ver Detalles",
+    "step": "Paso {{number}}",
+    "whatIncluded": "Qué Incluye",
+    "selectType": "Seleccionar Tipo de Proyecto",
+    "backToServices": "Volver a servicios",
+    "getInTouch": "Ponte en Contacto",
+    "projectPlaceholder": "Cuéntame sobre tu proyecto de {{title}}...",
+    "mostPopular": "Más Popular",
+    "getStarted": "Comenzar",
+    "processing": "Procesando...",
+    "serviceNotFound": "Servicio no encontrado",
+    "price": "Precio",
+    "delivery": "Entrega",
+    "pay": "Pagar",
+    "paymentConfirmed": "Pago Confirmado",
+    "nav": {
+      "services": "Servicios",
+      "process": "Proceso",
+      "pricing": "Precios",
+      "faq": "Preguntas Frecuentes",
+      "contact": "Contacto"
+    }
+  },
+  "support": {
+    "eyebrow": "Soporte",
+    "heroSubtitle": "Código Abierto y Gratis Para Siempre",
+    "heroDescription": "Este proyecto es 100% gratuito y de código abierto. Tu contribución lo mantiene con vida, financia nuevas funciones y nos ayuda a competir con alternativas de pago — manteniendo NEURAL AURORA gratis para todos.",
+    "floatingButton": "Apoyar",
+    "sponsorPlaceholder": "Cuéntame sobre tu proyecto o ideas de patrocinio...",
+    "nav": {
+      "contribute": "Contribuir",
+      "whySupport": "Por Qué Apoyar",
+      "faq": "Preguntas Frecuentes",
+      "contact": "Contacto"
+    },
+    "presets": {
+      "coffee": "Invita un café",
+      "feature": "Apoya una función",
+      "speed": "Acelera el desarrollo",
+      "rocket": "Impulso de lanzamiento",
+      "crown": "Patrocinador premium",
+      "legend": "Nivel leyenda"
+    }
+  },
+  "more": {
+    "eyebrow": "Más",
+    "titlePrefix": "Más allá del",
+    "titleSuffix": "Código",
+    "subtitle": "Mi trayectoria a través de la educación, experiencia, ideas y reflexiones.",
+    "education": "Educación",
+    "experience": "Experiencia Laboral",
+    "latestPosts": "Últimas Publicaciones",
+    "viewAll": "Ver todo",
+    "caseStudies": "Estudios de Caso",
+    "nav": {
+      "timeline": "Cronología",
+      "caseStudies": "Estudios de Caso",
+      "blog": "Blog"
+    }
+  },
+  "caseStudy": {
+    "notFound": "Estudio de caso no encontrado",
+    "backToStudies": "Volver a estudios de caso",
+    "eyebrow": "Estudio de Caso",
+    "outcome": "Resultado",
+    "fullAnalysis": "Análisis Completo",
+    "viewAll": "Ver todos los estudios de caso"
+  },
+  "contributors": {
+    "eyebrow": "Colaboradores",
+    "titlePrefix": "Personas Detrás de",
+    "subtitle": "Cada colaborador — desarrollador o donante — ayuda a mantener este proyecto gratuito y de código abierto.",
+    "becomeContributor": "Conviértete en Colaborador",
+    "becomeContributorSubtitle": "Apoya el proyecto y aparece aquí"
+  },
+  "mood": {
+    "title": "Mood Swing",
+    "subtitle": "Define el ambiente antes de entrar",
+    "footnote": "Elige tu estado de ánimo → la música ambienta tu exploración",
+    "moods": {
+      "energetic": {
+        "label": "Energético",
+        "description": "Animado y con energía"
+      },
+      "calm": {
+        "label": "Calmado",
+        "description": "Vibras tranquilas y relajadas"
+      },
+      "happy": {
+        "label": "Feliz",
+        "description": "Alegre y brillante"
+      },
+      "focused": {
+        "label": "Concentrado",
+        "description": "Estado de flujo profundo"
+      },
+      "mysterious": {
+        "label": "Misterioso",
+        "description": "Oscuro y atmosférico"
+      },
+      "euphoric": {
+        "label": "Eufórico",
+        "description": "Ondas trascendentes"
+      }
+    }
+  },
+  "ads": {
+    "ad": "Anuncio",
+    "video": "Video",
+    "short": "Short",
+    "sponsored": "Patrocinado",
+    "videoUnavailable": "Video no disponible",
+    "unavailable": "No disponible",
+    "adComplete": "Anuncio Completado",
+    "enteringIn": "Entrando en {{count}}s",
+    "skip": "Saltar",
+    "autoAd": "Anuncio Automático",
+    "googleAd": "Anuncio de Google",
+    "shortAd": "Anuncio Short",
+    "videoAd": "Anuncio de Video"
+  },
+  "youtube": {
+    "watchingToVerify": "Mirando para verificar",
+    "videos": "Videos",
+    "shorts": "Shorts",
+    "playlists": "Listas de Reproducción",
+    "searchPlaceholder": "Buscar en {{tab}}...",
+    "noVideos": "No se encontraron videos",
+    "noShorts": "No se encontraron shorts",
+    "noPlaylists": "No hay listas de reproducción públicas",
+    "loadMore": "Cargar más",
+    "tryDifferentSearch": "Intenta una búsqueda diferente o vuelve más tarde",
+    "shortsAppearHere": "El contenido de formato corto aparecerá aquí",
+    "playlistsAppearHere": "Las listas del canal aparecerán aquí",
+    "backToVerification": "Volver a la verificación",
+    "backToVideos": "Volver a videos",
+    "browseToVerify": "Explorar para verificar",
+    "retry": "Reintentar",
+    "subscribers": "suscriptores",
+    "videosCount": "{{count}} videos",
+    "noVideosInPlaylist": "No hay videos en esta lista de reproducción"
+  },
+  "theme": {
+    "switchToDark": "Cambiar a modo oscuro",
+    "switchToLight": "Cambiar a modo claro",
+    "searchPlaceholder": "Buscar..."
   }
 }

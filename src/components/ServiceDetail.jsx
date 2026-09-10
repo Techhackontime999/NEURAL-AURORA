@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, CheckCircle, Wallet, Clock, Send, Sparkles } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import { useServices } from '../lib/usePortfolioData'
@@ -101,6 +102,7 @@ const staggerItem = {
 }
 
 export default function ServiceDetail() {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const { serviceId } = useParams()
   const { data: services } = useServices()
@@ -183,7 +185,7 @@ export default function ServiceDetail() {
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1 }} className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">Service not found</motion.h1>
+            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1 }} className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">{t('services.serviceNotFound')}</motion.h1>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -191,7 +193,7 @@ export default function ServiceDetail() {
           >
             <Link to="/services" className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 mt-4 transition-colors">
               <ArrowLeft className="w-3 h-3" />
-              Back to services
+              {t('services.backToServices')}
             </Link>
           </motion.div>
         </main>
@@ -218,7 +220,7 @@ export default function ServiceDetail() {
             >
               <ArrowLeft className="w-3 h-3" />
             </motion.span>
-            Back to services
+            {t('services.backToServices')}
           </Link>
         </ScrollSection>
 
@@ -261,7 +263,7 @@ export default function ServiceDetail() {
             <div className="flex items-center gap-3 mb-6">
               <span className="w-8 h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
               <h2 className="text-xs font-semibold text-black/80 dark:text-white/80 uppercase tracking-[0.15em]">
-                What's Included
+                {t('services.whatIncluded')}
               </h2>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -295,7 +297,7 @@ export default function ServiceDetail() {
               <div className="flex items-center gap-3 mb-6">
                 <span className="w-8 h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
                 <h2 className="text-xs font-semibold text-black/80 dark:text-white/80 uppercase tracking-[0.15em]">
-                  Select Project Type
+                  {t('services.selectType')}
                 </h2>
                 <motion.span
                   animate={shouldReduceMotion ? undefined : { rotate: [0, 5, -5, 0] }}
@@ -372,7 +374,7 @@ export default function ServiceDetail() {
                 <div className="p-5">
                   <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium flex items-center gap-1.5 mb-2">
                     <Wallet className="w-3 h-3 text-cyan-500" />
-                    Price
+                    {t('services.price')}
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-sm text-cyan-500/70 font-medium">{service.currency || '₹'}</span>
@@ -386,7 +388,7 @@ export default function ServiceDetail() {
                   <div className="p-5">
                     <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium flex items-center gap-1.5 mb-2">
                       <Clock className="w-3 h-3 text-cyan-500" />
-                      Delivery
+                      {t('services.delivery')}
                     </span>
                     <span className="text-xl font-display font-bold tracking-tight text-black/80 dark:text-white/90">
                       {service.delivery}
@@ -406,12 +408,12 @@ export default function ServiceDetail() {
                 {paying ? (
                   <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
                     <motion.span animate={shouldReduceMotion ? undefined : { rotate: 360 }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 1, repeat: Infinity, ease: 'linear' }} className="h-4 w-4 rounded-full border-2 border-white border-t-transparent" />
-                    Processing...
+                    {t('services.processing')}
                   </motion.span>
                 ) : (
                   <>
                     <Wallet className="w-4 h-4" />
-                    Pay ₹{activeOption.price}
+                    {t('services.pay')} ₹{activeOption.price}
                     <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:bg-white/20 transition-colors duration-300">
                       <ArrowLeft className="w-3 h-3 rotate-180" />
                     </span>
@@ -444,7 +446,7 @@ export default function ServiceDetail() {
                   <CheckCircle className="w-5 h-5 text-emerald-500" />
                 </motion.span>
                 <div>
-                  <p className="text-sm font-semibold text-emerald-500">Payment Confirmed</p>
+                  <p className="text-sm font-semibold text-emerald-500">{t('services.paymentConfirmed')}</p>
                   <p className="text-xs text-emerald-500/70 mt-1">
                     {service.title} &mdash; {paidInfo.label} <span className="text-emerald-500/50">(₹{paidInfo.price})</span>
                   </p>
@@ -465,31 +467,31 @@ export default function ServiceDetail() {
             <div className="flex items-center gap-3 mb-6">
               <span className="w-8 h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
               <h2 className="text-xs font-semibold text-black/80 dark:text-white/80 uppercase tracking-[0.15em]">
-                Get in Touch
+                {t('services.getInTouch')}
               </h2>
             </div>
             <DoubleBezel>
               <form onSubmit={handleContactSubmit} className="p-6 md:p-8 space-y-5">
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">Name</label>
+                    <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">{t('contact.nameLabel')}</label>
                     <input type="text" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                      placeholder="Your name" required
+                      placeholder={t('contact.namePlaceholder')} required
                       className="w-full px-4 py-3.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] text-sm text-black/70 dark:text-white/80 placeholder:text-black/20 dark:placeholder:text-white/20 outline-none focus:border-cyan-500/30 transition-all duration-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">Email</label>
+                    <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">{t('contact.emailLabel')}</label>
                     <input type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                      placeholder="your@email.com" required
+                      placeholder={t('contact.emailPlaceholder')} required
                       className="w-full px-4 py-3.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] text-sm text-black/70 dark:text-white/80 placeholder:text-black/20 dark:placeholder:text-white/20 outline-none focus:border-cyan-500/30 transition-all duration-300"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">Message</label>
+                  <label className="block text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30">{t('contact.messageLabel')}</label>
                   <textarea rows={4} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    placeholder={`Tell me about your ${service.title} project...`} required
+                    placeholder={t('services.projectPlaceholder', { title: service.title })} required
                     className="w-full px-4 py-3.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] text-sm text-black/70 dark:text-white/80 placeholder:text-black/20 dark:placeholder:text-white/20 outline-none focus:border-cyan-500/30 transition-all duration-300 resize-none"
                   />
                 </div>
@@ -500,18 +502,18 @@ export default function ServiceDetail() {
                     transition={shouldReduceMotion ? { duration: 0 } : undefined}
                     className="w-full py-3.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-500 text-center"
                   >
-                    Message sent! I'll get back to you soon.
+                    {t('contact.sentSuccess')}
                   </motion.div>
                 ) : (
                   <MagneticButton type="submit" disabled={contactStatus === 'sending'} className="w-full sm:w-auto">
                     {contactStatus === 'sending' ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Sending...
+                        {t('contact.sending')}
                       </span>
                     ) : (
                       <>
-                        Send Message
+                        {t('contact.sendMessage')}
                         <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:bg-white/20 transition-colors duration-300">
                           <Send className="w-3 h-3" />
                         </span>

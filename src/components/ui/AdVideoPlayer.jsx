@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 const GOOGLE_AD_CLIENT = 'ca-pub-2699270619596438'
 const EASE = [0.16, 1, 0.3, 1]
@@ -100,6 +101,7 @@ function FloatingOrbs() {
 }
 
 function GoogleAdUnit() {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const containerRef = useRef(null)
   const adMounted = useRef(false)
@@ -200,13 +202,14 @@ function GoogleAdUnit() {
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.5, ease: EASE }}
       >
         <span className="inline-block w-1 h-1 rounded-full bg-amber-400/60" />
-        Ad
+        {t('ads.ad')}
       </motion.div>
     </div>
   )
 }
 
 function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   const ar = aspectRatio || '16/9'
@@ -236,7 +239,7 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
                   <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
               </div>
-              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Video unavailable</p>
+              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>{t('ads.videoUnavailable')}</p>
             </div>
           </div>
         </div>
@@ -249,13 +252,14 @@ function YouTubeVideoPlayer({ videoUrl, title, aspectRatio }) {
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.5, ease: EASE }}
       >
         <span className="inline-block w-1 h-1 rounded-full bg-neural-blue/60" />
-        Video
+        {t('ads.video')}
       </motion.div>
     </div>
   )
 }
 
 function YouTubeShortPlayer({ videoUrl, title }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const videoId = videoUrl?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   return (
@@ -294,7 +298,7 @@ function YouTubeShortPlayer({ videoUrl, title }) {
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                 </div>
-                <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>Unavailable</p>
+                <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>{t('ads.unavailable')}</p>
               </div>
             </div>
           )}
@@ -316,7 +320,7 @@ function YouTubeShortPlayer({ videoUrl, title }) {
               <path d="M12 5v14M5 12h14" />
             </svg>
             <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Short
+              {t('ads.short')}
             </span>
           </motion.div>
         </motion.div>
@@ -344,13 +348,14 @@ function YouTubeShortPlayer({ videoUrl, title }) {
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.5, ease: EASE }}
       >
         <span className="inline-block w-1 h-1 rounded-full bg-purple-400/60" />
-        Short
+        {t('ads.short')}
       </motion.div>
     </div>
   )
 }
 
 function CompletionOverlay({ countdown }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
 
   return (
@@ -390,14 +395,14 @@ function CompletionOverlay({ countdown }) {
           animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.15 }}
         >
-          Ad Complete
+          {t('ads.adComplete')}
         </motion.p>
         <motion.p className="text-[10px] font-mono mt-1.5" style={{ color: 'rgba(255,255,255,0.25)' }}
           initial={shouldReduceMotion ? { opacity: 1 } : { y: 8, opacity: 0 }}
           animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.25 }}
         >
-          Entering in {countdown}s
+          {t('ads.enteringIn', { count: countdown })}
         </motion.p>
       </motion.div>
     </motion.div>
@@ -405,6 +410,7 @@ function CompletionOverlay({ countdown }) {
 }
 
 export default function AdVideoPlayer({ video, onComplete, onSkip }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [progress, setProgress] = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -480,7 +486,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
               transition={shouldReduceMotion ? { duration: 0 } : { duration: 2, repeat: Infinity }}
             />
             <span className="text-[9px] font-mono uppercase tracking-[0.25em]" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              Sponsored
+              {t('ads.sponsored')}
             </span>
           </motion.div>
           <motion.span
@@ -490,7 +496,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
             animate={{ opacity: 1 }}
             transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
           >
-            {isGoogle ? 'Auto Ad' : isShort ? 'Short' : 'Video'}
+            {isGoogle ? t('ads.autoAd') : isShort ? t('ads.short') : t('ads.video')}
           </motion.span>
         </div>
 
@@ -521,7 +527,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                 animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
                 transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.4 }}
               >
-                {video?.title || (isGoogle ? 'Google Ad' : isShort ? 'Short Ad' : 'Video Ad')}
+                {video?.title || (isGoogle ? t('ads.googleAd') : isShort ? t('ads.shortAd') : t('ads.videoAd'))}
               </motion.p>
             </div>
             <AnimatePresence>
@@ -542,7 +548,7 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
                     initial={{ opacity: 0 }}
                     whileHover={shouldReduceMotion ? undefined : { opacity: 1 }}
                   />
-                  Skip
+                  {t('ads.skip')}
                 </motion.button>
               )}
             </AnimatePresence>

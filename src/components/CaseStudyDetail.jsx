@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Target, BarChart3 } from 'lucide-react'
 import { useCaseStudyBySlug } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
@@ -7,6 +8,7 @@ import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function CaseStudyDetail() {
+  const { t } = useTranslation()
   const { slug } = useParams()
   const { data: study } = useCaseStudyBySlug(slug)
 
@@ -17,10 +19,10 @@ export default function CaseStudyDetail() {
         <BlogNavbar />
         <main className="relative z-10 max-w-[700px] mx-auto px-6 md:px-12 pt-32 pb-20 text-center">
           <span className="eyebrow">404</span>
-          <h1 className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">Case study not found</h1>
+          <h1 className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">{t('caseStudy.notFound')}</h1>
           <Link to="/more#case-studies" className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 mt-4 transition-colors">
             <ArrowLeft className="w-3 h-3" />
-            Back to case studies
+            {t('caseStudy.backToStudies')}
           </Link>
         </main>
         <Footer />
@@ -44,10 +46,10 @@ export default function CaseStudyDetail() {
             className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 hover:text-cyan-500 transition-colors mb-8"
           >
             <ArrowLeft className="w-3 h-3" />
-            Back to case studies
+            {t('caseStudy.backToStudies')}
           </Link>
 
-          <span className="eyebrow">Case Study</span>
+          <span className="eyebrow">{t('caseStudy.eyebrow')}</span>
 
           <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-black/80 dark:text-white/90 mt-4 leading-snug">
             {study.title}
@@ -69,7 +71,7 @@ export default function CaseStudyDetail() {
           <div className="mt-8 p-6 rounded-xl glass-panel">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4 text-black/40 dark:text-white/40" />
-              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">Outcome</span>
+              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">{t('caseStudy.outcome')}</span>
             </div>
             <div
               className="text-sm text-black/60 dark:text-white/60 leading-relaxed prose-headings:text-black/80 dark:prose-headings:text-white/80 prose-headings:text-base prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2 prose-p:mb-3 prose-strong:text-black/70 dark:prose-strong:text-white/70"
@@ -80,7 +82,7 @@ export default function CaseStudyDetail() {
           <div className="mt-8 p-6 rounded-xl glass-panel">
             <div className="flex items-center gap-2 mb-4">
               <Target className="w-4 h-4 text-black/40 dark:text-white/40" />
-              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">Full Analysis</span>
+              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">{t('caseStudy.fullAnalysis')}</span>
             </div>
             <div
               className="text-sm text-black/60 dark:text-white/60 leading-relaxed prose-headings:text-black/80 dark:prose-headings:text-white/80 prose-headings:text-base prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2 prose-p:mb-3 prose-strong:text-black/70 dark:prose-strong:text-white/70"
@@ -94,7 +96,7 @@ export default function CaseStudyDetail() {
               className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
             >
               <ArrowLeft className="w-3 h-3" />
-              View all case studies
+              {t('caseStudy.viewAll')}
             </Link>
           </div>
         </motion.div>

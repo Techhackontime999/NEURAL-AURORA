@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useBlogPosts } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function BlogPost() {
+  const { t } = useTranslation()
   const { slug } = useParams()
   const { data: blogPosts } = useBlogPosts()
   const post = blogPosts.find((p) => p.slug === slug)
@@ -18,10 +20,10 @@ export default function BlogPost() {
         <BlogNavbar />
         <main className="relative z-10 max-w-[700px] mx-auto px-6 md:px-12 pt-32 pb-20 text-center">
           <span className="eyebrow">404</span>
-          <h1 className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">Post not found</h1>
+          <h1 className="text-2xl font-bold text-black/80 dark:text-white/80 mt-4">{t('blog.postNotFound')}</h1>
           <Link to="/blog" className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 mt-4 transition-colors">
             <ArrowLeft className="w-3 h-3" />
-            Back to blog
+            {t('blog.backToBlog')}
           </Link>
         </main>
         <Footer />
@@ -45,10 +47,10 @@ export default function BlogPost() {
             className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 hover:text-cyan-500 transition-colors mb-8"
           >
             <ArrowLeft className="w-3 h-3" />
-            Back to blog
+            {t('blog.backToBlog')}
           </Link>
 
-          <span className="eyebrow">Blog Post</span>
+          <span className="eyebrow">{t('blog.blogPostEyebrow')}</span>
 
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black/80 dark:text-white/90 mt-4 leading-snug">
             {post.title}
@@ -86,7 +88,7 @@ export default function BlogPost() {
               className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
             >
               <ArrowLeft className="w-3 h-3" />
-              Read more posts
+              {t('blog.readMore')}
             </Link>
           </div>
         </motion.div>

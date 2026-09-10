@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { Calendar, Briefcase, BookOpen, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useEducation, useExperience, useBlogPosts, useCaseStudies } from '../lib/usePortfolioData'
 import MoreNavbar from './MoreNavbar'
 import AuroraBackground from './AuroraBackground'
@@ -165,7 +166,7 @@ function CaseStudyCard({ study, index }) {
 
         <div className="mt-3 p-3 rounded-lg bg-black/5 dark:bg-white/5">
           <span className="text-[9px] uppercase tracking-widest text-black/40 dark:text-white/30 font-medium">
-            Outcome
+            {t('caseStudy.outcome')}
           </span>
 
           <div
@@ -190,6 +191,7 @@ function CaseStudyCard({ study, index }) {
 }
 
 export default function More() {
+  const { t } = useTranslation()
   const { data: education } = useEducation()
   const { data: experience } = useExperience()
   const { data: blogPosts } = useBlogPosts()
@@ -206,14 +208,14 @@ export default function More() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-16"
         >
-          <span className="eyebrow">More</span>
+          <span className="eyebrow">{t('more.eyebrow')}</span>
 
           <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
-            Beyond the <span className="text-gradient">Code</span>
+            {t('more.titlePrefix')} <span className="text-gradient">{t('more.titleSuffix')}</span>
           </h1>
 
           <p className="text-sm text-black/50 dark:text-white/50 mt-3 max-w-md mx-auto">
-            My journey through education, experience, ideas, and insights.
+            {t('more.subtitle')}
           </p>
         </motion.div>
 
@@ -232,7 +234,7 @@ export default function More() {
               </div>
 
               <h2 className="text-sm font-semibold uppercase tracking-widest text-black/60 dark:text-white/60">
-                Education
+                {t('more.education')}
               </h2>
             </motion.div>
 
@@ -262,7 +264,7 @@ export default function More() {
               </div>
 
               <h2 className="text-sm font-semibold uppercase tracking-widest text-black/60 dark:text-white/60">
-                Work Experience
+                {t('more.experience')}
               </h2>
             </motion.div>
 
@@ -294,7 +296,7 @@ export default function More() {
               </div>
 
               <h2 className="text-sm font-semibold uppercase tracking-widest text-black/60 dark:text-white/60">
-                Latest Blog Posts
+                {t('more.latestPosts')}
               </h2>
             </div>
 
@@ -302,7 +304,7 @@ export default function More() {
               to="/blog"
               className="text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400 transition-colors"
             >
-              View all
+              {t('more.viewAll')}
             </Link>
           </motion.div>
 
@@ -327,7 +329,7 @@ export default function More() {
             </div>
 
             <h2 className="text-sm font-semibold uppercase tracking-widest text-black/60 dark:text-white/60">
-              Case Studies
+              {t('more.caseStudies')}
             </h2>
           </motion.div>
 

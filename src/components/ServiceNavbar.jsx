@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const navLinks = [
-  { label: 'Services', href: '#services' },
-  { label: 'Process', href: '#process' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'services.nav.services', href: '#services' },
+  { label: 'services.nav.process', href: '#process' },
+  { label: 'services.nav.pricing', href: '#pricing' },
+  { label: 'services.nav.faq', href: '#faq' },
+  { label: 'services.nav.contact', href: '#contact' },
 ]
 
 const staggerItem = {
@@ -22,6 +24,7 @@ const staggerItem = {
 }
 
 export default function ServiceNavbar() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
@@ -64,15 +67,16 @@ export default function ServiceNavbar() {
                   onClick={() => handleClick(link.href)}
                   className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                 >
-                  {link.label}
+                  {t(link.label)}
                 </button>
               ))}
             </div>
+            <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"
-              aria-label="Menu"
+              aria-label={t('common.menu')}
             >
               <div className="flex flex-col gap-1.5">
                 <motion.span
@@ -111,7 +115,7 @@ export default function ServiceNavbar() {
                 onClick={() => { setOpen(false); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
               >
-                Home
+                {t('common.home')}
               </motion.button>
               {navLinks.map((link, i) => (
                 <motion.button
@@ -123,7 +127,7 @@ export default function ServiceNavbar() {
                   onClick={() => handleClick(link.href)}
                   className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
                 >
-                  {link.label}
+                  {t(link.label)}
                 </motion.button>
               ))}
             </div>

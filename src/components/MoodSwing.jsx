@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { MOODS } from '../lib/moodMusic'
 import { hasApiKey } from '../lib/musicApi'
 
@@ -71,6 +72,7 @@ function MoodParticles({ moodColors, shouldReduceMotion }) {
 }
 
 export default function MoodSwing({ onSelect }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [selected, setSelected] = useState(null)
   const [exiting, setExiting] = useState(false)
@@ -111,10 +113,10 @@ export default function MoodSwing({ onSelect }) {
             </motion.span>
           </div>
           <h2 className="text-xl font-display font-bold text-white text-center tracking-tight">
-            Mood Swing
+            {t('mood.title')}
           </h2>
           <p className="text-xs text-white/30 font-mono text-center max-w-xs">
-            Set the vibe before entering
+            {t('mood.subtitle')}
           </p>
         </motion.div>
 
@@ -197,10 +199,10 @@ export default function MoodSwing({ onSelect }) {
                     animate={shouldReduceMotion ? undefined : (isSelected ? { scale: [1, 1.05, 1] } : {})}
                     transition={shouldReduceMotion ? undefined : { duration: 0.3 }}
                   >
-                    {mood.label}
+                    {t('mood.moods.' + mood.id + '.label', mood.label)}
                   </motion.span>
                   <span className="text-[9px] sm:text-[10px] text-white/30 font-mono text-center leading-tight">
-                    {mood.description}
+                    {t('mood.moods.' + mood.id + '.description', mood.description)}
                   </span>
                 </div>
 
@@ -227,7 +229,7 @@ export default function MoodSwing({ onSelect }) {
           transition={shouldReduceMotion ? undefined : { delay: 0.8 }}
           className="text-[10px] font-mono text-white/15 text-center"
         >
-          Pick your mood {'\u2192'} music sets the vibe for exploring
+          {t('mood.footnote')}
         </motion.p>
 
         <motion.div

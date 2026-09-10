@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Heart, Github, ExternalLink, Star, Users } from 'lucide-react'
 import { getAdminSettings } from '../lib/supabase'
 import { cn } from '../lib/utils'
@@ -15,6 +16,7 @@ const cardVariants = {
 }
 
 export default function ContributorsSection({ className }) {
+  const { t } = useTranslation()
   const [contributors, setContributors] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -49,12 +51,12 @@ export default function ContributorsSection({ className }) {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mb-16"
         >
-          <span className="eyebrow">Contributors</span>
+          <span className="eyebrow">{t('contributors.eyebrow')}</span>
           <h2 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tighter leading-none">
-            People Behind <span className="text-gradient">NEURAL AURORA</span>
+            {t('contributors.titlePrefix')}{' '}<span className="text-gradient">NEURAL AURORA</span>
           </h2>
           <p className="mt-4 text-sm md:text-base text-black/50 dark:text-white/40 max-w-2xl leading-relaxed">
-            Every contributor — developer or donor — helps keep this project free and open-source.
+            {t('contributors.subtitle')}
           </p>
         </motion.div>
 
@@ -138,10 +140,10 @@ export default function ContributorsSection({ className }) {
                 <Heart className="w-5 h-5 text-rose-400" />
               </div>
               <h3 className="font-display font-semibold text-sm text-black/80 dark:text-white/90 mb-1">
-                Become a Contributor
+                {t('contributors.becomeContributor')}
               </h3>
               <p className="text-[10px] text-black/40 dark:text-white/30 leading-relaxed">
-                Support the project & get listed here
+                {t('contributors.becomeContributorSubtitle')}
               </p>
             </motion.a>
           </motion.div>

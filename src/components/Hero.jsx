@@ -3,7 +3,7 @@ import { usePersonalInfo, useSocialLinks } from '../lib/usePortfolioData'
 import { SplineScene } from './ui/splite'
 import { Spotlight } from './ui/spotlight'
 import MagneticButton from './ui/magnetic-button'
-import { useTranslation } from 'react-i18next'; // 1. ADD THIS IMPORT
+import { useTranslation } from 'react-i18next'
 
 const iconMap = {
   github: 'M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z',
@@ -60,7 +60,7 @@ export default function Hero() {
   const shouldReduceMotion = useReducedMotion()
   const { data: personalInfo } = usePersonalInfo()
   const { data: socialLinks } = useSocialLinks()
-  const { t } = useTranslation(); // 2. ADD THIS HOOK
+  const { t } = useTranslation()
 
   return (
     <section
@@ -110,7 +110,7 @@ export default function Hero() {
                 }}
                 className="group inline-flex items-center gap-3 px-6 py-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/60 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
               >
-                {t('hero.viewProjects')} {/* 3. TRANSLATED */}
+                {t('hero.viewProjects')}
                 <span className="w-6 h-6 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -123,7 +123,7 @@ export default function Hero() {
                 download
                 className="group inline-flex items-center gap-3 px-6 py-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/80 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
               >
-                {t('hero.resume')} {/* 4. TRANSLATED */}
+                {t('hero.resume')}
                 <span className="w-6 h-6 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -144,8 +144,8 @@ export default function Hero() {
               />
               <div className="absolute inset-0 z-10 pointer-events-none">
                 <div className="absolute top-4 left-4 glass-panel-strong rounded-xl px-4 py-2">
-                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.1em]">{t('hero.available')}</p> {/* 5. TRANSLATED */}
-                  <p className="text-xs font-medium text-[var(--text-primary)]">{t('hero.collaboration')}</p> {/* 6. TRANSLATED */}
+                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.1em]">{t('hero.available')}</p>
+                  <p className="text-xs font-medium text-[var(--text-primary)]">{t('hero.collaboration')}</p>
                 </div>
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
                   <motion.div

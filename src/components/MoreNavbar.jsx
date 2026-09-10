@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
+import LanguageSwitcher from './LanguageSwitcher'
 import { BrandLogo } from './ui/BrandLogo'
 
 const navLinks = [
-  { label: 'Timeline', href: '#timeline' },
-  { label: 'Case Studies', href: '#case-studies' },
-  { label: 'Blog', href: '/blog', route: true },
+  { key: 'timeline', href: '#timeline' },
+  { key: 'caseStudies', href: '#case-studies' },
+  { key: 'blog', href: '/blog', route: true },
 ]
 
 const staggerItem = {
@@ -20,6 +22,7 @@ const staggerItem = {
 }
 
 export default function MoreNavbar() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
@@ -67,15 +70,18 @@ export default function MoreNavbar() {
                   onClick={() => handleClick(link.href, link.route)}
                   className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                 >
-                  {link.label}
+                  {t(`more.nav.${link.key}`)}
                 </button>
               ))}
             </div>
-            <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
+            <div className="flex items-center gap-2">
+              <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
+              <LanguageSwitcher />
+            </div>
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"
-              aria-label="Menu"
+              aria-label={t('common.menu', 'Menu')}
             >
               <div className="flex flex-col gap-1.5">
                 <motion.span
@@ -114,7 +120,7 @@ export default function MoreNavbar() {
                 onClick={() => { setOpen(false); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
               >
-                Home
+                {t('common.home', 'Home')}
               </motion.button>
               {navLinks.map((link, i) => (
                 <motion.button
@@ -126,7 +132,7 @@ export default function MoreNavbar() {
                   onClick={() => handleClick(link.href, link.route)}
                   className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
                 >
-                  {link.label}
+                  {t(`more.nav.${link.key}`)}
                 </motion.button>
               ))}
             </div>

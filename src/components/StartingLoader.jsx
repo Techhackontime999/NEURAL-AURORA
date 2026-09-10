@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion, MotionConfig } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { useMood } from '../context/MoodContext'
@@ -318,6 +319,7 @@ function MCQChallenge({ question, onCorrect, onWrong }) {
 }
 
 function SuccessScreen({ name }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [showAccess, setShowAccess] = useState(false)
   const [showText, setShowText] = useState(false)
@@ -352,14 +354,14 @@ function SuccessScreen({ name }) {
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               filter: 'drop-shadow(0 0 25px rgba(0,240,255,0.25))',
             }}
-          >ACCESS GRANTED</motion.h1>
+          >{t('loader.success.accessGranted')}</motion.h1>
         )}
       </AnimatePresence>
       <AnimatePresence>
         {showText && (
           <motion.p initial={shouldReduceMotion ? false : { opacity: 0 }} animate={shouldReduceMotion ? undefined : { opacity: 1 }} transition={shouldReduceMotion ? undefined : { duration: 0.6 }}
             className="text-base text-white/40 font-mono tracking-wider"
-          >Welcome to {name}&apos;s world.</motion.p>
+          >{t('loader.success.welcome')}</motion.p>
         )}
       </AnimatePresence>
       {!shouldReduceMotion && Array.from({ length: 16 }).map((_, i) => (
@@ -1322,6 +1324,7 @@ function CmdExplorer({ onBack }) {
 }
 
 function InterviewMe({ onSuccess, name }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [step, setStep] = useState('intro')
   const [visitorQuestion, setVisitorQuestion] = useState('')
@@ -1826,12 +1829,12 @@ RULES:
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="text-white font-bold tracking-tight" style={{ fontSize: 'clamp(0.8125rem, 2.5vw, 0.875rem)' }}>Chat with {name}</p>
-                <p className="text-white/20 font-mono tracking-wide" style={{ fontSize: 'clamp(0.5625rem, 1.5vw, 0.625rem)' }}>Ask me anything</p>
+                <p className="text-white font-bold tracking-tight" style={{ fontSize: 'clamp(0.8125rem, 2.5vw, 0.875rem)' }}>{t('loader.interview.chatWith', { name })}</p>
+                <p className="text-white/20 font-mono tracking-wide" style={{ fontSize: 'clamp(0.5625rem, 1.5vw, 0.625rem)' }}>{t('loader.interview.askAnything')}</p>
               </div>
               <div className="ml-auto flex items-center gap-1.5 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
-                <span className="font-mono text-white/20 tracking-wider uppercase" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>Live</span>
+                <span className="font-mono text-white/20 tracking-wider uppercase" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>{t('loader.interview.live')}</span>
               </div>
             </div>
 
@@ -1846,7 +1849,7 @@ RULES:
                     className="flex flex-col items-center gap-3"
                   >
                     <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-neural-blue/30 border-t-neural-blue ${shouldReduceMotion ? '' : 'animate-spin'}`} />
-                    <span className="font-mono text-white/30 tracking-widest uppercase" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>Getting ready...</span>
+                    <span className="font-mono text-white/30 tracking-widest uppercase" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>{t('loader.interview.gettingReady')}</span>
                   </motion.div>
                 </motion.div>
               )}
@@ -1856,7 +1859,7 @@ RULES:
                   className="flex items-center gap-3 py-4 sm:py-6"
                 >
                   <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-neural-blue/30 border-t-neural-blue ${shouldReduceMotion ? '' : 'animate-spin'}`} />
-                  <span className="font-mono text-white/30 tracking-wide" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>{name} is thinking...</span>
+                  <span className="font-mono text-white/30 tracking-wide" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>{t('loader.interview.thinking', { name })}</span>
                 </motion.div>
               )}
 
@@ -1883,7 +1886,7 @@ RULES:
                           <span className={`font-mono uppercase tracking-wider block mb-1 ${
                             h.role === 'visitor' ? 'text-white/20' : 'text-neural-blue/40'
                           }`} style={{ fontSize: 'clamp(0.4375rem, 1.25vw, 0.5rem)' }}>
-                            {h.role === 'visitor' ? 'You' : name}
+                            {h.role === 'visitor' ? t('loader.interview.you') : name}
                           </span>
                           <span className="break-words">{h.text}</span>
                         </motion.div>
@@ -1928,7 +1931,7 @@ RULES:
                       )}
                     </motion.button>
                     <p className="font-mono tracking-widest uppercase text-white/20 text-center px-2" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>
-                      {listening ? 'Listening... go ahead, ask me anything' : 'Tap the mic, then ask your question'}
+                      {listening ? t('loader.interview.listening') : t('loader.interview.tapMic')}
                     </p>
                   </div>
                   {transcript && (
@@ -1947,7 +1950,7 @@ RULES:
                         value={textInput}
                         onChange={e => setTextInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') submitText() }}
-                        placeholder="Type your question..."
+                        placeholder={t('loader.interview.typeQuestion')}
                         className="flex-1 bg-white/[0.02] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 font-mono text-white/70 outline-none placeholder-white/15 focus:border-neural-blue/30 transition-colors"
                         style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                         autoFocus
@@ -1960,7 +1963,7 @@ RULES:
                         className="px-3 sm:px-4 rounded-xl font-mono text-neural-blue/70 hover:text-neural-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         style={{ background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(0,240,255,0.2)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                       >
-                        Ask
+                        {t('loader.interview.ask')}
                       </motion.button>
                     </motion.div>
                   )}
@@ -1977,7 +1980,7 @@ RULES:
                 >
                   <div className="space-y-1.5 sm:space-y-2">
                     <span className="inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/[0.03] border border-white/[0.06] font-mono text-white/20 uppercase tracking-[0.15em]" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
-                      You asked
+                      {t('loader.interview.youAsked')}
                     </span>
                     <div className="text-white/60 leading-relaxed font-mono bg-white/[0.02] rounded-xl p-3 sm:p-4 border border-white/[0.04] break-words" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)' }}>
                       {visitorQuestion}
@@ -1986,7 +1989,7 @@ RULES:
                   <div className="relative p-[1px] rounded-xl" style={{ background: 'linear-gradient(to bottom, rgba(0,240,255,0.2), transparent)' }}>
                     <div className="rounded-[calc(1rem-1px)] bg-[#050508] p-3 sm:p-4">
                       <span className="inline-block px-1.5 sm:px-2 py-0.5 rounded-full font-mono text-neural-blue/60 uppercase tracking-[0.15em] mb-1.5 sm:mb-2" style={{ background: 'rgba(0,240,255,0.06)', border: '1px solid rgba(0,240,255,0.1)', fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
-                        {name} says
+                        {t('loader.interview.says', { name })}
                       </span>
                       <div className="text-white/80 leading-relaxed font-mono break-words" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}>
                         {aiResponse}
@@ -2002,7 +2005,7 @@ RULES:
                       className="group relative flex-1 overflow-hidden rounded-xl border border-white/[0.06] px-4 sm:px-5 py-2.5 sm:py-3 font-mono tracking-wide text-white/70 transition-colors duration-300 hover:border-neural-blue/30 hover:text-neural-blue"
                       style={{ background: 'rgba(255,255,255,0.02)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                     >
-                      <span className="relative z-10">Ask another question</span>
+                      <span className="relative z-10">{t('loader.interview.askAnother')}</span>
                       <motion.div
                         className="absolute inset-0 pointer-events-none"
                         style={{ background: 'linear-gradient(90deg, transparent, rgba(0,240,255,0.03), transparent)' }}
@@ -2018,7 +2021,7 @@ RULES:
                       className="relative rounded-xl border border-white/[0.04] px-3 sm:px-4 py-2.5 sm:py-3 font-mono tracking-wide text-white/30 transition-colors duration-300 hover:border-white/[0.08] hover:text-white/50"
                       style={{ background: 'rgba(255,255,255,0.01)', fontSize: 'clamp(0.5625rem, 1.5vw, 0.625rem)' }}
                     >
-                      <span className="relative z-10">End interview</span>
+                      <span className="relative z-10">{t('loader.interview.endInterview')}</span>
                     </motion.button>
                   </div>
                 </motion.div>
@@ -2044,7 +2047,7 @@ RULES:
                       </svg>
                     </motion.div>
                     <span className="inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.03] border border-white/[0.06] font-mono text-white/20 uppercase tracking-[0.2em]" style={{ fontSize: 'clamp(0.5rem, 1.25vw, 0.5625rem)' }}>
-                      All done
+                      {t('loader.interview.allDone')}
                     </span>
                   </div>
                   <div className="relative p-[1px] rounded-xl" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.06), transparent)' }}>
@@ -2062,7 +2065,7 @@ RULES:
                     className="group relative w-full overflow-hidden rounded-xl border px-4 sm:px-5 py-2.5 sm:py-3 font-mono tracking-wide transition-colors duration-300"
                     style={{ borderColor: 'rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.04)', color: 'rgba(16,185,129,0.8)', fontSize: 'clamp(0.625rem, 2vw, 0.6875rem)' }}
                   >
-                    <span className="relative z-10">Enter Portfolio</span>
+                    <span className="relative z-10">{t('loader.interview.enterPortfolio')}</span>
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.04), transparent)' }}
@@ -2333,6 +2336,7 @@ function NeuralPatternLock({ onSuccess }) {
 }
 
 export default function StartingLoader({ onComplete }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [phase, setPhase] = useState('booting')
   const [question, setQuestion] = useState(null)
@@ -2536,7 +2540,7 @@ export default function StartingLoader({ onComplete }) {
                 transition={{ delay: 0.3, type: 'spring', stiffness: 100, damping: 20 }}
                 className="font-display font-bold text-white text-center tracking-tight"
                 style={{ fontSize: 'clamp(1.125rem, 4vw, 1.75rem)' }}
-              >Verification Required</motion.h2>
+              >{t('loader.verificationRequired')}</motion.h2>
 
               <motion.p
                 initial={{ opacity: 0 }}
@@ -2544,7 +2548,7 @@ export default function StartingLoader({ onComplete }) {
                 transition={{ delay: 0.4 }}
                 className="text-white/30 font-mono text-center max-w-[28ch]"
                 style={{ fontSize: 'clamp(0.625rem, 2vw, 0.75rem)' }}
-              >Prove your identity to access the system.</motion.p>
+              >{t('loader.proveIdentity')}</motion.p>
 
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -2593,8 +2597,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Say &ldquo;{firstName}&rdquo;</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Voice recognition</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.sayName', { name: firstName })}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.voiceRecognition')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2626,8 +2630,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Solve Puzzle</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>One question</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.solvePuzzle')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.oneQuestion')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2658,10 +2662,10 @@ export default function StartingLoader({ onComplete }) {
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)', color: autoTraverse ? '#10b981' : 'white' }}>
-                        {autoTraverse ? 'Traverse On' : 'Auto Traverse'}
+                        {autoTraverse ? t('loader.cards.traverseOn') : t('loader.cards.autoTraverse')}
                       </p>
                       <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>
-                        {autoTraverse ? 'Auto-demo mode active' : 'Full site demo tour'}
+                        {autoTraverse ? t('loader.cards.traverseActiveDesc') : t('loader.cards.traverseTourDesc')}
                       </p>
                     </div>
                   </div>
@@ -2692,8 +2696,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Watch Dev Ads</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Video ads to unlock</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.watchDevAds')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.videoAdsToUnlock')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2720,8 +2724,8 @@ export default function StartingLoader({ onComplete }) {
                       <span style={{ fontSize: 'clamp(0.8125rem, 2.5vw, 1.125rem)' }}>{'\uD83C\uDFB5'}</span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Mood Swing</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Set vibe & music</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.moodSwing')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.setVibeMusic')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2751,8 +2755,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Neural Aurora CMD</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Explore via terminal</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.neuralCmd')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.exploreTerminal')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2783,8 +2787,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Take My Interview</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Voice AI interview</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.takeInterview')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.voiceAiInterview')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2815,8 +2819,8 @@ export default function StartingLoader({ onComplete }) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Neural Pattern Lock</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Memory challenge</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.patternLock')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.memoryChallenge')}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -2847,8 +2851,8 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Channel Stream</p>
-                        <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Browse my videos</p>
+                        <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.channelStream')}</p>
+                        <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.browseVideos')}</p>
                       </div>
                     </div>
                   </motion.button>
@@ -2882,8 +2886,8 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                       </svg>
                     </motion.div>
                     <div className="min-w-0">
-                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>Skip the Vibes</p>
-                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>Direct entry</p>
+                      <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{t('loader.cards.skipVibes')}</p>
+                      <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{t('loader.cards.directEntry')}</p>
                     </div>
                   </div>
                 </motion.button>

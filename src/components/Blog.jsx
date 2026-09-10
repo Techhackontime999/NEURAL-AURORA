@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Tag, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useBlogPosts } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
 export default function Blog() {
+  const { t } = useTranslation()
   const { data: blogPosts } = useBlogPosts()
   const [search, setSearch] = useState('')
 
@@ -28,12 +30,12 @@ export default function Blog() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-12"
         >
-          <span className="eyebrow">Blog</span>
+          <span className="eyebrow">{t('blog.eyebrow')}</span>
           <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
-            Thoughts & <span className="text-gradient">Ideas</span>
+            {t('blog.titlePrefix')} <span className="text-gradient">{t('blog.titleSuffix')}</span>
           </h1>
           <p className="text-sm text-black/50 dark:text-white/50 mt-3 max-w-md mx-auto">
-            Sharing what I learn, build, and think about.
+            {t('blog.subtitle')}
           </p>
         </motion.div>
 
@@ -46,7 +48,7 @@ export default function Blog() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 dark:text-white/30" />
           <input
             type="text"
-            placeholder="Search posts..."
+            placeholder={t('blog.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-black/10 dark:border-white/10 bg-[var(--bg-secondary)] text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all"
@@ -59,7 +61,7 @@ export default function Blog() {
             animate={{ opacity: 1 }}
             className="text-center text-sm text-black/40 dark:text-white/40"
           >
-            No posts found. Try a different search.
+            {t('blog.noPosts')}
           </motion.p>
         ) : (
           <div className="space-y-4">

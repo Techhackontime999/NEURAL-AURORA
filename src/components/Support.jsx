@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Heart, Coffee, Zap, Rocket, Crown, Sparkles, Star, Shield, CheckCircle, ArrowRight, ChevronDown, Send, Wallet, Smartphone, Gift } from 'lucide-react'
 import { openRazorpayCheckout } from '../lib/razorpay'
 import { useSocialLinks } from '../lib/usePortfolioData'
@@ -121,6 +122,15 @@ function FAQItem({ faq, index, openIndex, setOpenIndex }) {
 
 const iconMap = { Heart, Coffee, Zap, Rocket, Crown, Sparkles, Star, Shield }
 
+const PRESET_KEY_MAP = {
+  Coffee: 'coffee',
+  Heart: 'feature',
+  Zap: 'speed',
+  Rocket: 'rocket',
+  Crown: 'crown',
+  Sparkles: 'legend',
+}
+
 function ResolvedIcon({ name, className }) {
   const Icon = iconMap[name]
   if (!Icon) return null
@@ -128,6 +138,7 @@ function ResolvedIcon({ name, className }) {
 }
 
 export default function Support() {
+  const { t } = useTranslation()
   const { data: socialLinks } = useSocialLinks()
   const [settings, setSettings] = useState(defaultSettings)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
@@ -281,14 +292,14 @@ export default function Support() {
         >
           <motion.div variants={childVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 mb-6">
             <Heart className="w-3 h-3 text-rose-400" />
-            <span className="text-[10px] uppercase tracking-widest text-rose-400 font-medium">{settings.hero_subtitle}</span>
+            <span className="text-[10px] uppercase tracking-widest text-rose-400 font-medium">{t('support.heroSubtitle')}</span>
           </motion.div>
           <motion.h1 variants={childVariants} className="text-4xl md:text-6xl lg:text-7xl font-display font-bold tracking-tighter mt-4 leading-none text-balance">
-            <span className="text-black/60 dark:text-white/60">Support</span>{' '}
+            <span className="text-black/60 dark:text-white/60">{t('support.eyebrow')}</span>{' '}
             <span className="text-gradient">{settings.hero_title}</span>
           </motion.h1>
           <motion.p variants={childVariants} className="text-sm md:text-base text-black/50 dark:text-white/50 mt-5 max-w-2xl mx-auto leading-relaxed">
-            {settings.hero_description}
+            {t('support.heroDescription')}
           </motion.p>
         </motion.div>
 
@@ -332,7 +343,7 @@ export default function Support() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <span className="eyebrow">Contribute</span>
+              <span className="eyebrow">{t('support.nav.contribute')}</span>
               <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4 mb-3">
                 Choose Your{' '}
                 <span className="text-gradient">Contribution</span>
@@ -360,7 +371,7 @@ export default function Support() {
                           {preset.label}
                         </span>
                         <span className="text-[8px] uppercase tracking-wider text-black/30 dark:text-white/30">
-                          {preset.desc}
+                          {t('support.presets.' + (PRESET_KEY_MAP[preset.icon] || 'coffee'), preset.desc)}
                         </span>
                       </button>
                     )
@@ -398,12 +409,12 @@ export default function Support() {
                   {paymentStatus === 'processing' ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Processing...
+                      {t('services.processing')}
                     </span>
                   ) : paymentStatus === 'success' ? (
                     <span className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
-                      Thank You!
+                      {t('reviews.thankYou')}
                     </span>
                   ) : paymentStatus === 'error' ? (
                     <span className="flex items-center gap-2 text-[10px]">
@@ -574,10 +585,9 @@ export default function Support() {
                   visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 20 } },
                 }}
               >
-                <span className="eyebrow">Connect</span>
+                <span className="eyebrow">{t('contact.eyebrow')}</span>
                 <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tighter leading-none">
-                  Get in{' '}
-                  <span className="text-gradient">Touch</span>
+                  {t('services.getInTouch')}
                 </h2>
                 <p className="mt-4 text-sm text-black/50 dark:text-white/40 max-w-[65ch] leading-relaxed">
                   Questions about contributing? Want to discuss a sponsorship or partnership?
@@ -593,7 +603,7 @@ export default function Support() {
                 className="glass-panel rounded-[2rem] p-6 md:p-8 space-y-4"
               >
                 <h3 className="text-[10px] uppercase tracking-[0.15em] text-black/40 dark:text-white/30 font-medium">
-                  Find me on
+                  {t('contact.findMeOn')}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {socialLinks.map((link) => (
@@ -625,42 +635,42 @@ export default function Support() {
               >
                 <div className="space-y-2">
                   <label htmlFor="s-name" className="block text-[10px] text-black/50 dark:text-white/40 uppercase tracking-[0.1em]">
-                    Name
+                    {t('contact.nameLabel')}
                   </label>
                   <input
                     type="text"
                     id="s-name"
                     value={contactForm.name}
                     onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    placeholder="Your name"
+                    placeholder={t('contact.namePlaceholder')}
                     required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="s-email" className="block text-[10px] text-black/50 dark:text-white/40 uppercase tracking-[0.1em]">
-                    Email
+                    {t('contact.emailLabel')}
                   </label>
                   <input
                     type="email"
                     id="s-email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    placeholder="your@email.com"
+                    placeholder={t('contact.emailPlaceholder')}
                     required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="s-message" className="block text-[10px] text-black/50 dark:text-white/40 uppercase tracking-[0.1em]">
-                    Message
+                    {t('contact.messageLabel')}
                   </label>
                   <textarea
                     id="s-message"
                     rows={4}
                     value={contactForm.message}
                     onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    placeholder="Tell me about your project or sponsorship ideas..."
+                    placeholder={t('support.sponsorPlaceholder')}
                     required
                     className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-300 resize-none"
                   />
@@ -671,7 +681,7 @@ export default function Support() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="w-full py-3.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-500 text-center"
                   >
-                    Message sent! I'll get back to you soon.
+                    {t('contact.sentSuccess')}
                   </motion.div>
                 ) : (
                   <motion.button
@@ -684,11 +694,11 @@ export default function Support() {
                     {contactStatus === 'sending' ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Sending...
+                        {t('contact.sending')}
                       </span>
                     ) : (
                       <>
-                        Send Message
+                        {t('contact.sendMessage')}
                         <Send className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                       </>
                     )}
@@ -717,7 +727,7 @@ export default function Support() {
             className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-gradient-to-r from-rose-500 to-purple-500 text-white text-xs uppercase tracking-widest font-medium shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-shadow duration-300"
           >
             <Gift className="w-4 h-4" />
-            <span className="hidden sm:inline">Support</span>
+            <span className="hidden sm:inline">{t('support.floatingButton')}</span>
           </motion.button>
         </motion.div>
       </main>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Moon, Sun, Search, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const TOKENS = {
   light: {
@@ -51,6 +52,7 @@ export function ThemeToggle({
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
   const curtainColorRef       = useRef("");
+  const { t: translate }      = useTranslation();
   const t                     = TOKENS[theme];
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function ThemeToggle({
           onMouseLeave={() => { setHovered(false); setPressed(false); }}
           onMouseDown={() => setPressed(true)}
           onMouseUp={() => setPressed(false)}
-          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+          aria-label={theme === "light" ? translate("theme.switchToDark", "Switch to dark mode") : translate("theme.switchToLight", "Switch to light mode")}
           aria-pressed={theme === "dark"}
         >
           {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
@@ -210,7 +212,7 @@ export function ThemeToggle({
               </div>
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={translate("theme.searchPlaceholder", "Search...")}
                 onChange={(e) => appBarProps.onSearch?.(e.target.value)}
                 style={{
                   width: "100%",
@@ -260,7 +262,7 @@ export function ThemeToggle({
               onMouseLeave={() => { setHovered(false); setPressed(false); }}
               onMouseDown={() => setPressed(true)}
               onMouseUp={() => setPressed(false)}
-              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              aria-label={theme === "light" ? translate("theme.switchToDark", "Switch to dark mode") : translate("theme.switchToLight", "Switch to light mode")}
               aria-pressed={theme === "dark"}
             >
               {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
@@ -276,7 +278,7 @@ export function ThemeToggle({
             onMouseLeave={() => { setHovered(false); setPressed(false); }}
             onMouseDown={() => setPressed(true)}
             onMouseUp={() => setPressed(false)}
-            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            aria-label={theme === "light" ? translate("theme.switchToDark", "Switch to dark mode") : translate("theme.switchToLight", "Switch to light mode")}
             aria-pressed={theme === "dark"}
           >
             {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}

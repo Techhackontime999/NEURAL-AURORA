@@ -7,10 +7,10 @@ import { BrandLogo } from './ui/BrandLogo'
 import { getCrmUrl } from '../lib/crm-config'
 import { getDocsUrl } from '../lib/docs-config'
 import LanguageSwitcher from './LanguageSwitcher';
-import { useTranslation } from 'react-i18next'; // 1. ADD THIS IMPORT
+import { useTranslation } from 'react-i18next'
 
 const navLinks = [
-  { label: 'nav.about', href: '#about' }, // 2. USE TRANSLATION KEYS
+  { label: 'nav.about', href: '#about' },
   { label: 'nav.skills', href: '#skills' },
   { label: 'nav.projects', href: '#projects' },
   { label: 'nav.services', href: '/services', route: true },
@@ -32,7 +32,7 @@ const staggerItem = {
 function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavigate }) {
   const [expanded, setExpanded] = useState(false)
   const mNavigate = useNavigate()
-  const { t } = useTranslation(); // ADD HOOK
+  const { t } = useTranslation()
 
   return (
     <motion.div
@@ -48,7 +48,7 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
         style={{ color: 'var(--accent)' }}
       >
         <Lock className="w-4 h-4" strokeWidth={1.5} />
-        <span>{t('nav.login')}</span> {/* TRANSLATED */}
+        <span>{t('nav.login')}</span>
         <motion.svg
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.3 }}
@@ -73,7 +73,7 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
               style={{ color: 'var(--text-secondary)' }}
             >
               <Shield className="w-4 h-4" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-              {t('nav.admin')} {/* TRANSLATED */}
+              {t('nav.admin')}
             </button>
             {crmUrl && (
               <a
@@ -85,7 +85,7 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <ExternalLink className="w-4 h-4" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-                {t('nav.crm')} {/* TRANSLATED */}
+                {t('nav.crm')}
               </a>
             )}
             {docsUrl && (
@@ -98,7 +98,7 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <ExternalLink className="w-4 h-4" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-                {t('nav.getStarted')} {/* TRANSLATED */}
+                {t('nav.getStarted')}
               </a>
             )}
           </motion.div>
@@ -118,7 +118,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { scrollY } = useScroll()
-  const { t } = useTranslation(); // 3. ADD HOOK HERE
+  const { t } = useTranslation()
 
   useEffect(() => {
     setCrmUrl(getCrmUrl())
@@ -187,14 +187,14 @@ export default function Navbar() {
                       : 'text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90'
                   }`}
                 >
-                  {t(link.label)} {/* TRANSLATED */}
+                  {t(link.label)}
                 </button>
               ))}
               <div className="flex items-center gap-2 relative" ref={loginRef}>
                 <button
                   onClick={() => setLoginOpen(!loginOpen)}
                   className="relative flex items-center justify-center w-7 h-7 rounded-lg text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 active:scale-[0.92] transition-all duration-300"
-                  title={t('nav.login')} /* TRANSLATED */
+                  title={t('nav.login')}
                 >
                   <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </button>
@@ -221,7 +221,7 @@ export default function Navbar() {
                           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <Shield className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-                          <span>{t('nav.admin')}</span> {/* TRANSLATED */}
+                          <span>{t('nav.admin')}</span>
                         </button>
                         {crmUrl && (
                           <>
@@ -236,7 +236,7 @@ export default function Navbar() {
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                               <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-                              <span>{t('nav.crm')}</span> {/* TRANSLATED */}
+                              <span>{t('nav.crm')}</span>
                             </a>
                           </>
                         )}
@@ -253,7 +253,7 @@ export default function Navbar() {
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                               <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-                              <span>{t('nav.getStarted')}</span> {/* TRANSLATED */}
+                              <span>{t('nav.getStarted')}</span>
                             </a>
                           </>
                         )}
@@ -263,12 +263,12 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             </div>
-            <LanguageSwitcher /> {/* SWITCHER IS PLACED HERE */}
+            <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"
-              aria-label={t('nav.menu')} /* TRANSLATED */
+              aria-label={t('nav.menu')}
             >
               <div className="flex flex-col gap-1.5">
                 <motion.span
@@ -313,7 +313,7 @@ export default function Navbar() {
                       : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'
                   }`}
                 >
-                  {t(link.label)} {/* TRANSLATED */}
+                  {t(link.label)}
                 </motion.button>
               ))}
               <LoginMenuMobile

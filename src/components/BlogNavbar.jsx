@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const staggerItem = {
   hidden: { opacity: 0, y: 20 },
@@ -15,6 +17,7 @@ const staggerItem = {
 }
 
 export default function BlogNavbar() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
@@ -52,7 +55,7 @@ export default function BlogNavbar() {
                 onClick={() => { navigate('/more'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
               >
-                More
+                {t('nav.more')}
               </button>
               {isPost && (
                 <button
@@ -60,15 +63,16 @@ export default function BlogNavbar() {
                   className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-1"
                 >
                   <ArrowLeft className="w-3 h-3" />
-                  All Posts
+                  {t('blog.allPosts')}
                 </button>
               )}
             </div>
+            <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"
-              aria-label="Menu"
+              aria-label={t('common.menu')}
             >
               <div className="flex flex-col gap-1.5">
                 <motion.span
@@ -107,7 +111,7 @@ export default function BlogNavbar() {
                 onClick={() => { setOpen(false); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
               >
-                Home
+                {t('common.home')}
               </motion.button>
               <motion.button
                 custom={1}
@@ -117,7 +121,7 @@ export default function BlogNavbar() {
                 onClick={() => { setOpen(false); navigate('/more'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
               >
-                More
+                {t('nav.more')}
               </motion.button>
               {isPost && (
                 <motion.button
@@ -128,7 +132,7 @@ export default function BlogNavbar() {
                   onClick={() => { setOpen(false); navigate('/blog') }}
                   className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
                 >
-                  All Posts
+                  {t('blog.allPosts')}
                 </motion.button>
               )}
             </div>

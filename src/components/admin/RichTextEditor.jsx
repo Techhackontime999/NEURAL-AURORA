@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { uploadImage } from '../../lib/supabase'
+import { useToast } from '../../context/ToastContext'
 
 const toolbarItems = [
   { cmd: 'bold', icon: 'B', label: 'Bold' },
@@ -18,6 +19,7 @@ const toolbarItems = [
 ]
 
 export default function RichTextEditor({ value, onChange, placeholder = 'Start writing...', minHeight = 300 }) {
+  const { toast } = useToast()
   const editorRef = useRef(null)
   const fileInputRef = useRef(null)
   const [activeCmds, setActiveCmds] = useState(new Set())
@@ -32,21 +34,23 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
   }, [value])
 
   const updateState = useCallback(() => {
-    const cmds = new Set()
-    if (document.queryCommandState('bold')) cmds.add('bold')
-    if (document.queryCommandState('italic')) cmds.add('italic')
-    if (document.queryCommandState('underline')) cmds.add('underline')
-    setActiveCmds(cmds)
+    const active = new Set()
+    toolbarItems.forEach(item => {
+      if (item.cmd && document.queryCommandState(item.cmd)) {
+        active.add(item.cmd)
+      }
+    })
+    setActiveCmds(active)
   }, [])
 
   const exec = useCallback((cmd, cmdValue = null) => {
+    editorRef.current?.focus()
     if (cmd === 'createLink') {
       const url = prompt('Enter URL:', 'https://')
       if (url) document.execCommand(cmd, false, url)
     } else {
       document.execCommand(cmd, false, cmdValue)
     }
-    editorRef.current?.focus()
     updateState()
     isInternalRef.current = true
     if (onChange) {
@@ -66,13 +70,14 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
         if (onChange) {
           onChange(editorRef.current?.innerHTML || '')
         }
+        toast.success('Image inserted')
       }
     } catch (err) {
-      alert('Upload failed: ' + err.message)
+      toast.error('Upload failed: ' + err.message)
     }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }, [onChange])
+  }, [onChange, toast])
 
   const handleInput = useCallback(() => {
     isInternalRef.current = true

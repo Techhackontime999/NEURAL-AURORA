@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { getSkills, updateSkill, createSkill, deleteSkill } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 const categories = ['frontend', 'backend', 'language', 'devops', 'design']
 
 export default function AdminSkills() {
+  const { toast, confirm } = useToast()
   const [skills, setSkills] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -34,8 +36,11 @@ export default function AdminSkills() {
       const { id: _id, created_at, updated_at, ...payload } = editForm
       await updateSkill(id, payload)
       setEditingId(null)
+      toast.success('Skill updated successfully')
       load()
-    } catch (err) { alert('Failed to save: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -44,18 +49,44 @@ export default function AdminSkills() {
       await createSkill(newForm)
       setNewForm({ name: '', level: 50, category: 'frontend', display_order: 0 })
       setShowNew(false)
+      toast.success('Skill created successfully')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this skill?')) { try { await deleteSkill(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+    const ok = await confirm({
+      title: 'Delete Skill',
+      message: 'Are you sure you want to delete this skill?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteSkill(id)
+      toast.success('Skill deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Skills',
+      message: `Delete ${selectedIds.size} selected item(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteSkill)
+    if (deleted > 0) toast.success(`Deleted ${deleted} skill(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} skill(s)`)
     clearSelection()
     load()
   }

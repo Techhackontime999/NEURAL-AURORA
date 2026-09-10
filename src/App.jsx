@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring , MotionConfig } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
 import { MoodProvider } from './context/MoodContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
@@ -241,11 +242,13 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <AuthProvider>
-      <AutoTraverseProvider>
-        <MoodProvider>
-          <AppContent />
-        </MoodProvider>
-      </AutoTraverseProvider>
+      <ToastProvider>
+        <AutoTraverseProvider>
+          <MoodProvider>
+            <AppContent />
+          </MoodProvider>
+        </AutoTraverseProvider>
+      </ToastProvider>
     </AuthProvider>
     </MotionConfig>
   )

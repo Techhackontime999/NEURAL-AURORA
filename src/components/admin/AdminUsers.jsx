@@ -5,9 +5,11 @@ import {
   getAllProfiles, updateProfileRole, getAdminSettings, updateAdminSettings,
   setAdminEmail, adminDeleteUser,
 } from '../../lib/supabase'
+import { useToast } from '../../context/ToastContext'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminUsers() {
+  const { toast, confirm } = useToast()
   const [profiles, setProfiles] = useState([])
   const [search, setSearch] = useState('')
   const [settings, setSettings] = useState(null)
@@ -33,6 +35,8 @@ export default function AdminUsers() {
 
   function showMsg(msg, type = 'success') {
     setMessage(msg); setMessageType(type)
+    if (type === 'error') toast.error(msg)
+    else toast.success(msg)
     setTimeout(() => setMessage(''), 3000)
   }
 
@@ -43,14 +47,16 @@ export default function AdminUsers() {
   const toggleSelect = useCallback((id) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }, [])
 
   const toggleAll = useCallback(() => {
-    setSelectedIds(prev => prev.size === profiles.length ? new Set() : new Set(profiles.map(p => p.id)))
-  }, [profiles])
+    if (selectedIds.size === profiles.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(profiles.map(p => p.id)))
+  }, [selectedIds.size, profiles])
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
 
@@ -85,7 +91,13 @@ export default function AdminUsers() {
   }
 
   async function handleDelete(userId) {
-    if (!confirm('Delete this user permanently? This cannot be undone.')) return
+    const ok = await confirm({
+      title: 'Delete User',
+      message: 'Delete this user permanently? This action cannot be undone.',
+      confirmText: 'Delete Permanently',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await adminDeleteUser(userId)
       setProfiles(prev => prev.filter(p => p.id !== userId))
@@ -97,7 +109,13 @@ export default function AdminUsers() {
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected users permanently? This cannot be undone.`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Users',
+      message: `Delete ${selectedIds.size} selected user(s) permanently? This cannot be undone.`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
     setDeleting(true)
     let deleted = 0; let errors = 0
     for (const id of selectedIds) {

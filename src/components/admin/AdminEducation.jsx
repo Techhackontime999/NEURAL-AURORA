@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getEducation, updateEducation, createEducation, deleteEducation } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminEducation() {
+  const { toast, confirm } = useToast()
   const [items, setItems] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -29,8 +31,12 @@ export default function AdminEducation() {
     try {
       const { id: _id, created_at, updated_at, ...payload } = editForm
       await updateEducation(id, payload)
-      setEditingId(null); load()
-    } catch (err) { alert('Failed to save: ' + err.message) }
+      setEditingId(null)
+      toast.success('Education record updated')
+      load()
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -39,16 +45,44 @@ export default function AdminEducation() {
       await createEducation(newForm)
       setShowNew(false)
       setNewForm({ edu_id: '', degree: '', school: '', year: '', description: '', display_order: 0 })
+      toast.success('Education record created')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteEducation(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
+  async function handleDelete(id) {
+    const ok = await confirm({
+      title: 'Delete Education Record',
+      message: 'Are you sure you want to delete this education record?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteEducation(id)
+      toast.success('Education record deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
+  }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Items',
+      message: `Delete ${selectedIds.size} selected item(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteEducation)
+    if (deleted > 0) toast.success(`Deleted ${deleted} item(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} item(s)`)
     clearSelection()
     load()
   }

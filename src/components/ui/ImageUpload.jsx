@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import { uploadImage } from '../../lib/supabase'
+import { useToast } from '../../context/ToastContext'
 
 export default function ImageUpload({ value, onChange, label = 'Image' }) {
+  const { toast } = useToast()
   const inputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
 
@@ -12,8 +14,9 @@ export default function ImageUpload({ value, onChange, label = 'Image' }) {
     try {
       const url = await uploadImage(file)
       if (onChange) onChange(url)
+      toast.success('Image uploaded successfully')
     } catch (err) {
-      alert('Upload failed: ' + err.message)
+      toast.error('Upload failed: ' + err.message)
     }
     setUploading(false)
     if (inputRef.current) inputRef.current.value = ''

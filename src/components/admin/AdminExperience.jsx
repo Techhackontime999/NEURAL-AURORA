@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getExperience, updateExperience, createExperience, deleteExperience } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminExperience() {
+  const { toast, confirm } = useToast()
   const [items, setItems] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -29,8 +31,12 @@ export default function AdminExperience() {
     try {
       const { id: _id, created_at, updated_at, ...payload } = editForm
       await updateExperience(id, payload)
-      setEditingId(null); load()
-    } catch (err) { alert('Failed to save: ' + err.message) }
+      setEditingId(null)
+      toast.success('Experience updated successfully')
+      load()
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -39,16 +45,44 @@ export default function AdminExperience() {
       await createExperience(newForm)
       setShowNew(false)
       setNewForm({ exp_id: '', role: '', company: '', year: '', description: '', display_order: 0 })
+      toast.success('Experience created successfully')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteExperience(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
+  async function handleDelete(id) {
+    const ok = await confirm({
+      title: 'Delete Experience',
+      message: 'Are you sure you want to delete this experience record?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteExperience(id)
+      toast.success('Experience deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
+  }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Items',
+      message: `Delete ${selectedIds.size} selected item(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteExperience)
+    if (deleted > 0) toast.success(`Deleted ${deleted} item(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} item(s)`)
     clearSelection()
     load()
   }

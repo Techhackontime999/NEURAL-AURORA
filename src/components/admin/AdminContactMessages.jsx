@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getContactMessages, markContactMessageRead, deleteContactMessage } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminContactMessages() {
+  const { toast, confirm } = useToast()
   const [messages, setMessages] = useState([])
   const [search, setSearch] = useState('')
   const filtered = search
@@ -23,17 +25,46 @@ export default function AdminContactMessages() {
   }
 
   async function handleMarkRead(id) {
-    try { await markContactMessageRead(id); load() } catch (err) { alert('Failed to mark as read: ' + err.message) }
+    try {
+      await markContactMessageRead(id)
+      toast.success('Message marked as read')
+      load()
+    } catch (err) {
+      toast.error('Failed to mark as read: ' + err.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this message?')) { try { await deleteContactMessage(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+    const ok = await confirm({
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this contact message?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteContactMessage(id)
+      toast.success('Message deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected messages permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Messages',
+      message: `Delete ${selectedIds.size} selected message(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteContactMessage)
+    if (deleted > 0) toast.success(`Deleted ${deleted} message(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} message(s)`)
     clearSelection()
     load()
   }

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { getPersonalInfo, updatePersonalInfo, uploadImage } from '../../lib/supabase'
+import { useToast } from '../../context/ToastContext'
 import ImageUpload from '../ui/ImageUpload'
 
 function ResumeUpload({ value, onChange }) {
+  const { toast } = useToast()
   const inputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
 
@@ -13,8 +15,9 @@ function ResumeUpload({ value, onChange }) {
     try {
       const url = await uploadImage(file, 'portfolio-images')
       if (onChange) onChange(url)
+      toast.success('Resume uploaded successfully')
     } catch (err) {
-      alert('Upload failed: ' + err.message)
+      toast.error('Upload failed: ' + err.message)
     }
     setUploading(false)
     if (inputRef.current) inputRef.current.value = ''
@@ -48,6 +51,7 @@ function ResumeUpload({ value, onChange }) {
 }
 
 export default function AdminPersonalInfo() {
+  const { toast } = useToast()
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -63,8 +67,10 @@ export default function AdminPersonalInfo() {
     try {
       await updatePersonalInfo(form)
       setMessage('Saved successfully')
+      toast.success('Personal info saved successfully')
     } catch (err) {
       setMessage('Error: ' + err.message)
+      toast.error('Error saving personal info: ' + err.message)
     }
     setSaving(false)
   }

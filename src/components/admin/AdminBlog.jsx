@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { getBlogPosts, updateBlogPost, createBlogPost, deleteBlogPost } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminBlog() {
+  const { toast, confirm } = useToast()
   const [posts, setPosts] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -35,8 +37,12 @@ export default function AdminBlog() {
       const { id: _id, created_at, updated_at, ...payload } = editForm
       if (typeof payload.tags === 'string') payload.tags = payload.tags.split(',').map(t => t.trim()).filter(Boolean)
       await updateBlogPost(id, payload)
-      setEditingId(null); load()
-    } catch (err) { alert('Failed to save: ' + err.message) }
+      setEditingId(null)
+      toast.success('Blog post updated successfully')
+      load()
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -47,18 +53,44 @@ export default function AdminBlog() {
       await createBlogPost(payload)
       setShowNew(false)
       setNewForm({ post_id: '', title: '', slug: '', excerpt: '', content: '', date: '', read_time: '5 min read', tags: [] })
+      toast.success('Blog post created successfully')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this post?')) { try { await deleteBlogPost(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+    const ok = await confirm({
+      title: 'Delete Blog Post',
+      message: 'Are you sure you want to delete this blog post?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteBlogPost(id)
+      toast.success('Blog post deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Posts',
+      message: `Delete ${selectedIds.size} selected post(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteBlogPost)
+    if (deleted > 0) toast.success(`Deleted ${deleted} post(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} post(s)`)
     clearSelection()
     load()
   }

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getAllReviews, approveReview, deleteReview } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminReviews() {
+  const { toast, confirm } = useToast()
   const [reviews, setReviews] = useState([])
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -25,17 +27,46 @@ export default function AdminReviews() {
   async function load() { setReviews(await getAllReviews()) }
 
   async function handleApprove(id) {
-    try { await approveReview(id); load() } catch (err) { alert('Failed to approve: ' + err.message) }
+    try {
+      await approveReview(id)
+      toast.success('Review approved')
+      load()
+    } catch (err) {
+      toast.error('Failed to approve: ' + err.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this review?')) { try { await deleteReview(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+    const ok = await confirm({
+      title: 'Delete Review',
+      message: 'Are you sure you want to delete this review?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteReview(id)
+      toast.success('Review deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected reviews permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Reviews',
+      message: `Delete ${selectedIds.size} selected review(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteReview)
+    if (deleted > 0) toast.success(`Deleted ${deleted} review(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} review(s)`)
     clearSelection()
     load()
   }

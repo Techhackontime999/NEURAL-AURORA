@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getAdVideos, addAdVideo, updateAdVideo, deleteAdVideo } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 
 const AD_TYPES = [
@@ -25,6 +26,7 @@ const ASPECT_RATIOS = [
 const defaultForm = { title: '', ad_type: 'google', format: 'video', aspect_ratio: '16/9', video_url: '', duration_seconds: 30, active: true }
 
 export default function AdminAds() {
+  const { toast, confirm } = useToast()
   const [ads, setAds] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ ...defaultForm })
@@ -56,32 +58,62 @@ export default function AdminAds() {
     const err = validate(editForm)
     if (err) { setUrlError(err); return }
     setUrlError('')
-    await updateAdVideo(id, editForm)
-    setEditingId(null)
-    load()
+    try {
+      await updateAdVideo(id, editForm)
+      setEditingId(null)
+      toast.success('Ad video updated')
+      load()
+    } catch (e) {
+      toast.error('Failed to update: ' + e.message)
+    }
   }
 
   async function handleCreate() {
     const err = validate(newForm)
     if (err) { setUrlError(err); return }
     setUrlError('')
-    await addAdVideo(newForm)
-    setNewForm({ ...defaultForm })
-    setShowNew(false)
-    load()
+    try {
+      await addAdVideo(newForm)
+      setNewForm({ ...defaultForm })
+      setShowNew(false)
+      toast.success('Ad video created')
+      load()
+    } catch (e) {
+      toast.error('Failed to create: ' + e.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this ad video?')) {
+    const ok = await confirm({
+      title: 'Delete Ad Video',
+      message: 'Are you sure you want to delete this ad video?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
       await deleteAdVideo(id)
+      toast.success('Ad video deleted')
       load()
+    } catch (e) {
+      toast.error('Failed to delete: ' + e.message)
     }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected ads permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Ads',
+      message: `Delete ${selectedIds.size} selected ad(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteAdVideo)
+    if (deleted > 0) toast.success(`Deleted ${deleted} ad(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} ad(s)`)
     clearSelection()
     load()
   }

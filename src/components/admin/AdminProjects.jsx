@@ -4,10 +4,12 @@ import RichTextEditor from './RichTextEditor'
 import { stripHtml } from '../../lib/utils'
 import ImageUpload from '../ui/ImageUpload'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 export default function AdminProjects() {
+  const { toast, confirm } = useToast()
   const [projects, setProjects] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -42,8 +44,11 @@ export default function AdminProjects() {
       }
       await updateProject(id, payload)
       setEditingId(null)
+      toast.success('Project updated successfully')
       load()
-    } catch (err) { alert('Failed to save: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -56,18 +61,44 @@ export default function AdminProjects() {
       await createProject(payload)
       setShowNew(false)
       setNewForm({ project_id: '', title: '', description: '', technologies: [], image: '', github: '', link: '', demo: '', display_order: 0 })
+      toast.success('Project created successfully')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this project?')) { try { await deleteProject(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } }
+    const ok = await confirm({
+      title: 'Delete Project',
+      message: 'Are you sure you want to delete this project?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteProject(id)
+      toast.success('Project deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected items permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Projects',
+      message: `Delete ${selectedIds.size} selected item(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteProject)
+    if (deleted > 0) toast.success(`Deleted ${deleted} project(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} project(s)`)
     clearSelection()
     load()
   }

@@ -6,6 +6,7 @@ import {
 } from '../../lib/supabase'
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import { stripHtml } from '../../lib/utils'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
@@ -131,6 +132,7 @@ function ArrayItemEditor({ items, onChange, fields, itemLabel }) {
 }
 
 export default function AdminServices() {
+  const { toast, confirm } = useToast()
   const [services, setServices] = useState([])
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(null)
@@ -164,38 +166,68 @@ export default function AdminServices() {
   }
 
   async function handleSave(id) {
-    const payload = { ...editForm }
-    if (typeof payload.features === 'string') {
-      payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+    try {
+      const payload = { ...editForm }
+      if (typeof payload.features === 'string') {
+        payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+      }
+      await updateService(id, payload)
+      setEditingId(null)
+      toast.success('Service updated successfully')
+      load()
+    } catch (err) {
+      toast.error('Failed to update service: ' + err.message)
     }
-    await updateService(id, payload)
-    setEditingId(null)
-    load()
   }
 
   async function handleCreate() {
     if (!newForm.title.trim()) return
-    const payload = { ...newForm }
-    if (typeof payload.features === 'string') {
-      payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+    try {
+      const payload = { ...newForm }
+      if (typeof payload.features === 'string') {
+        payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+      }
+      await createService(payload)
+      setShowNew(false)
+      setNewForm({ service_id: '', icon_name: 'Globe', title: '', tagline: '', description: '', features: [], pricing: [], price: '', currency: '₹', period: '/project', delivery: '' })
+      toast.success('Service created successfully')
+      load()
+    } catch (err) {
+      toast.error('Failed to create service: ' + err.message)
     }
-    await createService(payload)
-    setShowNew(false)
-    setNewForm({ service_id: '', icon_name: 'Globe', title: '', tagline: '', description: '', features: [], pricing: [], price: '', currency: '₹', period: '/project', delivery: '' })
-    load()
   }
 
   async function handleDelete(id) {
-    if (confirm('Delete this service?')) {
+    const ok = await confirm({
+      title: 'Delete Service',
+      message: 'Are you sure you want to delete this service?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
       await deleteService(id)
+      toast.success('Service deleted')
       load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
     }
   }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected services permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Services',
+      message: `Delete ${selectedIds.size} selected service(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteService)
+    if (deleted > 0) toast.success(`Deleted ${deleted} service(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} service(s)`)
     clearSelection()
     load()
   }
@@ -213,11 +245,9 @@ export default function AdminServices() {
     for (const [key, value] of Object.entries(src)) {
       if (key === 'id' || key === 'created_at' || key === 'updated_at') continue
       if (key === 'packages' && Array.isArray(value)) {
-        payload[key] = value.map((pkg) => ({
-          ...pkg,
-          features: typeof pkg.features === 'string'
-            ? pkg.features.split(',').map((f) => f.trim()).filter(Boolean)
-            : pkg.features,
+        payload[key] = value.map(({ popular, features, ...rest }) => ({
+          ...rest,
+          features: Array.isArray(features) ? features : (features || '').split(',').map(s => s.trim()).filter(Boolean),
         }))
       } else {
         payload[key] = value
@@ -226,11 +256,15 @@ export default function AdminServices() {
     return payload
   }
 
-  async function handlePageSave() {
+  async function handleSavePage() {
+    if (!page) return
     setSaving(true)
     try {
       await updateServicePage(normalizePagePayload(page))
       setPageDirty(false)
+      toast.success('Service page settings saved')
+    } catch (err) {
+      toast.error('Failed to save service page: ' + err.message)
     } finally {
       setSaving(false)
     }

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { getSocialLinks, updateSocialLink, createSocialLink, deleteSocialLink } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
+import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
 const iconOptions = ['github', 'linkedin', 'code', 'terminal', 'x', 'youtube', 'instagram', 'facebook', 'link', 'globe', 'mail']
 
 export default function AdminSocialLinks() {
+  const { toast, confirm } = useToast()
   const [links, setLinks] = useState([])
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -27,8 +29,15 @@ export default function AdminSocialLinks() {
   async function load() { setLinks(await getSocialLinks()) }
 
   async function handleSave(id) {
-    try { const { id: _id, created_at, updated_at, ...payload } = editForm; await updateSocialLink(id, payload); setEditingId(null); load() }
-    catch (err) { alert('Failed to save: ' + err.message) }
+    try {
+      const { id: _id, created_at, updated_at, ...payload } = editForm
+      await updateSocialLink(id, payload)
+      setEditingId(null)
+      toast.success('Social link updated successfully')
+      load()
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    }
   }
 
   async function handleCreate() {
@@ -37,16 +46,44 @@ export default function AdminSocialLinks() {
       await createSocialLink(newForm)
       setShowNew(false)
       setNewForm({ label: '', url: '', icon: 'link', display_order: 0 })
+      toast.success('Social link created successfully')
       load()
-    } catch (err) { alert('Failed to create: ' + err.message) }
+    } catch (err) {
+      toast.error('Failed to create: ' + err.message)
+    }
   }
 
-  async function handleDelete(id) { if (confirm('Delete?')) { try { await deleteSocialLink(id); load() } catch (err) { alert('Failed to delete: ' + err.message) } } }
+  async function handleDelete(id) {
+    const ok = await confirm({
+      title: 'Delete Social Link',
+      message: 'Are you sure you want to delete this social link?',
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    try {
+      await deleteSocialLink(id)
+      toast.success('Social link deleted')
+      load()
+    } catch (err) {
+      toast.error('Failed to delete: ' + err.message)
+    }
+  }
 
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
-    if (!confirm(`Delete ${selectedIds.size} selected links permanently?`)) return
+    const ok = await confirm({
+      title: 'Delete Selected Links',
+      message: `Delete ${selectedIds.size} selected link(s) permanently?`,
+      confirmText: 'Delete All',
+      danger: true,
+    })
+    if (!ok) return
+
     const { deleted, errors } = await handleBulkDelete(deleteSocialLink)
+    if (deleted > 0) toast.success(`Deleted ${deleted} link(s)`)
+    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} link(s)`)
     clearSelection()
     load()
   }

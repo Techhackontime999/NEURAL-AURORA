@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 
 const navItems = [
   { path: '/admin', label: 'Overview', icon: '◈' },
@@ -27,6 +28,7 @@ const navItems = [
 ]
 
 export default function AdminLayout({ children }) {
+  const { toast, confirm } = useToast()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isDark, setIsDark] = useState(true)
   const { signOut, user, profile } = useAuth()
@@ -48,7 +50,15 @@ export default function AdminLayout({ children }) {
   }
 
   async function handleSignOut() {
+    const ok = await confirm({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of the admin panel?',
+      confirmText: 'Sign Out',
+      danger: false,
+    })
+    if (!ok) return
     await signOut()
+    toast.info('Signed out successfully')
     navigate('/')
   }
 

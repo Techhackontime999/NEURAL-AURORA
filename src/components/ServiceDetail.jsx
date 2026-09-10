@@ -122,31 +122,34 @@ export default function ServiceDetail() {
     setPaidInfo(null)
     const priceNum = parsePrice(activeOption.price)
     if (!priceNum) { setPaying(false); return }
-    await openRazorpayCheckout({
-      amount: priceNum,
-      currency: 'INR',
-      description: `${service.title} — ${activeOption.label} — ${activeOption.price}`,
-      prefill: { name: '', email: '' },
-      async onSuccess(response) {
-        try {
-          await savePayment({
-            service_id: service.service_id,
-            service_title: service.title,
-            pricing_label: activeOption.label,
-            amount: priceNum,
-            currency: 'INR',
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-          })
-        } catch (e) {
-          console.warn('Payment saved but failed to record:', e)
-        }
-        setPaidInfo({ label: activeOption.label, price: activeOption.price, paymentId: response.razorpay_payment_id })
-        setPaying(false)
-      },
-      onError() { setPaying(false) },
-    })
-    setPaying(false)
+    try {
+      await openRazorpayCheckout({
+        amount: priceNum,
+        currency: 'INR',
+        description: `${service.title} — ${activeOption.label} — ${activeOption.price}`,
+        prefill: { name: '', email: '' },
+        async onSuccess(response) {
+          try {
+            await savePayment({
+              service_id: service.service_id,
+              service_title: service.title,
+              pricing_label: activeOption.label,
+              amount: priceNum,
+              currency: 'INR',
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+            })
+          } catch (e) {
+            console.warn('Payment saved but failed to record:', e)
+          }
+          setPaidInfo({ label: activeOption.label, price: activeOption.price, paymentId: response.razorpay_payment_id })
+        },
+      })
+    } catch (err) {
+      console.log('[ServiceDetail] Payment cancelled or failed:', err)
+    } finally {
+      setPaying(false)
+    }
   }
 
   async function handleContactSubmit(e) {

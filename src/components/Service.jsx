@@ -476,60 +476,66 @@ export default function Service() {
     setPayingPackage(pkg.name)
     const priceNum = parsePrice(pkg.price)
     if (!priceNum) { setPayingPackage(null); return }
-    await openRazorpayCheckout({
-      amount: priceNum,
-      currency: 'INR',
-      description: `${pkg.name} Package — ${pkg.currency}${pkg.price}`,
-      prefill: { name: '', email: '' },
-      async onSuccess(response) {
-        try {
-          await savePayment({
-            service_id: 'package',
-            service_title: `${pkg.name} Package`,
-            pricing_label: pkg.name,
-            amount: priceNum,
-            currency: 'INR',
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-          })
-        } catch (e) {
-          console.warn('Payment saved but failed to record:', e)
-        }
-        setPayingPackage(null)
-      },
-      onError() { setPayingPackage(null) },
-    })
-    setPayingPackage(null)
+    try {
+      await openRazorpayCheckout({
+        amount: priceNum,
+        currency: 'INR',
+        description: `${pkg.name} Package — ${pkg.currency}${pkg.price}`,
+        prefill: { name: '', email: '' },
+        async onSuccess(response) {
+          try {
+            await savePayment({
+              service_id: 'package',
+              service_title: `${pkg.name} Package`,
+              pricing_label: pkg.name,
+              amount: priceNum,
+              currency: 'INR',
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+            })
+          } catch (e) {
+            console.warn('Payment saved but failed to record:', e)
+          }
+        },
+      })
+    } catch (err) {
+      console.log('[Service] Package payment cancelled or failed:', err)
+    } finally {
+      setPayingPackage(null)
+    }
   }
 
   async function handleServicePayment(service) {
     setPayingService(service.service_id)
     const priceNum = parsePrice(service.price)
     if (!priceNum) { setPayingService(null); return }
-    await openRazorpayCheckout({
-      amount: priceNum,
-      currency: 'INR',
-      description: `${service.title} — ${service.currency || '₹'}${service.price}`,
-      prefill: { name: '', email: '' },
-      async onSuccess(response) {
-        try {
-          await savePayment({
-            service_id: service.service_id || 'service',
-            service_title: service.title,
-            pricing_label: 'Direct Payment',
-            amount: priceNum,
-            currency: 'INR',
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-          })
-        } catch (e) {
-          console.warn('Payment saved but failed to record:', e)
-        }
-        setPayingService(null)
-      },
-      onError() { setPayingService(null) },
-    })
-    setPayingService(null)
+    try {
+      await openRazorpayCheckout({
+        amount: priceNum,
+        currency: 'INR',
+        description: `${service.title} — ${service.currency || '₹'}${service.price}`,
+        prefill: { name: '', email: '' },
+        async onSuccess(response) {
+          try {
+            await savePayment({
+              service_id: service.service_id || 'service',
+              service_title: service.title,
+              pricing_label: 'Direct Payment',
+              amount: priceNum,
+              currency: 'INR',
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+            })
+          } catch (e) {
+            console.warn('Payment saved but failed to record:', e)
+          }
+        },
+      })
+    } catch (err) {
+      console.log('[Service] Service payment cancelled or failed:', err)
+    } finally {
+      setPayingService(null)
+    }
   }
 
   async function handleContactSubmit(e) {

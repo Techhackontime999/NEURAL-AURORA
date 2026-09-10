@@ -5,19 +5,28 @@ import { submitContactMessage } from '../lib/supabase'
 
 export default function Contact() {
   const { data: socialLinks } = useSocialLinks()
-  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', message: '', hp_field: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Bot honeypot trap
+    if (form.hp_field) {
+      setStatus('sent')
+      return
+    }
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return
     setStatus('sending')
     setError('')
     try {
-      await submitContactMessage(form)
+      await submitContactMessage({
+        name: form.name,
+        email: form.email,
+        message: form.message,
+      })
       setStatus('sent')
-      setForm({ name: '', email: '', message: '' })
+      setForm({ name: '', email: '', message: '', hp_field: '' })
       setTimeout(() => setStatus('idle'), 5000)
     } catch (err) {
       setError(err.message || 'Failed to send message')
@@ -131,6 +140,18 @@ export default function Contact() {
                   placeholder="Tell me about your project..."
                   required
                   className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/5 text-sm text-black/70 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/20 outline-none focus:border-black/20 dark:focus:border-white/10 transition-all duration-300 resize-none"
+                />
+              </div>
+
+              {/* Spam Honeypot Field */}
+              <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex="-1"
+                  value={form.hp_field}
+                  onChange={(e) => setForm({ ...form, hp_field: e.target.value })}
+                  autoComplete="off"
                 />
               </div>
 

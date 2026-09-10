@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import {
+  checkPasswordResetRateLimit,
+  recordPasswordResetAttempt,
+} from '../../lib/rateLimit'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -12,10 +16,17 @@ export default function ForgotPassword() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const limitCheck = checkPasswordResetRateLimit()
+    if (!limitCheck.allowed) {
+      setError(`Too many reset requests. Please wait ${limitCheck.retryAfterSeconds}s before trying again.`)
+      return
+    }
+
     setError('')
     setLoading(true)
     try {
       await resetPassword(email)
+      recordPasswordResetAttempt()
       setSent(true)
     } catch (err) {
       setError(err.message || 'Failed to send reset email')

@@ -1,4 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+  checkContactRateLimit,
+  recordContactSubmission,
+  checkReviewRateLimit,
+  recordReviewSubmission,
+} from './rateLimit'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -117,10 +123,27 @@ export async function getReviews() {
 }
 
 export async function submitReview(review) {
+  const limitCheck = checkReviewRateLimit()
+  if (!limitCheck.allowed) {
+    throw new Error(
+      `You have submitted recently. Please wait ${limitCheck.retryAfterSeconds}s before submitting another review.`
+    )
+  }
+
+  // Basic sanity validation
+  if (!review.name?.trim() || !review.message?.trim()) {
+    throw new Error('Name and message are required.')
+  }
+  if (review.message.trim().length > 2000) {
+    throw new Error('Review message is too long (maximum 2000 characters).')
+  }
+
   const { error } = await supabase
     .from('reviews')
     .insert([{ ...review, approved: false }])
   if (error) throw error
+
+  recordReviewSubmission()
 }
 
 export async function getAllReviews() {
@@ -447,10 +470,27 @@ export async function uploadImage(file, bucket = 'portfolio-images') {
 }
 
 export async function submitContactMessage({ name, email, message, service, pricing_label, paid }) {
+  const limitCheck = checkContactRateLimit()
+  if (!limitCheck.allowed) {
+    throw new Error(
+      `You are sending messages too quickly. Please wait ${limitCheck.retryAfterSeconds}s before sending another message.`
+    )
+  }
+
+  // Basic sanity validation
+  if (!name?.trim() || !email?.trim() || !message?.trim()) {
+    throw new Error('Name, email, and message are required.')
+  }
+  if (message.trim().length > 3000) {
+    throw new Error('Message is too long (maximum 3000 characters).')
+  }
+
   const { error } = await supabase
     .from('contact_messages')
-    .insert([{ name, email, message, service, pricing_label, paid: paid || false }])
+    .insert([{ name: name.trim(), email: email.trim(), message: message.trim(), service, pricing_label, paid: paid || false }])
   if (error) throw error
+
+  recordContactSubmission()
 }
 
 export async function getContactMessages() {

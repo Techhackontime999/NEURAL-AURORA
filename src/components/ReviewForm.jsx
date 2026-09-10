@@ -3,19 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { submitReview } from '../lib/supabase'
 
 export default function ReviewForm() {
-  const [form, setForm] = useState({ name: '', email: '', rating: 5, message: '' })
+  const [form, setForm] = useState({ name: '', email: '', rating: 5, message: '', hp_field: '' })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Bot honeypot check
+    if (form.hp_field) {
+      setDone(true)
+      return
+    }
     setError('')
     setSubmitting(true)
     try {
-      await submitReview(form)
+      await submitReview({
+        name: form.name,
+        email: form.email,
+        rating: form.rating,
+        message: form.message,
+      })
       setDone(true)
-      setForm({ name: '', email: '', rating: 5, message: '' })
+      setForm({ name: '', email: '', rating: 5, message: '', hp_field: '' })
     } catch (err) {
       setError(err.message || 'Failed to submit review')
     }
@@ -123,6 +133,18 @@ export default function ReviewForm() {
                       rows={4}
                       placeholder="Write your review..."
                       className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm text-black/80 dark:text-white placeholder-black/40 dark:placeholder-white/30 outline-none transition-colors focus:border-neural-500 focus:ring-1 focus:ring-neural-500"
+                    />
+                  </div>
+
+                  {/* Spam Honeypot Field */}
+                  <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+                    <input
+                      type="text"
+                      name="company_url"
+                      tabIndex="-1"
+                      value={form.hp_field}
+                      onChange={(e) => setForm({ ...form, hp_field: e.target.value })}
+                      autoComplete="off"
                     />
                   </div>
 

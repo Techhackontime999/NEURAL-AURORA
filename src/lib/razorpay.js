@@ -46,6 +46,7 @@ export function openRazorpayCheckout({
   currency = 'INR',
   description = 'Support NEURAL AURORA',
   prefill = {},
+  notes = {},
   method,
   key,
   onSuccess,
@@ -109,7 +110,11 @@ export function openRazorpayCheckout({
         const res = await fetch('/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: formatAmount(amount), currency }),
+          body: JSON.stringify({
+            amount: formatAmount(amount),
+            currency,
+            notes: notes || {},
+          }),
           signal: controller.signal,
         })
         clearTimeout(orderTimeout)
@@ -137,6 +142,7 @@ export function openRazorpayCheckout({
         ...(orderId ? { order_id: orderId } : {}),
         ...(method ? { method } : {}),
         ...(Object.keys(prefillFields).length > 0 ? { prefill: prefillFields } : {}),
+        ...(notes && Object.keys(notes).length > 0 ? { notes } : {}),
         handler(response) {
           console.log('[Razorpay] Payment success:', response)
           safeResolve(response)

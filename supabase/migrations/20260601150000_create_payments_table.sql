@@ -13,14 +13,20 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_razorpay_payment_id ON payments (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_razorpay_order_id ON payments (razorpay_order_id) WHERE razorpay_order_id IS NOT NULL;
+
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can insert payments"
-  ON payments FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (true);
-
-CREATE POLICY "Authenticated users can view payments"
+CREATE POLICY "Admins can view payments"
   ON payments FOR SELECT
   TO authenticated
-  USING (true);
+  USING (is_admin());
+
+CREATE POLICY "Admins can insert payments"
+  ON payments FOR INSERT
+  TO authenticated
+  WITH CHECK (is_admin());
+
+REVOKE ALL ON TABLE payments FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE payments TO authenticated, service_role;

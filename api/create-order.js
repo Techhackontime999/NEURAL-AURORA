@@ -5,7 +5,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { amount, currency = 'INR' } = req.body
+  const { amount, currency = 'INR', notes = {}, receipt } = req.body
 
   if (!amount || amount <= 0) {
     return res.status(400).json({ error: 'Invalid amount' })
@@ -20,7 +20,8 @@ module.exports = async function handler(req, res) {
     const order = await razorpay.orders.create({
       amount,
       currency,
-      receipt: `receipt_${Date.now()}`,
+      receipt: receipt || `receipt_${Date.now()}`,
+      notes: notes || {},
     })
 
     res.status(200).json(order)

@@ -92,16 +92,10 @@ BEGIN
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
     CASE
-      WHEN allowed_email IS NOT NULL AND allowed_email != '' AND NEW.email = allowed_email THEN 'admin'
+      WHEN allowed_email IS NOT NULL AND allowed_email != '' AND LOWER(NEW.email) = LOWER(allowed_email) THEN 'admin'
       ELSE 'viewer'
     END
   );
-
-  -- If no admin exists yet, make the first user admin
-  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE role = 'admin') THEN
-    UPDATE public.profiles SET role = 'admin' WHERE id = NEW.id;
-    UPDATE public.admin_settings SET admin_email = NEW.email WHERE id = 1;
-  END IF;
 
   RETURN NEW;
 END;

@@ -19,16 +19,23 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Auto-create profile on user signup
+-- Auto-create profile on user signup (restricted by configured admin_email)
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  allowed_email TEXT;
 BEGIN
+  SELECT admin_email INTO allowed_email FROM public.admin_settings WHERE id = 1;
+
   INSERT INTO public.profiles (id, email, full_name, role)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    COALESCE(NEW.raw_user_meta_data->>'role', 'viewer')
+    CASE
+      WHEN allowed_email IS NOT NULL AND allowed_email != '' AND LOWER(NEW.email) = LOWER(allowed_email) THEN 'admin'
+      ELSE 'viewer'
+    END
   );
   RETURN NEW;
 END;
@@ -265,27 +272,7 @@ CREATE POLICY "Admin can delete test_data_templates" ON test_data_templates FOR 
 GRANT SELECT ON TABLE test_data_templates TO anon;
 GRANT SELECT, INSERT, DELETE ON TABLE test_data_templates TO authenticated;
 
--- ============================================================
--- UPDATED PROFILE TRIGGER (auth restriction)
--- ============================================================
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-DECLARE
-  allowed_email TEXT;
-BEGIN
-  SELECT admin_email INTO allowed_email FROM public.admin_settings WHERE id = 1;
-  INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (
-    NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name',
-    CASE WHEN allowed_email IS NOT NULL AND allowed_email != '' AND NEW.email = allowed_email THEN 'admin' ELSE 'viewer' END
-  );
-  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE role = 'admin') THEN
-    UPDATE public.profiles SET role = 'admin' WHERE id = NEW.id;
-    UPDATE public.admin_settings SET admin_email = NEW.email WHERE id = 1;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- ============================================================
 -- TEST DATA GENERATION FUNCTION

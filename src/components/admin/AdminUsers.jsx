@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import {
   getAllProfiles, updateProfileRole, getAdminSettings, updateAdminSettings,
-  setAdminEmail, adminDeleteUser,
+  adminDeleteUser,
 } from '../../lib/supabase'
 import { useToast } from '../../context/ToastContext'
 import SearchBar from '../ui/SearchBar'
@@ -132,8 +132,8 @@ export default function AdminUsers() {
 
   async function handleSaveAdminEmail() {
     try {
-      await setAdminEmail(adminEmail)
-      showMsg('Admin email saved. Existing users with this email promoted to admin.')
+      await updateAdminSettings({ admin_email: adminEmail })
+      showMsg('Admin email saved.')
       load()
     } catch (err) {
       showMsg('Error: ' + err.message, 'error')

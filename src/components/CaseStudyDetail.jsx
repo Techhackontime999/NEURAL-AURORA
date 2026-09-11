@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Target, BarChart3 } from 'lucide-react'
 import { useCaseStudyBySlug } from '../lib/usePortfolioData'
+import { sanitizeHtml } from '../lib/utils'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -57,7 +58,7 @@ export default function CaseStudyDetail() {
 
           <div
             className="text-sm text-black/50 dark:text-white/50 mt-4 leading-relaxed max-w-[65ch]"
-            dangerouslySetInnerHTML={{ __html: study.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.description) }}
           />
 
           <div className="flex flex-wrap gap-1.5 mt-4">
@@ -75,7 +76,7 @@ export default function CaseStudyDetail() {
             </div>
             <div
               className="text-sm text-black/60 dark:text-white/60 leading-relaxed prose-headings:text-black/80 dark:prose-headings:text-white/80 prose-headings:text-base prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2 prose-p:mb-3 prose-strong:text-black/70 dark:prose-strong:text-white/70"
-              dangerouslySetInnerHTML={{ __html: study.outcome }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.outcome) }}
             />
           </div>
 
@@ -86,7 +87,7 @@ export default function CaseStudyDetail() {
             </div>
             <div
               className="text-sm text-black/60 dark:text-white/60 leading-relaxed prose-headings:text-black/80 dark:prose-headings:text-white/80 prose-headings:text-base prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2 prose-p:mb-3 prose-strong:text-black/70 dark:prose-strong:text-white/70"
-              dangerouslySetInnerHTML={{ __html: study.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.content) }}
             />
           </div>
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import * as LucideIcons from 'lucide-react'
 const { CheckCircle, ArrowRight, ChevronDown, Layers, Send, Wallet } = LucideIcons
 import { useSocialLinks, useServices, useServicePage } from '../lib/usePortfolioData'
+import { sanitizeHtml } from '../lib/utils'
 import { submitContactMessage, savePayment } from '../lib/supabase'
 import { openRazorpayCheckout } from '../lib/razorpay'
 import ServiceNavbar from './ServiceNavbar'
@@ -144,7 +145,7 @@ function ServiceCard({ service, index }) {
           </p>
           <div
             className="text-sm text-black/50 dark:text-white/50 leading-relaxed mb-5 flex-1"
-            dangerouslySetInnerHTML={{ __html: service.description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(service.description) }}
           />
 
           <ul className="space-y-2 mb-6">

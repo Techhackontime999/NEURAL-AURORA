@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { uploadImage } from '../../lib/supabase'
+import { sanitizeHtml } from '../../lib/utils'
 import { useToast } from '../../context/ToastContext'
 
 const toolbarItems = [
@@ -28,7 +29,11 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start w
 
   useEffect(() => {
     if (editorRef.current && !isInternalRef.current) {
-      editorRef.current.innerHTML = value || ''
+      // Content loaded here may originate from a compromised admin
+      // account, an RLS-exposed insert, or a previous edit made on a
+      // compromised device -- sanitize before it renders in the editor
+      // (this doubles as the admin's live preview of existing content).
+      editorRef.current.innerHTML = sanitizeHtml(value) || ''
     }
     isInternalRef.current = false
   }, [value])

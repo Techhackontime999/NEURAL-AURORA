@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-const SUPERUSER_EMAIL = import.meta.env.VITE_SUPERUSER_EMAIL || ''
-
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -42,15 +40,6 @@ export function AuthProvider({ children }) {
     return () => authListener?.subscription?.unsubscribe()
   }, [])
 
-  async function ensureSuperuser(email) {
-    if (!SUPERUSER_EMAIL || email !== SUPERUSER_EMAIL) return
-    try {
-      await supabase.rpc('set_admin_email', { p_email: email })
-    } catch (e) {
-      console.warn('[Auth] Superuser promotion failed (may already be admin):', e.message)
-    }
-  }
-
   async function fetchProfile(userId) {
     setProfileLoading(true)
     const { data, error } = await supabase
@@ -64,20 +53,8 @@ export function AuthProvider({ children }) {
     }
 
     if (data) {
-      if (data.role !== 'admin') {
-        await ensureSuperuser(data.email)
-        const { data: refreshed } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-        if (refreshed) setProfile(refreshed)
-        else setProfile(data)
-      } else {
-        setProfile(data)
-      }
+      setProfile(data)
     } else if (user) {
-      await ensureSuperuser(user.email)
       try {
         await supabase.rpc('ensure_my_profile')
       } catch (err) {

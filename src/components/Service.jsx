@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import * as LucideIcons from 'lucide-react'
 const { CheckCircle, ArrowRight, ChevronDown, Layers, Send, Wallet } = LucideIcons
 import { useSocialLinks, useServices, useServicePage } from '../lib/usePortfolioData'
-import { submitContactMessage, savePayment } from '../lib/supabase'
+import { submitContactMessage } from '../lib/supabase'
 import { openRazorpayCheckout } from '../lib/razorpay'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
@@ -487,20 +487,10 @@ export default function Service() {
         currency: 'INR',
         description: `${pkg.name} Package — ${pkg.currency}${pkg.price}`,
         prefill: { name: '', email: '' },
-        async onSuccess(response) {
-          try {
-            await savePayment({
-              service_id: 'package',
-              service_title: `${pkg.name} Package`,
-              pricing_label: pkg.name,
-              amount: priceNum,
-              currency: 'INR',
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-            })
-          } catch (e) {
-            console.warn('Payment saved but failed to record:', e)
-          }
+        notes: {
+          service_id: 'package',
+          service_title: `${pkg.name} Package`,
+          pricing_label: pkg.name,
         },
       })
     } catch (err) {
@@ -520,20 +510,10 @@ export default function Service() {
         currency: 'INR',
         description: `${service.title} — ${service.currency || '₹'}${service.price}`,
         prefill: { name: '', email: '' },
-        async onSuccess(response) {
-          try {
-            await savePayment({
-              service_id: service.service_id || 'service',
-              service_title: service.title,
-              pricing_label: 'Direct Payment',
-              amount: priceNum,
-              currency: 'INR',
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-            })
-          } catch (e) {
-            console.warn('Payment saved but failed to record:', e)
-          }
+        notes: {
+          service_id: service.service_id || 'service',
+          service_title: service.title,
+          pricing_label: 'Direct Payment',
         },
       })
     } catch (err) {

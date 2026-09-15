@@ -381,11 +381,6 @@ export async function updateAdminSettings(settings) {
   if (error) throw error
 }
 
-export async function setAdminEmail(email) {
-  const { data, error } = await supabase.rpc('set_admin_email', { p_email: email })
-  if (error) throw error
-  return data
-}
 
 export async function generateTestData(category, count = 3) {
   const { data, error } = await supabase.rpc('generate_test_data', {

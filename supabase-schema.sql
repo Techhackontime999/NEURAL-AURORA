@@ -344,11 +344,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION set_admin_email(p_email TEXT)
 RETURNS TEXT AS $$
 BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can set the admin email';
+  END IF;
+
   UPDATE admin_settings SET admin_email = p_email, updated_at = NOW() WHERE id = 1;
   UPDATE profiles SET role = 'admin' WHERE email = p_email;
   RETURN 'Admin email set to: ' || p_email;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION set_admin_email(TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION set_admin_email(TEXT) TO service_role;
 
 -- ============================================================
 -- REVIEWS / FEEDBACK

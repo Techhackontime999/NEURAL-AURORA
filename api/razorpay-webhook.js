@@ -1,6 +1,28 @@
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
 
+async function readRawBody(req) {
+  if (req.rawBody) {
+    return Buffer.isBuffer(req.rawBody) ? req.rawBody.toString('utf8') : String(req.rawBody)
+  }
+  if (typeof req.body === 'string') {
+    return req.body
+  }
+  if (Buffer.isBuffer(req.body)) {
+    return req.body.toString('utf8')
+  }
+  if (!req.body) {
+    return await new Promise((resolve, reject) => {
+      const chunks = []
+      req.on('data', chunk => chunks.push(Buffer.from(chunk)))
+      req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+      req.on('error', reject)
+    })
+  }
+  console.warn('[Razorpay Webhook] Body was pre-parsed by the runtime; verifying against re-serialized body')
+  return JSON.stringify(req.body)
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -19,42 +41,26 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing signature header' })
   }
 
-  // Retrieve raw body for signature verification
-  let rawBody = ''
-  if (typeof req.body === 'string') {
-    rawBody = req.body
-  } else if (req.rawBody) {
-    rawBody = typeof req.rawBody === 'string' ? req.rawBody : req.rawBody.toString('utf8')
-  } else if (req.body && typeof req.body === 'object') {
-    rawBody = JSON.stringify(req.body)
-  } else {
-    // Attempt stream read if body was not pre-parsed
-    try {
-      rawBody = await new Promise((resolve, reject) => {
-        let buffer = ''
-        req.on('data', chunk => { buffer += chunk })
-        req.on('end', () => resolve(buffer))
-        req.on('error', err => reject(err))
-      })
-    } catch (err) {
-      console.error('[Razorpay Webhook] Error reading request stream:', err)
-      return res.status(400).json({ error: 'Failed to read request body' })
-    }
+  let rawBody
+  try {
+    rawBody = await readRawBody(req)
+  } catch (err) {
+    console.error('[Razorpay Webhook] Error reading request body:', err)
+    return res.status(400).json({ error: 'Failed to read request body' })
+  }
+  if (!rawBody) {
+    console.warn('[Razorpay Webhook] Empty request body')
+    return res.status(400).json({ error: 'Empty request body' })
   }
 
-  // Verify signature using HMAC SHA256
+  // Verify signature using HMAC SHA256 over the exact raw body bytes
   try {
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(rawBody)
-      .digest('hex')
-
-    const expectedBuf = Buffer.from(expectedSignature, 'utf8')
-    const receivedBuf = Buffer.from(String(signature), 'utf8')
+    const expectedDigest = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest()
+    const receivedDigest = Buffer.from(String(signature), 'hex')
 
     if (
-      expectedBuf.length !== receivedBuf.length ||
-      !crypto.timingSafeEqual(expectedBuf, receivedBuf)
+      expectedDigest.length !== receivedDigest.length ||
+      !crypto.timingSafeEqual(expectedDigest, receivedDigest)
     ) {
       console.warn('[Razorpay Webhook] Signature verification failed')
       return res.status(400).json({ error: 'Invalid signature' })
@@ -67,7 +73,8 @@ module.exports = async function handler(req, res) {
   // Parse payload JSON
   let payload
   try {
-    payload = typeof req.body === 'object' && req.body !== null ? req.body : JSON.parse(rawBody)
+    const isParsedBody = req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)
+    payload = isParsedBody ? req.body : JSON.parse(rawBody)
   } catch (err) {
     console.error('[Razorpay Webhook] Invalid JSON payload:', err)
     return res.status(400).json({ error: 'Invalid JSON payload' })
@@ -94,16 +101,16 @@ module.exports = async function handler(req, res) {
       currency: payment.currency || order.currency || 'INR',
       razorpay_payment_id: payment.id || null,
       razorpay_order_id: payment.order_id || order.id || null,
-      status: payment.status === 'captured' ? 'completed' : (payment.status || 'completed'),
+      status: payment.status === 'captured' ? 'completed' : (payment.status || (event === 'order.paid' ? 'paid' : 'completed')),
       customer_email: payment.email || notes.customer_email || null,
       customer_name: notes.customer_name || notes.name || null,
     }
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[Razorpay Webhook] Missing Supabase credentials in environment')
+      console.error('[Razorpay Webhook] Missing Supabase service role credentials in environment')
       return res.status(500).json({ error: 'Server database configuration missing' })
     }
 

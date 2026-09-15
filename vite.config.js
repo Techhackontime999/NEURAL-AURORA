@@ -2,7 +2,10 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import { createRequire } from 'node:module'
 import Razorpay from 'razorpay'
+
+const requireCjs = createRequire(path.join(process.cwd(), 'vite.config.js'))
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -156,7 +159,7 @@ export default defineConfig(({ mode }) => {
               return
             }
             try {
-              const webhookHandler = (await import('./api/razorpay-webhook.js')).default || require('./api/razorpay-webhook.js')
+              const webhookHandler = requireCjs('./api/razorpay-webhook.js')
               // Adapter for Vercel handler style in connect middleware
               req.headers = req.headers || {}
               res.status = (code) => {

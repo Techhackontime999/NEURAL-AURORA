@@ -2,7 +2,10 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import { createRequire } from 'node:module'
 import Razorpay from 'razorpay'
+
+const requireCjs = createRequire(path.join(process.cwd(), 'vite.config.js'))
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -126,12 +129,17 @@ export default defineConfig(({ mode }) => {
             req.on('data', chunk => body += chunk)
             req.on('end', async () => {
               try {
-                const { amount, currency = 'INR' } = JSON.parse(body)
+                const { amount, currency = 'INR', notes = {}, receipt } = JSON.parse(body)
                 const razorpay = new Razorpay({
                   key_id: env.RAZORPAY_KEY_ID,
                   key_secret: env.RAZORPAY_KEY_SECRET,
                 })
-                const order = await razorpay.orders.create({ amount, currency, receipt: `receipt_${Date.now()}` })
+                const order = await razorpay.orders.create({
+                  amount,
+                  currency,
+                  receipt: receipt || `receipt_${Date.now()}`,
+                  notes: notes || {},
+                })
                 res.setHeader('Content-Type', 'application/json')
                 res.end(JSON.stringify(order))
               } catch (err) {
@@ -141,6 +149,34 @@ export default defineConfig(({ mode }) => {
                 res.end(JSON.stringify({ error: 'Failed to create order' }))
               }
             })
+          })
+
+          server.middlewares.use('/api/razorpay-webhook', async (req, res) => {
+            if (req.method !== 'POST') {
+              res.statusCode = 405
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Method not allowed' }))
+              return
+            }
+            try {
+              const webhookHandler = requireCjs('./api/razorpay-webhook.js')
+              // Adapter for Vercel handler style in connect middleware
+              req.headers = req.headers || {}
+              res.status = (code) => {
+                res.statusCode = code
+                return res
+              }
+              res.json = (data) => {
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify(data))
+              }
+              await webhookHandler(req, res)
+            } catch (err) {
+              console.error('[API] Webhook error:', err)
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Webhook processing failed' }))
+            }
           })
         },
       },

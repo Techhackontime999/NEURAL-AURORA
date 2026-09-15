@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Heart, Coffee, Zap, Rocket, Crown, Sparkles, Star, Shield, CheckCircle, ArrowRight, ChevronDown, Send, Wallet, Smartphone, Gift } from 'lucide-react'
 import { openRazorpayCheckout } from '../lib/razorpay'
 import { useSocialLinks } from '../lib/usePortfolioData'
-import { getAdminSettings, submitContactMessage, savePayment } from '../lib/supabase'
+import { getAdminSettings, submitContactMessage } from '../lib/supabase'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 import SupportNavbar from './SupportNavbar'
@@ -187,21 +187,13 @@ export default function Support() {
         amount: finalAmount,
         currency: 'INR',
         description: `Support NEURAL AURORA — ₹${finalAmount}`,
+        notes: {
+          service_id: 'support',
+          service_title: 'Support NEURAL AURORA',
+          pricing_label: pricingLabel,
+        },
         ...(razorpayKey ? { key: razorpayKey } : {}),
-        async onSuccess(response) {
-          try {
-            await savePayment({
-              service_id: 'support',
-              service_title: 'Support NEURAL AURORA',
-              pricing_label: pricingLabel,
-              amount: finalAmount,
-              currency: 'INR',
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-            })
-          } catch (e) {
-            console.warn('Payment saved but failed to record:', e)
-          }
+        async onSuccess() {
           setPaymentStatus('success')
           setTimeout(() => setPaymentStatus('idle'), 5000)
         },
@@ -230,21 +222,13 @@ export default function Support() {
         currency: 'INR',
         description: `UPI Support — NEURAL AURORA`,
         method: 'upi',
+        notes: {
+          service_id: 'support',
+          service_title: 'Support NEURAL AURORA',
+          pricing_label: pricingLabel,
+        },
         ...(razorpayKey ? { key: razorpayKey } : {}),
-        async onSuccess(response) {
-          try {
-            await savePayment({
-              service_id: 'support',
-              service_title: 'Support NEURAL AURORA',
-              pricing_label: pricingLabel,
-              amount,
-              currency: 'INR',
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-            })
-          } catch (e) {
-            console.warn('Payment saved but failed to record:', e)
-          }
+        async onSuccess() {
           setPaymentStatus('success')
           setTimeout(() => setPaymentStatus('idle'), 5000)
         },

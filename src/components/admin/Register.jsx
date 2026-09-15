@@ -46,10 +46,7 @@ export default function Register() {
 
     setLoading(true)
     try {
-      const isSuperuser = SUPERUSER_EMAIL && email === SUPERUSER_EMAIL
-      await signUp(email, password, {
-        data: { role: isSuperuser ? 'admin' : 'viewer' },
-      })
+      await signUp(email, password)
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Failed to create account')

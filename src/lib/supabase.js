@@ -381,11 +381,6 @@ export async function updateAdminSettings(settings) {
   if (error) throw error
 }
 
-export async function setAdminEmail(email) {
-  const { data, error } = await supabase.rpc('set_admin_email', { p_email: email })
-  if (error) throw error
-  return data
-}
 
 export async function generateTestData(category, count = 3) {
   const { data, error } = await supabase.rpc('generate_test_data', {
@@ -622,23 +617,6 @@ export async function updateServicePage(data) {
     .from('service_page')
     .update(data)
     .eq('id', 1)
-  if (error) throw error
-}
-
-export async function savePayment(data) {
-  const { error } = await supabase
-    .from('payments')
-    .insert([{
-      service_id: data.service_id,
-      service_title: data.service_title,
-      pricing_label: data.pricing_label,
-      amount: data.amount,
-      currency: data.currency || 'INR',
-      razorpay_payment_id: data.razorpay_payment_id || null,
-      razorpay_order_id: data.razorpay_order_id || null,
-      customer_email: data.customer_email || null,
-      customer_name: data.customer_name || null,
-    }])
   if (error) throw error
 }
 

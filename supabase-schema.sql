@@ -19,16 +19,23 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Auto-create profile on user signup
+-- Auto-create profile on user signup (restricted by configured admin_email)
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  allowed_email TEXT;
 BEGIN
+  SELECT admin_email INTO allowed_email FROM public.admin_settings WHERE id = 1;
+
   INSERT INTO public.profiles (id, email, full_name, role)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    COALESCE(NEW.raw_user_meta_data->>'role', 'viewer')
+    CASE
+      WHEN allowed_email IS NOT NULL AND allowed_email != '' AND LOWER(NEW.email) = LOWER(allowed_email) THEN 'admin'
+      ELSE 'viewer'
+    END
   );
   RETURN NEW;
 END;
@@ -265,27 +272,7 @@ CREATE POLICY "Admin can delete test_data_templates" ON test_data_templates FOR 
 GRANT SELECT ON TABLE test_data_templates TO anon;
 GRANT SELECT, INSERT, DELETE ON TABLE test_data_templates TO authenticated;
 
--- ============================================================
--- UPDATED PROFILE TRIGGER (auth restriction)
--- ============================================================
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-DECLARE
-  allowed_email TEXT;
-BEGIN
-  SELECT admin_email INTO allowed_email FROM public.admin_settings WHERE id = 1;
-  INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (
-    NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name',
-    CASE WHEN allowed_email IS NOT NULL AND allowed_email != '' AND NEW.email = allowed_email THEN 'admin' ELSE 'viewer' END
-  );
-  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE role = 'admin') THEN
-    UPDATE public.profiles SET role = 'admin' WHERE id = NEW.id;
-    UPDATE public.admin_settings SET admin_email = NEW.email WHERE id = 1;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- ============================================================
 -- TEST DATA GENERATION FUNCTION
@@ -344,11 +331,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION set_admin_email(p_email TEXT)
 RETURNS TEXT AS $$
 BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can set the admin email';
+  END IF;
+
   UPDATE admin_settings SET admin_email = p_email, updated_at = NOW() WHERE id = 1;
   UPDATE profiles SET role = 'admin' WHERE email = p_email;
   RETURN 'Admin email set to: ' || p_email;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION set_admin_email(TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION set_admin_email(TEXT) TO service_role;
 
 -- ============================================================
 -- REVIEWS / FEEDBACK
@@ -408,7 +402,7 @@ CREATE POLICY "Users can view own profile"
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile"
   ON profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (auth.uid() = id AND role = 'viewer');
 
 DROP POLICY IF EXISTS "Admins can update profiles" ON profiles;
 CREATE POLICY "Admins can update profiles"
@@ -814,3 +808,49 @@ CREATE POLICY "Admin can update images"
 CREATE POLICY "Admin can delete images"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'portfolio-images' AND is_admin());
+
+-- ============================================================
+-- PAYMENTS TABLE & SECURITY
+-- ============================================================
+CREATE TABLE IF NOT EXISTS payments (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  service_id TEXT NOT NULL,
+  service_title TEXT NOT NULL,
+  pricing_label TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'INR',
+  razorpay_payment_id TEXT,
+  razorpay_order_id TEXT,
+  status TEXT NOT NULL DEFAULT 'completed',
+  customer_email TEXT,
+  customer_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_razorpay_payment_id ON payments (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_razorpay_order_id ON payments (razorpay_order_id) WHERE razorpay_order_id IS NOT NULL;
+
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can view payments"
+  ON payments FOR SELECT
+  TO authenticated
+  USING (is_admin());
+
+CREATE POLICY "Admins can insert payments"
+  ON payments FOR INSERT
+  TO authenticated
+  WITH CHECK (is_admin());
+
+CREATE POLICY "Admins can update payments"
+  ON payments FOR UPDATE
+  TO authenticated
+  USING (is_admin());
+
+CREATE POLICY "Admins can delete payments"
+  ON payments FOR DELETE
+  TO authenticated
+  USING (is_admin());
+
+REVOKE ALL ON TABLE payments FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE payments TO authenticated, service_role;

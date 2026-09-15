@@ -30,5 +30,13 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
+-- ============================================================================
+-- Defense-in-depth: client-created profiles can only ever be viewers
+-- ============================================================================
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+CREATE POLICY "Users can insert own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id AND role = 'viewer');
+
 -- Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';

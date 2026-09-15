@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useBlogPosts } from '../lib/usePortfolioData'
+import { sanitizeHtml } from '../lib/utils'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -78,7 +79,7 @@ export default function BlogPost() {
           <div className="mt-8 p-6 rounded-xl glass-panel">
             <div
               className="text-sm text-black/60 dark:text-white/60 leading-relaxed [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_li]:mb-1 [&_a]:text-cyan-500 [&_a]:underline [&_a:hover]:text-cyan-400 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-5 [&_h3]:mb-2"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
             />
           </div>
 

@@ -3,6 +3,7 @@ import { Calendar, Briefcase, BookOpen, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEducation, useExperience, useBlogPosts, useCaseStudies } from '../lib/usePortfolioData'
+import { sanitizeHtml } from '../lib/utils'
 import MoreNavbar from './MoreNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -162,7 +163,7 @@ function CaseStudyCard({ study, index }) {
 
         <div
           className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed line-clamp-2"
-          dangerouslySetInnerHTML={{ __html: study.description }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.description) }}
         />
 
         <div className="mt-3 p-3 rounded-lg bg-black/5 dark:bg-white/5">
@@ -172,7 +173,7 @@ function CaseStudyCard({ study, index }) {
 
           <div
             className="text-xs text-black/60 dark:text-white/60 mt-1 line-clamp-2"
-            dangerouslySetInnerHTML={{ __html: study.outcome }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.outcome) }}
           />
         </div>
 

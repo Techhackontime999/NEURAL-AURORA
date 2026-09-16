@@ -480,13 +480,15 @@ export default function Service() {
 
   async function handlePackagePayment(pkg) {
     setPayingPackage(pkg.name)
-    const priceNum = parsePrice(pkg.price)
-    if (!priceNum) { setPayingPackage(null); return }
+    const priceNum = pkg.price_paise ? Math.round(pkg.price_paise / 100) : parsePrice(pkg.price)
+    if (!priceNum && !pkg.price_paise) { setPayingPackage(null); return }
     try {
       await openRazorpayCheckout({
+        order_type: 'package',
+        package_name: pkg.name,
         amount: priceNum,
         currency: 'INR',
-        description: `${pkg.name} Package — ${pkg.currency}${pkg.price}`,
+        description: `${pkg.name} Package — ${pkg.currency || '₹'}${pkg.price}`,
         prefill: { name: '', email: '' },
         notes: {
           service_id: 'package',
@@ -503,10 +505,12 @@ export default function Service() {
 
   async function handleServicePayment(service) {
     setPayingService(service.service_id)
-    const priceNum = parsePrice(service.price)
-    if (!priceNum) { setPayingService(null); return }
+    const priceNum = service.price_paise ? Math.round(service.price_paise / 100) : parsePrice(service.price)
+    if (!priceNum && !service.price_paise) { setPayingService(null); return }
     try {
       await openRazorpayCheckout({
+        order_type: 'service',
+        service_id: service.service_id,
         amount: priceNum,
         currency: 'INR',
         description: `${service.title} — ${service.currency || '₹'}${service.price}`,

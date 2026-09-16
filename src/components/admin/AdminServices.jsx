@@ -165,11 +165,28 @@ export default function AdminServices() {
     setPage(p)
   }
 
+  function parsePriceToPaise(price) {
+    if (!price || typeof price !== 'string') return 0
+    const cleaned = price.replace(/[^0-9.kK]/g, '')
+    if (!cleaned) return 0
+    const isK = /k/i.test(cleaned)
+    const num = parseFloat(cleaned.replace(/k/i, ''))
+    if (isNaN(num) || num <= 0) return 0
+    return isK ? Math.round(num * 1000 * 100) : Math.round(num * 100)
+  }
+
   async function handleSave(id) {
     try {
       const payload = { ...editForm }
       if (typeof payload.features === 'string') {
         payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+      }
+      payload.price_paise = payload.price_paise ? Number(payload.price_paise) : parsePriceToPaise(payload.price)
+      if (Array.isArray(payload.pricing)) {
+        payload.pricing = payload.pricing.map(p => ({
+          ...p,
+          price_paise: p.price_paise ? Number(p.price_paise) : parsePriceToPaise(p.price),
+        }))
       }
       await updateService(id, payload)
       setEditingId(null)
@@ -186,6 +203,13 @@ export default function AdminServices() {
       const payload = { ...newForm }
       if (typeof payload.features === 'string') {
         payload.features = payload.features.split('\n').map(t => t.trim()).filter(Boolean)
+      }
+      payload.price_paise = payload.price_paise ? Number(payload.price_paise) : parsePriceToPaise(payload.price)
+      if (Array.isArray(payload.pricing)) {
+        payload.pricing = payload.pricing.map(p => ({
+          ...p,
+          price_paise: p.price_paise ? Number(p.price_paise) : parsePriceToPaise(p.price),
+        }))
       }
       await createService(payload)
       setShowNew(false)
@@ -218,16 +242,16 @@ export default function AdminServices() {
   async function handleBulkDeleteWrapper() {
     if (selectedIds.size === 0) return
     const ok = await confirm({
-      title: 'Delete Selected Services',
-      message: `Delete ${selectedIds.size} selected service(s) permanently?`,
-      confirmText: 'Delete All',
+      title: 'Delete Services',
+      message: `Are you sure you want to delete ${selectedIds.size} service(s)?`,
+      confirmText: 'Delete',
       danger: true,
     })
     if (!ok) return
 
     const { deleted, errors } = await handleBulkDelete(deleteService)
     if (deleted > 0) toast.success(`Deleted ${deleted} service(s)`)
-    if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} service(s)`)
+    if (errors > 0) toast.error(`Failed to delete ${errors} service(s)`)
     clearSelection()
     load()
   }
@@ -245,8 +269,10 @@ export default function AdminServices() {
     for (const [key, value] of Object.entries(src)) {
       if (key === 'id' || key === 'created_at' || key === 'updated_at') continue
       if (key === 'packages' && Array.isArray(value)) {
-        payload[key] = value.map(({ popular, features, ...rest }) => ({
+        payload[key] = value.map(({ features, price, price_paise, ...rest }) => ({
           ...rest,
+          price: price || '',
+          price_paise: price_paise ? Number(price_paise) : parsePriceToPaise(price),
           features: Array.isArray(features) ? features : (features || '').split(',').map(s => s.trim()).filter(Boolean),
         }))
       } else {

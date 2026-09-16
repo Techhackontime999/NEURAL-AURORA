@@ -123,10 +123,13 @@ export default function ServiceDetail() {
     if (!service || !activeOption) return
     setPaying(true)
     setPaidInfo(null)
-    const priceNum = parsePrice(activeOption.price)
-    if (!priceNum) { setPaying(false); return }
+    const priceNum = activeOption.price_paise ? Math.round(activeOption.price_paise / 100) : parsePrice(activeOption.price)
+    if (!priceNum && !activeOption.price_paise) { setPaying(false); return }
     try {
       await openRazorpayCheckout({
+        order_type: 'pricing_tier',
+        service_id: service.service_id,
+        pricing_label: activeOption.label,
         amount: priceNum,
         currency: 'INR',
         description: `${service.title} — ${activeOption.label} — ${activeOption.price}`,

@@ -184,6 +184,8 @@ export default function Support() {
       const pricingLabel = selectedPreset ? selectedPreset.desc : 'Custom Donation'
 
       await openRazorpayCheckout({
+        order_type: 'support',
+        custom_amount: useCustom ? finalAmount : undefined,
         amount: finalAmount,
         currency: 'INR',
         description: `Support NEURAL AURORA — ₹${finalAmount}`,
@@ -218,6 +220,7 @@ export default function Support() {
       const pricingLabel = matchingPreset ? matchingPreset.desc : 'UPI Quick Pay'
 
       await openRazorpayCheckout({
+        order_type: 'support',
         amount,
         currency: 'INR',
         description: `UPI Support — NEURAL AURORA`,

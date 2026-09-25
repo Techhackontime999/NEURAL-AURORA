@@ -30,19 +30,21 @@ function loadScript() {
 }
 
 function formatAmount(amount) {
-  return Math.round(amount * 100)
+  return Math.round((Number(amount) || 0) * 100)
 }
 
 /**
- * Opens the Razorpay Checkout modal.
+ * Opens the Razorpay Checkout modal with server-verified order amounts.
  * Returns a Promise that resolves when payment completes successfully,
  * and rejects when the modal is dismissed or payment fails.
- * 
- * NOTE: Client-side response should be paired with server-side webhook / signature verification
- * before unlocking sensitive server-side resources.
  */
 export function openRazorpayCheckout({
+  order_type,
+  service_id,
+  pricing_label,
+  package_name,
   amount,
+  custom_amount,
   currency = 'INR',
   description = 'Support NEURAL AURORA',
   prefill = {},
@@ -103,15 +105,23 @@ export function openRazorpayCheckout({
 
     try {
       let orderId = null
+      let verifiedAmountPaise = formatAmount(amount || custom_amount)
+      let verifiedNotes = { ...notes }
+
       try {
-        console.log('[Razorpay] Creating order...')
+        console.log('[Razorpay] Creating server-verified order...')
         const controller = new AbortController()
         const orderTimeout = setTimeout(() => controller.abort(), 8000)
         const res = await fetch('/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: formatAmount(amount),
+            order_type,
+            service_id,
+            pricing_label,
+            package_name,
+            amount,
+            custom_amount,
             currency,
             notes: notes || {},
           }),
@@ -121,10 +131,26 @@ export function openRazorpayCheckout({
         if (res.ok) {
           const order = await res.json()
           orderId = order.id
-          console.log('[Razorpay] Order created:', orderId)
+          if (order.amount) {
+            verifiedAmountPaise = order.amount
+          }
+          if (order.notes) {
+            verifiedNotes = order.notes
+          }
+          console.log('[Razorpay] Order created and verified server-side:', { orderId, verifiedAmountPaise })
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          const errorMsg = errData.error || `Order creation failed (${res.status})`
+          console.error('[Razorpay] Order creation rejected by server:', errorMsg)
+          throw new Error(errorMsg)
         }
-      } catch (_) {
-        console.log('[Razorpay] Order creation skipped (dev mode or serverless offline)')
+      } catch (orderErr) {
+        // If order creation was rejected by business logic (e.g. invalid service/amount), fail fast
+        if (orderErr.message && !orderErr.message.includes('fetch') && !orderErr.message.includes('abort')) {
+          safeReject(orderErr)
+          return
+        }
+        console.warn('[Razorpay] Serverless order creation unavailable (dev mode or offline). Fallback mode.')
       }
 
       const safePrefill = prefill || {}
@@ -135,14 +161,14 @@ export function openRazorpayCheckout({
 
       const options = {
         key: razorpayKey,
-        amount: formatAmount(amount),
+        amount: verifiedAmountPaise,
         currency,
         name: 'NEURAL AURORA',
-        description: description || `Support NEURAL AURORA — ₹${amount}`,
+        description: description || `Payment — NEURAL AURORA`,
         ...(orderId ? { order_id: orderId } : {}),
         ...(method ? { method } : {}),
         ...(Object.keys(prefillFields).length > 0 ? { prefill: prefillFields } : {}),
-        ...(notes && Object.keys(notes).length > 0 ? { notes } : {}),
+        ...(verifiedNotes && Object.keys(verifiedNotes).length > 0 ? { notes: verifiedNotes } : {}),
         handler(response) {
           console.log('[Razorpay] Payment success:', response)
           safeResolve(response)

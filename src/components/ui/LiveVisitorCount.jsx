@@ -1,23 +1,23 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 
 const EASE = [0.16, 1, 0.3, 1]
 
-function useVisitorCount() {
-  const [count, setCount] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const hitRef = useRef(false)
+// Cache the visitor-count request at module level.
+// This prevents duplicate increments when React remounts
+// the component during development.
+let visitorCountRequest = null
 
-  useEffect(() => {
-    if (hitRef.current) return
-    hitRef.current = true
-
-    async function fetchCount() {
+function getVisitorCount() {
+  if (!visitorCountRequest) {
+    visitorCountRequest = (async () => {
       try {
         const { data, error } = await supabase.rpc('increment_visitor_count')
+
         if (error) throw error
-        setCount(data)
+
+        return data
       } catch {
         try {
           const { data, error } = await supabase
@@ -25,12 +25,37 @@ function useVisitorCount() {
             .select('count')
             .eq('id', 1)
             .single()
-          if (!error && data) setCount(data.count)
+
+          if (!error && data) {
+            return data.count
+          }
         } catch {}
+
+        return null
       }
+    })()
+  }
+
+  return visitorCountRequest
+}
+
+function useVisitorCount() {
+  const [count, setCount] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    getVisitorCount().then((visitorCount) => {
+      if (!isMounted) return
+
+      setCount(visitorCount)
       setLoading(false)
+    })
+
+    return () => {
+      isMounted = false
     }
-    fetchCount()
   }, [])
 
   return { count, loading }
@@ -77,6 +102,7 @@ export default function LiveVisitorCount() {
 
         <div className="relative z-10 flex items-center gap-3">
           <LiveDot />
+
           <div className="flex flex-col">
             <span
               className="text-[10px] font-mono tracking-[0.15em] uppercase"
@@ -84,6 +110,7 @@ export default function LiveVisitorCount() {
             >
               Visitors
             </span>
+
             <div className="flex items-baseline gap-1.5">
               {loading ? (
                 <div className="flex gap-0.5 py-1">
@@ -116,6 +143,7 @@ export default function LiveVisitorCount() {
                   --
                 </span>
               )}
+
               <span
                 className="text-[9px] font-mono"
                 style={{ color: 'var(--text-tertiary)' }}
@@ -142,6 +170,7 @@ function LiveDot() {
           boxShadow: '0 0 6px var(--accent-glow)',
         }}
       />
+
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
@@ -169,7 +198,8 @@ function ShimmerOverlay() {
       <motion.div
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.04) 45%, rgba(0,240,255,0.02) 50%, transparent 65%)',
+          background:
+            'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.04) 45%, rgba(0,240,255,0.02) 50%, transparent 65%)',
         }}
         animate={shouldReduceMotion ? undefined : { x: ['-100%', '200%'] }}
         transition={

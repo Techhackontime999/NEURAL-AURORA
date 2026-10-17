@@ -620,6 +620,111 @@ export async function updateServicePage(data) {
   if (error) throw error
 }
 
+export async function getCertificates() {
+  const { data, error } = await supabase
+    .from('certificates')
+    .select('*')
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createCertificate(data) {
+  const { data: newItem, error } = await supabase
+    .from('certificates')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateCertificate(id, data) {
+  const { error } = await supabase
+    .from('certificates')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCertificate(id) {
+  const { error } = await supabase
+    .from('certificates')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getAchievements() {
+  const { data, error } = await supabase
+    .from('achievements')
+    .select('*')
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createAchievement(data) {
+  const { data: newItem, error } = await supabase
+    .from('achievements')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateAchievement(id, data) {
+  const { error } = await supabase
+    .from('achievements')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAchievement(id) {
+  const { error } = await supabase
+    .from('achievements')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getGallery() {
+  const { data, error } = await supabase
+    .from('gallery')
+    .select('*')
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createGalleryItem(data) {
+  const { data: newItem, error } = await supabase
+    .from('gallery')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateGalleryItem(id, data) {
+  const { error } = await supabase
+    .from('gallery')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteGalleryItem(id) {
+  const { error } = await supabase
+    .from('gallery')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function getPayments() {
   const { data, error } = await supabase
     .from('payments')

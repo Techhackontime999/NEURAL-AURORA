@@ -8,6 +8,9 @@ import AdminEducation from './AdminEducation'
 import AdminExperience from './AdminExperience'
 import AdminBlog from './AdminBlog'
 import AdminCaseStudies from './AdminCaseStudies'
+import AdminCertificates from './AdminCertificates'
+import AdminAchievements from './AdminAchievements'
+import AdminGallery from './AdminGallery'
 import AdminSocialLinks from './AdminSocialLinks'
 import AdminReviews from './AdminReviews'
 import AdminUsers from './AdminUsers'
@@ -32,6 +35,9 @@ export default function AdminDashboard() {
         <Route path="experience" element={<AdminExperience />} />
         <Route path="blog" element={<AdminBlog />} />
         <Route path="case-studies" element={<AdminCaseStudies />} />
+        <Route path="certificates" element={<AdminCertificates />} />
+        <Route path="achievements" element={<AdminAchievements />} />
+        <Route path="gallery" element={<AdminGallery />} />
         <Route path="services" element={<AdminServices />} />
         <Route path="social-links" element={<AdminSocialLinks />} />
         <Route path="reviews" element={<AdminReviews />} />

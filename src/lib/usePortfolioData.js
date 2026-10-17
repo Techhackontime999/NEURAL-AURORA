@@ -12,6 +12,9 @@ import {
   getServices,
   getServicePage,
   getReviews,
+  getCertificates,
+  getAchievements,
+  getGallery,
 } from './supabase'
 import {
   personalInfo as staticPersonalInfo,
@@ -24,6 +27,9 @@ import {
   caseStudies as staticCaseStudies,
   services as staticServices,
   defaultServicePage as staticServicePage,
+  certificates as staticCertificates,
+  achievements as staticAchievements,
+  galleryItems as staticGalleryItems,
 } from '../data/portfolio'
 
 const supabaseConfigured =
@@ -300,4 +306,16 @@ export function useServicePage() {
 
 export function useReviews() {
   return usePortfolioResource('reviews', getReviews, [])
+}
+
+export function useCertificates() {
+  return usePortfolioResource('certificates', getCertificates, staticCertificates)
+}
+
+export function useAchievements() {
+  return usePortfolioResource('achievements', getAchievements, staticAchievements)
+}
+
+export function useGallery() {
+  return usePortfolioResource('gallery', getGallery, staticGalleryItems)
 }

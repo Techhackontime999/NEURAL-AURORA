@@ -8,6 +8,9 @@ import { BrandLogo } from './ui/BrandLogo'
 
 const navLinks = [
   { key: 'timeline', href: '#timeline' },
+  { key: 'certificates', href: '#certificates' },
+  { key: 'achievements', href: '#achievements' },
+  { key: 'gallery', href: '#gallery' },
   { key: 'caseStudies', href: '#case-studies' },
   { key: 'blog', href: '/blog', route: true },
 ]

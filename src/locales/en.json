@@ -253,10 +253,20 @@
     "latestPosts": "Latest Blog Posts",
     "viewAll": "View all",
     "caseStudies": "Case Studies",
+    "certificates": "Certificates",
+    "achievements": "Achievements",
+    "gallery": "Gallery",
+    "verifyCredential": "Verify credential",
+    "noCertificates": "No certificates added yet.",
+    "noAchievements": "No achievements added yet.",
+    "noGallery": "No gallery images added yet.",
     "nav": {
       "timeline": "Timeline",
       "caseStudies": "Case Studies",
-      "blog": "Blog"
+      "blog": "Blog",
+      "certificates": "Certificates",
+      "achievements": "Achievements",
+      "gallery": "Gallery"
     }
   },
   "caseStudy": {

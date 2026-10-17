@@ -417,3 +417,13 @@ export const caseStudies = [
     tech: ['Next.js', 'Tailwind CSS', 'Stripe'],
   },
 ]
+
+// ---------------------------------------------------------------------------
+// Certificates / Achievements / Gallery
+// ---------------------------------------------------------------------------
+// Intentionally empty: these are personal credentials, so we never fabricate
+// fallback content that could masquerade as real on the live site. Populate
+// them from Admin → Certificates / Achievements / Gallery (Supabase-backed).
+export const certificates = []
+export const achievements = []
+export const galleryItems = []

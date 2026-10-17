@@ -34,6 +34,100 @@ function formatAmount(amount) {
 }
 
 /**
+ * Opens Razorpay Checkout for an ALREADY created server-side order.
+ *
+ * Unlike `openRazorpayCheckout`, this never calls `/api/create-order` and has
+ * NO client-side price fallback: it is used by the digital-product flow where
+ * the server is the only authority on price. If you do not have a verified
+ * order id and amount from the server, do not call this.
+ *
+ * @returns {Promise<object>} the Razorpay handler response on success.
+ */
+export function openCheckoutModal({
+  order_id,
+  amount,
+  currency = 'INR',
+  name = 'NEURAL AURORA',
+  description = 'Purchase — NEURAL AURORA',
+  prefill = {},
+  notes = {},
+  method,
+  key,
+}) {
+  return new Promise(async (resolve, reject) => {
+    let settled = false
+    const safeReject = (err) => {
+      if (settled) return
+      settled = true
+      reject(err instanceof Error ? err : new Error(String(err)))
+    }
+    const safeResolve = (response) => {
+      if (settled) return
+      settled = true
+      resolve(response)
+    }
+
+    const razorpayKey = (key || import.meta.env.VITE_RAZORPAY_KEY_ID || '').trim()
+    if (!razorpayKey || razorpayKey.includes('xxxxxxxx')) {
+      safeReject(new Error('Razorpay key is not configured. Set it in Settings → Payment Settings'))
+      return
+    }
+
+    if (!order_id) {
+      safeReject(new Error('Missing verified order id — refusing to open checkout.'))
+      return
+    }
+
+    const loaded = await loadScript()
+    if (!loaded) {
+      safeReject(new Error('Failed to load Razorpay checkout script. Check your internet or ad blocker.'))
+      return
+    }
+
+    try {
+      const prefillFields = {}
+      if (prefill?.name) prefillFields.name = prefill.name
+      if (prefill?.email) prefillFields.email = prefill.email
+      if (prefill?.contact) prefillFields.contact = prefill.contact
+
+      const options = {
+        key: razorpayKey,
+        order_id,
+        amount: Number(amount) || 0,
+        currency,
+        name,
+        description,
+        ...(method ? { method } : {}),
+        ...(Object.keys(prefillFields).length > 0 ? { prefill: prefillFields } : {}),
+        ...(notes && Object.keys(notes).length > 0 ? { notes } : {}),
+        handler(response) {
+          safeResolve(response)
+        },
+        modal: {
+          ondismiss() {
+            safeReject(new Error('Payment cancelled'))
+          },
+        },
+      }
+
+      if (!window.Razorpay) {
+        throw new Error('Razorpay SDK is not available')
+      }
+
+      const rzp = new window.Razorpay(options)
+      if (typeof rzp.on === 'function') {
+        rzp.on('payment.failed', (response) => {
+          safeReject(new Error(response?.error?.description || 'Payment failed'))
+        })
+      }
+      rzp.open()
+    } catch (err) {
+      safeReject(err)
+    }
+  })
+}
+
+/**
  * Opens the Razorpay Checkout modal with server-verified order amounts.
  * Returns a Promise that resolves when payment completes successfully,
  * and rejects when the modal is dismissed or payment fails.

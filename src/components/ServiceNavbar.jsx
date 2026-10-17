@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
@@ -8,6 +8,7 @@ import LanguageSwitcher from './LanguageSwitcher'
 
 const navLinks = [
   { label: 'services.nav.services', href: '#services' },
+  { label: 'services.nav.products', href: '/offerings/products', route: true },
   { label: 'services.nav.process', href: '#process' },
   { label: 'services.nav.pricing', href: '#pricing' },
   { label: 'services.nav.faq', href: '#faq' },
@@ -28,16 +29,36 @@ export default function ServiceNavbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 80)
   })
 
-  const handleClick = (href) => {
+  const handleClick = (href, isRoute) => {
     setOpen(false)
+    if (isRoute) {
+      navigate(href)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     const el = document.querySelector(href)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+
+    // Anchor target isn't on this page (e.g. "Pricing" while on the
+    // Products storefront): go to the offerings page, then scroll.
+    navigate('/offerings')
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = document.querySelector(href)
+        if (target) target.scrollIntoView({ behavior: 'smooth' })
+      })
+    })
   }
 
   return (
@@ -64,8 +85,12 @@ export default function ServiceNavbar() {
               {navLinks.map((link) => (
                 <button
                   key={link.href}
-                  onClick={() => handleClick(link.href)}
-                  className="text-xs tracking-wider uppercase text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  onClick={() => handleClick(link.href, link.route)}
+                  className={`text-xs tracking-wider uppercase transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
+                    link.route && location.pathname === link.href
+                      ? 'text-black/90 dark:text-white/90'
+                      : 'text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90'
+                  }`}
                 >
                   {t(link.label)}
                 </button>
@@ -124,7 +149,7 @@ export default function ServiceNavbar() {
                   variants={staggerItem}
                   initial="hidden"
                   animate="visible"
-                  onClick={() => handleClick(link.href)}
+                  onClick={() => handleClick(link.href, link.route)}
                   className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
                 >
                   {t(link.label)}

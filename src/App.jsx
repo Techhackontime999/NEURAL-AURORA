@@ -23,6 +23,8 @@ import Achievements from './components/more/Achievements'
 import Gallery from './components/more/Gallery'
 import Service from './components/Service'
 import ServiceDetail from './components/ServiceDetail'
+import Products from './components/offerings/Products'
+import ProductDetail from './components/offerings/ProductDetail'
 import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
 import CaseStudyDetail from './components/CaseStudyDetail'
@@ -228,6 +230,10 @@ function AppContent() {
               <Route path="/more/achievements" element={<Achievements />} />
               <Route path="/more/gallery" element={<Gallery />} />
               <Route path="/offerings" element={<Service />} />
+              {/* Product store — static segments outrank /offerings/:serviceId,
+                  so "products" never opens the generic service-detail page. */}
+              <Route path="/offerings/products" element={<Products />} />
+              <Route path="/offerings/products/:slug" element={<ProductDetail />} />
               <Route path="/offerings/:serviceId" element={<ServiceDetail />} />
               {/* /services was renamed to /offerings — keep old links working */}
               <Route path="/services" element={<Navigate to="/offerings" replace />} />

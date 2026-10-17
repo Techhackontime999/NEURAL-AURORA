@@ -1033,3 +1033,557 @@ CREATE POLICY "Admin can delete gallery"
 
 GRANT SELECT ON TABLE gallery TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE gallery TO authenticated;
+
+
+===========================================================================
+DIGITAL PRODUCTS STORE
+Catalogue, orders, entitlements and private storage.
+Appended from supabase/migrations/2026101800000{0,1,2,3}_*.sql
+===========================================================================
+
+-- >>> supabase/migrations/20261018000000_create_digital_products.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — catalogue (Phase A)
+-- Adds a first-party digital store to NEURAL AURORA.
+-- Additive only: does not touch services, payments or portfolio data.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Configurable product categories.
+-- Kept in the database (not hardcoded) so new categories can be
+-- added from the admin dashboard without a code change.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS product_categories (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  icon_name TEXT DEFAULT 'Package',
+  display_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE product_categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read product_categories" ON product_categories;
+CREATE POLICY "Anyone can read product_categories"
+  ON product_categories FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "Admin can insert product_categories" ON product_categories;
+CREATE POLICY "Admin can insert product_categories"
+  ON product_categories FOR INSERT WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "Admin can update product_categories" ON product_categories;
+CREATE POLICY "Admin can update product_categories"
+  ON product_categories FOR UPDATE USING (is_admin());
+DROP POLICY IF EXISTS "Admin can delete product_categories" ON product_categories;
+CREATE POLICY "Admin can delete product_categories"
+  ON product_categories FOR DELETE USING (is_admin());
+
+GRANT SELECT ON TABLE product_categories TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE product_categories TO authenticated;
+
+-- ------------------------------------------------------------
+-- PRODUCTS
+-- Money is stored as INTEGER minor units (paise for INR) so no
+-- float arithmetic is ever used for an authoritative total.
+-- No private storage path lives on this table: the public product
+-- representation is safe to expose under the RLS policy below.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  short_description TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  category_slug TEXT REFERENCES product_categories(slug) ON DELETE SET NULL,
+  format TEXT DEFAULT '',
+  price_paise INTEGER NOT NULL DEFAULT 0 CHECK (price_paise >= 0),
+  compare_at_paise INTEGER CHECK (compare_at_paise IS NULL OR compare_at_paise >= 0),
+  currency TEXT NOT NULL DEFAULT 'INR',
+  -- Derived, so it can never drift from price_paise.
+  is_free BOOLEAN GENERATED ALWAYS AS (price_paise = 0) STORED,
+  status TEXT NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft', 'published', 'archived')),
+  featured BOOLEAN NOT NULL DEFAULT FALSE,
+  cover_image_url TEXT DEFAULT '',
+  gallery_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
+  includes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  requirements JSONB NOT NULL DEFAULT '[]'::jsonb,
+  license_type TEXT DEFAULT '',
+  license_summary TEXT DEFAULT '',
+  support_policy TEXT DEFAULT '',
+  refund_policy TEXT DEFAULT '',
+  faqs JSONB NOT NULL DEFAULT '[]'::jsonb,
+  tags TEXT[] DEFAULT '{}',
+  version TEXT DEFAULT '1.0.0',
+  release_notes TEXT DEFAULT '',
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT products_currency_supported CHECK (currency IN ('INR', 'USD')),
+  CONSTRAINT products_compare_at_gt_price
+    CHECK (compare_at_paise IS NULL OR compare_at_paise >= price_paise)
+);
+
+-- Only published products are publicly visible/purchasable; admins see all.
+CREATE INDEX IF NOT EXISTS idx_products_status ON products (status);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products (category_slug);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products (featured) WHERE featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_published_at ON products (published_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_products_price ON products (price_paise);
+CREATE INDEX IF NOT EXISTS idx_products_tags ON products USING GIN (tags);
+
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read published products" ON products;
+CREATE POLICY "Public can read published products"
+  ON products FOR SELECT
+  USING (status = 'published' OR is_admin());
+
+DROP POLICY IF EXISTS "Admin can insert products" ON products;
+CREATE POLICY "Admin can insert products"
+  ON products FOR INSERT WITH CHECK (is_admin());
+
+DROP POLICY IF EXISTS "Admin can update products" ON products;
+CREATE POLICY "Admin can update products"
+  ON products FOR UPDATE USING (is_admin());
+
+DROP POLICY IF EXISTS "Admin can delete products" ON products;
+CREATE POLICY "Admin can delete products"
+  ON products FOR DELETE USING (is_admin());
+
+GRANT SELECT ON TABLE products TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE products TO authenticated;
+
+-- ------------------------------------------------------------
+-- PRODUCT FILES
+-- Paid downloads live in a PRIVATE bucket. Deliberately there is
+-- NO public SELECT policy here: the public catalogue must never
+-- receive a storage path. Only admins and the server (service_role)
+-- can read these rows, and delivery always goes through a short
+-- lived signed URL minted server-side after entitlement checks.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS product_files (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  storage_path TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  size_bytes BIGINT NOT NULL DEFAULT 0,
+  version TEXT NOT NULL DEFAULT '1.0.0',
+  is_preview BOOLEAN NOT NULL DEFAULT FALSE,
+  display_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_files_product ON product_files (product_id);
+
+ALTER TABLE product_files ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin can read product_files" ON product_files;
+CREATE POLICY "Admin can read product_files"
+  ON product_files FOR SELECT TO authenticated USING (is_admin());
+DROP POLICY IF EXISTS "Admin can insert product_files" ON product_files;
+CREATE POLICY "Admin can insert product_files"
+  ON product_files FOR INSERT WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "Admin can update product_files" ON product_files;
+CREATE POLICY "Admin can update product_files"
+  ON product_files FOR UPDATE USING (is_admin());
+DROP POLICY IF EXISTS "Admin can delete product_files" ON product_files;
+CREATE POLICY "Admin can delete product_files"
+  ON product_files FOR DELETE USING (is_admin());
+
+-- anon gets nothing at all on product_files.
+REVOKE ALL ON TABLE product_files FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE product_files TO authenticated;
+
+-- ------------------------------------------------------------
+-- Seed the default categories from the product strategy.
+-- ON CONFLICT DO NOTHING keeps this reproducible and non
+-- destructive: an admin who edits a seeded row keeps their edit.
+-- ------------------------------------------------------------
+INSERT INTO product_categories (slug, label, description, icon_name, display_order) VALUES
+  ('developer-tools',  'Developer Tools & Source Code', 'Reusable source code, scripts and developer utilities.',        'Code',        1),
+  ('templates',        'Starter Kits & Templates',      'Website templates and software starter kits.',                  'LayoutGrid',  2),
+  ('ui-kits',          'UI Kits & Design Resources',    'Design systems, component libraries and visual assets.',        'Palette',     3),
+  ('ebooks',           'Ebooks, PDFs & Guides',         'Technical books, PDFs and in-depth guides.',                    'BookOpen',    4),
+  ('ai-resources',     'AI Prompts & Automations',      'Prompt packs, agent resources and automation workflows.',       'Bot',         5),
+  ('learning',         'Learning & Roadmaps',           'Roadmaps, cheat sheets and structured learning material.',      'GraduationCap', 6),
+  ('free',             'Free Resources',                'Free downloads and open resources.',                            'Gift',        7)
+ON CONFLICT (slug) DO NOTHING;
+
+-- >>> supabase/migrations/20261018000001_create_digital_orders.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — orders & payments (Phase D foundation)
+-- Integer minor units (paise) throughout. Additive only: the
+-- legacy `payments` table is left untouched so existing service
+-- payment history and its webhook keep working unchanged.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- ORDERS
+-- One row per checkout attempt. `provider_order_id` ties it to
+-- the Razorpay order created server-side. `payment_status` only
+-- ever moves to 'paid' via server-side webhook verification.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_ref TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
+  customer_name TEXT DEFAULT '',
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  provider TEXT NOT NULL DEFAULT 'razorpay',
+  provider_order_id TEXT UNIQUE,
+  payment_status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (payment_status IN ('pending', 'paid', 'failed', 'cancelled', 'refunded')),
+  currency TEXT NOT NULL DEFAULT 'INR',
+  subtotal_paise BIGINT NOT NULL DEFAULT 0 CHECK (subtotal_paise >= 0),
+  discount_paise BIGINT NOT NULL DEFAULT 0 CHECK (discount_paise >= 0),
+  total_paise BIGINT NOT NULL DEFAULT 0 CHECK (total_paise >= 0),
+  failure_reason TEXT DEFAULT '',
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- A paid order can never have paid_at left empty.
+  CONSTRAINT orders_paid_requires_timestamp
+    CHECK (payment_status <> 'paid' OR paid_at IS NOT NULL),
+  CONSTRAINT orders_total_is_consistent
+    CHECK (total_paise = subtotal_paise - discount_paise)
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (lower(email));
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at DESC);
+
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Admins see everything. A signed-in customer sees only orders they
+-- placed while authenticated. Guests are deliberately NOT granted a
+-- read path here: knowing an email or order ref must never reveal a
+-- purchase history. Guest recovery goes through the server endpoint
+-- with a signed, expiring claim token instead.
+DROP POLICY IF EXISTS "Admin can read orders" ON orders;
+CREATE POLICY "Admin can read orders"
+  ON orders FOR SELECT TO authenticated USING (is_admin());
+
+DROP POLICY IF EXISTS "Users can read own orders" ON orders;
+CREATE POLICY "Users can read own orders"
+  ON orders FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admin can update orders" ON orders;
+CREATE POLICY "Admin can update orders"
+  ON orders FOR UPDATE USING (is_admin());
+
+-- Order rows are written exclusively by the serverless functions
+-- with the service role, which bypasses RLS. No client insert path.
+REVOKE ALL ON TABLE orders FROM PUBLIC, anon;
+GRANT SELECT, UPDATE ON TABLE orders TO authenticated;
+
+-- ------------------------------------------------------------
+-- ORDER ITEMS
+-- Title/price are snapshotted immutably so an admin editing a
+-- product later can never rewrite what a customer actually paid.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_items (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  unit_price_paise BIGINT NOT NULL DEFAULT 0 CHECK (unit_price_paise >= 0),
+  total_price_paise BIGINT NOT NULL DEFAULT 0 CHECK (total_price_paise >= 0),
+  product_title_snapshot TEXT NOT NULL,
+  product_slug_snapshot TEXT NOT NULL,
+  product_version_snapshot TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT order_items_total_matches
+    CHECK (total_price_paise = unit_price_paise * quantity)
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
+
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin can read order_items" ON order_items;
+CREATE POLICY "Admin can read order_items"
+  ON order_items FOR SELECT TO authenticated USING (is_admin());
+
+DROP POLICY IF EXISTS "Users can read own order_items" ON order_items;
+CREATE POLICY "Users can read own order_items"
+  ON order_items FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_id AND o.user_id = auth.uid()
+  ));
+
+REVOKE ALL ON TABLE order_items FROM PUBLIC, anon;
+GRANT SELECT ON TABLE order_items TO authenticated;
+
+-- ------------------------------------------------------------
+-- PAYMENT TRANSACTIONS
+-- One row per gateway payment attempt. `signature_valid` records
+-- whether the gateway signature was actually verified, so a
+-- recorded transaction can never be mistaken for a verified one.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  payment_id TEXT NOT NULL UNIQUE,
+  provider TEXT NOT NULL DEFAULT 'razorpay',
+  provider_order_id TEXT,
+  order_id BIGINT REFERENCES orders(id) ON DELETE SET NULL,
+  amount_paise BIGINT NOT NULL DEFAULT 0 CHECK (amount_paise >= 0),
+  currency TEXT NOT NULL DEFAULT 'INR',
+  status TEXT NOT NULL DEFAULT 'created',
+  signature_valid BOOLEAN NOT NULL DEFAULT FALSE,
+  event_type TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_tx_order ON payment_transactions (order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_tx_provider_order ON payment_transactions (provider_order_id);
+
+ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin can read payment_transactions" ON payment_transactions;
+CREATE POLICY "Admin can read payment_transactions"
+  ON payment_transactions FOR SELECT TO authenticated USING (is_admin());
+
+REVOKE ALL ON TABLE payment_transactions FROM PUBLIC, anon;
+GRANT SELECT ON TABLE payment_transactions TO authenticated;
+
+-- >>> supabase/migrations/20261018000002_create_digital_entitlements.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — entitlements & secure delivery (Phase E)
+-- An entitlement is the single source of truth for "may this
+-- customer have this file". Nothing downloads without one.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- ENTITLEMENTS
+-- `source` distinguishes a paid purchase from a free acquisition.
+-- For paid rows the entitlement is keyed to the immutable order
+-- item, so replaying a webhook can never mint a second grant.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS entitlements (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
+  order_item_id BIGINT REFERENCES order_items(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  customer_email TEXT,
+  source TEXT NOT NULL DEFAULT 'purchase'
+    CHECK (source IN ('purchase', 'free', 'gift', 'comp')),
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'revoked')),
+  granted_at TIMESTAMPTZ DEFAULT NOW(),
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- A revocation must be timestamped; an active grant must not be.
+  CONSTRAINT entitlements_revoked_requires_timestamp
+    CHECK (status <> 'revoked' OR revoked_at IS NOT NULL)
+);
+
+-- One grant per purchased line item — this is the replay guard.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_per_item
+  ON entitlements (product_id, order_item_id)
+  WHERE order_item_id IS NOT NULL;
+
+-- One free grant per product per customer email (case-insensitive).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_free_email
+  ON entitlements (product_id, lower(customer_email))
+  WHERE order_item_id IS NULL AND customer_email IS NOT NULL;
+
+-- One free grant per product per authenticated account when there is
+-- no email on the row.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_free_user
+  ON entitlements (product_id, user_id)
+  WHERE order_item_id IS NULL AND user_id IS NOT NULL AND customer_email IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_entitlements_product ON entitlements (product_id);
+CREATE INDEX IF NOT EXISTS idx_entitlements_user ON entitlements (user_id);
+CREATE INDEX IF NOT EXISTS idx_entitlements_email ON entitlements (lower(customer_email));
+CREATE INDEX IF NOT EXISTS idx_entitlements_status ON entitlements (status);
+
+ALTER TABLE entitlements ENABLE ROW LEVEL SECURITY;
+
+-- Admins see all. A signed-in customer sees only their own active
+-- grants (matched by user_id, or by the email on their verified
+-- session). No anon access: a guest must prove ownership through
+-- the server-side claim flow rather than by knowing an address.
+DROP POLICY IF EXISTS "Admin can read entitlements" ON entitlements;
+CREATE POLICY "Admin can read entitlements"
+  ON entitlements FOR SELECT TO authenticated USING (is_admin());
+
+DROP POLICY IF EXISTS "Users can read own entitlements" ON entitlements;
+CREATE POLICY "Users can read own entitlements"
+  ON entitlements FOR SELECT TO authenticated
+  USING (
+    status = 'active'
+    AND (
+      user_id = auth.uid()
+      OR lower(coalesce(customer_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    )
+  );
+
+DROP POLICY IF EXISTS "Admin can update entitlements" ON entitlements;
+CREATE POLICY "Admin can update entitlements"
+  ON entitlements FOR UPDATE USING (is_admin());
+
+REVOKE ALL ON TABLE entitlements FROM PUBLIC, anon;
+GRANT SELECT, UPDATE ON TABLE entitlements TO authenticated;
+
+-- ------------------------------------------------------------
+-- DOWNLOAD GRANTS
+-- Short-lived, single-purpose tokens issued only after an
+-- entitlement check. Only a SHA-256 hash is stored, so a database
+-- leak cannot be replayed into downloads. Usage is counted so the
+-- server can apply rate limits and abuse protection.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS download_grants (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  entitlement_id BIGINT NOT NULL REFERENCES entitlements(id) ON DELETE CASCADE,
+  product_file_id BIGINT REFERENCES product_files(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  max_uses INTEGER NOT NULL DEFAULT 5 CHECK (max_uses > 0),
+  used_count INTEGER NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_download_grants_entitlement
+  ON download_grants (entitlement_id);
+CREATE INDEX IF NOT EXISTS idx_download_grants_expiry
+  ON download_grants (expires_at);
+
+ALTER TABLE download_grants ENABLE ROW LEVEL SECURITY;
+
+-- Server (service_role) only. No client read or write path at all,
+-- so a browser can never mint or inspect a grant.
+REVOKE ALL ON TABLE download_grants FROM PUBLIC, anon, authenticated;
+
+-- ------------------------------------------------------------
+-- PURCHASE CLAIMS
+-- Guest purchase recovery. A signed, expiring token emailed to the
+-- buyer. Knowing an order_ref or an email address is never enough
+-- to retrieve a purchase.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS purchase_claims (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  token_hash TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
+  order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_purchase_claims_email ON purchase_claims (lower(email));
+CREATE INDEX IF NOT EXISTS idx_purchase_claims_order ON purchase_claims (order_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_claims_expiry ON purchase_claims (expires_at);
+
+ALTER TABLE purchase_claims ENABLE ROW LEVEL SECURITY;
+
+-- Server (service_role) only. Same reasoning as download_grants.
+REVOKE ALL ON TABLE purchase_claims FROM PUBLIC, anon, authenticated;
+
+-- ------------------------------------------------------------
+-- Explicit service_role grants.
+-- The serverless functions (create-order, webhook, download) act
+-- with the service role. BYPASSRLS only skips row security, not
+-- object privileges, so these are stated outright rather than
+-- relying on project default privileges.
+-- ------------------------------------------------------------
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE products            TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE product_categories  TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE product_files       TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE orders              TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE order_items        TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE payment_transactions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE entitlements        TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE download_grants     TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE purchase_claims     TO service_role;
+
+-- >>> supabase/migrations/20261018000003_create_digital_products_storage.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — private storage bucket (Phase E)
+-- Paid downloads live here. Deliberately NO public read policy:
+-- a path in this bucket is never a working URL on its own.
+-- Access is only ever granted by the server minting a short lived
+-- signed URL after an entitlement check.
+-- ============================================================
+
+-- Private bucket (public = false).
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('digital-products', 'digital-products', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Admins may manage the paid assets they uploaded.
+DROP POLICY IF EXISTS "Admin can upload digital products" ON storage.objects;
+CREATE POLICY "Admin can upload digital products"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'digital-products' AND is_admin());
+
+DROP POLICY IF EXISTS "Admin can update digital products" ON storage.objects;
+CREATE POLICY "Admin can update digital products"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'digital-products' AND is_admin());
+
+DROP POLICY IF EXISTS "Admin can delete digital products" ON storage.objects;
+CREATE POLICY "Admin can delete digital products"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'digital-products' AND is_admin());
+
+DROP POLICY IF EXISTS "Admin can read digital products" ON storage.objects;
+CREATE POLICY "Admin can read digital products"
+  ON storage.objects FOR SELECT
+  TO authenticated
+  USING (bucket_id = 'digital-products' AND is_admin());
+
+-- Intentionally NO "Anyone can view" policy for this bucket, and no
+-- anon SELECT grant: anonymous fetches of these objects must fail.
+-- Customers reach their files only through /api/download, which
+-- verifies an active entitlement and then issues a signed URL.
+
+-- ------------------------------------------------------------
+-- Public preview bucket.
+-- Covers and deliberately-public preview assets only. Never paid
+-- source material. Reuses the existing public portfolio bucket so
+-- the admin image picker keeps working unchanged.
+-- ------------------------------------------------------------
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('portfolio-images', 'portfolio-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ------------------------------------------------------------
+-- Optional: an RPC that lets an admin validate a storage path
+-- exists for a product before saving metadata. service_role
+-- callers only; kept as SECURITY DEFINER so it never leaks paths
+-- to a non-admin caller.
+-- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION admin_can_read_product_file(p_path TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RETURN FALSE;
+  END IF;
+  RETURN EXISTS (
+    SELECT 1 FROM storage.objects
+    WHERE bucket_id = 'digital-products' AND name = p_path
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION admin_can_read_product_file(TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_can_read_product_file(TEXT) TO authenticated, service_role;

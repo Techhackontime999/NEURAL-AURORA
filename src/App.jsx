@@ -18,6 +18,9 @@ import Contact from './components/Contact'
 import ReviewsList from './components/ReviewsList'
 import ReviewForm from './components/ReviewForm'
 import More from './components/More'
+import Certificates from './components/more/Certificates'
+import Achievements from './components/more/Achievements'
+import Gallery from './components/more/Gallery'
 import Service from './components/Service'
 import ServiceDetail from './components/ServiceDetail'
 import Blog from './components/Blog'
@@ -213,6 +216,9 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/more" element={<More />} />
+              <Route path="/more/certificates" element={<Certificates />} />
+              <Route path="/more/achievements" element={<Achievements />} />
+              <Route path="/more/gallery" element={<Gallery />} />
               <Route path="/services" element={<Service />} />
               <Route path="/services/:serviceId" element={<ServiceDetail />} />
               <Route path="/blog" element={<Blog />} />

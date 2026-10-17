@@ -8,9 +8,9 @@ import { BrandLogo } from './ui/BrandLogo'
 
 const navLinks = [
   { key: 'timeline', href: '#timeline' },
-  { key: 'certificates', href: '#certificates' },
-  { key: 'achievements', href: '#achievements' },
-  { key: 'gallery', href: '#gallery' },
+  { key: 'certificates', href: '/more/certificates', route: true },
+  { key: 'achievements', href: '/more/achievements', route: true },
+  { key: 'gallery', href: '/more/gallery', route: true },
   { key: 'caseStudies', href: '#case-studies' },
   { key: 'blog', href: '/blog', route: true },
 ]
@@ -40,10 +40,24 @@ export default function MoreNavbar() {
     if (isRoute) {
       navigate(href)
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      const el = document.querySelector(href)
-      if (el) el.scrollIntoView({ behavior: 'smooth' })
+      return
     }
+
+    const el = document.querySelector(href)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+
+    // Anchor target isn't on the current page (e.g. "Timeline" while on
+    // /more/certificates): go to /more first, then scroll once it mounts.
+    navigate('/more')
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = document.querySelector(href)
+        if (target) target.scrollIntoView({ behavior: 'smooth' })
+      })
+    })
   }
 
   return (

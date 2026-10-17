@@ -17,6 +17,8 @@ const navItems = [
   { path: '/admin/achievements', label: 'Achievements', icon: '✦' },
   { path: '/admin/gallery', label: 'Gallery', icon: '▦' },
   { path: '/admin/services', label: 'Services', icon: '⊞' },
+  { path: '/admin/products', label: 'Products', icon: '◈' },
+  { path: '/admin/orders', label: 'Orders', icon: '₹' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
   { path: '/admin/messages', label: 'Messages', icon: '✉' },

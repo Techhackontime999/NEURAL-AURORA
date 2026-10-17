@@ -46,6 +46,7 @@ function timeAgo(dateStr) {
 }
 
 function VideoSkeleton({ tall }) {
+  const shouldReduceMotion = useReducedMotion()
   return (
     <div className={`rounded-2xl overflow-hidden border border-white/[0.04] bg-white/[0.015] ${tall ? 'aspect-[9/16] w-36 sm:w-44 shrink-0' : ''}`}>
       <div className={`relative overflow-hidden ${tall ? 'absolute inset-0' : 'aspect-video bg-white/[0.03]'}`}>
@@ -77,6 +78,7 @@ function VideoSkeleton({ tall }) {
 
 function PlaylistCard({ playlist, onSelect }) {
   const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY
   const [videos, setVideos] = useState(null)
   const [open, setOpen] = useState(false)

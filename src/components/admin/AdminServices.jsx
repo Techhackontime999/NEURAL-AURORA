@@ -614,7 +614,7 @@ export default function AdminServices() {
           </h2>
           {pageDirty && (
             <button
-              onClick={handlePageSave}
+              onClick={handleSavePage}
               disabled={saving}
               className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: '#10b981' }}

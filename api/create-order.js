@@ -176,7 +176,11 @@ module.exports = async function handler(req, res) {
       // service-support flow, a digital purchase must fail closed if the
       // database cannot be reached.
       // -------------------------------------------------------------------------
-      if (!supabase) {
+      // The service-role key is required, not merely preferred: writing an
+      // order is a privileged operation and the anon key cannot satisfy RLS.
+      // Requiring it here turns a confusing RLS failure into an honest 503.
+      if (!supabase || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error('[create-order] Digital store requires SUPABASE_SERVICE_ROLE_KEY')
         return res.status(503).json({ error: 'Digital store is unavailable right now. Please try again shortly.' })
       }
 

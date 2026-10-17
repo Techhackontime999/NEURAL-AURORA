@@ -47,6 +47,11 @@ before changing anything in `api/` or the migrations.
 - **Knowing an order reference, email, product id or UUID grants nothing.**
   Order status returns no PII and no files; downloads always re-check the
   entitlement against the authenticated principal.
+- **A free product is self-granted only while it is published.** The download
+  endpoint issues a free entitlement on the spot for a signed-in customer, but
+  only for a `published` product — otherwise a draft's files could be pulled by
+  anyone who guessed its slug. A pre-existing entitlement always wins, so an
+  archived purchase keeps working.
 - **Guests prove email ownership.** A guest checkout still works (entitlement is
   keyed to the email on the order), but to *retrieve* it they sign in through a
   Supabase email link for that same address. An email address is never by itself
@@ -132,6 +137,7 @@ supabase/migrations/20261018000003_create_digital_products_storage.sql
 supabase/migrations/20261018000004_add_download_rate_limit.sql
 supabase/migrations/20261018000005_digital_products_owner_read.sql
 supabase/migrations/20261018000006_digital_products_updated_at.sql
+supabase/migrations/20261018000007_harden_email_claim_policies.sql
 ```
 
 `supabase-schema.sql` is the canonical schema and already contains all of the
@@ -224,7 +230,7 @@ configuration error rather than falling back to anything weaker.
 
 ## 6. Production checklist
 
-- [ ] All seven migrations applied.
+- [ ] All eight migrations applied.
 - [ ] `digital-products` bucket exists and is **private**.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
       `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo).

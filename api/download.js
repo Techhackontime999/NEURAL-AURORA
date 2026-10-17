@@ -114,8 +114,13 @@ module.exports = async function handler(req, res) {
 
     let entitlement = await findEntitlement()
 
-    // A free product is granted on the spot — to a verified account only.
-    if (!entitlement && product.price_paise === 0) {
+    // An existing entitlement always wins, including for a product that has
+    // since been archived — that is what the buyer paid for.
+    //
+    // A FREE product, by contrast, is self-granted only while it is actually
+    // published. Without the status check anyone with an account could pull the
+    // files of a free DRAFT by guessing its slug, which is unpublished work.
+    if (!entitlement && product.price_paise === 0 && product.status === 'published') {
       const { data: created, error: createError } = await supabase
         .from('entitlements')
         .insert({

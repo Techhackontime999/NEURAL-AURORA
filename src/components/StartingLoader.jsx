@@ -2484,6 +2484,12 @@ export default function StartingLoader({ onComplete }) {
     setPhase('impress')
   }
 
+  function handleSkipVerification() {
+    clearTimeout(idleSkipTimerRef.current)
+    sessionStorage.setItem('neural-aurora-verified', 'true')
+    doneRef.current()
+  }
+
   function handleImpressDone() {
     sessionStorage.setItem('neural-aurora-verified', 'true')
     setPhase('success')
@@ -3133,6 +3139,25 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {phase === 'selecting' && (
+          <motion.button
+            key="skip-verification"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleSkipVerification}
+            aria-label={t('ads.skip')}
+            title={t('ads.skip')}
+            className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </motion.button>
         )}
       </AnimatePresence>
 

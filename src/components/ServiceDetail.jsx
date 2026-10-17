@@ -187,7 +187,7 @@ export default function ServiceDetail() {
             animate={{ opacity: 1 }}
             transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.2 }}
           >
-            <Link to="/services" className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 mt-4 transition-colors">
+            <Link to="/offerings" className="inline-flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 mt-4 transition-colors">
               <ArrowLeft className="w-3 h-3" />
               {t('services.backToServices')}
             </Link>
@@ -207,7 +207,7 @@ export default function ServiceDetail() {
         {/* ---- Back link ---- */}
         <ScrollSection delay={0}>
           <Link
-            to="/services"
+            to="/offerings"
             className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/30 hover:text-cyan-500 transition-colors mb-12 group"
           >
             <motion.span

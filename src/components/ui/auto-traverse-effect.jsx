@@ -5,7 +5,7 @@ import { useAutoTraverse } from '../../context/AutoTraverseContext'
 
 const TRAVERSAL_PLAN = [
   { path: '/', sections: ['hero', 'about', 'skills', 'projects', 'resume', 'review', 'contact'] },
-  { path: '/services', sections: ['services', 'process', 'pricing', 'testimonials', 'faq', 'contact'] },
+  { path: '/offerings', sections: ['services', 'process', 'pricing', 'testimonials', 'faq', 'contact'] },
   { path: '/more', sections: ['timeline', 'blog-posts', 'case-studies'] },
   { path: '/blog', sections: [] },
 ]

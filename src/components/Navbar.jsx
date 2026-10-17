@@ -13,7 +13,7 @@ const navLinks = [
   { label: 'nav.about', href: '#about' },
   { label: 'nav.skills', href: '#skills' },
   { label: 'nav.projects', href: '#projects' },
-  { label: 'nav.services', href: '/services', route: true },
+  { label: 'nav.services', href: '/offerings', route: true },
   { label: 'nav.resume', href: '#resume' },
   { label: 'nav.contact', href: '#contact' },
   { label: 'nav.more', href: '/more', route: true },

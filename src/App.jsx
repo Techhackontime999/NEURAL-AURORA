@@ -219,8 +219,8 @@ function AppContent() {
               <Route path="/more/certificates" element={<Certificates />} />
               <Route path="/more/achievements" element={<Achievements />} />
               <Route path="/more/gallery" element={<Gallery />} />
-              <Route path="/services" element={<Service />} />
-              <Route path="/services/:serviceId" element={<ServiceDetail />} />
+              <Route path="/offerings" element={<Service />} />
+              <Route path="/offerings/:serviceId" element={<ServiceDetail />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />

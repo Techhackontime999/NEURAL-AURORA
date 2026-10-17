@@ -189,7 +189,7 @@ function ServiceCard({ service, index }) {
 
           {hasPrice ? (
             <motion.button
-              onClick={() => navigate(`/services/${service.service_id}`)}
+              onClick={() => navigate(`/offerings/${service.service_id}`)}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -207,7 +207,7 @@ function ServiceCard({ service, index }) {
             </motion.button>
           ) : (
             <motion.button
-              onClick={() => navigate(`/services/${service.service_id}`)}
+              onClick={() => navigate(`/offerings/${service.service_id}`)}
               whileHover={{ scale: 1.03, x: 4 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}

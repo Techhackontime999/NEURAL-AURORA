@@ -45,6 +45,8 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-3 text-xl tracking-tight transition-colors"
+        aria-expanded={expanded}
+        aria-controls="mobile-login-menu"
         style={{ color: 'var(--accent)' }}
       >
         <Lock className="w-4 h-4" strokeWidth={1.5} />
@@ -61,6 +63,7 @@ function LoginMenuMobile({ crmUrl, docsUrl, staggerItem, navLinksLength, onNavig
       <AnimatePresence>
         {expanded && (
           <motion.div
+            id="mobile-login-menu"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -115,6 +118,9 @@ export default function Navbar() {
   const [crmUrl, setCrmUrl] = useState('')
   const [docsUrl, setDocsUrl] = useState('')
   const loginRef = useRef(null)
+  const menuButtonRef = useRef(null)
+  const mobileMenuRef = useRef(null)
+  const wasMenuOpenRef = useRef(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { scrollY } = useScroll()
@@ -134,6 +140,50 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!open) {
+      if (wasMenuOpenRef.current) {
+        menuButtonRef.current?.focus()
+        wasMenuOpenRef.current = false
+      }
+      return
+    }
+
+    wasMenuOpenRef.current = true
+    const menu = mobileMenuRef.current
+    const firstItem = menu?.querySelector('button, a[href]')
+    firstItem?.focus()
+
+    function handleMenuKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setOpen(false)
+        return
+      }
+
+      if (event.key !== 'Tab' || !menu) return
+
+      const focusableItems = menu.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      const first = focusableItems[0]
+      const last = focusableItems[focusableItems.length - 1]
+
+      if (!first || !last) return
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleMenuKeyDown)
+    return () => document.removeEventListener('keydown', handleMenuKeyDown)
+  }, [open])
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 80)
@@ -195,12 +245,15 @@ export default function Navbar() {
                   onClick={() => setLoginOpen(!loginOpen)}
                   className="relative flex items-center justify-center w-7 h-7 rounded-lg text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 active:scale-[0.92] transition-all duration-300"
                   title={t('nav.login')}
+                  aria-expanded={loginOpen}
+                  aria-controls="desktop-login-menu"
                 >
                   <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </button>
                 <AnimatePresence>
                   {loginOpen && (
                     <motion.div
+                      id="desktop-login-menu"
                       initial={{ opacity: 0, y: -8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -266,9 +319,12 @@ export default function Navbar() {
             <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button
+              ref={menuButtonRef}
               onClick={() => setOpen(!open)}
               className="md:hidden relative w-6 h-6 flex items-center justify-center"
               aria-label={t('nav.menu')}
+              aria-expanded={open}
+              aria-controls="mobile-navigation-menu"
             >
               <div className="flex flex-col gap-1.5">
                 <motion.span
@@ -292,6 +348,11 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="mobile-navigation-menu"
+            ref={mobileMenuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('nav.menu')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

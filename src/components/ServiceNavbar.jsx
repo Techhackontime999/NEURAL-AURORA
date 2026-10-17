@@ -9,6 +9,7 @@ import LanguageSwitcher from './LanguageSwitcher'
 const navLinks = [
   { label: 'services.nav.services', href: '#services' },
   { label: 'services.nav.products', href: '/offerings/products', route: true },
+  { label: 'services.nav.library', href: '/library', route: true },
   { label: 'services.nav.process', href: '#process' },
   { label: 'services.nav.pricing', href: '#pricing' },
   { label: 'services.nav.faq', href: '#faq' },

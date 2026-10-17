@@ -35,6 +35,20 @@ for (const file of FILES) {
       for (const k of ['featured', 'newest', 'price-asc', 'price-desc', 'title']) {
         used.add(`store.sort.${k}`)
       }
+    } else if (m[1] === 'store.purchase.${status}.title' || m[1] === 'store.purchase.${status}.body') {
+      const leaf = m[1].endsWith('title') ? 'title' : 'body'
+      for (const s of [
+        'loading',
+        'pending',
+        'slow',
+        'paid',
+        'failed',
+        'cancelled',
+        'refunded',
+        'error',
+      ]) {
+        used.add(`store.purchase.${s}.${leaf}`)
+      }
     } else {
       skipped++
       console.log(`SKIP  dynamic key not statically checked: ${m[1]}`)

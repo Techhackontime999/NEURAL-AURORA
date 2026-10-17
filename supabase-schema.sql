@@ -1587,3 +1587,148 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 REVOKE EXECUTE ON FUNCTION admin_can_read_product_file(TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION admin_can_read_product_file(TEXT) TO authenticated, service_role;
+
+-- >>> supabase/migrations/20261018000004_add_download_rate_limit.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — download abuse protection
+-- Enforced in the database, not the browser, so a compromised or
+-- modified client cannot mint unlimited download links.
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION check_download_grant_rate_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  recent_count INTEGER;
+BEGIN
+  -- A download grant must be short-lived. This bounds the damage from a bug
+  -- that passes an over-long expiry, and keeps the "reauthorize on every new
+  -- link" guarantee meaningful.
+  IF NEW.expires_at > (NOW() + INTERVAL '1 hour') THEN
+    RAISE EXCEPTION 'Download grants must expire within one hour.';
+  END IF;
+
+  IF NEW.expires_at <= NOW() THEN
+    RAISE EXCEPTION 'Download grant expiry must be in the future.';
+  END IF;
+
+  -- Rate limit: at most 30 download links per entitlement per hour.
+  SELECT COUNT(*) INTO recent_count
+  FROM download_grants
+  WHERE entitlement_id = NEW.entitlement_id
+    AND created_at > (NOW() - INTERVAL '1 hour');
+
+  IF recent_count >= 30 THEN
+    RAISE EXCEPTION 'Too many download requests. Please wait before trying again.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_download_grant_rate_limit ON download_grants;
+CREATE TRIGGER trg_download_grant_rate_limit
+  BEFORE INSERT ON download_grants
+  FOR EACH ROW
+  EXECUTE FUNCTION check_download_grant_rate_limit();
+
+-- Housekeeping helper: purge expired grants and claims. Intended to be called
+-- by a scheduled job (pg_cron) or manually; written as a plain function so it
+-- works on any Supabase plan.
+CREATE OR REPLACE FUNCTION purge_expired_download_records()
+RETURNS INTEGER AS $$
+DECLARE
+  removed INTEGER := 0;
+  step INTEGER := 0;
+BEGIN
+  DELETE FROM download_grants WHERE expires_at < (NOW() - INTERVAL '1 day');
+  GET DIAGNOSTICS step = ROW_COUNT;
+  removed := removed + step;
+
+  DELETE FROM purchase_claims WHERE expires_at < (NOW() - INTERVAL '1 day');
+  GET DIAGNOSTICS step = ROW_COUNT;
+  removed := removed + step;
+
+  RETURN removed;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION purge_expired_download_records() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION purge_expired_download_records() TO service_role;
+
+-- >>> supabase/migrations/20261018000005_digital_products_owner_read.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — owners can always see what they bought
+--
+-- The catalogue policy only exposes `status = 'published'`. That is
+-- correct for browsing, but it would also hide a product from the
+-- customer who already paid for it once it is archived. This adds a
+-- narrow, additive read path: an authenticated customer may read a
+-- product row IF they hold an active entitlement for it.
+--
+-- No recursion risk: the subquery reads `entitlements`, whose own
+-- policy depends only on auth.uid()/auth.jwt() — it never reads
+-- `products`. So the EXISTS sees only the caller's own grants.
+-- ============================================================
+
+DROP POLICY IF EXISTS "Owners can read their purchased products" ON products;
+
+CREATE POLICY "Owners can read their purchased products"
+  ON products FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM entitlements e
+      WHERE e.product_id = products.id
+        AND e.status = 'active'
+        AND (
+          e.user_id = auth.uid()
+          OR lower(coalesce(e.customer_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
+        )
+    )
+  );
+
+-- >>> supabase/migrations/20261018000006_digital_products_updated_at.sql
+
+-- ============================================================
+-- DIGITAL PRODUCTS — keep updated_at truthful
+--
+-- The admin UI shows a product's "last updated" date and the store
+-- uses it for the "Newest" sort. Nothing else in this schema
+-- maintains updated_at automatically for these new tables, so
+-- without this trigger the column would silently stay at the row's
+-- creation time and the UI would lie.
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION touch_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_products_updated_at ON products;
+CREATE TRIGGER trg_products_updated_at
+  BEFORE UPDATE ON products
+  FOR EACH ROW
+  EXECUTE FUNCTION touch_updated_at();
+
+DROP TRIGGER IF EXISTS trg_product_categories_updated_at ON product_categories;
+CREATE TRIGGER trg_product_categories_updated_at
+  BEFORE UPDATE ON product_categories
+  FOR EACH ROW
+  EXECUTE FUNCTION touch_updated_at();
+
+DROP TRIGGER IF EXISTS trg_product_files_updated_at ON product_files;
+CREATE TRIGGER trg_product_files_updated_at
+  BEFORE UPDATE ON product_files
+  FOR EACH ROW
+  EXECUTE FUNCTION touch_updated_at();
+
+DROP TRIGGER IF EXISTS trg_orders_updated_at ON orders;
+CREATE TRIGGER trg_orders_updated_at
+  BEFORE UPDATE ON orders
+  FOR EACH ROW
+  EXECUTE FUNCTION touch_updated_at();

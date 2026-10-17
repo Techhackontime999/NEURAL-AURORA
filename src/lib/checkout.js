@@ -38,14 +38,29 @@ async function postJson(url, body, headers = {}) {
 export async function startProductCheckout({ product, email, name = '', quantity = 1 }) {
   if (!product?.slug) throw new Error('Missing product.')
 
-  const order = await postJson('/api/create-order', {
-    order_type: 'product',
-    items: [{ slug: product.slug, quantity }],
-    email,
-    name,
-    currency: product.currency || 'INR',
-    notes: { item_type: 'product', product_slug: product.slug },
-  })
+  // A signed-in buyer's Supabase token lets the server bind the entitlement to
+  // a verified account. Guests simply omit it; they later prove email
+  // ownership through a magic link before anything is downloadable.
+  let authHeader = {}
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    if (token) authHeader = { Authorization: `Bearer ${token}` }
+  } catch {
+    /* guest checkout */
+  }
+
+  const order = await postJson(
+    '/api/create-order',
+    {
+      order_type: 'product',
+      items: [{ slug: product.slug, quantity }],
+      email,
+      name,
+      currency: product.currency || 'INR',
+    },
+    authHeader
+  )
 
   if (!order?.id || !order?.amount || !order?.order_ref) {
     throw new Error('The server did not return a verified order.')

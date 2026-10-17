@@ -1,25 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X } from 'lucide-react'
-import { getPublishedProducts, getCategories, getPublishedFormats, PRODUCT_SORTS } from '../../lib/products'
+import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2 } from 'lucide-react'
+import {
+  getPublishedProducts,
+  getCategories,
+  getPublishedFormats,
+  PRODUCT_SORTS,
+} from '../../lib/products'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 
 const EMPTY_FILTERS = { search: '', category: '', format: '', freeOnly: false, sort: 'featured' }
 
-// Bounds the catalogue fetch so a misconfigured table cannot pull an
-// unbounded result set into the browser.
+// Bounds the catalogue query so a misconfigured table cannot pull an unbounded
+// result set into the browser.
 const LIST_CAP = 200
+
+// Typing is debounced so a search does not fire a request per keystroke.
+const SEARCH_DEBOUNCE_MS = 300
 
 /**
  * The digital-product storefront.
  *
- * The published catalogue is fetched once and filtered in the browser. That
- * is deliberate: RLS already guarantees only `status = 'published'` rows are
- * returned, search-as-you-type stays instant with no request per keystroke,
- * and a single-creator catalogue is small. `LIST_CAP` bounds the fetch so a
- * misconfigured table cannot pull an unbounded result set.
+ * Filtering and sorting are delegated to `getPublishedProducts` rather than
+ * reimplemented here, so the meaning of "matches this search" or "sorted by
+ * newest" exists in exactly one place server-side. RLS independently guarantees
+ * only `status = 'published'` rows can ever come back.
  */
 export default function Products() {
   const { t } = useTranslation()
@@ -27,72 +34,89 @@ export default function Products() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [formats, setFormats] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+
   const [filters, setFilters] = useState(EMPTY_FILTERS)
+  // The raw input value, which lags behind `filters.search` by the debounce.
+  const [searchInput, setSearchInput] = useState('')
 
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [items, cats, fmts] = await Promise.all([
-        getPublishedProducts({ limit: LIST_CAP }),
-        getCategories(),
-        getPublishedFormats(),
-      ])
-      setProducts(items)
-      setCategories(cats)
-      setFormats(fmts)
-    } catch (err) {
-      console.error('Failed to load product catalogue:', err?.message || err)
-      setError(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
+  const firstLoad = useRef(true)
+
+  // --- reference data (does not depend on the active filters) ----------------
   useEffect(() => {
+    let cancelled = false
+
+    const loadReferenceData = async () => {
+      try {
+        const [cats, fmts] = await Promise.all([getCategories(), getPublishedFormats()])
+        if (cancelled) return
+        setCategories(cats)
+        setFormats(fmts)
+      } catch (err) {
+        // Reference data is decorative: the catalogue itself still renders.
+        console.error('Failed to load store filters:', err?.message || err)
+      }
+    }
+
+    loadReferenceData()
+    return () => {
+      cancelled = true
+    }
+  }, [reloadToken])
+
+  // --- debounce the free-text search ----------------------------------------
+  useEffect(() => {
+    if (searchInput === filters.search) return undefined
+
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, search: searchInput }))
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => clearTimeout(timer)
+  }, [searchInput, filters.search])
+
+  // --- catalogue -------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      if (firstLoad.current) setLoading(true)
+      else setRefreshing(true)
+      setError(null)
+
+      try {
+        const items = await getPublishedProducts({ ...filters, limit: LIST_CAP })
+        if (cancelled) return
+        setProducts(items)
+      } catch (err) {
+        if (cancelled) return
+        console.error('Failed to load product catalogue:', err?.message || err)
+        setError(err)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+          setRefreshing(false)
+          firstLoad.current = false
+        }
+      }
+    }
+
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [filters, reloadToken])
 
   const set = (patch) => setFilters((prev) => ({ ...prev, ...patch }))
 
-  const visible = useMemo(() => {
-    const term = filters.search.trim().toLowerCase()
-
-    let list = products.filter((p) => {
-      if (filters.category && p.category_slug !== filters.category) return false
-      if (filters.format && p.format !== filters.format) return false
-      if (filters.freeOnly && p.price_paise !== 0) return false
-      if (!term) return true
-
-      const haystack = [
-        p.title,
-        p.short_description,
-        p.description,
-        Array.isArray(p.tags) ? p.tags.join(' ') : '',
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(term)
-    })
-
-    const dir = {
-      featured: (a, b) => {
-        if (a.featured !== b.featured) return a.featured ? -1 : 1
-        return (b.published_at || '').localeCompare(a.published_at || '')
-      },
-      newest: (a, b) => (b.published_at || '').localeCompare(a.published_at || ''),
-      'price-asc': (a, b) => a.price_paise - b.price_paise,
-      'price-desc': (a, b) => b.price_paise - a.price_paise,
-      title: (a, b) => a.title.localeCompare(b.title),
-    }
-
-    const comparator = dir[filters.sort] || dir.featured
-    return [...list].sort(comparator)
-  }, [products, filters])
+  const clearFilters = () => {
+    setSearchInput('')
+    setFilters(EMPTY_FILTERS)
+  }
 
   const hasActiveFilters =
     filters.search !== '' ||
@@ -122,8 +146,8 @@ export default function Products() {
             />
             <input
               type="search"
-              value={filters.search}
-              onChange={(e) => set({ search: e.target.value })}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t('store.searchPlaceholder')}
               aria-label={t('store.searchPlaceholder')}
               className="w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 pl-9 pr-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
@@ -178,9 +202,7 @@ export default function Products() {
               <CategoryChip
                 key={cat.slug}
                 active={filters.category === cat.slug}
-                onClick={() =>
-                  set({ category: filters.category === cat.slug ? '' : cat.slug })
-                }
+                onClick={() => set({ category: filters.category === cat.slug ? '' : cat.slug })}
                 label={cat.label}
               />
             ))}
@@ -199,23 +221,22 @@ export default function Products() {
               <CategoryChip
                 key={fmt}
                 active={filters.format === fmt}
-                onClick={() =>
-                  set({ format: filters.format === fmt ? '' : fmt })
-                }
+                onClick={() => set({ format: filters.format === fmt ? '' : fmt })}
                 label={fmt}
               />
             ))}
           </div>
         )}
 
-        {hasActiveFilters && (
+        {hasActiveFilters && !loading && (
           <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
-              {t('store.resultCount', { count: visible.length })}
+            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+              {refreshing && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
+              {t('store.resultCount', { count: products.length })}
             </span>
             <button
               type="button"
-              onClick={() => setFilters(EMPTY_FILTERS)}
+              onClick={clearFilters}
               className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400 transition-colors"
             >
               <X className="w-3 h-3" />
@@ -248,14 +269,14 @@ export default function Products() {
           action={
             <button
               type="button"
-              onClick={load}
+              onClick={() => setReloadToken((n) => n + 1)}
               className="rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
             >
               {t('store.retry')}
             </button>
           }
         />
-      ) : visible.length === 0 ? (
+      ) : products.length === 0 ? (
         hasActiveFilters ? (
           <StatePanel
             icon={<PackageOpen className="w-5 h-5" aria-hidden="true" />}
@@ -264,7 +285,7 @@ export default function Products() {
             action={
               <button
                 type="button"
-                onClick={() => setFilters(EMPTY_FILTERS)}
+                onClick={clearFilters}
                 className="rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
               >
                 {t('store.clearFilters')}
@@ -279,8 +300,13 @@ export default function Products() {
           />
         )
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visible.map((product, i) => (
+        <div
+          className={`grid sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-200 ${
+            refreshing ? 'opacity-60' : 'opacity-100'
+          }`}
+          aria-busy={refreshing}
+        >
+          {products.map((product, i) => (
             <ProductCard key={product.id} product={product} index={i} />
           ))}
         </div>
@@ -320,9 +346,7 @@ function StatePanel({ icon, tone, title, message, action }) {
         {icon}
       </div>
       <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">{title}</h2>
-      {message && (
-        <p className="mt-1.5 text-xs text-black/50 dark:text-white/50">{message}</p>
-      )}
+      {message && <p className="mt-1.5 text-xs text-black/50 dark:text-white/50">{message}</p>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   )

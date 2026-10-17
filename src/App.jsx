@@ -25,6 +25,8 @@ import Service from './components/Service'
 import ServiceDetail from './components/ServiceDetail'
 import Products from './components/offerings/Products'
 import ProductDetail from './components/offerings/ProductDetail'
+import Library from './components/offerings/Library'
+import PurchaseSuccess from './components/offerings/PurchaseSuccess'
 import Blog from './components/Blog'
 import BlogPost from './components/BlogPost'
 import CaseStudyDetail from './components/CaseStudyDetail'
@@ -55,6 +57,13 @@ function LegacyServicesRedirect() {
   const params = useParams()
   const rest = params['*'] || ''
   return <Navigate to={rest ? `/offerings/${rest}` : '/offerings'} replace />
+}
+
+// /checkout/:orderId is accepted as an alias for the order-status screen. It
+// only ever renders the status view — it is never a source of authorization.
+function CheckoutAlias() {
+  const { orderId } = useParams()
+  return <Navigate to={`/purchase/success?ref=${encodeURIComponent(orderId || '')}`} replace />
 }
 
 function HomePage() {
@@ -235,6 +244,14 @@ function AppContent() {
               <Route path="/offerings/products" element={<Products />} />
               <Route path="/offerings/products/:slug" element={<ProductDetail />} />
               <Route path="/offerings/:serviceId" element={<ServiceDetail />} />
+              {/* Customer purchase library and post-payment status screen. */}
+              <Route path="/library" element={<Library />} />
+              <Route path="/purchase/success" element={<PurchaseSuccess />} />
+              {/* /checkout/:orderId is an alias for the status screen. */}
+              <Route
+                path="/checkout/:orderId"
+                element={<CheckoutAlias />}
+              />
               {/* /services was renamed to /offerings — keep old links working */}
               <Route path="/services" element={<Navigate to="/offerings" replace />} />
               <Route path="/services/*" element={<LegacyServicesRedirect />} />

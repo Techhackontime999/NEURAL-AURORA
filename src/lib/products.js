@@ -170,3 +170,27 @@ export function formatBytes(bytes) {
   if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
   return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
+
+/**
+ * The signed-in customer's purchase library.
+ *
+ * RLS does the authorization: the `entitlements` policy only returns rows
+ * matching `auth.uid()` or the verified email on the session, so this query
+ * cannot be widened from the browser. Products are embedded through the
+ * entitlements foreign key, and a separate policy lets owners still read a
+ * product they bought even after it is archived.
+ */
+export async function getMyLibrary() {
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select(
+      `id, status, source, granted_at, product_id,
+       products (id, slug, title, cover_image_url, version, format, currency, price_paise, category_slug, updated_at, release_notes)`
+    )
+    .eq('status', 'active')
+    .order('granted_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data || []).map((row) => ({ ...row, product: row.products || null }))
+}

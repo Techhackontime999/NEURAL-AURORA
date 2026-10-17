@@ -217,6 +217,7 @@
     "nav": {
       "services": "Services",
       "products": "Products",
+      "library": "Library",
       "process": "Process",
       "pricing": "Pricing",
       "faq": "FAQ",
@@ -281,7 +282,67 @@
     "secureNote": "Payment is processed securely by Razorpay. Your download is unlocked only after the payment is verified on the server.",
     "freeNote": "Sign in (we'll email you a secure link) to unlock this download and keep it in your library.",
     "magicLinkSent": "Check your email — we sent you a secure sign-in link. Open it to access your library.",
-    "relatedProducts": "You may also like"
+    "magicLinkSentBody": "Click the link in that email and you'll be signed in and returned to your library.",
+    "relatedProducts": "You may also like",
+    "libraryTitle": "Your Library",
+    "librarySubtitle": "Every digital product you have purchased or downloaded, ready to re-download at any time.",
+    "libraryEmpty": "Your library is empty",
+    "libraryEmptyBody": "Products you buy or download will appear here.",
+    "libraryError": "We could not load your library. Please try again.",
+    "signInTitle": "Sign in to your library",
+    "signInBody": "Enter the email you used at checkout and we'll send you a secure sign-in link. No password needed.",
+    "signInEmailLabel": "Email address",
+    "sendMagicLink": "Email me a sign-in link",
+    "signInNote": "We only use this to prove the purchase is yours. We never issue a permanent download link to an unverified address.",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{email}}",
+    "download": "Download",
+    "downloadFailed": "We could not prepare your download. Please try again.",
+    "details": "Details",
+    "purchased": "Purchased",
+    "purchasedOn": "Purchased {{date}}",
+    "unavailable": "No longer listed",
+    "browseStore": "Browse products",
+    "purchaseError": "We could not check your order status. Please try again.",
+    "purchaseMissingRef": "No order reference was provided.",
+    "purchase": {
+      "loading": {
+        "title": "Checking your payment",
+        "body": "One moment while we confirm this order with the payment provider."
+      },
+      "pending": {
+        "title": "Confirming your payment",
+        "body": "Your payment was submitted. We are waiting for the provider to confirm it — this usually takes a few seconds."
+      },
+      "slow": {
+        "title": "Still confirming",
+        "body": "This is taking longer than usual. Your order is safe: access is granted automatically as soon as the payment is confirmed. You can check again from your library."
+      },
+      "paid": {
+        "title": "Payment confirmed",
+        "body": "Thank you. Your purchase is unlocked — open your library to download it."
+      },
+      "failed": {
+        "title": "Payment failed",
+        "body": "The payment did not go through, so no access was granted and you have not been charged for the product. You can try again."
+      },
+      "cancelled": {
+        "title": "Payment cancelled",
+        "body": "The checkout was cancelled before payment completed. No access was granted."
+      },
+      "refunded": {
+        "title": "Payment refunded",
+        "body": "This order has been refunded. Access to the product has been withdrawn."
+      },
+      "error": {
+        "title": "We could not confirm this order",
+        "body": "Something went wrong while checking the order. If you were charged, your access will still be granted automatically — check your library shortly."
+      },
+      "orderRef": "Order {{ref}}",
+      "total": "Total",
+      "goToLibrary": "Go to your library",
+      "guestHint": "Sign in with the email you used at checkout to see this purchase in your library."
+    }
   },
   "support": {
     "eyebrow": "Support",

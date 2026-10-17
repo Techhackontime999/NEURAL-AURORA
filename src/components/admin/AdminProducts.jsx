@@ -144,11 +144,43 @@ export default function AdminProducts() {
     }
   }
 
+  // --- validation ----------------------------------------------------------
+
+  /**
+   * Mirrors the database constraints so an admin gets a clear message instead
+   * of a raw Postgres error. Returns null when the form is valid.
+   */
+  function validateForm(form) {
+    if (!form.title.trim()) return 'A title is required'
+    if (!form.slug.trim()) return 'A slug is required'
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug.trim())) {
+      return 'The slug may only contain lowercase letters, numbers and single hyphens (e.g. my-product)'
+    }
+    if (form.price !== '' && (!Number.isFinite(Number(form.price)) || Number(form.price) < 0)) {
+      return 'Price must be a positive number of rupees, or empty for free'
+    }
+    if (
+      form.compare_at !== '' &&
+      (!Number.isFinite(Number(form.compare_at)) || Number(form.compare_at) < 0)
+    ) {
+      return 'Compare-at price must be a positive number of rupees, or empty'
+    }
+    // The database enforces compare_at >= price, so catch it here first.
+    if (
+      form.compare_at !== '' &&
+      form.price !== '' &&
+      Number(form.compare_at) < Number(form.price)
+    ) {
+      return 'Compare-at price cannot be lower than the price'
+    }
+    return null
+  }
+
   // --- actions -------------------------------------------------------------
 
   async function handleCreate() {
-    if (!newForm.title.trim()) return toast.error('A title is required')
-    if (!newForm.slug.trim()) return toast.error('A slug is required')
+    const problem = validateForm(newForm)
+    if (problem) return toast.error(problem)
 
     try {
       await createProduct(fromForm(newForm))
@@ -162,6 +194,9 @@ export default function AdminProducts() {
   }
 
   async function handleSave(id) {
+    const problem = validateForm(editForm)
+    if (problem) return toast.error(problem)
+
     try {
       await updateProduct(id, fromForm(editForm))
       setEditingId(null)
@@ -399,9 +434,7 @@ export default function AdminProducts() {
           <input
             type={field.type || 'text'}
             value={value ?? ''}
-            onChange={(e) =>
-              setValue(field.type === 'number' ? e.target.value : e.target.value)
-            }
+            onChange={(e) => setValue(e.target.value)}
             className="w-full rounded border px-3 py-2 text-sm outline-none"
             style={inputStyle}
           />

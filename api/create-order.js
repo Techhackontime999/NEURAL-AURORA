@@ -1,5 +1,11 @@
+const crypto = require('crypto')
 const Razorpay = require('razorpay')
 const { createClient } = require('@supabase/supabase-js')
+const {
+  collectRequestedItems,
+  priceProductOrder,
+  generateOrderRef,
+} = require('./_lib/order-pricing')
 
 // Static fallback data when Supabase is unreachable or in offline dev mode
 const fallbackServices = [
@@ -86,6 +92,38 @@ function getSupabaseClient() {
   })
 }
 
+/**
+ * Resolve the caller's Supabase account from a Bearer token, if one was sent.
+ * Returns null for guests. Never trusts a client-supplied user id.
+ */
+async function resolveSupabaseUser(req) {
+  const header = req.headers?.authorization || req.headers?.Authorization || ''
+  if (!header.toLowerCase().startsWith('bearer ')) return null
+
+  const token = header.slice(7).trim()
+  if (!token) return null
+
+  const supabase = getSupabaseClient()
+  if (!supabase) return null
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token)
+    if (error || !data?.user) return null
+    return data.user
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Unguessable, human-shareable order reference. It is an identifier for
+ * support/reconciliation, never a credential: the order-status endpoint
+ * returns status only, and downloads always require proof of ownership.
+ */
+function makeOrderRef() {
+  return generateOrderRef(crypto)
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -98,14 +136,25 @@ module.exports = async function handler(req, res) {
     package_name,
     amount,
     custom_amount,
-    currency = 'INR',
+    currency: requestedCurrency = 'INR',
     notes = {},
     receipt,
+    items,
+    email,
+    name,
   } = req.body || {}
+
+  // Product orders may carry a Supabase JWT so the entitlement can be bound to
+  // a VERIFIED account rather than a client-asserted user id.
+  const verifiedUser = await resolveSupabaseUser(req)
+  let currency = requestedCurrency
 
   const supabase = getSupabaseClient()
   let verifiedAmountPaise = 0
   let verifiedNotes = { ...notes }
+  // Non-null only for digital-store orders; used to persist the gateway
+  // order id and return our own order reference.
+  let digitalOrder = null
 
   try {
     // -------------------------------------------------------------------------
@@ -114,7 +163,110 @@ module.exports = async function handler(req, res) {
     const type = order_type ||
       (package_name ? 'package' : (pricing_label ? 'pricing_tier' : (service_id === 'support' ? 'support' : 'service')))
 
-    if (type === 'package' || package_name) {
+    if (type === 'product') {
+      // -------------------------------------------------------------------------
+      // DIGITAL STORE ORDER.
+      //
+      // The browser submits product SLUGS only — never a price. The canonical
+      // price is read from the database, the total is computed here in integer
+      // paise, and a pending order plus immutable item snapshots are persisted
+      // before the gateway is asked for anything.
+      //
+      // There is deliberately NO static fallback for this branch: unlike the
+      // service-support flow, a digital purchase must fail closed if the
+      // database cannot be reached.
+      // -------------------------------------------------------------------------
+      if (!supabase) {
+        return res.status(503).json({ error: 'Digital store is unavailable right now. Please try again shortly.' })
+      }
+
+      const collected = collectRequestedItems(items)
+      if (!collected.ok) {
+        return res.status(400).json({ error: collected.error })
+      }
+
+      const { data: products, error: productError } = await supabase
+        .from('products')
+        .select('id, slug, title, price_paise, currency, status, version')
+        .in('slug', [...collected.wanted.keys()])
+
+      if (productError) {
+        console.error('[create-order] Failed to load products:', productError.message)
+        return res.status(503).json({ error: 'Could not verify the products in this order' })
+      }
+
+      // Canonical total, computed server-side from database prices only.
+      const priced = priceProductOrder({ requestedItems: items, products })
+      if (!priced.ok) {
+        return res.status(priced.status || 400).json({ error: priced.error })
+      }
+
+      const totalPaise = priced.totalPaise
+      currency = priced.currency
+
+      const customerEmail = String(email || '').trim().toLowerCase()
+      if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+        return res.status(400).json({ error: 'A valid email address is required for the receipt and download access' })
+      }
+
+      const orderRef = makeOrderRef()
+
+      const { data: orderRow, error: orderInsertError } = await supabase
+        .from('orders')
+        .insert({
+          order_ref: orderRef,
+          email: customerEmail,
+          customer_name: String(name || '').trim().slice(0, 120),
+          // Only trust an account id proven by the server, never one the
+          // browser claims.
+          user_id: verifiedUser?.id || null,
+          provider: 'razorpay',
+          payment_status: 'pending',
+          currency,
+          subtotal_paise: totalPaise,
+          discount_paise: 0,
+          total_paise: totalPaise,
+        })
+        .select('id')
+        .single()
+
+      if (orderInsertError || !orderRow) {
+        console.error('[create-order] Failed to persist order:', orderInsertError?.message)
+        return res.status(500).json({ error: 'Could not create your order' })
+      }
+
+      const orderItems = priced.lines.map((line) => ({
+        order_id: orderRow.id,
+        product_id: line.product.id,
+        quantity: line.quantity,
+        unit_price_paise: line.unitPricePaise,
+        total_price_paise: line.totalPricePaise,
+        // Immutable snapshots: editing the product later must never change
+        // what this customer paid.
+        product_title_snapshot: line.product.title,
+        product_slug_snapshot: line.product.slug,
+        product_version_snapshot: line.product.version || '',
+      }))
+
+      const { error: itemsInsertError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsInsertError) {
+        console.error('[create-order] Failed to persist order items:', itemsInsertError.message)
+        // The pending order is left behind on purpose so it can be reconciled.
+        return res.status(500).json({ error: 'Could not create your order items' })
+      }
+
+      verifiedAmountPaise = totalPaise
+      verifiedNotes = {
+        item_type: 'product',
+        order_ref: orderRef,
+        service_id: 'digital-store',
+        service_title: priced.lines[0]?.product.title || 'Digital Products',
+        pricing_label: 'Digital Product',
+        product_slugs: priced.lines.map((line) => line.product.slug).join(','),
+      }
+      digitalOrder = { orderRef, dbOrderId: orderRow.id }
+
+    } else if (type === 'package' || package_name) {
       const targetName = (package_name || notes.pricing_label || '').trim().toLowerCase()
       if (!targetName) {
         return res.status(400).json({ error: 'Package name is required' })
@@ -288,14 +440,35 @@ module.exports = async function handler(req, res) {
     const order = await razorpay.orders.create({
       amount: verifiedAmountPaise,
       currency: currency || 'INR',
-      receipt: receipt || `rcpt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      receipt: digitalOrder ? digitalOrder.orderRef : (receipt || `rcpt_${Date.now()}_${Math.floor(Math.random() * 1000)}`),
       notes: verifiedNotes,
     })
+
+    // Link the gateway order to our pending order row. The webhook uses this
+    // mapping to decide which order a payment belongs to.
+    if (digitalOrder) {
+      const { error: linkError } = await supabase
+        .from('orders')
+        .update({ provider_order_id: order.id })
+        .eq('id', digitalOrder.dbOrderId)
+
+      if (linkError) {
+        // The customer can still pay, but the webhook will not be able to match
+        // this payment automatically. Fail loudly so it can be reconciled
+        // rather than silently issuing nothing.
+        console.error(
+          '[create-order] Failed to link gateway order to pending order:',
+          { order_ref: digitalOrder.orderRef, provider_order_id: order.id, error: linkError.message }
+        )
+        return res.status(500).json({ error: 'Could not finalise your order. Please contact support with your reference.' })
+      }
+    }
 
     console.log('[create-order] Order successfully created with verified amount:', {
       order_id: order.id,
       amount: order.amount,
       item_type: verifiedNotes.item_type,
+      order_ref: digitalOrder?.orderRef,
     })
 
     return res.status(200).json({
@@ -304,6 +477,7 @@ module.exports = async function handler(req, res) {
       currency: order.currency,
       receipt: order.receipt,
       notes: order.notes,
+      ...(digitalOrder ? { order_ref: digitalOrder.orderRef } : {}),
     })
   } catch (err) {
     console.error('[create-order] Razorpay order creation failed:', err)

@@ -61,8 +61,6 @@ export default function ProductDetail() {
         }
 
         setProduct(item)
-        setActiveImage(item.cover_image_url || null)
-
         const gallery = Array.isArray(item.gallery_urls) ? item.gallery_urls : []
         setActiveImage(item.cover_image_url || gallery[0] || null)
 

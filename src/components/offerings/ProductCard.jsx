@@ -31,43 +31,39 @@ export default function ProductCard({ product, index = 0 }) {
       }}
       className="glass-panel rounded-xl overflow-hidden group flex flex-col focus-within:ring-1 focus-within:ring-cyan-500/50"
     >
-      <button
-        type="button"
+      {/* Decorative: the image duplicates the title button and CTA below, so it
+          is hidden from assistive tech rather than announced twice. */}
+      <div
         onClick={open}
-        aria-label={t('store.openProduct', { title: product.title })}
-        className="text-left focus:outline-none"
+        aria-hidden="true"
+        className="aspect-[16/10] bg-black/5 dark:bg-white/5 overflow-hidden relative cursor-pointer"
       >
-        <div className="aspect-[16/10] bg-black/5 dark:bg-white/5 overflow-hidden relative">
-          {hasCover ? (
-            <img
-              src={product.cover_image_url}
-              alt={product.title}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <FileText
-                className="w-10 h-10 text-black/20 dark:text-white/20"
-                aria-hidden="true"
-              />
-            </div>
-          )}
-
-          <div className="absolute top-3 left-3 flex items-center gap-2">
-            {isFree ? (
-              <span className="rounded-full bg-emerald-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
-                {t('store.free')}
-              </span>
-            ) : product.featured ? (
-              <span className="rounded-full bg-cyan-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
-                {t('store.featured')}
-              </span>
-            ) : null}
+        {hasCover ? (
+          <img
+            src={product.cover_image_url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <FileText className="w-10 h-10 text-black/20 dark:text-white/20" aria-hidden="true" />
           </div>
+        )}
+
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          {isFree ? (
+            <span className="rounded-full bg-emerald-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
+              {t('store.free')}
+            </span>
+          ) : product.featured ? (
+            <span className="rounded-full bg-cyan-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
+              {t('store.featured')}
+            </span>
+          ) : null}
         </div>
-      </button>
+      </div>
 
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3">
@@ -120,7 +116,7 @@ export default function ProductCard({ product, index = 0 }) {
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-3 mt-auto">
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/5 pt-4 dark:border-white/5">
           <button
             type="button"
             onClick={open}

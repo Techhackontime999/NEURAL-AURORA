@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring , MotionConfig } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
@@ -45,6 +45,14 @@ function SectionSeparator() {
       <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent via-[var(--border-color)] to-transparent" />
     </div>
   )
+}
+
+// /services was renamed to /offerings. Keeps old bookmarks and shared links
+// working, including deep links to a single service.
+function LegacyServicesRedirect() {
+  const params = useParams()
+  const rest = params['*'] || ''
+  return <Navigate to={rest ? `/offerings/${rest}` : '/offerings'} replace />
 }
 
 function HomePage() {
@@ -221,6 +229,9 @@ function AppContent() {
               <Route path="/more/gallery" element={<Gallery />} />
               <Route path="/offerings" element={<Service />} />
               <Route path="/offerings/:serviceId" element={<ServiceDetail />} />
+              {/* /services was renamed to /offerings — keep old links working */}
+              <Route path="/services" element={<Navigate to="/offerings" replace />} />
+              <Route path="/services/*" element={<LegacyServicesRedirect />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
@@ -236,6 +247,8 @@ function AppContent() {
                   </AdminRoute>
                 }
               />
+              {/* Unknown URLs fall back to the home page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </motion.div>
         )}

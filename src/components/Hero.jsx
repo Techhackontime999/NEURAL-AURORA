@@ -67,21 +67,21 @@ export default function Hero() {
       id="hero"
       className="relative min-h-[100dvh] flex items-center z-10"
     >
-      <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 py-24">
+      <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-6 md:px-12 py-16 sm:py-20 md:py-24">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid md:grid-cols-2 gap-12 md:gap-20 items-center"
+          className="grid gap-12 sm:gap-14 md:gap-20 md:grid-cols-2 items-center"
         >
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8 text-center md:text-left">
             <motion.div variants={itemVariants}>
               <span className="eyebrow">{personalInfo.title}</span>
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
-              className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tighter leading-none"
+              className="text-[2.6rem] sm:text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tighter leading-[1.05] sm:leading-none"
             >
               <span className="text-black/80 dark:text-white">{personalInfo.name.split(' ').slice(0, -1).join(' ')}</span>{' '}
               <span className="text-gradient">{personalInfo.name.split(' ').pop()}</span>
@@ -89,18 +89,18 @@ export default function Hero() {
 
             <motion.p
               variants={itemVariants}
-              className="text-lg md:text-xl text-black/50 dark:text-white/40 leading-relaxed max-w-[65ch]"
+              className="text-base sm:text-lg md:text-xl text-black/50 dark:text-white/40 leading-relaxed max-w-[65ch] mx-auto md:mx-0"
             >
               {personalInfo.tagline}
             </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-wrap gap-3">
+            <motion.div variants={itemVariants} className="flex flex-wrap justify-center md:justify-start gap-3">
               {socialLinks.map((link) => (
                 <SocialIcon key={link.label} name={link.icon} url={link.url} label={link.label} />
               ))}
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex gap-4 pt-2">
+            <motion.div variants={itemVariants} className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 pt-2">
               <MagneticButton
                 as="a"
                 href="#projects"
@@ -135,23 +135,23 @@ export default function Hero() {
 
           <motion.div
             variants={itemVariants}
-            className="relative hidden md:block"
+            className="relative block order-first md:order-none"
           >
-            <div className="relative w-full h-[480px] mx-auto rounded-[2rem] overflow-hidden bg-[var(--bg-secondary)] border border-black/10 dark:border-white/[0.06]">
+            <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] md:aspect-auto md:h-[480px] mx-auto rounded-[2rem] overflow-hidden bg-[var(--bg-secondary)] border border-black/10 dark:border-white/[0.06]">
               <Spotlight
                 className="-top-40 left-0 md:left-60 md:-top-20"
                 fill="white"
               />
               <div className="absolute inset-0 z-10 pointer-events-none">
-                <div className="absolute top-4 left-4 glass-panel-strong rounded-xl px-4 py-2">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 glass-panel-strong rounded-xl px-3 py-1.5 sm:px-4 sm:py-2">
                   <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.1em]">{t('hero.available')}</p>
                   <p className="text-xs font-medium text-[var(--text-primary)]">{t('hero.collaboration')}</p>
                 </div>
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+                <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2">
                   <motion.div
                     animate={shouldReduceMotion ? {} : { y: [0, -4, 0] }}
                     transition={shouldReduceMotion ? { duration: 0 } : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                    className="px-5 py-2.5 rounded-2xl backdrop-blur-sm border border-[#00f0ff]/20"
+                    className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl backdrop-blur-sm border border-[#00f0ff]/20"
                     style={{ background: 'var(--glass-bg)' }}
                   >
                     <span className="text-xs md:text-sm font-display font-bold tracking-[0.15em] dark:text-[#00f0ff] text-[#00a0ff] ">
@@ -162,7 +162,7 @@ export default function Hero() {
               </div>
               <SplineScene
                 scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-                className="w-full h-full"
+                className="absolute inset-0 w-full h-full"
               />
             </div>
           </motion.div>

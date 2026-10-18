@@ -15,7 +15,7 @@ export function SplineScene({ scene, className }) {
 
   if (!ready) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center">
         <span className="loader"></span>
       </div>
     )

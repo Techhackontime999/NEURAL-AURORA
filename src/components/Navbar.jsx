@@ -216,12 +216,12 @@ export default function Navbar() {
           scrolled ? 'mt-0' : 'mt-4'
         }`}
       >
-        <div className={`mx-auto w-max transition-all duration-500 ${
+        <div className={`mx-auto w-max max-w-[calc(100vw-1.5rem)] transition-all duration-500 ${
           scrolled
             ? 'glass-panel-strong rounded-2xl px-4 py-2'
-            : 'glass-panel rounded-full px-6 py-3'
+            : 'glass-panel rounded-full px-4 sm:px-6 py-3'
         }`}>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-5 sm:gap-6 md:gap-8">
             <BrandLogo
               size="small"
               onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}

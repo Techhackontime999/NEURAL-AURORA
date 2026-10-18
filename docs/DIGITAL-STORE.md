@@ -281,6 +281,11 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   email** used at checkout.
 - Download returns `429` → the per-entitlement rate limit (30 links/hour) was
   hit. Intentional.
+- **The sign-in email links to `http://localhost:…`** → not a code bug. The app
+  requests a redirect to `window.location.origin + '/library'`, and Supabase
+  rewrites it to the project's `Site URL` whenever the requested origin is not
+  in **Authentication → URL Configuration → Redirect URLs**. Set the `Site URL`
+  to the deployed origin and allow-list `https://<domain>/**`.
 
 ---
 
@@ -293,6 +298,13 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
       for the **Production** environment, and for Preview too if you test there.
       The store fails closed with a `503` without the service-role key.
 - [ ] Razorpay webhook created, secret matches, events subscribed.
+- [ ] **Supabase → Authentication → URL Configuration** points at the deployed
+      site: `Site URL` = the production origin, and `Redirect URLs` includes
+      `https://<domain>/**` (plus `http://localhost:5173/**` for local work).
+      This is what the sign-in/magic link uses: the app asks for
+      `window.location.origin + '/library'`, but Supabase silently falls back to
+      the `Site URL` when the requested URL is not allow-listed — which is why a
+      deployed store can email a `http://localhost:…` link.
 - [ ] Live Razorpay keys swapped in for `rzp_test_…` when going live.
 - [ ] A test purchase verified end to end in the hosted environment.
 - [ ] Optional: schedule `purge_expired_download_records()` via `pg_cron` (it is

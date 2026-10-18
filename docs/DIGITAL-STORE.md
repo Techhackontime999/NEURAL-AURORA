@@ -171,8 +171,13 @@ Add a webhook in the Razorpay dashboard pointing at:
 https://<your-domain>/api/razorpay-webhook
 ```
 
-- **Secret**: must equal `RAZORPAY_WEBHOOK_SECRET`. If that is unset, the code
-  falls back to `RAZORPAY_KEY_SECRET`.
+- **Secret**: **you invent this value** — Razorpay does not generate one. Type any
+  long random string into the dashboard's *Secret* field, then set the *same*
+  string in the hosting environment as `RAZORPAY_WEBHOOK_SECRET`. If that
+  variable is unset, the code falls back to `RAZORPAY_KEY_SECRET` — so either
+  set a dedicated secret in both places, or paste your key secret into the
+  dashboard field. Live and Test mode keep **separate** webhooks and secrets;
+  the mode you configure must match the API keys in the environment.
 - **Active events**:
   - `payment.captured` — fulfils the order (required)
   - `order.paid` — fulfils the order (also accepted)
@@ -183,6 +188,12 @@ The handler verifies the `X-Razorpay-Signature` header against an HMAC-SHA256 of
 the **raw request body** using a constant-time comparison. It writes the legacy
 `payments` row exactly as before, then runs the additive digital-store
 fulfilment step, which is a no-op for service/support payments.
+
+A correct setup is verifiable without a payment: fire a test event from the
+dashboard's webhook page (or use the *Resend* action on a past delivery). The
+delivery log shows `200` for a matching secret and `400 Invalid signature` when
+the two values differ. Note that Razorpay asks for the default OTP `754081` when
+adding or editing a webhook **in Test mode**.
 
 ### Service-role key
 

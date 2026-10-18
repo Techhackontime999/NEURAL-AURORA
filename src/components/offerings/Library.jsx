@@ -17,6 +17,17 @@ import { getDownloadUrl } from '../../lib/checkout'
 import { getMyLibrary } from '../../lib/products'
 import StoreShell from './StoreShell'
 
+/**
+ * Supabase's own wording is written for developers. Translate the one state a
+ * customer can genuinely hit — the project's mailer refusing to send more
+ * messages this hour — into something they can act on.
+ */
+function readableAuthError(err, t) {
+  const raw = String(err?.message || '').toLowerCase()
+  if (raw.includes('rate limit')) return t('store.signInRateLimited')
+  return err?.message || t('store.signInFailed')
+}
+
 export default function Library() {
   const { t } = useTranslation()
   const { user, signOut } = useAuth()
@@ -65,7 +76,7 @@ export default function Library() {
       if (otpError) throw otpError
       setMagicSent(true)
     } catch (err) {
-      setError(err)
+      setError({ message: readableAuthError(err, t) })
     } finally {
       setSending(false)
     }
@@ -101,6 +112,20 @@ export default function Library() {
               <p className="mt-2 text-xs text-black/50 dark:text-white/50">
                 {t('store.magicLinkSentBody')}
               </p>
+              <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+                {t('store.magicLinkSentSupport')}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setMagicSent(false)
+                  setError(null)
+                  setEmail('')
+                }}
+                className="mt-4 text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"
+              >
+                {t('store.useDifferentEmail')}
+              </button>
             </div>
           ) : (
             <form onSubmit={handleMagicLink} className="glass-panel rounded-xl p-6 text-center">
@@ -143,6 +168,10 @@ export default function Library() {
 
               <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
                 {t('store.signInNote')}
+              </p>
+
+              <p className="mt-2 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+                {t('store.signInSupport')}
               </p>
 
               <Link

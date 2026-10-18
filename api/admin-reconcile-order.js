@@ -1,6 +1,6 @@
 const Razorpay = require('razorpay')
-const { createClient } = require('@supabase/supabase-js')
 const { newRequestId, envPresence, log, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
+const { getServiceClient, requireAdmin } = require('./_lib/adminAuth')
 const { fulfilDigitalOrder } = require('./_lib/fulfilment')
 
 // ---------------------------------------------------------------------------
@@ -34,44 +34,6 @@ const { fulfilDigitalOrder } = require('./_lib/fulfilment')
 
 const ORDER_REF_RE = /^NA-[0-9a-fA-F]{16}$/
 const PAYMENT_ID_RE = /^pay_[A-Za-z0-9]+$/
-
-/** The server's Supabase client, or null when the deployment is unconfigured. */
-function getServiceClient() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supabaseUrl || !supabaseKey) return null
-  return createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
-}
-
-/**
- * Resolve the caller's account from a Bearer token, then confirm the matching
- * profile is an administrator. Returns the admin user, or null when the caller
- * is not provably an admin. The role is read from the database with the service
- * role, so claiming 'admin' in the request body achieves nothing.
- */
-async function requireAdmin(req, supabase) {
-  const header = req.headers?.authorization || req.headers?.Authorization || ''
-  if (!header.toLowerCase().startsWith('bearer ')) return null
-
-  const token = header.slice(7).trim()
-  if (!token) return null
-
-  try {
-    const { data, error } = await supabase.auth.getUser(token)
-    if (error || !data?.user) return null
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle()
-
-    if (profileError || profile?.role !== 'admin') return null
-    return data.user
-  } catch {
-    return null
-  }
-}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {

@@ -251,24 +251,19 @@ export async function revokeEntitlement(id) {
 }
 
 /**
- * Recovery path for a PAID order whose webhook never arrived.
+ * POST JSON to an admin-only store endpoint with the admin's own session token.
  *
- * The browser only sends the order reference and the admin's own session
- * token: the server fetches the payment from Razorpay with its secret key and
- * refuses to grant anything unless the captured amount matches the order. So
- * this cannot be used to fake a payment — it can only convince the server of a
- * payment the gateway already confirms.
- *
- * @returns {Promise<{ok: true, status: 'fulfilled'|'already_paid', order_ref: string}>}
+ * The browser never asserts a payment, a role or an email — every admin
+ * endpoint re-derives all of that on the server from this token.
  */
-async function postReconcile(body) {
+async function postAdminJson(path, body) {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) throw sessionError
 
   const token = sessionData?.session?.access_token
   if (!token) throw new Error('Your session has expired. Please sign in again.')
 
-  const res = await fetch('/api/admin-reconcile-order', {
+  const res = await fetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -278,13 +273,22 @@ async function postReconcile(body) {
   })
 
   const payload = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(payload?.error || `Verification failed (${res.status})`)
+  if (!res.ok) throw new Error(payload?.error || `Request failed (${res.status})`)
   return payload
 }
 
-/** Re-check a pending order against the payments the gateway holds for it. */
+/**
+ * Recovery path for a PAID order whose webhook never arrived.
+ *
+ * The server fetches the payment from Razorpay with its secret key and refuses
+ * to grant anything unless the captured amount matches the order, so this
+ * cannot be used to fake a payment — it can only convince the server of a
+ * payment the gateway already confirms.
+ *
+ * @returns {Promise<{ok: true, status: 'fulfilled'|'already_paid', order_ref: string}>}
+ */
 export async function reconcileOrder(orderRef) {
-  return postReconcile({ order_ref: orderRef })
+  return postAdminJson('/api/admin-reconcile-order', { order_ref: orderRef })
 }
 
 /**
@@ -293,7 +297,27 @@ export async function reconcileOrder(orderRef) {
  * pending order by the payer's email and the captured amount.
  */
 export async function reconcilePayment(paymentId) {
-  return postReconcile({ payment_id: paymentId })
+  return postAdminJson('/api/admin-reconcile-order', { payment_id: paymentId })
+}
+
+/**
+ * Mint a sign-in link for a customer, for when email delivery is unreliable
+ * (Supabase's built-in mailer is rate limited until a custom SMTP provider is
+ * configured).
+ *
+ * The server asks Supabase to generate the link WITHOUT sending a message, so
+ * the admin can hand it to the buyer through any channel. Only an address that
+ * already has a store order can be addressed, so this cannot be used to create
+ * accounts for strangers.
+ *
+ * @returns {Promise<{ok: true, email: string, link: string, account_created: boolean,
+ *                    orders: number, active_entitlements: number|null}>}
+ */
+export async function createAccessLink({ orderRef, email } = {}) {
+  return postAdminJson(
+    '/api/admin-access-link',
+    orderRef ? { order_ref: orderRef } : { email }
+  )
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   revokeEntitlement,
   reconcileOrder,
   reconcilePayment,
+  createAccessLink,
   summariseOrders,
 } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
@@ -33,6 +34,8 @@ export default function AdminOrders() {
   const [reconciling, setReconciling] = useState(null)
   const [paymentId, setPaymentId] = useState('')
   const [verifyingPaymentId, setVerifyingPaymentId] = useState(false)
+  const [linkBusy, setLinkBusy] = useState(null)
+  const [accessLink, setAccessLink] = useState(null)
 
   useEffect(() => {
     load()
@@ -146,6 +149,62 @@ export default function AdminOrders() {
       toast.error('Failed to revoke: ' + err.message)
     }
   }
+
+  /**
+   * Mint a one-off sign-in link for this order's customer.
+   *
+   * Used when the buyer cannot sign in: Supabase's built-in mailer is rate
+   * limited until custom SMTP is configured, and a customer who cannot sign in
+   * cannot download what they paid for. The server generates the link without
+   * sending any email, so the admin can deliver it directly.
+   */
+  async function handleAccessLink(order) {
+    setLinkBusy(order.id)
+    try {
+      const result = await createAccessLink({ orderRef: order.order_ref })
+      setAccessLink(result)
+    } catch (err) {
+      toast.error('Could not create a sign-in link: ' + err.message)
+    } finally {
+      setLinkBusy(null)
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!accessLink?.link) return
+    try {
+      await navigator.clipboard.writeText(accessLink.link)
+      toast.success('Sign-in link copied')
+    } catch {
+      toast.error('Could not copy — select the link and copy it manually')
+    }
+  }
+
+  // Ready-made messages so the admin can deliver the link with one click, from
+  // their own mail client or WhatsApp, with no SMTP configured anywhere.
+  const mailtoHref = useMemo(() => {
+    if (!accessLink?.link) return '#'
+    const subject = 'Your NEURAL AURORA download link'
+    const body = [
+      'Hi,',
+      '',
+      'Your purchase is unlocked. Use this secure link to sign in and download it:',
+      '',
+      accessLink.link,
+      '',
+      'The link signs you straight into your library. If it has expired, just reply and I will send a new one.',
+      '',
+      '— NEURAL AURORA',
+    ].join('\n')
+    return `mailto:${accessLink.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }, [accessLink])
+
+  const whatsappHref = useMemo(() => {
+    if (!accessLink?.link) return '#'
+    return `https://wa.me/?text=${encodeURIComponent(
+      `Your NEURAL AURORA download is ready. Use this link to sign in: ${accessLink.link}`
+    )}`
+  }, [accessLink])
 
   return (
     <div>
@@ -326,8 +385,11 @@ export default function AdminOrders() {
                     <p className="mt-2 text-[11px] text-red-400">{order.failure_reason}</p>
                   )}
 
-                  {order.payment_status === 'pending' && order.provider_order_id && (
-                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+                  <div
+                    className="mt-3 flex flex-wrap items-center gap-3 border-t pt-3"
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    {order.payment_status === 'pending' && order.provider_order_id && (
                       <button
                         onClick={() => handleReconcile(order)}
                         disabled={reconciling === order.id}
@@ -336,11 +398,25 @@ export default function AdminOrders() {
                       >
                         {reconciling === order.id ? 'Verifying…' : 'Verify payment'}
                       </button>
-                      <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                        Customer paid but this order is still pending? Click to re-check the capture in Razorpay.
-                      </span>
-                    </div>
-                  )}
+                    )}
+
+                    <button
+                      onClick={() => handleAccessLink(order)}
+                      disabled={linkBusy === order.id}
+                      className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity disabled:opacity-50"
+                      style={{
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {linkBusy === order.id ? 'Preparing…' : 'Sign-in link'}
+                    </button>
+
+                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                      “Verify payment” re-checks Razorpay for a capture. “Sign-in link” mints a
+                      one-off login link you can send the customer if they cannot sign in.
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -388,6 +464,87 @@ export default function AdminOrders() {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Sign-in link delivery. Kept out of the list so the admin can copy it
+          without the surrounding rows scroll-locking behind a modal. */}
+      {accessLink && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(2,6,23,0.72)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Customer sign-in link"
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border p-5"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}
+          >
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Sign-in link ready
+            </h2>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              Send this to <span className="font-medium">{accessLink.email}</span>. It signs them
+              straight into their library and needs no email from us, so the mail rate limit
+              cannot block it.
+            </p>
+
+            <textarea
+              readOnly
+              rows={3}
+              value={accessLink.link}
+              onFocus={(e) => e.target.select()}
+              className="mt-3 w-full resize-none break-all rounded-lg border px-3 py-2 text-[11px] outline-none"
+              style={{
+                borderColor: 'var(--border-color)',
+                background: 'var(--input-bg)',
+                color: 'var(--text-secondary)',
+              }}
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
+                style={{ background: 'var(--accent)' }}
+              >
+                Copy link
+              </button>
+              <a
+                href={mailtoHref}
+                className="rounded-lg border px-3 py-1.5 text-xs font-medium"
+                style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                Open in my mail app
+              </a>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border px-3 py-1.5 text-xs font-medium"
+                style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                Share on WhatsApp
+              </a>
+              <button
+                type="button"
+                onClick={() => setAccessLink(null)}
+                className="ml-auto rounded-lg px-3 py-1.5 text-xs font-medium"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+              {accessLink.orders} order(s) ·{' '}
+              {accessLink.active_entitlements ?? 0} active download entitlement(s)
+              {accessLink.account_created ? ' · account created' : ' · account already existed'}.
+              Treat this link like a password — anyone who opens it is signed in as this customer.
+            </p>
+          </div>
         </div>
       )}
     </div>

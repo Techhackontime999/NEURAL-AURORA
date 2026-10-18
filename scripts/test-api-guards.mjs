@@ -8,6 +8,7 @@
 //
 // Run: npm run test:api-guards
 import { createRequire } from 'node:module'
+import fs from 'node:fs'
 
 const require = createRequire(import.meta.url)
 
@@ -70,6 +71,8 @@ const createOrder = require('../api/create-order.js')
 const orderStatus = require('../api/order-status.js')
 const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
+const adminAccessLink = require('../api/admin-access-link.js')
+const adminAuth = require('../api/_lib/adminAuth.js')
 const webhook = require('../api/razorpay-webhook.js')
 const { envPresence } = require('../api/_lib/diag.js')
 const fulfilment = require('../api/_lib/fulfilment.js')
@@ -277,6 +280,70 @@ check(
   'fulfilment: the audited grant path is exported for reuse',
   typeof fulfilment.fulfilDigitalOrder === 'function' && typeof fulfilment.getServiceClient === 'function'
 )
+
+// --- 9. One admin gate, shared by every admin-only endpoint ------------------
+check(
+  'admin-auth: the audited admin gate is exported for reuse',
+  typeof adminAuth.requireAdmin === 'function' && typeof adminAuth.getServiceClient === 'function'
+)
+{
+  const reconcileSrc = fs.readFileSync('api/admin-reconcile-order.js', 'utf8')
+  const accessLinkSrc = fs.readFileSync('api/admin-access-link.js', 'utf8')
+  check(
+    'admin-auth: no endpoint keeps a divergent copy of the admin check',
+    reconcileSrc.includes("require('./_lib/adminAuth')") &&
+      accessLinkSrc.includes("require('./_lib/adminAuth')") &&
+      !reconcileSrc.includes('async function requireAdmin'),
+    'an admin endpoint declares its own requireAdmin()'
+  )
+}
+
+// --- 10. Sign-in links: the admin proof is required BEFORE anything is minted --
+setEnv({})
+{
+  const { res, lines } = await capture((r) =>
+    adminAccessLink({ method: 'POST', headers: {}, body: { email: 'buyer@example.com' } }, r)
+  )
+  check('admin-access-link: unconfigured -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check('admin-access-link: 503 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) => adminAccessLink({ method: 'GET', headers: {} }, r))
+  check('admin-access-link: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+}
+{
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res, lines } = await capture((r) =>
+    adminAccessLink({ method: 'POST', headers: {}, body: { email: 'buyer@example.com' } }, r)
+  )
+  check(
+    'admin-access-link: anonymous -> 403 (never mints a link)',
+    res.statusCode === 403,
+    `got ${res.statusCode}`
+  )
+  check('admin-access-link: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+  check(
+    'admin-access-link: 403 body contains no link',
+    !jsonBody(res).includes('http'),
+    jsonBody(res)
+  )
+}
+{
+  // An empty bearer token is not proof of anything: no network call, just 403.
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) =>
+    adminAccessLink(
+      { method: 'POST', headers: { authorization: 'Bearer ' }, body: { order_ref: 'not-a-ref' } },
+      r
+    )
+  )
+  check(
+    'admin-access-link: empty bearer token -> 403',
+    res.statusCode === 403,
+    `got ${res.statusCode}`
+  )
+}
 
 setEnv({})
 

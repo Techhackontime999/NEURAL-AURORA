@@ -38,8 +38,12 @@ before changing anything in `api/` or the migrations.
   computed on the unparsed body with `timingSafeEqual`. A redirect or callback
   grants nothing.
 - **Entitlements are the only thing that unlocks a download.** They are created
-  exclusively by the verified webhook (paid) or by `/api/download` for a free
-  product owned by a verified account.
+  exclusively by `fulfilDigitalOrder` in `api/_lib/fulfilment.js`, which runs
+  only after a payment has been proven — either by the webhook's HMAC signature
+  or by fetching the capture from the Razorpay API in
+  `/api/admin-reconcile-order` — and only when the paid amount matches the total
+  the server priced. `/api/download` separately self-grants a free product to a
+  verified account.
 - **Paid files live in the private `digital-products` bucket.** There is no
   `anon` or public read policy, and `product_files` has no public `SELECT`, so a
   storage path can never reach the catalogue. Delivery is a short-lived signed
@@ -318,10 +322,66 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   to the deployed origin and allow-list `https://<domain>/**`.
 - **`email rate limit exceeded`** (429) → the project is still on Supabase's
   built-in mailer, which allows **2 auth emails per hour**. Configure custom
-  SMTP. Meanwhile, a purchase can still be delivered without any email: create
-  the buyer in **Authentication → Users → Add user** (auto-confirm) with a
-  password, and they sign in at `/login` — entitlements are matched on the
-  session's email, so the library works with no mail delivered.
+  SMTP. Meanwhile no purchase has to wait for an email: use
+  **Admin → Orders → “Sign-in link”** (see *Customer sign-in when email cannot be
+  delivered*) and hand the buyer the link yourself. Creating the buyer in
+  **Authentication → Users → Add user** (auto-confirm) with a password and
+  having them sign in at `/login` also works — entitlements are matched on the
+  session's email either way.
+
+---
+
+### Customer sign-in when email cannot be delivered
+
+A customer proves a purchase by signing in with the email they used at checkout.
+That normally means a Supabase email sign-in link — which cannot be sent while
+the project is still on the built-in mailer (2 emails per hour; see the
+checklist below).
+
+`POST /api/admin-access-link` closes that gap. It asks Supabase to **generate** a
+sign-in link without sending any message, so the mail rate limit is not involved
+at all, and returns it to the administrator, who delivers it however they like.
+
+From the admin UI: **Admin → Orders → the order → “Sign-in link”**. A panel opens
+with the link, a *Copy link* button, *Open in my mail app* (a pre-filled
+`mailto:` to the buyer, sent from the admin's own mailbox) and *Share on
+WhatsApp*.
+
+Or from a shell:
+
+```bash
+curl -s -X POST "$SITE/api/admin-access-link" \
+  -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"order_ref":"NA-0123456789abcdef"}'
+```
+
+```json
+{
+  "ok": true,
+  "email": "buyer@example.com",
+  "link": "https://<project>.supabase.co/auth/v1/verify?token=…",
+  "redirect_to": "https://<domain>/library",
+  "account_created": true,
+  "orders": 1,
+  "active_entitlements": 1,
+  "latest_order_ref": "NA-0123456789abcdef"
+}
+```
+
+- POST only, and the caller must be an admin — the same gate as reconciliation
+  (`api/_lib/adminAuth.js`, one shared implementation).
+- A link is only minted for an address that **already has a digital-store
+  order**, so this cannot be used to create accounts for strangers (`404`
+  otherwise).
+- The account is created with the address already confirmed, because the
+  administrator is choosing to send the link to it.
+- `active_entitlements: 0` means the link will work but the library will be
+  empty — no grant exists yet for that address. Check `/admin/orders`.
+- No secret is returned. The link is the same one Supabase would have emailed,
+  so treat it like a password: whoever opens it is signed in as that customer.
+- The link expires (one hour by default, `Authentication → Email OTP
+  Expiry`). Generate a fresh one if it lapses.
 
 ---
 
@@ -346,7 +406,9 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
       project — shared by sign-up confirmations, magic links and password
       resets — and only delivers to pre-authorised team addresses. Every
       customer sign-in therefore needs a real provider; once it is set, raise
-      Authentication → Rate Limits → *emails per hour* (default 30).
+      Authentication → Rate Limits → *emails per hour* (default 30). Until then,
+      a customer who cannot receive mail can still be let in with
+      **Admin → Orders → “Sign-in link”**.
 - [ ] Live Razorpay keys swapped in for `rzp_test_…` when going live.
 - [ ] A test purchase verified end to end in the hosted environment.
 - [ ] Optional: schedule `purge_expired_download_records()` via `pg_cron` (it is

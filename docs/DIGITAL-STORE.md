@@ -286,6 +286,12 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   rewrites it to the project's `Site URL` whenever the requested origin is not
   in **Authentication → URL Configuration → Redirect URLs**. Set the `Site URL`
   to the deployed origin and allow-list `https://<domain>/**`.
+- **`email rate limit exceeded`** (429) → the project is still on Supabase's
+  built-in mailer, which allows **2 auth emails per hour**. Configure custom
+  SMTP. Meanwhile, a purchase can still be delivered without any email: create
+  the buyer in **Authentication → Users → Add user** (auto-confirm) with a
+  password, and they sign in at `/login` — entitlements are matched on the
+  session's email, so the library works with no mail delivered.
 
 ---
 
@@ -305,6 +311,12 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
       `window.location.origin + '/library'`, but Supabase silently falls back to
       the `Site URL` when the requested URL is not allow-listed — which is why a
       deployed store can email a `http://localhost:…` link.
+- [ ] **Custom SMTP configured** (Authentication → Emails → SMTP Settings).
+      Supabase's built-in provider sends only **2 auth emails per hour** per
+      project — shared by sign-up confirmations, magic links and password
+      resets — and only delivers to pre-authorised team addresses. Every
+      customer sign-in therefore needs a real provider; once it is set, raise
+      Authentication → Rate Limits → *emails per hour* (default 30).
 - [ ] Live Razorpay keys swapped in for `rzp_test_…` when going live.
 - [ ] A test purchase verified end to end in the hosted environment.
 - [ ] Optional: schedule `purge_expired_download_records()` via `pg_cron` (it is

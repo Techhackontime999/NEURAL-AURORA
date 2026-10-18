@@ -261,7 +261,7 @@ export async function revokeEntitlement(id) {
  *
  * @returns {Promise<{ok: true, status: 'fulfilled'|'already_paid', order_ref: string}>}
  */
-export async function reconcileOrder(orderRef) {
+async function postReconcile(body) {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) throw sessionError
 
@@ -274,12 +274,26 @@ export async function reconcileOrder(orderRef) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ order_ref: orderRef }),
+    body: JSON.stringify(body),
   })
 
   const payload = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(payload?.error || `Verification failed (${res.status})`)
   return payload
+}
+
+/** Re-check a pending order against the payments the gateway holds for it. */
+export async function reconcileOrder(orderRef) {
+  return postReconcile({ order_ref: orderRef })
+}
+
+/**
+ * Verify a specific Razorpay payment (pay_…) — for a capture the gateway did
+ * not attach to the order we recorded. The server matches it to a single
+ * pending order by the payer's email and the captured amount.
+ */
+export async function reconcilePayment(paymentId) {
+  return postReconcile({ payment_id: paymentId })
 }
 
 /**

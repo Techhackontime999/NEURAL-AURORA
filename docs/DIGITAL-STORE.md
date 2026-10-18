@@ -273,6 +273,25 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   The audit row in `payment_transactions` is written with `signature_valid = false`
   and `event_type = 'manual.reconcile'`: the payment came from the gateway API,
   not from a signed webhook, and the record says so.
+
+  **`Razorpay has no successful payment attached to gateway order order_…`** →
+  the capture is real but the gateway attached it to a *different* order than
+  the one our row recorded (typically a payment that completed against an
+  earlier checkout attempt). Open that payment in the Razorpay dashboard and use
+  the **Verify by payment ID** box with its `pay_…` id:
+
+  ```bash
+  curl -i -X POST "$SITE/api/admin-reconcile-order" \
+    -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{"payment_id":"pay_XXXXXXXXXXXXXX"}'
+  ```
+
+  The server proves the payment with the gateway, then matches it to a **single**
+  pending order by the payer's email + captured amount + currency. If more than
+  one order matches it refuses and lists the references, so send
+  `{"order_ref":"…","payment_id":"…"}` to pair them explicitly. Either way the
+  amount must still match before access is granted.
 - Log shows `PAYMENT MISMATCH` → the gateway reported a different amount or
   currency than the server priced. Do not force it; investigate the order row.
 - Download returns `403 You do not have access to this product` → there is no

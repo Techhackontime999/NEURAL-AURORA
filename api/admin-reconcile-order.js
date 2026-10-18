@@ -23,6 +23,13 @@ const { fulfilDigitalOrder } = require('./_lib/fulfilment')
 //   * Idempotent: a second call is a no-op.
 //
 // Body: { "order_ref": "NA-xxxxxxxxxxxxxxxx" }  or  { "payment_id": "pay_xxx" }
+//       (both together pair a specific capture with a specific order)
+//
+// The payment_id form exists for a capture that is real but is NOT attached to
+// the gateway order we recorded (e.g. the buyer's payment completed against an
+// earlier checkout attempt). The admin reads the pay_… id off the Razorpay
+// dashboard; the server then proves it and falls back to matching a single
+// pending order by the gateway-reported email + amount + currency.
 // ---------------------------------------------------------------------------
 
 const ORDER_REF_RE = /^NA-[0-9a-fA-F]{16}$/
@@ -115,75 +122,125 @@ module.exports = async function handler(req, res) {
   try {
     const ORDER_COLUMNS = 'id, order_ref, payment_status, provider_order_id, total_paise, currency, email'
 
-    // --- 1. Which order are we talking about? ------------------------------
-    let order = null
-
-    if (order_ref) {
-      const { data, error: orderError } = await supabase
-        .from('orders')
-        .select(ORDER_COLUMNS)
-        .eq('order_ref', order_ref)
-        .maybeSingle()
-
-      if (orderError) {
-        logError('admin-reconcile-order', requestId, {
-          stage: 'order-lookup-failed',
-          db_error: orderError.message,
-        })
-        return res.status(500).json({ error: 'Could not read that order.' })
-      }
-      order = data || null
-    }
-
-    // --- 2. Prove the payment with the gateway (never the browser) ---------
+    // --- 1. Prove the payment with the gateway (never the browser) ---------
     let payment = null
 
     if (payment_id) {
       payment = await razorpay.payments.fetch(payment_id)
+
+      if (payment?.status !== 'captured') {
+        return res.status(409).json({
+          error: `That payment is '${payment?.status || 'unknown'}', not captured. Nothing was changed.`,
+        })
+      }
     }
 
-    if (!order && payment?.order_id) {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(ORDER_COLUMNS)
-        .eq('provider_order_id', payment.order_id)
-        .maybeSingle()
+    // --- 2. Which order does it belong to? ---------------------------------
+    /** Run a maybeSingle() lookup against `orders`, reporting DB errors. */
+    async function queryOrder(build) {
+      const { data, error } = await build(supabase.from('orders').select(ORDER_COLUMNS)).maybeSingle()
+      return { order: data || null, error }
+    }
 
-      if (error) {
+    let order = null
+    let matchedBy = null
+
+    if (order_ref) {
+      const found = await queryOrder((q) => q.eq('order_ref', order_ref))
+      if (found.error) {
         logError('admin-reconcile-order', requestId, {
-          stage: 'order-lookup-by-payment-failed',
-          db_error: error.message,
+          stage: 'order-lookup-failed',
+          db_error: found.error.message,
         })
         return res.status(500).json({ error: 'Could not read that order.' })
       }
-      order = data || null
+      order = found.order
+      matchedBy = 'order_ref'
+    }
+
+    if (!order && payment?.order_id) {
+      const found = await queryOrder((q) => q.eq('provider_order_id', payment.order_id))
+      if (found.error) {
+        logError('admin-reconcile-order', requestId, {
+          stage: 'order-lookup-by-payment-failed',
+          db_error: found.error.message,
+        })
+        return res.status(500).json({ error: 'Could not read that order.' })
+      }
+      order = found.order
+      if (order) matchedBy = matchedBy || 'payment.order_id'
+    }
+
+    // The capture is real, but it is not attached to a gateway order we
+    // recorded — for example the customer's payment landed on an earlier
+    // checkout attempt. Match it to a pending order using only what the
+    // gateway told us (paying email + amount + currency), and only when that
+    // identifies exactly one order, so no one else's purchase can be touched.
+    if (!order && payment) {
+      const payerEmail = String(payment.email || '').trim().toLowerCase()
+
+      if (payerEmail) {
+        const { data, error: candidateError } = await supabase
+          .from('orders')
+          .select(ORDER_COLUMNS)
+          .eq('payment_status', 'pending')
+          .eq('total_paise', Number(payment.amount) || 0)
+          .eq('currency', payment.currency || 'INR')
+          .ilike('email', payerEmail)
+
+        if (candidateError) {
+          logError('admin-reconcile-order', requestId, {
+            stage: 'candidate-lookup-failed',
+            db_error: candidateError.message,
+          })
+          return res.status(500).json({ error: 'Could not read that order.' })
+        }
+
+        const candidates = data || []
+        if (candidates.length === 1) {
+          order = candidates[0]
+          matchedBy = 'payment email + amount'
+        } else if (candidates.length > 1) {
+          return res.status(409).json({
+            error: 'Several pending orders match that payment. Send the order reference as well.',
+            order_refs: candidates.map((o) => o.order_ref),
+          })
+        }
+      }
     }
 
     if (!order) {
-      return res.status(404).json({ error: 'No digital-store order matches that reference.' })
+      return res.status(404).json({
+        error: 'No pending digital-store order matches that payment. Nothing was changed.',
+      })
     }
 
     if (order.payment_status === 'paid') {
       return res.json({ ok: true, status: 'already_paid', order_ref: order.order_ref })
     }
 
-    if (!order.provider_order_id) {
-      return res.status(409).json({
-        error: 'This order was never linked to a payment attempt, so there is nothing to verify.',
-      })
-    }
-
+    // --- 3. If we only have the order, ask the gateway for its payments ----
     if (!payment) {
+      if (!order.provider_order_id) {
+        return res.status(409).json({
+          error: 'This order was never linked to a payment attempt, so there is nothing to verify.',
+        })
+      }
+
       const collection = await razorpay.orders.fetchPayments(order.provider_order_id)
       const items = Array.isArray(collection?.items) ? collection.items : []
-
       const captured = items.filter((p) => p?.status === 'captured')
+
       if (captured.length === 0) {
         const authorized = items.filter((p) => p?.status === 'authorized')
         return res.status(409).json({
           error: authorized.length
             ? 'A payment for this order is authorised but not yet captured. Try again shortly.'
-            : 'Razorpay shows no successful payment for this order yet. Nothing was changed.',
+            : `Razorpay has no successful payment attached to gateway order ${order.provider_order_id}. Nothing was changed.`,
+          razorpay_order_id: order.provider_order_id,
+          payments_found: items.map((p) => ({ id: p.id, status: p.status, amount: p.amount })),
+          hint:
+            'If the customer really did pay, find that payment in the Razorpay dashboard and use “Verify by payment ID” with its pay_… id.',
         })
       }
 
@@ -194,19 +251,21 @@ module.exports = async function handler(req, res) {
             Number(p.amount) === Number(order.total_paise) &&
             (p.currency || order.currency) === order.currency
         ) || captured[0]
-    } else if (payment.order_id && payment.order_id !== order.provider_order_id) {
-      return res.status(409).json({
-        error: 'That payment belongs to a different order.',
+    }
+
+    if (payment.order_id && order.provider_order_id && payment.order_id !== order.provider_order_id) {
+      // Explicitly tolerated: an administrator paired a genuine capture with a
+      // pending order. Access is still gated by the amount/currency check in
+      // fulfilDigitalOrder below, and the pairing is logged.
+      log('admin-reconcile-order', requestId, {
+        stage: 'gateway-order-mismatch-accepted',
+        order_ref: order.order_ref,
+        order_gateway_id: order.provider_order_id,
+        payment_gateway_id: payment.order_id,
       })
     }
 
-    if (payment.status !== 'captured') {
-      return res.status(409).json({
-        error: `That payment is '${payment.status || 'unknown'}', not captured. Nothing was changed.`,
-      })
-    }
-
-    // --- 3. Run the SAME fulfilment the webhook runs -----------------------
+    // --- 4. Run the SAME fulfilment the webhook runs -----------------------
     const result = await fulfilDigitalOrder(supabase, {
       payment,
       event: 'manual.reconcile',
@@ -218,6 +277,7 @@ module.exports = async function handler(req, res) {
       actor: admin.id,
       order_ref: order.order_ref,
       payment_id: payment.id,
+      matched_by: matchedBy,
       result: result.status,
     })
 
@@ -241,6 +301,7 @@ module.exports = async function handler(req, res) {
       status: result.status,
       order_ref: result.order_ref,
       payment_id: payment.id,
+      matched_by: matchedBy,
     })
   } catch (err) {
     logError('admin-reconcile-order', requestId, {

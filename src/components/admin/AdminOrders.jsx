@@ -5,6 +5,7 @@ import {
   getAllEntitlements,
   revokeEntitlement,
   reconcileOrder,
+  reconcilePayment,
   summariseOrders,
 } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
@@ -30,6 +31,8 @@ export default function AdminOrders() {
   const [tab, setTab] = useState('orders')
   const [loading, setLoading] = useState(true)
   const [reconciling, setReconciling] = useState(null)
+  const [paymentId, setPaymentId] = useState('')
+  const [verifyingPaymentId, setVerifyingPaymentId] = useState(false)
 
   useEffect(() => {
     load()
@@ -97,6 +100,32 @@ export default function AdminOrders() {
       toast.error('Verification failed: ' + err.message)
     } finally {
       setReconciling(null)
+    }
+  }
+
+  /**
+   * Verify a specific Razorpay payment id. Used when the capture exists in the
+   * dashboard but was not attached to the gateway order our row recorded.
+   */
+  async function handleVerifyByPaymentId(event) {
+    event.preventDefault()
+    const id = paymentId.trim()
+    if (!id) return
+
+    setVerifyingPaymentId(true)
+    try {
+      const result = await reconcilePayment(id)
+      toast.success(
+        result.status === 'already_paid'
+          ? 'That payment was already applied'
+          : 'Payment verified — access granted'
+      )
+      setPaymentId('')
+      await load()
+    } catch (err) {
+      toast.error('Verification failed: ' + err.message)
+    } finally {
+      setVerifyingPaymentId(false)
     }
   }
 
@@ -184,6 +213,36 @@ export default function AdminOrders() {
               ))}
             </select>
           </div>
+
+          {/* Recovery for a capture the gateway did not attach to our order */}
+          <form
+            onSubmit={handleVerifyByPaymentId}
+            className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border p-3"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}
+          >
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              Paid in Razorpay but still pending here? Paste the payment ID:
+            </span>
+            <input
+              value={paymentId}
+              onChange={(e) => setPaymentId(e.target.value)}
+              placeholder="pay_XXXXXXXXXXXXXX"
+              className="min-w-[180px] flex-1 rounded-lg border px-3 py-1.5 text-xs outline-none"
+              style={{
+                borderColor: 'var(--border-color)',
+                background: 'var(--input-bg)',
+                color: 'var(--text-primary)',
+              }}
+            />
+            <button
+              type="submit"
+              disabled={verifyingPaymentId || !paymentId.trim()}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity disabled:opacity-50"
+              style={{ background: 'var(--accent)' }}
+            >
+              {verifyingPaymentId ? 'Verifying…' : 'Verify by payment ID'}
+            </button>
+          </form>
 
           {loading ? (
             <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>

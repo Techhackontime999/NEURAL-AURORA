@@ -6,6 +6,13 @@ const {
   priceProductOrder,
   generateOrderRef,
 } = require('./_lib/order-pricing')
+const {
+  newRequestId,
+  envPresence,
+  log,
+  logError,
+  SUPABASE_ENV_NAMES,
+} = require('./_lib/diag')
 
 // Static fallback data when Supabase is unreachable or in offline dev mode
 const fallbackServices = [
@@ -129,6 +136,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const requestId = newRequestId()
+
   const {
     order_type,
     service_id,
@@ -180,7 +189,13 @@ module.exports = async function handler(req, res) {
       // order is a privileged operation and the anon key cannot satisfy RLS.
       // Requiring it here turns a confusing RLS failure into an honest 503.
       if (!supabase || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        console.error('[create-order] Digital store requires SUPABASE_SERVICE_ROLE_KEY')
+        logError('create-order', requestId, {
+          stage: 'store-env-check',
+          reason: !process.env.SUPABASE_SERVICE_ROLE_KEY
+            ? 'missing SUPABASE_SERVICE_ROLE_KEY'
+            : 'supabase client unavailable (SUPABASE_URL / VITE_SUPABASE_URL missing or placeholder)',
+          env: envPresence(SUPABASE_ENV_NAMES),
+        })
         return res.status(503).json({ error: 'Digital store is unavailable right now. Please try again shortly.' })
       }
 
@@ -189,13 +204,22 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: collected.error })
       }
 
+      log('create-order', requestId, {
+        stage: 'product-initiated',
+        distinct_items: collected.wanted.size,
+        buyer_authenticated: Boolean(verifiedUser),
+      })
+
       const { data: products, error: productError } = await supabase
         .from('products')
         .select('id, slug, title, price_paise, currency, status, version')
         .in('slug', [...collected.wanted.keys()])
 
       if (productError) {
-        console.error('[create-order] Failed to load products:', productError.message)
+        logError('create-order', requestId, {
+          stage: 'product-lookup-failed',
+          db_error: productError.message,
+        })
         return res.status(503).json({ error: 'Could not verify the products in this order' })
       }
 
@@ -235,7 +259,10 @@ module.exports = async function handler(req, res) {
         .single()
 
       if (orderInsertError || !orderRow) {
-        console.error('[create-order] Failed to persist order:', orderInsertError?.message)
+        logError('create-order', requestId, {
+          stage: 'order-persist-failed',
+          db_error: orderInsertError?.message || 'no row returned',
+        })
         return res.status(500).json({ error: 'Could not create your order' })
       }
 
@@ -254,7 +281,11 @@ module.exports = async function handler(req, res) {
 
       const { error: itemsInsertError } = await supabase.from('order_items').insert(orderItems)
       if (itemsInsertError) {
-        console.error('[create-order] Failed to persist order items:', itemsInsertError.message)
+        logError('create-order', requestId, {
+          stage: 'order-items-persist-failed',
+          order_ref: orderRef,
+          db_error: itemsInsertError.message,
+        })
         // The pending order is left behind on purpose so it can be reconciled.
         return res.status(500).json({ error: 'Could not create your order items' })
       }
@@ -432,13 +463,23 @@ module.exports = async function handler(req, res) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET
 
     if (!keyId || !keySecret) {
-      console.error('[create-order] Razorpay credentials missing in server environment')
+      logError('create-order', requestId, {
+        stage: 'razorpay-credentials-check',
+        env: envPresence(['RAZORPAY_KEY_ID', 'VITE_RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET']),
+      })
       return res.status(500).json({ error: 'Payment gateway configuration missing on server' })
     }
 
     const razorpay = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
+    })
+
+    log('create-order', requestId, {
+      stage: 'razorpay-order-create',
+      amount_paise: verifiedAmountPaise,
+      currency: currency || 'INR',
+      item_type: verifiedNotes.item_type,
     })
 
     const order = await razorpay.orders.create({
@@ -460,17 +501,20 @@ module.exports = async function handler(req, res) {
         // The customer can still pay, but the webhook will not be able to match
         // this payment automatically. Fail loudly so it can be reconciled
         // rather than silently issuing nothing.
-        console.error(
-          '[create-order] Failed to link gateway order to pending order:',
-          { order_ref: digitalOrder.orderRef, provider_order_id: order.id, error: linkError.message }
-        )
+        logError('create-order', requestId, {
+          stage: 'gateway-order-link-failed',
+          order_ref: digitalOrder.orderRef,
+          provider_order_id: order.id,
+          db_error: linkError.message,
+        })
         return res.status(500).json({ error: 'Could not finalise your order. Please contact support with your reference.' })
       }
     }
 
-    console.log('[create-order] Order successfully created with verified amount:', {
-      order_id: order.id,
-      amount: order.amount,
+    log('create-order', requestId, {
+      stage: 'order-created',
+      provider_order_id: order.id,
+      amount_paise: order.amount,
       item_type: verifiedNotes.item_type,
       order_ref: digitalOrder?.orderRef,
     })
@@ -484,7 +528,10 @@ module.exports = async function handler(req, res) {
       ...(digitalOrder ? { order_ref: digitalOrder.orderRef } : {}),
     })
   } catch (err) {
-    console.error('[create-order] Razorpay order creation failed:', err)
+    logError('create-order', requestId, {
+      stage: 'razorpay-order-create-failed',
+      error: err?.message || String(err),
+    })
     return res.status(500).json({ error: 'Failed to create payment order' })
   }
 }

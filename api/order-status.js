@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
+const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
 
 /**
  * Read-only order status for the post-payment screen.
@@ -24,7 +25,10 @@ module.exports = async function handler(req, res) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceKey || supabaseUrl === 'https://placeholder.supabase.co') {
-    console.error('[order-status] Supabase service credentials are not configured')
+    logError('order-status', newRequestId(), {
+      stage: 'env-check',
+      env: envPresence(SUPABASE_ENV_NAMES),
+    })
     return res.status(503).json({ error: 'Order status is unavailable right now.' })
   }
 

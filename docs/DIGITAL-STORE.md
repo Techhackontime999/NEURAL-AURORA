@@ -113,7 +113,7 @@ error instead of issuing an order.
 
 ```bash
 npm run check              # route ranking + i18n keys + SQL structural lint
-npm run test               # server pricing / entitlement-decision tests
+npm run test               # server pricing tests + API endpoint guards
 npm run build              # production build
 ```
 
@@ -215,6 +215,24 @@ configuration error rather than falling back to anything weaker.
 
 **What to check when it does not work**
 
+- The purchase button shows *Digital store is unavailable right now* →
+  `/api/create-order` answered `503`. That message is emitted only when the
+  store cannot reach its privileged configuration, before any product lookup
+  or gateway call. Probe it without creating an order:
+
+  ```bash
+  # an unknown slug fails at lookup, so no order row is ever written
+  curl -i -X POST "$SITE/api/create-order" -H 'Content-Type: application/json' \
+    -d '{"order_type":"product","items":[{"slug":"no-such-product","quantity":1}],"email":"probe@example.com"}'
+  ```
+
+  A `503` with `{"error":"Digital store is unavailable…"}` means the deployment
+  is missing `SUPABASE_SERVICE_ROLE_KEY` (or a usable Supabase URL). Set it in
+  the hosting provider's **Production** environment and redeploy. The function
+  log line `[create-order] rid=… {"stage":"store-env-check",…,"env":{…}}` names
+  the variable and reports every related flag as `true`/`false` — values are
+  never logged. A `400`/`404` here means the configuration is fine and the
+  problem is elsewhere.
 - `Payment confirmed` never appears → the webhook is not reaching the
   deployment, or the secret does not match. Check the function logs.
 - Log shows `PAYMENT MISMATCH` → the gateway reported a different amount or
@@ -233,7 +251,9 @@ configuration error rather than falling back to anything weaker.
 - [ ] All eight migrations applied.
 - [ ] `digital-products` bucket exists and is **private**.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
-      `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo).
+      `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo) —
+      for the **Production** environment, and for Preview too if you test there.
+      The store fails closed with a `503` without the service-role key.
 - [ ] Razorpay webhook created, secret matches, events subscribed.
 - [ ] Live Razorpay keys swapped in for `rzp_test_…` when going live.
 - [ ] A test purchase verified end to end in the hosted environment.

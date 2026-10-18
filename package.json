@@ -12,8 +12,9 @@
     "check:routes": "node scripts/check-routes.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:sql": "node scripts/check-sql.mjs",
-    "test": "npm run test:order-pricing",
-    "test:order-pricing": "node scripts/test-order-pricing.mjs"
+    "test": "npm run test:order-pricing && npm run test:api-guards",
+    "test:order-pricing": "node scripts/test-order-pricing.mjs",
+    "test:api-guards": "node scripts/test-api-guards.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
+const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
 
 async function readRawBody(req) {
   if (req.rawBody) {
@@ -288,7 +289,11 @@ module.exports = async function handler(req, res) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[Razorpay Webhook] Missing Supabase service role credentials in environment')
+      logError('razorpay-webhook', newRequestId(), {
+        stage: 'env-check',
+        event,
+        env: envPresence(SUPABASE_ENV_NAMES),
+      })
       return res.status(500).json({ error: 'Server database configuration missing' })
     }
 

@@ -97,7 +97,7 @@ Required variables (see `.env.example` for the annotated list):
 | --- | --- |
 | `VITE_SUPABASE_URL` | browser reads |
 | `VITE_SUPABASE_ANON_KEY` | browser auth + RLS-scoped reads |
-| `SUPABASE_SERVICE_ROLE_KEY` | `/api/create-order`, `/api/razorpay-webhook`, `/api/download`, `/api/order-status` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `/api/create-order`, `/api/razorpay-webhook`, `/api/download`, `/api/order-status`, `/api/admin-reconcile-order` |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | server-side order creation |
 | `RAZORPAY_WEBHOOK_SECRET` | webhook signature verification |
 | `VITE_RAZORPAY_KEY_ID` | opens the Razorpay Checkout modal |
@@ -186,9 +186,26 @@ fulfilment step, which is a no-op for service/support payments.
 
 ### Service-role key
 
-`/api/download`, `/api/order-status`, `/api/create-order` and the webhook all
-require `SUPABASE_SERVICE_ROLE_KEY`. Without it they return `503` and log a
-configuration error rather than falling back to anything weaker.
+`/api/download`, `/api/order-status`, `/api/create-order`, the webhook and the
+admin reconciliation endpoint all require `SUPABASE_SERVICE_ROLE_KEY`. Without
+it they return `503` and log a configuration error rather than falling back to
+anything weaker.
+
+### Manual reconciliation (lost webhooks)
+
+Entitlements are granted by the webhook, never by the browser callback. If a
+gateway delivery is lost, the capture is still real and the customer must not be
+left without access. `/api/admin-reconcile-order` is the recovery path:
+
+- **Admin only.** The caller must present a Supabase access token whose profile
+  role is `admin`; the role is read server-side, so it cannot be claimed.
+- **Gateway-proven.** The payment is fetched from the Razorpay API with the
+  server secret. The browser sends only a reference — never an amount, a status
+  or a "paid" flag.
+- **Same code path.** It runs the identical `fulfilDigitalOrder` used by the
+  webhook (`api/_lib/fulfilment.js`), which refuses to grant unless the captured
+  amount and currency match the order we priced.
+- **Idempotent.** Re-running it on a paid order is a no-op.
 
 ---
 
@@ -235,6 +252,27 @@ configuration error rather than falling back to anything weaker.
   problem is elsewhere.
 - `Payment confirmed` never appears → the webhook is not reaching the
   deployment, or the secret does not match. Check the function logs.
+- **Money captured, order still `pending`** (customer paid but no access) → the
+  capture never reached us as a webhook. Do **not** hand-edit the database.
+  Admin → **Orders** → the pending order → **Verify payment**. The server asks
+  the Razorpay API for that order's payments, and only grants access when it
+  finds a **captured** payment whose amount and currency match the order we
+  priced. It is idempotent, so clicking twice is harmless. The same thing over
+  HTTP (admin token required):
+
+  ```bash
+  curl -i -X POST "$SITE/api/admin-reconcile-order" \
+    -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{"order_ref":"NA-xxxxxxxxxxxxxxxx"}'
+  ```
+
+  Answers: `{"status":"fulfilled"}` (access granted now), `{"status":"already_paid"}`
+  (nothing to do), `409` (authorised-but-not-captured, no capture yet, or an
+  amount mismatch — access is *not* granted), `403` (caller is not an admin).
+  The audit row in `payment_transactions` is written with `signature_valid = false`
+  and `event_type = 'manual.reconcile'`: the payment came from the gateway API,
+  not from a signed webhook, and the record says so.
 - Log shows `PAYMENT MISMATCH` → the gateway reported a different amount or
   currency than the server priced. Do not force it; investigate the order row.
 - Download returns `403 You do not have access to this product` → there is no

@@ -251,6 +251,38 @@ export async function revokeEntitlement(id) {
 }
 
 /**
+ * Recovery path for a PAID order whose webhook never arrived.
+ *
+ * The browser only sends the order reference and the admin's own session
+ * token: the server fetches the payment from Razorpay with its secret key and
+ * refuses to grant anything unless the captured amount matches the order. So
+ * this cannot be used to fake a payment — it can only convince the server of a
+ * payment the gateway already confirms.
+ *
+ * @returns {Promise<{ok: true, status: 'fulfilled'|'already_paid', order_ref: string}>}
+ */
+export async function reconcileOrder(orderRef) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) throw sessionError
+
+  const token = sessionData?.session?.access_token
+  if (!token) throw new Error('Your session has expired. Please sign in again.')
+
+  const res = await fetch('/api/admin-reconcile-order', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ order_ref: orderRef }),
+  })
+
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(payload?.error || `Verification failed (${res.status})`)
+  return payload
+}
+
+/**
  * Aggregate a coarse sales summary on the client from the orders the admin
  * is allowed to see. Kept deliberately simple; a real reporting workload
  * should move to a SQL view or RPC.

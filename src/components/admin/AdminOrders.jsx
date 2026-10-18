@@ -4,6 +4,7 @@ import {
   getOrderItems,
   getAllEntitlements,
   revokeEntitlement,
+  reconcileOrder,
   summariseOrders,
 } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
@@ -28,6 +29,7 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('')
   const [tab, setTab] = useState('orders')
   const [loading, setLoading] = useState(true)
+  const [reconciling, setReconciling] = useState(null)
 
   useEffect(() => {
     load()
@@ -69,6 +71,34 @@ export default function AdminOrders() {
       )
     })
   }, [orders, search, statusFilter])
+
+  /**
+   * Ask the server to re-verify a pending order straight from Razorpay. This
+   * is the recovery path for a capture whose webhook never reached us.
+   */
+  async function handleReconcile(order) {
+    const ok = await confirm({
+      title: 'Verify Payment',
+      message: `Check Razorpay for a captured payment on ${order.order_ref}? If a matching payment is found, the order is marked paid and the customer's download access is granted.`,
+      confirmText: 'Verify',
+    })
+    if (!ok) return
+
+    setReconciling(order.id)
+    try {
+      const result = await reconcileOrder(order.order_ref)
+      toast.success(
+        result.status === 'already_paid'
+          ? 'This order was already marked paid'
+          : 'Payment verified — access granted'
+      )
+      await load()
+    } catch (err) {
+      toast.error('Verification failed: ' + err.message)
+    } finally {
+      setReconciling(null)
+    }
+  }
 
   async function handleRevoke(entitlement) {
     const ok = await confirm({
@@ -235,6 +265,22 @@ export default function AdminOrders() {
 
                   {order.failure_reason && (
                     <p className="mt-2 text-[11px] text-red-400">{order.failure_reason}</p>
+                  )}
+
+                  {order.payment_status === 'pending' && order.provider_order_id && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+                      <button
+                        onClick={() => handleReconcile(order)}
+                        disabled={reconciling === order.id}
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity disabled:opacity-50"
+                        style={{ background: 'var(--accent)' }}
+                      >
+                        {reconciling === order.id ? 'Verifying…' : 'Verify payment'}
+                      </button>
+                      <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        Customer paid but this order is still pending? Click to re-check the capture in Razorpay.
+                      </span>
+                    </div>
                   )}
                 </div>
               ))}

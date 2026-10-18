@@ -26,6 +26,7 @@ const MANAGED = [
   'RAZORPAY_KEY_ID',
   'VITE_RAZORPAY_KEY_ID',
   'RAZORPAY_KEY_SECRET',
+  'RAZORPAY_WEBHOOK_SECRET',
 ]
 
 function setEnv(values) {
@@ -68,7 +69,10 @@ async function capture(fn) {
 const createOrder = require('../api/create-order.js')
 const orderStatus = require('../api/order-status.js')
 const download = require('../api/download.js')
+const adminReconcile = require('../api/admin-reconcile-order.js')
+const webhook = require('../api/razorpay-webhook.js')
 const { envPresence } = require('../api/_lib/diag.js')
+const fulfilment = require('../api/_lib/fulfilment.js')
 
 let passed = 0
 let failed = 0
@@ -203,6 +207,76 @@ setEnv({})
     JSON.stringify(flags)
   )
 }
+
+// --- 6. Admin reconcile: never usable without config, method or admin proof ---
+setEnv({})
+{
+  const { res, lines } = await capture((r) =>
+    adminReconcile({ method: 'POST', headers: {}, body: { order_ref: 'NA-0000000000000000' } }, r)
+  )
+  check('admin-reconcile: unconfigured -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check('admin-reconcile: 503 logs leak no secrets', noSecrets(lines))
+}
+{
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) => adminReconcile({ method: 'GET', headers: {} }, r))
+  check('admin-reconcile: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+}
+{
+  // Configured, but no gateway credentials: must fail closed, not crash.
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) =>
+    adminReconcile({ method: 'POST', headers: {}, body: { order_ref: 'NA-0000000000000000' } }, r)
+  )
+  check('admin-reconcile: missing gateway creds -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+}
+{
+  // Fully configured, but the caller presents no admin token.
+  setEnv({
+    SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET,
+    SUPABASE_URL: 'https://example.supabase.co',
+    RAZORPAY_KEY_ID: SENTINEL_KEY_ID,
+    RAZORPAY_KEY_SECRET: SENTINEL_RAZORPAY,
+  })
+  const { res, lines } = await capture((r) =>
+    adminReconcile({ method: 'POST', headers: {}, body: { order_ref: 'NA-0000000000000000' } }, r)
+  )
+  check('admin-reconcile: anonymous -> 403 (never reaches the gateway)', res.statusCode === 403, `got ${res.statusCode}`)
+  check('admin-reconcile: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+
+// --- 7. Webhook: a signature is still required before any fulfilment work ---
+{
+  setEnv({ RAZORPAY_WEBHOOK_SECRET: SENTINEL_RAZORPAY })
+  const { res, lines } = await capture((r) =>
+    webhook({ method: 'POST', headers: {}, body: { event: 'payment.captured' } }, r)
+  )
+  check('webhook: no signature header -> 400', res.statusCode === 400, `got ${res.statusCode}`)
+  check('webhook: rejects without leaking the secret', noSecrets(lines))
+
+  const { res: badSignature } = await capture((r) =>
+    webhook(
+      {
+        method: 'POST',
+        headers: { 'x-razorpay-signature': 'deadbeef' },
+        body: '{"event":"payment.captured"}',
+      },
+      r
+    )
+  )
+  check('webhook: bad signature -> 400', badSignature.statusCode === 400, `got ${badSignature.statusCode}`)
+}
+{
+  setEnv({ RAZORPAY_WEBHOOK_SECRET: SENTINEL_RAZORPAY })
+  const { res } = await capture((r) => webhook({ method: 'GET', headers: {} }, r))
+  check('webhook: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+}
+
+// --- 8. One fulfilment implementation, shared by both entry points -----------
+check(
+  'fulfilment: the audited grant path is exported for reuse',
+  typeof fulfilment.fulfilDigitalOrder === 'function' && typeof fulfilment.getServiceClient === 'function'
+)
 
 setEnv({})
 

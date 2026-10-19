@@ -148,6 +148,7 @@ export default function AdminOverview() {
             { href: '/admin/projects', label: 'Manage Projects' },
             { href: '/admin/blog', label: 'Write Blog Post' },
             { href: '/admin/reviews', label: 'Moderate Reviews' },
+            { href: '/admin/data', label: 'Backup / Restore Data' },
           ].map(({ href, label }) => (
             <a
               key={href}

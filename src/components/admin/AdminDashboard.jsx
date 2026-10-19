@@ -27,6 +27,7 @@ import AdminYouTubeConfig from './AdminYouTubeConfig'
 import AdminVideoHero from './AdminVideoHero'
 import AdminStoreHero from './AdminStoreHero'
 import AdminPaymentSettings from './AdminPaymentSettings'
+import AdminDataTransfer from './AdminDataTransfer'
 export default function AdminDashboard() {
   return (
     <AdminLayout>
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
         <Route path="store-hero" element={<AdminStoreHero />} />
         <Route path="ai-automation" element={<AdminAiAutomation />} />
         <Route path="payment-settings" element={<AdminPaymentSettings />} />
+        <Route path="data" element={<AdminDataTransfer />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

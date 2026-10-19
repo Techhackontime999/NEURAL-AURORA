@@ -32,6 +32,7 @@ const navItems = [
   { path: '/admin/video-hero', label: 'Video Hero', icon: '▶' },
   { path: '/admin/store-hero', label: 'Store Hero Carousel', icon: '▦' },
   { path: '/admin/payment-settings', label: 'Payment Settings', icon: '₹' },
+  { path: '/admin/data', label: 'Import / Export Data', icon: '⇅' },
 ]
 
 export default function AdminLayout({ children }) {

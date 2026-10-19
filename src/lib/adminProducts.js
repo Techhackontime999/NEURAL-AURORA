@@ -311,7 +311,11 @@ export async function reconcilePayment(paymentId) {
  * accounts for strangers.
  *
  * @returns {Promise<{ok: true, email: string, link: string, account_created: boolean,
- *                    orders: number, active_entitlements: number|null}>}
+ *                    orders: number, active_entitlements: number|null,
+ *                    phone: string|null}>}
+ *          `phone` is the digits-only number from the customer's latest order,
+ *          used to open the WhatsApp share straight into their chat; null when
+ *          no order recorded one.
  */
 export async function createAccessLink({ orderRef, email } = {}) {
   return postAdminJson(

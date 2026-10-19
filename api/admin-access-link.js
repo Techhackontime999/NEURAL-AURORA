@@ -1,5 +1,6 @@
 const { newRequestId, envPresence, log, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
 const { getServiceClient, requireAdmin } = require('./_lib/adminAuth')
+const { normalisePhone } = require('./_lib/phone')
 
 // ---------------------------------------------------------------------------
 // POST /api/admin-access-link
@@ -60,6 +61,36 @@ function isAlreadyRegistered(error) {
 function actionLinkOf(data) {
   const link = data?.properties?.action_link || data?.action_link
   return typeof link === 'string' && link.startsWith('http') ? link : null
+}
+
+/**
+ * The phone number from this customer's most recent order, digits only, or ''.
+ *
+ * Deliberately tolerant and deliberately a separate query: `orders.customer_phone`
+ * arrives with migration …00008, and a deployment that has not applied it yet
+ * must still be able to mint a link. A missing column therefore costs only the
+ * WhatsApp shortcut — never the sign-in link itself.
+ *
+ * @returns {Promise<string>}
+ */
+async function latestCustomerPhone(supabase, email) {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('customer_phone')
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (error) return ''
+
+    // Newest non-empty number wins: a buyer may have improved their details on
+    // a later order.
+    const row = (data || []).find((entry) => normalisePhone(entry?.customer_phone))
+    return normalisePhone(row?.customer_phone)
+  } catch {
+    return ''
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -161,6 +192,10 @@ module.exports = async function handler(req, res) {
       })
     }
 
+    // The buyer's contact number, so the admin can deliver the link over
+    // WhatsApp instead of email. Optional at every step.
+    const phone = await latestCustomerPhone(supabase, email)
+
     // --- 3. Make sure the account exists (idempotent) ----------------------
     // `generateLink` would create the user itself, so this is only here to pin
     // `email_confirm` and to report honestly whether the account was new. It is
@@ -217,6 +252,7 @@ module.exports = async function handler(req, res) {
       created_account: created,
       orders: orders.length,
       active_entitlements: activeEntitlements ?? null,
+      has_customer_phone: Boolean(phone),
     })
 
     return res.json({
@@ -228,6 +264,7 @@ module.exports = async function handler(req, res) {
       orders: orders.length,
       active_entitlements: activeEntitlements ?? null,
       latest_order_ref: orders[0]?.order_ref || null,
+      phone: phone || null,
     })
   } catch (err) {
     logError('admin-access-link', requestId, {

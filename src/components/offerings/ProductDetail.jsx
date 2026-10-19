@@ -20,6 +20,7 @@ import {
   formatPrice,
 } from '../../lib/products'
 import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
+import { normalisePhone } from '../../lib/phone'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 
@@ -38,6 +39,7 @@ export default function ProductDetail() {
   // Purchase panel state.
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
   const [actionNotice, setActionNotice] = useState(null)
@@ -99,6 +101,15 @@ export default function ProductDetail() {
       return
     }
 
+    // A paid order also collects a contact number: it is what lets us hand the
+    // customer their download link over WhatsApp if the sign-in email cannot be
+    // delivered. Checked here so the buyer can fix a typo before paying.
+    const buyerPhone = isFree ? '' : normalisePhone(phone)
+    if (!isFree && !buyerPhone) {
+      setActionError(t('store.phoneRequired'))
+      return
+    }
+
     setBusy(true)
     try {
       if (isFree) {
@@ -113,6 +124,7 @@ export default function ProductDetail() {
           product,
           email: buyerEmail,
           name: (name || '').trim(),
+          phone: buyerPhone,
         })
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
@@ -381,6 +393,30 @@ export default function ProductDetail() {
                   autoComplete="name"
                   className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                 />
+              </label>
+            )}
+
+            {!isFree && (
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  {t('store.phoneLabel')}
+                </span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t('store.phonePlaceholder')}
+                  autoComplete="tel"
+                  aria-describedby="store-phone-note"
+                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                />
+                <span
+                  id="store-phone-note"
+                  className="mt-1 block text-[10px] leading-relaxed text-black/35 dark:text-white/35"
+                >
+                  {t('store.phoneNote')}
+                </span>
               </label>
             )}
 

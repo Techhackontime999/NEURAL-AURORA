@@ -13,6 +13,7 @@ const {
   logError,
   SUPABASE_ENV_NAMES,
 } = require('./_lib/diag')
+const { normalisePhone } = require('./_lib/phone')
 
 // Static fallback data when Supabase is unreachable or in offline dev mode
 const fallbackServices = [
@@ -131,6 +132,19 @@ function makeOrderRef() {
   return generateOrderRef(crypto)
 }
 
+/**
+ * True only when the database rejected a write because a column does not exist
+ * yet — i.e. the table is older than a migration. Used to keep selling while an
+ * additive column is still pending, never to swallow any other failure.
+ */
+function isMissingColumnError(error, column) {
+  if (!error) return false
+  if (error.code === 'PGRST204') return true // PostgREST: column not in schema cache
+
+  const message = String(error.message || '').toLowerCase()
+  return message.includes(column.toLowerCase()) && /column|schema cache/.test(message)
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -151,6 +165,7 @@ module.exports = async function handler(req, res) {
     items,
     email,
     name,
+    phone,
   } = req.body || {}
 
   // Product orders may carry a Supabase JWT so the entitlement can be bound to
@@ -237,26 +252,56 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'A valid email address is required for the receipt and download access' })
       }
 
+      // Optional: only used so the admin can hand this customer their sign-in
+      // link over WhatsApp. An unusable number is stored as '' — never a
+      // rejected sale.
+      const customerPhone = normalisePhone(phone)
+
       const orderRef = makeOrderRef()
 
-      const { data: orderRow, error: orderInsertError } = await supabase
-        .from('orders')
-        .insert({
-          order_ref: orderRef,
-          email: customerEmail,
-          customer_name: String(name || '').trim().slice(0, 120),
-          // Only trust an account id proven by the server, never one the
-          // browser claims.
-          user_id: verifiedUser?.id || null,
-          provider: 'razorpay',
-          payment_status: 'pending',
-          currency,
-          subtotal_paise: totalPaise,
-          discount_paise: 0,
-          total_paise: totalPaise,
-        })
-        .select('id')
-        .single()
+      const orderFields = {
+        order_ref: orderRef,
+        email: customerEmail,
+        customer_name: String(name || '').trim().slice(0, 120),
+        // Only trust an account id proven by the server, never one the
+        // browser claims.
+        user_id: verifiedUser?.id || null,
+        provider: 'razorpay',
+        payment_status: 'pending',
+        currency,
+        subtotal_paise: totalPaise,
+        discount_paise: 0,
+        total_paise: totalPaise,
+      }
+
+      let orderRow = null
+      let orderInsertError = null
+      {
+        const attempt = customerPhone
+          ? await supabase
+              .from('orders')
+              .insert({ ...orderFields, customer_phone: customerPhone })
+              .select('id')
+              .single()
+          : await supabase.from('orders').insert(orderFields).select('id').single()
+
+        orderRow = attempt.data
+        orderInsertError = attempt.error
+
+        // `customer_phone` arrives with migration …00008. A deployment that has
+        // not applied it yet must still be able to SELL: losing a paid order
+        // over an optional contact column would be far worse than the admin
+        // losing a WhatsApp shortcut. Retry once, without the phone.
+        if (orderInsertError && isMissingColumnError(orderInsertError, 'customer_phone')) {
+          log('create-order', requestId, {
+            stage: 'customer-phone-column-missing',
+            order_ref: orderRef,
+          })
+          const retry = await supabase.from('orders').insert(orderFields).select('id').single()
+          orderRow = retry.data
+          orderInsertError = retry.error
+        }
+      }
 
       if (orderInsertError || !orderRow) {
         logError('create-order', requestId, {
@@ -299,7 +344,7 @@ module.exports = async function handler(req, res) {
         pricing_label: 'Digital Product',
         product_slugs: priced.lines.map((line) => line.product.slug).join(','),
       }
-      digitalOrder = { orderRef, dbOrderId: orderRow.id }
+      digitalOrder = { orderRef, dbOrderId: orderRow.id, customerPhone }
 
     } else if (type === 'package' || package_name) {
       const targetName = (package_name || notes.pricing_label || '').trim().toLowerCase()
@@ -517,6 +562,7 @@ module.exports = async function handler(req, res) {
       amount_paise: order.amount,
       item_type: verifiedNotes.item_type,
       order_ref: digitalOrder?.orderRef,
+      has_customer_phone: Boolean(digitalOrder?.customerPhone),
     })
 
     return res.status(200).json({

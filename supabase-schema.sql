@@ -1229,12 +1229,17 @@ ON CONFLICT (slug) DO NOTHING;
 -- One row per checkout attempt. `provider_order_id` ties it to
 -- the Razorpay order created server-side. `payment_status` only
 -- ever moves to 'paid' via server-side webhook verification.
+--
+-- `customer_phone` is optional and stored digits-only in
+-- international form, so the admin can send a sign-in link over
+-- WhatsApp when email delivery is unavailable.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS orders (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   order_ref TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL,
   customer_name TEXT DEFAULT '',
+  customer_phone TEXT NOT NULL DEFAULT '',
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   provider TEXT NOT NULL DEFAULT 'razorpay',
   provider_order_id TEXT UNIQUE,

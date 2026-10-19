@@ -345,6 +345,90 @@ setEnv({})
   )
 }
 
+// --- 11. Customer phone: one normaliser, and the browser copy agrees ---------
+{
+  const serverPhone = require('../api/_lib/phone.js')
+  const browserPhone = await import('../src/lib/phone.js')
+
+  // input -> digits-only international form the database stores.
+  const cases = [
+    ['98765 43210', '919876543210'],
+    ['+91 98765-43210', '919876543210'],
+    ['09876543210', '919876543210'],
+    ['0091 98765 43210', '919876543210'],
+    ['+44 7911 123456', '447911123456'],
+    ['+1 (415) 555-2671', '14155552671'],
+    ['4155552671', '914155552671'],
+    ['ask me later', ''],
+    ['12 34', ''],
+    ['+91', ''],
+    ['1234567890123456', ''],
+    ['', ''],
+  ]
+
+  const mismatches = cases.filter(([input, expected]) => {
+    const fromServer = serverPhone.normalisePhone(input)
+    const fromBrowser = browserPhone.normalisePhone(input)
+    return fromServer !== fromBrowser || fromServer !== expected
+  })
+  check(
+    'phone: server and browser normalisers agree on every case',
+    mismatches.length === 0,
+    mismatches
+      .map(
+        ([input]) =>
+          `'${input}' -> ${serverPhone.normalisePhone(input)} / ${browserPhone.normalisePhone(input)}`
+      )
+      .join('; ')
+  )
+
+  check(
+    'phone: normalising an already-normalised number changes nothing',
+    cases.every(
+      ([, expected]) =>
+        expected === '' || serverPhone.normalisePhone(expected) === expected
+    )
+  )
+
+  check(
+    'phone: unusable input is empty, never an exception',
+    serverPhone.normalisePhone(undefined) === '' &&
+      serverPhone.normalisePhone(null) === '' &&
+      serverPhone.normalisePhone(12345) === '' &&
+      serverPhone.normalisePhone({}) === ''
+  )
+
+  // A phone number is a convenience, never a reason to lose a sale, so the
+  // shared module is the ONLY implementation and nothing rejects an order for
+  // want of one.
+  const createOrderSrc = fs.readFileSync('api/create-order.js', 'utf8')
+  check(
+    'phone: create-order uses the shared normaliser, not a private copy',
+    createOrderSrc.includes("require('./_lib/phone')") &&
+      !createOrderSrc.includes('function normalisePhone')
+  )
+  check(
+    'phone: an unusable number never fails the order',
+    !/if \(!customerPhone\)[\s\S]{0,120}status\(4\d\d\)/.test(createOrderSrc),
+    'create-order rejects an order because of the phone number'
+  )
+
+  const accessLinkSrc = fs.readFileSync('api/admin-access-link.js', 'utf8')
+  check(
+    'phone: the sign-in link endpoint reports the customer number',
+    accessLinkSrc.includes("require('./_lib/phone')") &&
+      accessLinkSrc.includes('phone: phone || null')
+  )
+
+  const detailSrc = fs.readFileSync('src/components/offerings/ProductDetail.jsx', 'utf8')
+  check(
+    'phone: the store checkout asks for a number and validates it',
+    detailSrc.includes('normalisePhone') &&
+      detailSrc.includes('type="tel"') &&
+      detailSrc.includes("t('store.phoneRequired')")
+  )
+}
+
 setEnv({})
 
 console.log(`\n${passed} passed, ${failed} failed`)

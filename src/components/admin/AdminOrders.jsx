@@ -10,6 +10,7 @@ import {
   summariseOrders,
 } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
+import { formatPhone, telLink, whatsappLink } from '../../lib/phone'
 import { useToast } from '../../context/ToastContext'
 import SearchBar from '../ui/SearchBar'
 
@@ -72,9 +73,13 @@ export default function AdminOrders() {
     return orders.filter((o) => {
       if (statusFilter && o.payment_status !== statusFilter) return false
       if (!term) return true
-      return [o.order_ref, o.email, o.customer_name, o.provider_order_id].some(
-        (f) => f && String(f).toLowerCase().includes(term)
-      )
+      return [
+        o.order_ref,
+        o.email,
+        o.customer_name,
+        o.customer_phone,
+        o.provider_order_id,
+      ].some((f) => f && String(f).toLowerCase().includes(term))
     })
   }, [orders, search, statusFilter])
 
@@ -199,11 +204,15 @@ export default function AdminOrders() {
     return `mailto:${accessLink.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }, [accessLink])
 
+  // WhatsApp delivery. When the order recorded a phone number this opens the
+  // chat with that customer directly; otherwise it falls back to WhatsApp's own
+  // contact picker, so the admin is never blocked.
   const whatsappHref = useMemo(() => {
     if (!accessLink?.link) return '#'
-    return `https://wa.me/?text=${encodeURIComponent(
+    return whatsappLink(
+      accessLink.phone,
       `Your NEURAL AURORA download is ready. Use this link to sign in: ${accessLink.link}`
-    )}`
+    )
   }, [accessLink])
 
   return (
@@ -336,6 +345,7 @@ export default function AdminOrders() {
                         {order.email}
                         {order.customer_name ? ` · ${order.customer_name}` : ''}
                       </p>
+                      {order.customer_phone && <PhoneLinks phone={order.customer_phone} />}
                       <p className="mt-0.5 break-all text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                         {order.provider} {order.provider_order_id || ''}
                         {order.paid_at ? ` · paid ${new Date(order.paid_at).toLocaleString()}` : ''}
@@ -539,6 +549,12 @@ export default function AdminOrders() {
             </div>
 
             <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+              {accessLink.phone
+                ? `WhatsApp will open a chat with ${formatPhone(accessLink.phone)}.`
+                : 'No phone number was recorded on this customer’s orders — WhatsApp will ask you to pick a contact.'}
+            </p>
+
+            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
               {accessLink.orders} order(s) ·{' '}
               {accessLink.active_entitlements ?? 0} active download entitlement(s)
               {accessLink.account_created ? ' · account created' : ' · account already existed'}.
@@ -548,6 +564,29 @@ export default function AdminOrders() {
         </div>
       )}
     </div>
+  )
+}
+
+/** Phone contact links for an order, or nothing when there is no usable number. */
+function PhoneLinks({ phone }) {
+  const number = formatPhone(phone)
+  if (!number) return null
+
+  return (
+    <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+      <a href={telLink(phone)} className="underline decoration-dotted">
+        {number}
+      </a>
+      {' · '}
+      <a
+        href={whatsappLink(phone)}
+        target="_blank"
+        rel="noreferrer"
+        className="underline decoration-dotted"
+      >
+        WhatsApp
+      </a>
+    </p>
   )
 }
 

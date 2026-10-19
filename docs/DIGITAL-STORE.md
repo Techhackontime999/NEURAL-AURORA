@@ -51,6 +51,11 @@ before changing anything in `api/` or the migrations.
 - **Knowing an order reference, email, product id or UUID grants nothing.**
   Order status returns no PII and no files; downloads always re-check the
   entitlement against the authenticated principal.
+- **A phone number is contact data, never proof.** `orders.customer_phone` is
+  collected at checkout only so an administrator can deliver a sign-in link over
+  WhatsApp. It is optional, normalised to digits-only international form, and
+  grants nothing by itself — it is never used to authenticate anyone or to match
+  an entitlement.
 - **A free product is self-granted only while it is published.** The download
   endpoint issues a free entitlement on the spot for a signed-in customer, but
   only for a `published` product — otherwise a draft's files could be pulled by
@@ -142,7 +147,13 @@ supabase/migrations/20261018000004_add_download_rate_limit.sql
 supabase/migrations/20261018000005_digital_products_owner_read.sql
 supabase/migrations/20261018000006_digital_products_updated_at.sql
 supabase/migrations/20261018000007_harden_email_claim_policies.sql
+supabase/migrations/20261018000008_add_customer_phone.sql
 ```
+
+`…00008` is additive (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) and safe to
+re-run. A checkout does **not** depend on it: the phone number is an optional
+contact detail, so orders still sell if it has not been applied yet — only the
+WhatsApp shortcut in the admin panel stays empty.
 
 `supabase-schema.sql` is the canonical schema and already contains all of the
 above, so a fresh project can be created from it in one paste instead.
@@ -239,11 +250,16 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
 
 1. Admin → Products → create a product with a non-zero price, publish it, upload
    a file.
-2. Open the product page, enter an email, press *Buy for ₹…*.
+2. Open the product page, enter an email and a phone number, press *Buy for ₹…*.
+   The phone field is required in the form and is stored digits-only
+   (`98765 43210` → `919876543210`).
 3. Complete a test payment with a Razorpay test card.
 4. You land on `/purchase/success?ref=NA-…`, which shows *Confirming your
    payment* until the webhook arrives, then *Payment confirmed*.
 5. Sign in at `/library` with the same email to download.
+6. Admin → **Orders** → the order → *Sign-in link* → *Share on WhatsApp*. With a
+   number on the order, WhatsApp opens that buyer's chat with the link already
+   typed; the panel says which number it will use.
 
 **What to check when it does not work**
 
@@ -267,6 +283,10 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   problem is elsewhere.
 - `Payment confirmed` never appears → the webhook is not reaching the
   deployment, or the secret does not match. Check the function logs.
+- **An order shows no phone number** → it was placed before migration `…00008`
+  was applied, or the buyer's number could not be parsed. Nothing is broken: the
+  link panel falls back to WhatsApp's contact picker, and the order still sells.
+  Apply the migration (it is additive, see §3) to capture numbers from then on.
 - **Money captured, order still `pending`** (customer paid but no access) → the
   capture never reached us as a webhook. Do **not** hand-edit the database.
   Admin → **Orders** → the pending order → **Verify payment**. The server asks
@@ -382,12 +402,31 @@ curl -s -X POST "$SITE/api/admin-access-link" \
   so treat it like a password: whoever opens it is signed in as that customer.
 - The link expires (one hour by default, `Authentication → Email OTP
   Expiry`). Generate a fresh one if it lapses.
+- `phone` echoes the customer's latest order number (digits only, e.g.
+  `"919876543210"`), or `null`. It is what makes the admin UI's *Share on
+  WhatsApp* open that buyer's chat directly; with `null` WhatsApp asks the admin
+  to pick a contact, and the link still works.
+
+#### Where the phone number comes from
+
+The storefront's purchase panel asks for a number alongside the email and
+validates it with `src/lib/phone.js`. It is normalised to digits-only
+international form (`api/_lib/phone.js`; `98765 43210` → `919876543210`, a
+leading `+`/`00` country code is preserved, an Indian trunk `0` is dropped) and
+stored in `orders.customer_phone` by `/api/create-order`. The admin order list
+shows it as a `tel:` and WhatsApp link, and it is included in the Razorpay
+`prefill.contact` so the checkout form arrives pre-filled.
+
+The number is **never required by the server**: an unusable value is stored as
+`''` and the order still goes through, because losing a sale over an optional
+contact detail would be far worse than losing a WhatsApp shortcut. Applying
+migration `…00008` is what makes the value persist at all.
 
 ---
 
 ## 6. Production checklist
 
-- [ ] All eight migrations applied.
+- [ ] All nine migrations applied.
 - [ ] `digital-products` bucket exists and is **private**.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
       `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo) —

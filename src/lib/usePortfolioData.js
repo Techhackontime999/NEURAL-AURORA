@@ -336,3 +336,20 @@ export function useVideoHeroSettings() {
     return settings?.video_hero || {}
   }, {})
 }
+
+/**
+ * Admin-managed background-image carousel for the digital-store hero card
+ * (/offerings/products). The static default is an empty object:
+ * StoreShell.jsx merges these fields over its built-in default images
+ * (src/lib/storeHeroDefaults.js), so an empty/partial document never blanks
+ * the carousel out.
+ *
+ * Call invalidatePortfolioCache('storeHeroSettings') after an admin save to
+ * refresh already-mounted copies.
+ */
+export function useStoreHeroSettings() {
+  return usePortfolioResource('storeHeroSettings', async () => {
+    const settings = await getAdminSettings()
+    return settings?.store_hero || {}
+  }, {})
+}

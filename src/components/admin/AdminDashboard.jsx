@@ -25,6 +25,7 @@ import AdminDocsConfig from './AdminDocsConfig'
 import AdminAiAutomation from './AdminAiAutomation'
 import AdminYouTubeConfig from './AdminYouTubeConfig'
 import AdminVideoHero from './AdminVideoHero'
+import AdminStoreHero from './AdminStoreHero'
 import AdminPaymentSettings from './AdminPaymentSettings'
 export default function AdminDashboard() {
   return (
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
         <Route path="docs-config" element={<AdminDocsConfig />} />
         <Route path="youtube-config" element={<AdminYouTubeConfig />} />
         <Route path="video-hero" element={<AdminVideoHero />} />
+        <Route path="store-hero" element={<AdminStoreHero />} />
         <Route path="ai-automation" element={<AdminAiAutomation />} />
         <Route path="payment-settings" element={<AdminPaymentSettings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />

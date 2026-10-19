@@ -30,6 +30,7 @@ const navItems = [
   { path: '/admin/docs-config', label: 'Docs Config', icon: '⊡' },
   { path: '/admin/youtube-config', label: 'YouTube Config', icon: '⊡' },
   { path: '/admin/video-hero', label: 'Video Hero', icon: '▶' },
+  { path: '/admin/store-hero', label: 'Store Hero Carousel', icon: '▦' },
   { path: '/admin/payment-settings', label: 'Payment Settings', icon: '₹' },
 ]
 

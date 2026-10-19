@@ -4,6 +4,7 @@ import {
   getOrderItems,
   getAllEntitlements,
   revokeEntitlement,
+  deleteOrders,
   reconcileOrder,
   reconcilePayment,
   createAccessLink,
@@ -13,6 +14,8 @@ import { formatPrice } from '../../lib/products'
 import { formatPhone, telLink, whatsappLink } from '../../lib/phone'
 import { useToast } from '../../context/ToastContext'
 import SearchBar from '../ui/SearchBar'
+import BulkActionsBar from '../ui/BulkActionsBar'
+import useBulkSelect from '../../lib/useBulkSelect'
 
 const STATUS_COLORS = {
   pending: '#f59e0b',
@@ -37,6 +40,7 @@ export default function AdminOrders() {
   const [verifyingPaymentId, setVerifyingPaymentId] = useState(false)
   const [linkBusy, setLinkBusy] = useState(null)
   const [accessLink, setAccessLink] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     load()
@@ -82,6 +86,20 @@ export default function AdminOrders() {
       ].some((f) => f && String(f).toLowerCase().includes(term))
     })
   }, [orders, search, statusFilter])
+
+  const {
+    selectedIds,
+    toggleSelect,
+    toggleAll,
+    clearSelection,
+    allSelected,
+  } = useBulkSelect(filtered)
+
+  // Selection follows what is on screen: changing the filters starts fresh so
+  // a bulk delete can never include rows the admin can no longer see.
+  useEffect(() => {
+    clearSelection()
+  }, [search, statusFilter, clearSelection])
 
   /**
    * Ask the server to re-verify a pending order straight from Razorpay. This
@@ -152,6 +170,47 @@ export default function AdminOrders() {
       load()
     } catch (err) {
       toast.error('Failed to revoke: ' + err.message)
+    }
+  }
+
+  /**
+   * Permanently delete the selected orders. Orders are server-managed, so the
+   * request goes through the admin-only endpoint; the database cascades remove
+   * their line items and download entitlements.
+   */
+  async function handleDeleteSelected() {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+
+    const selected = orders.filter((o) => selectedIds.has(o.id))
+    const paidCount = selected.filter((o) => o.payment_status === 'paid').length
+
+    const ok = await confirm({
+      title: `Delete ${ids.length} order${ids.length === 1 ? '' : 's'}`,
+      message: [
+        'This permanently removes the selected order(s) along with their line items and download entitlements.',
+        paidCount > 0
+          ? `${paidCount} of them ${paidCount === 1 ? 'is a paid order' : 'are paid orders'} — the customer will lose download access.`
+          : '',
+        'Payment transaction records are kept for audit. This cannot be undone.',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      confirmText: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    setDeleting(true)
+    try {
+      const result = await deleteOrders(ids)
+      toast.success(`${result.deleted} order${result.deleted === 1 ? '' : 's'} deleted`)
+      clearSelection()
+      await load()
+    } catch (err) {
+      toast.error('Delete failed: ' + err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -290,7 +349,33 @@ export default function AdminOrders() {
                 </option>
               ))}
             </select>
+
+            <label
+              className="flex cursor-pointer items-center gap-2 text-xs"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleAll}
+                disabled={filtered.length === 0}
+                className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              Select all{filtered.length ? ` (${filtered.length})` : ''}
+            </label>
+
+            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+              Tick orders to delete them in bulk
+            </span>
           </div>
+
+          <BulkActionsBar
+            selectedCount={selectedIds.size}
+            onDelete={handleDeleteSelected}
+            onClear={clearSelection}
+            deleting={deleting}
+          />
 
           {/* Recovery for a capture the gateway did not attach to our order */}
           <form
@@ -335,31 +420,44 @@ export default function AdminOrders() {
               {filtered.map((order) => (
                 <div
                   key={order.id}
-                  className="rounded-xl border p-4"
-                  style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}
+                  className="rounded-xl border p-4 transition-colors"
+                  style={{
+                    borderColor: selectedIds.has(order.id) ? 'var(--accent)' : 'var(--border-color)',
+                    background: 'var(--card-bg)',
+                  }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {order.order_ref}
-                        </span>
-                        <span
-                          className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-white"
-                          style={{ background: STATUS_COLORS[order.payment_status] || '#64748b' }}
-                        >
-                          {order.payment_status}
-                        </span>
+                    <div className="flex min-w-0 items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(order.id)}
+                        onChange={() => toggleSelect(order.id)}
+                        aria-label={`Select order ${order.order_ref}`}
+                        className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer"
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {order.order_ref}
+                          </span>
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-white"
+                            style={{ background: STATUS_COLORS[order.payment_status] || '#64748b' }}
+                          >
+                            {order.payment_status}
+                          </span>
+                        </div>
+                        <p className="mt-1 break-all text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {order.email}
+                          {order.customer_name ? ` · ${order.customer_name}` : ''}
+                        </p>
+                        {order.customer_phone && <PhoneLinks phone={order.customer_phone} />}
+                        <p className="mt-0.5 break-all text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                          {order.provider} {order.provider_order_id || ''}
+                          {order.paid_at ? ` · paid ${new Date(order.paid_at).toLocaleString()}` : ''}
+                        </p>
                       </div>
-                      <p className="mt-1 break-all text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {order.email}
-                        {order.customer_name ? ` · ${order.customer_name}` : ''}
-                      </p>
-                      {order.customer_phone && <PhoneLinks phone={order.customer_phone} />}
-                      <p className="mt-0.5 break-all text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                        {order.provider} {order.provider_order_id || ''}
-                        {order.paid_at ? ` · paid ${new Date(order.paid_at).toLocaleString()}` : ''}
-                      </p>
                     </div>
 
                     <div className="text-right">

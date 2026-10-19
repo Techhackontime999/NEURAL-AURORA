@@ -251,6 +251,21 @@ export async function revokeEntitlement(id) {
 }
 
 /**
+ * Permanently delete orders (and, by database cascade, their order items and
+ * download entitlements).
+ *
+ * Orders are server-managed: the browser only has SELECT/UPDATE grants, so
+ * deletion goes through an admin-only endpoint that verifies the caller's
+ * session on the server. Payment transaction rows are kept for audit.
+ *
+ * @param {number[]} ids order ids (max 200 per request)
+ * @returns {Promise<{ok: true, deleted: number, paid_deleted: number, order_refs: string[]}>}
+ */
+export async function deleteOrders(ids) {
+  return postAdminJson('/api/admin-delete-orders', { ids })
+}
+
+/**
  * POST JSON to an admin-only store endpoint with the admin's own session token.
  *
  * The browser never asserts a payment, a role or an email — every admin

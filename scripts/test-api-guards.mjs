@@ -72,6 +72,7 @@ const orderStatus = require('../api/order-status.js')
 const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
 const adminAccessLink = require('../api/admin-access-link.js')
+const adminDeleteOrders = require('../api/admin-delete-orders.js')
 const adminAuth = require('../api/_lib/adminAuth.js')
 const webhook = require('../api/razorpay-webhook.js')
 const { envPresence } = require('../api/_lib/diag.js')
@@ -289,10 +290,12 @@ check(
 {
   const reconcileSrc = fs.readFileSync('api/admin-reconcile-order.js', 'utf8')
   const accessLinkSrc = fs.readFileSync('api/admin-access-link.js', 'utf8')
+  const deleteOrdersSrc = fs.readFileSync('api/admin-delete-orders.js', 'utf8')
   check(
     'admin-auth: no endpoint keeps a divergent copy of the admin check',
     reconcileSrc.includes("require('./_lib/adminAuth')") &&
       accessLinkSrc.includes("require('./_lib/adminAuth')") &&
+      deleteOrdersSrc.includes("require('./_lib/adminAuth')") &&
       !reconcileSrc.includes('async function requireAdmin'),
     'an admin endpoint declares its own requireAdmin()'
   )
@@ -426,6 +429,50 @@ setEnv({})
     detailSrc.includes('normalisePhone') &&
       detailSrc.includes('type="tel"') &&
       detailSrc.includes("t('store.phoneRequired')")
+  )
+}
+
+// --- 12. Bulk order deletion: admin proof before anything is removed --------
+setEnv({})
+{
+  const { res, lines } = await capture((r) =>
+    adminDeleteOrders({ method: 'POST', headers: {}, body: { ids: [1] } }, r)
+  )
+  check('admin-delete-orders: unconfigured -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check('admin-delete-orders: 503 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) => adminDeleteOrders({ method: 'GET', headers: {} }, r))
+  check('admin-delete-orders: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+}
+{
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res, lines } = await capture((r) =>
+    adminDeleteOrders({ method: 'POST', headers: {}, body: { ids: [1] } }, r)
+  )
+  check(
+    'admin-delete-orders: anonymous -> 403 (never deletes)',
+    res.statusCode === 403,
+    `got ${res.statusCode}`
+  )
+  check('admin-delete-orders: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  // Validation happens only after the admin gate, so an unauthenticated caller
+  // can never probe which ids exist. An empty bearer token is not proof of
+  // anything, so this returns before any network call.
+  setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
+  const { res } = await capture((r) =>
+    adminDeleteOrders(
+      { method: 'POST', headers: { authorization: 'Bearer ' }, body: { ids: [1] } },
+      r
+    )
+  )
+  check(
+    'admin-delete-orders: empty bearer token -> 403 (never deletes)',
+    res.statusCode === 403,
+    `got ${res.statusCode}`
   )
 }
 

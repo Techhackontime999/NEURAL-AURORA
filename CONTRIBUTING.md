@@ -1,123 +1,107 @@
 # Contributing to NEURAL AURORA
 
-First off, thank you for considering contributing to **NEURAL AURORA** — *The Synaptic Portfolio*. This is an open-source portfolio project built with React, Vite, Three.js, and Supabase. Whether you're fixing a bug, adding a feature, improving docs, or supporting financially — every contribution matters.
+First off, thank you for considering contributing to **NEURAL AURORA** — *The Synaptic Portfolio*. This project thrives because of people like you.
 
 ---
 
 ## Ways to Contribute
 
-- **Code** — Bug fixes, new features, performance improvements, refactoring.
-- **Financial Support** — Donations via the [/support](https://neural-aurora.vercel.app/support) page help cover hosting, APIs, and contributor compensation.
-- **Documentation** — Improve README, fix typos, add examples, or write guides.
-- **Bug Reports & Feature Requests** — Open an issue with a clear description, steps to reproduce, and expected vs. actual behavior.
+- **Code** – Bug fixes, new features, performance improvements, refactoring
+- **Documentation** – Improve README, fix typos, add guides or examples
+- **Bug Reports** – Open an issue with clear steps to reproduce
+- **Feature Requests** – Share ideas with reasoning and use cases
+- **Testing** – Test flows (digital store, auth, admin) and report issues
 
 ---
 
 ## Getting Started
 
-1. Fork the repository.
-2. Clone your fork:
+1. **Fork** the repository: [github.com/Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA)
+2. **Clone** your fork
    ```bash
    git clone https://github.com/your-username/NEURAL-AURORA.git
+   cd NEURAL-AURORA
    ```
-3. Follow the [Quick Start](README.md#neural-aurora--setup) instructions in the README to set up the project locally.
-4. Create a new branch (see branch naming below).
+3. **Install dependencies**
+   ```bash
+   npm install
+   ```
+4. **Set up environment** – Copy `.env.example` to `.env` and fill values as needed
+5. **Run locally**
+   ```bash
+   npm run dev
+   ```
+6. **Create a branch** – Use descriptive, kebab-case names
 
 ---
 
-## Development Workflow
+## Branch Naming
 
-### Branch Naming
+| Prefix | Example |
+|--------|---------|
+| `feature/` | `feature/digital-store-improvements` |
+| `fix/` | `fix/library-signin-issue` |
+| `docs/` | `docs/update-setup-guide` |
+| `refactor/` | `refactor/admin-orders-table` |
+| `chore/` | `chore/update-deps` |
 
-Use descriptive kebab-case names with a prefix:
+---
 
-| Prefix     | Example                          |
-|------------|----------------------------------|
-| `feature/` | `feature/particle-system-refactor` |
-| `fix/`     | `fix/mobile-nav-overflow`        |
-| `chore/`   | `chore/update-tailwind-config`   |
-
-### Commit Messages
+## Commit Messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-<type>(<scope>): <description>
-
-feat(admin): add donation preset editor
-fix(navbar): correct mobile menu overflow on iOS
-docs(readme): update environment variable table
+feat(digital-store): add phone validation
+fix(library): handle missing password gracefully
+docs(readme): update license section
 ```
 
-Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `chore`.
+---
 
-### Pull Request Process
+## Pull Request Process
 
-1. Ensure your branch is up to date with `main`.
-2. Run `npm run build` to verify the project builds without errors.
-3. Open a PR with a clear title and description linking to any related issues.
-4. Maintainers will review and may request changes. Please keep discussions constructive.
+1. Keep your branch up to date with `main`
+2. Ensure `npm run build` passes without errors
+3. Ensure `npm run check` passes (routes + i18n + SQL lint)
+4. Ensure `npm test` passes (pricing + API guards)
+5. Open a PR with a clear title, description, and screenshots if UI-related
+6. Link any related issue(s)
+7. Be responsive to review feedback
 
 ---
 
-## Code Standards
+## Contributor Benefit
 
-- **React / JSX** — Use functional components and hooks. Avoid class components.
-- **Tailwind** — Use utility classes directly in JSX. Keep custom CSS in `index.css` only when Tailwind utilities are insufficient.
-- **Component Patterns** — Place reusable UI components in `src/components/ui/` and admin components in `src/components/admin/`. Each component in its own file.
-- **Imports** — Prefer named exports. Group imports by: React/external libraries → project modules → assets/styles.
-- **Formatting** — Use the project's existing style. There is no strict linter config, so match surrounding code.
+**Having at least one Pull Request merged** into the official repository makes you a **verified Contributor**.
 
----
+As a verified Contributor, you receive a **perpetual, royalty-free license** to use NEURAL AURORA for **personal, educational, or commercial** purposes under the terms of the [LICENSE](LICENSE) — **no commercial license purchase required**.
 
-## Contributor Recognition
-
-### Current Project Founder
-
-| Name | Role | GitHub |
-|------|------|--------|
-| **Amit Kumar (Techhackontime999)** | Founder & Lead Developer | [@Techhackontime999](https://github.com/Techhackontime999) |
-
-### How Contributors Are Listed
-
-All contributors — whether through code, documentation, or financial support — are managed via the **Admin Dashboard → Payment Settings → Contributors** section. Anyone added there will appear:
-
-1. On the live site's **Contributors Section** (public-facing grid)
-2. In the project README credits
-
-### Becoming a Contributor
-
-- **Code Contributors** — Submit a PR. Once merged, the maintainer will add you to the contributors list.
-- **Financial Donors** — Make a donation via the [/support](https://neural-aurora.vercel.app/support) page. Donors contributing ₹99+ are automatically eligible for listing.
-- **Future Expansion** — This system is designed to scale. As the project grows, automated recognition via GitHub API and blockchain-verified donations may be added.
+**Verified Students** who meaningfully contribute may also qualify for the same benefit. Reach out to `techhackontime999@gmail.com` with proof if needed.
 
 ---
 
-## Financial Contributions
+## Code Guidelines
 
-If you'd like to support NEURAL AURORA financially, visit the [/support](https://neural-aurora.vercel.app/support) page.
-
-100% of contributions go toward:
-- **Development costs** — hosting (Vercel/Supabase), API subscriptions (OpenRouter, Jamendo), and domain renewal.
-- **Compensating contributors** — contributors who add features or fix bugs may receive compensation from the support fund.
-
-Every rupee is transparently accounted for. There are no paywalls, no premium tiers — just pure open-source value for the entire community.
-
----
-
-## Community Guidelines
-
-- Be respectful and inclusive. Harassment, discrimination, or toxic behavior will not be tolerated.
-- Provide constructive feedback. Assume good intent.
-- Help others learn — this project is a portfolio and a learning resource.
-- If you see a problem, speak up respectfully or submit a fix.
+- **React** – Functional components + hooks only
+- **Styling** – Tailwind CSS utility classes; minimal custom CSS in `index.css`
+- **Structure** – Keep components small, reusable, and colocated logically
+- **Naming** – Clear, descriptive names
+- **TypeScript mindset** – Write readable, predictable JS
+- **Security** – Never commit secrets, keys, or credentials
+- **i18n** – Add keys to `src/locales/en.json` if adding user-facing text
+- **API safety** – Respect existing validation, auth, and RLS patterns
 
 ---
 
-## License
+## Code of Conduct
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+By participating, you agree to abide by our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ---
 
-*Built with synapses, not just syntax.*
+## Questions?
+
+Feel free to open an issue or reach out via the repository discussions.
+
+**Thank you for helping make NEURAL AURORA better!**

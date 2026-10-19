@@ -6,7 +6,7 @@ If you discover a security vulnerability in **NEURAL AURORA**, please **do not**
 
 Instead, report it privately to:
 
-**Email:** techhackontime999@gmail.com  
+**Email:** amitkumarkh01012006@gmail.com  
 **Subject:** `SECURITY: NEURAL AURORA`
 
 ## What to Include

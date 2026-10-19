@@ -29,13 +29,13 @@ const defaultSettings = {
     { title: 'Co-Creator Status', desc: 'Direct influence on roadmap & private community access.', min: 4999 },
   ],
   hero_title: 'NEURAL AURORA',
-  hero_subtitle: 'Open Source & Free Forever',
-  hero_description: 'This project is 100% free and open-source. Your contribution keeps it alive, funds new features, and helps us compete with paid alternatives — while keeping NEURAL AURORA free for everyone.',
+  hero_subtitle: 'Source-Available & Free for Contributors',
+  hero_description: 'NEURAL AURORA is source-available software. Contributions keep it alive, fund new features, and help us compete with paid alternatives — while keeping it free for contributors, students, and evaluation.',
   faqs: [
     { q: 'Where does my money go?', a: '100% of contributions go toward development costs — hosting, API subscriptions, domain renewal, and compensating contributors who add features to NEURAL AURORA. Every rupee is transparently accounted for.' },
-    { q: 'Is NEURAL AURORA really free?', a: 'Yes! The core project will always remain free and open-source. Contributions help sustain development and accelerate new features, but the free version is our flagship and main competitor.' },
+    { q: 'Is NEURAL AURORA really free?', a: 'It is free for contributors, verified students, and evaluation. Running it commercially requires a Commercial License — contributions help sustain development and keep it free for those who qualify.' },
     { q: 'Can I request a specific feature?', a: 'Absolutely! Contributors at ₹999 and above can vote on the roadmap. Higher tiers get direct input on what gets built next.' },
-    { q: 'What if I want a custom enterprise plan?', a: 'For custom enterprise needs, check out the Services page. This support page is purely for sustaining the open-source project.' },
+    { q: 'What if I want a custom enterprise plan?', a: 'For custom enterprise needs, check out the Services page. This support page is purely for sustaining the project.' },
     { q: 'Is my payment secure?', a: 'All payments are processed securely through Razorpay, a PCI-DSS compliant payment gateway. We never store your card or UPI details.' },
   ],
 }
@@ -279,14 +279,14 @@ export default function Support() {
         >
           <motion.div variants={childVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 mb-6">
             <Heart className="w-3 h-3 text-rose-400" />
-            <span className="text-[10px] uppercase tracking-widest text-rose-400 font-medium">{t('support.heroSubtitle')}</span>
+            <span className="text-[10px] uppercase tracking-widest text-rose-400 font-medium">{settings.hero_subtitle || t('support.heroSubtitle')}</span>
           </motion.div>
           <motion.h1 variants={childVariants} className="text-4xl md:text-6xl lg:text-7xl font-display font-bold tracking-tighter mt-4 leading-none text-balance">
             <span className="text-black/60 dark:text-white/60">{t('support.eyebrow')}</span>{' '}
             <span className="text-gradient">{settings.hero_title}</span>
           </motion.h1>
           <motion.p variants={childVariants} className="text-sm md:text-base text-black/50 dark:text-white/50 mt-5 max-w-2xl mx-auto leading-relaxed">
-            {t('support.heroDescription')}
+            {settings.hero_description || t('support.heroDescription')}
           </motion.p>
         </motion.div>
 
@@ -298,7 +298,7 @@ export default function Support() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20"
         >
           {[
-            { value: '100%', label: 'Free & Open Source', icon: Shield },
+            { value: '100%', label: 'Free for Contributors', icon: Shield },
             { value: '0', label: 'Paid Features', icon: Crown },
             { value: 'Your', label: 'Contribution Counts', icon: Heart },
             { value: '∞', label: 'Possibilities', icon: Sparkles },
@@ -336,8 +336,8 @@ export default function Support() {
                 <span className="text-gradient">Contribution</span>
               </h2>
               <p className="text-sm text-black/50 dark:text-white/50 leading-relaxed mb-6">
-                Every contribution — big or small — helps keep NEURAL AURORA free and
-                drives the next wave of features. Pick an amount or enter your own.
+                Every contribution — big or small — helps keep NEURAL AURORA free for contributors
+                and drives the next wave of features. Pick an amount or enter your own.
               </p>
               <div className="glass-panel rounded-2xl p-6 space-y-4">
                 <div className="grid grid-cols-3 gap-2">
@@ -501,8 +501,8 @@ export default function Support() {
             {[
               {
                 icon: Heart,
-                title: 'Free for Everyone',
-                desc: 'Your contribution ensures NEURAL AURORA stays 100% free with no paywalls, no premium tiers — just pure open-source value for the entire community.',
+                title: 'Free for Contributors',
+                desc: 'Merged contributors get full commercial rights at no cost. Your contribution keeps NEURAL AURORA alive, funds new features, and helps us compete with paid alternatives.',
               },
               {
                 icon: Zap,
@@ -512,7 +512,7 @@ export default function Support() {
               {
                 icon: Rocket,
                 title: 'Compete with Paid',
-                desc: 'The free version is our competitor. Your support helps us build features that rival enterprise solutions, proving open-source can win.',
+                desc: 'The free-for-contributors version is our competitor. Your support helps us build features that rival enterprise solutions, proving source-available can win.',
               },
             ].map((item, i) => (
               <motion.div

@@ -8,6 +8,7 @@ import {
   Library as LibraryIcon,
   LogOut,
   MailCheck,
+  KeyRound,
   AlertTriangle,
   Loader2,
 } from 'lucide-react'
@@ -17,15 +18,41 @@ import { getDownloadUrl } from '../../lib/checkout'
 import { getMyLibrary } from '../../lib/products'
 import StoreShell from './StoreShell'
 
+/** Supabase's default minimum; the project may require a longer one. */
+const MIN_PASSWORD_LENGTH = 8
+
 /**
- * Supabase's own wording is written for developers. Translate the one state a
- * customer can genuinely hit — the project's mailer refusing to send more
- * messages this hour — into something they can act on.
+ * Supabase's own wording is written for developers. Translate the states a
+ * customer can genuinely hit — above all the project's mailer refusing to send
+ * more messages this hour — into something they can act on.
  */
 function readableAuthError(err, t) {
   const raw = String(err?.message || '').toLowerCase()
   if (raw.includes('rate limit')) return t('store.signInRateLimited')
   return err?.message || t('store.signInFailed')
+}
+
+function readableSignInError(err, t) {
+  const raw = String(err?.message || '').toLowerCase()
+  if (raw.includes('rate limit')) return t('store.signInRateLimited')
+  // Supabase deliberately does not say whether the account exists, whether it
+  // has a password, or whether the password was simply wrong.
+  if (raw.includes('invalid login credentials') || raw.includes('invalid_credentials')) {
+    return t('store.invalidCredentials')
+  }
+  if (raw.includes('not confirmed')) return t('store.emailNotConfirmed')
+  return err?.message || t('store.signInFailed')
+}
+
+function readablePasswordError(err, t) {
+  const raw = String(err?.message || '').toLowerCase()
+  // "Secure password change" forces a re-authentication email before a password
+  // can be changed; that would put the mailer back in the way, so tell the
+  // customer exactly what to do instead.
+  if (raw.includes('reauthentication') || raw.includes('nonce') || raw.includes('reauth')) {
+    return t('store.passwordReauthRequired')
+  }
+  return err?.message || t('store.passwordFailed')
 }
 
 export default function Library() {
@@ -40,6 +67,21 @@ export default function Library() {
   const [sending, setSending] = useState(false)
   const [downloadingSlug, setDownloadingSlug] = useState(null)
   const [downloadError, setDownloadError] = useState(null)
+
+  // Sign-in method. Password is the default because it is the only method that
+  // sends NOTHING: the email link is rate limited by Supabase's built-in mailer,
+  // a password sign-in is not limited by mail at all.
+  const [signInMode, setSignInMode] = useState('password')
+  const [passwordValue, setPasswordValue] = useState('')
+  const [signingIn, setSigningIn] = useState(false)
+
+  // Set / change password, available as soon as the customer is signed in.
+  const [showPasswordPanel, setShowPasswordPanel] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState(null)
+  const [passwordSaved, setPasswordSaved] = useState(false)
 
   const load = useCallback(async () => {
     if (!user) {
@@ -79,6 +121,73 @@ export default function Library() {
       setError({ message: readableAuthError(err, t) })
     } finally {
       setSending(false)
+    }
+  }
+
+  /**
+   * Sign in with the password the customer set. This is the path that makes the
+   * mail rate limit irrelevant: no email is generated, so nothing can be
+   * throttled, and the session is remembered so they can come back any time.
+   */
+  const handlePasswordSignIn = async (event) => {
+    event.preventDefault()
+    const targetEmail = email.trim()
+    if (!targetEmail || !passwordValue) return
+
+    setSigningIn(true)
+    setError(null)
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password: passwordValue,
+      })
+      if (signInError) throw signInError
+
+      // AuthContext reacts to the new session and this component switches to the
+      // signed-in library on the next render.
+      setPasswordValue('')
+    } catch (err) {
+      setError({ message: readableSignInError(err, t) })
+    } finally {
+      setSigningIn(false)
+    }
+  }
+
+  /**
+   * Give the signed-in customer a password. Customers arrive from a one-time
+   * sign-in link, so this is where they opt out of email for good.
+   */
+  const handleSetPassword = async (event) => {
+    event.preventDefault()
+
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setPasswordError(t('store.passwordTooShort', { min: MIN_PASSWORD_LENGTH }))
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('store.passwordMismatch'))
+      return
+    }
+
+    setSavingPassword(true)
+    setPasswordError(null)
+    setPasswordSaved(false)
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+        // Recorded so the library can stop asking on later visits.
+        data: { has_password: true },
+      })
+      if (updateError) throw updateError
+
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordSaved(true)
+      setShowPasswordPanel(false)
+    } catch (err) {
+      setPasswordError(readablePasswordError(err, t))
+    } finally {
+      setSavingPassword(false)
     }
   }
 
@@ -128,37 +237,94 @@ export default function Library() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleMagicLink} className="glass-panel rounded-xl p-6 text-center">
+            <div className="glass-panel rounded-xl p-6 text-center">
               <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
                 <LibraryIcon className="h-5 w-5" aria-hidden="true" />
               </div>
               <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
                 {t('store.signInTitle')}
               </h2>
-              <p className="mt-2 text-xs text-black/50 dark:text-white/50">{t('store.signInBody')}</p>
+              <p className="mt-2 text-xs text-black/50 dark:text-white/50">
+                {signInMode === 'password'
+                  ? t('store.signInPasswordBody')
+                  : t('store.signInBody')}
+              </p>
 
-              <label className="mt-5 block text-left">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
-                  {t('store.signInEmailLabel')}
-                </span>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('store.emailPlaceholder')}
-                  autoComplete="email"
-                  className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
-                />
-              </label>
+              {/* Two ways in. Password needs no email at all, so it can never be
+                  blocked by the mailer's hourly limit. */}
+              <div className="mt-5 flex gap-2" role="tablist" aria-label={t('store.signInMethod')}>
+                {[
+                  { key: 'password', label: t('store.signInPasswordMode') },
+                  { key: 'link', label: t('store.signInLinkMode') },
+                ].map((entry) => (
+                  <button
+                    key={entry.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={signInMode === entry.key}
+                    onClick={() => {
+                      setSignInMode(entry.key)
+                      setError(null)
+                    }}
+                    className={`flex-1 rounded-lg px-3 py-2 text-[10px] uppercase tracking-widest transition-colors ${
+                      signInMode === entry.key
+                        ? 'bg-black/90 text-white dark:bg-white/90 dark:text-black'
+                        : 'bg-black/5 text-black/50 hover:text-black/80 dark:bg-white/5 dark:text-white/50 dark:hover:text-white/80'
+                    }`}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
 
-              <button
-                type="submit"
-                disabled={sending}
-                className="mt-4 w-full rounded-lg bg-black/90 py-3 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+              <form
+                onSubmit={signInMode === 'password' ? handlePasswordSignIn : handleMagicLink}
+                className="mt-4 text-left"
               >
-                {sending ? t('store.working') : t('store.sendMagicLink')}
-              </button>
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                    {t('store.signInEmailLabel')}
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('store.emailPlaceholder')}
+                    autoComplete="email"
+                    className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                  />
+                </label>
+
+                {signInMode === 'password' && (
+                  <label className="mt-2.5 block">
+                    <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                      {t('store.passwordLabel')}
+                    </span>
+                    <input
+                      type="password"
+                      required
+                      value={passwordValue}
+                      onChange={(e) => setPasswordValue(e.target.value)}
+                      placeholder={t('store.passwordPlaceholder')}
+                      autoComplete="current-password"
+                      className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                    />
+                  </label>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={signInMode === 'password' ? signingIn : sending}
+                  className="mt-4 w-full rounded-lg bg-black/90 py-3 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                >
+                  {(signInMode === 'password' ? signingIn : sending)
+                    ? t('store.working')
+                    : signInMode === 'password'
+                      ? t('store.signInWithPassword')
+                      : t('store.sendMagicLink')}
+                </button>
+              </form>
 
               {error && (
                 <p role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500">
@@ -167,7 +333,7 @@ export default function Library() {
               )}
 
               <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
-                {t('store.signInNote')}
+                {signInMode === 'password' ? t('store.passwordSignInNote') : t('store.signInNote')}
               </p>
 
               <p className="mt-2 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
@@ -180,7 +346,7 @@ export default function Library() {
               >
                 {t('store.browseStore')}
               </Link>
-            </form>
+            </div>
           )}
         </div>
       </StoreShell>
@@ -188,6 +354,10 @@ export default function Library() {
   }
 
   // --- Signed in ------------------------------------------------------------
+  // We only know a password exists if it was set through this panel, so it is a
+  // hint for wording — never a gate. Setting one again simply replaces it.
+  const hasPassword = passwordSaved || user?.user_metadata?.has_password === true
+
   return (
     <StoreShell eyebrow={t('store.eyebrow')} title={t('store.libraryTitle')} subtitle={t('store.librarySubtitle')}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -202,6 +372,104 @@ export default function Library() {
           <LogOut className="h-3 w-3" aria-hidden="true" />
           {t('store.signOut')}
         </button>
+      </div>
+
+      {/*
+        Set a password. This is what removes the email dependency for good: from
+        here on the customer signs in with email + password, which sends no mail
+        and therefore cannot be blocked by the mailer's hourly limit.
+      */}
+      <div className="glass-panel mb-6 rounded-xl p-4">
+        {showPasswordPanel ? (
+          <form onSubmit={handleSetPassword}>
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-3.5 w-3.5 text-cyan-500" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+                {hasPassword ? t('store.changePasswordTitle') : t('store.setPasswordTitle')}
+              </h2>
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-black/50 dark:text-white/50">
+              {t('store.setPasswordBody')}
+            </p>
+
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  {t('store.newPasswordLabel')}
+                </span>
+                <input
+                  type="password"
+                  required
+                  minLength={MIN_PASSWORD_LENGTH}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t('store.newPasswordPlaceholder', { min: MIN_PASSWORD_LENGTH })}
+                  autoComplete="new-password"
+                  className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  {t('store.confirmPasswordLabel')}
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t('store.confirmPasswordPlaceholder')}
+                  autoComplete="new-password"
+                  className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                />
+              </label>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={savingPassword}
+                className="rounded-lg bg-black/90 px-4 py-2.5 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+              >
+                {savingPassword ? t('store.working') : t('store.savePassword')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordPanel(false)
+                  setPasswordError(null)
+                  setNewPassword('')
+                  setConfirmPassword('')
+                }}
+                className="text-[10px] uppercase tracking-widest text-black/40 transition-colors hover:text-black/80 dark:text-white/40 dark:hover:text-white/80"
+              >
+                {t('store.passwordCancel')}
+              </button>
+            </div>
+
+            {passwordError && (
+              <p role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500">
+                {passwordError}
+              </p>
+            )}
+          </form>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[11px] leading-relaxed text-black/50 dark:text-white/50">
+              {hasPassword ? t('store.passwordSetStatus') : t('store.setPasswordNudge')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPasswordPanel(true)
+                setPasswordError(null)
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-black/5 px-3 py-2 text-[10px] uppercase tracking-widest text-black/60 transition-colors hover:text-black/90 dark:bg-white/5 dark:text-white/60 dark:hover:text-white/90"
+            >
+              <KeyRound className="h-3 w-3" aria-hidden="true" />
+              {hasPassword ? t('store.changePasswordCta') : t('store.setPasswordCta')}
+            </button>
+          </div>
+        )}
       </div>
 
       {downloadError && (

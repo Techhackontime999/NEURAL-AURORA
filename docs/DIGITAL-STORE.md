@@ -344,7 +344,9 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   built-in mailer, which allows **2 auth emails per hour**. Configure custom
   SMTP. Meanwhile no purchase has to wait for an email: use
   **Admin → Orders → “Sign-in link”** (see *Customer sign-in when email cannot be
-  delivered*) and hand the buyer the link yourself. Creating the buyer in
+  delivered*) and hand the buyer the link yourself. Once the customer is inside,
+  have them **set a password** in the library — password sign-in sends no email,
+  so this limit stops mattering for every later visit. Creating the buyer in
   **Authentication → Users → Add user** (auto-confirm) with a password and
   having them sign in at `/login` also works — entitlements are matched on the
   session's email either way.
@@ -422,6 +424,42 @@ The number is **never required by the server**: an unusable value is stored as
 contact detail would be far worse than losing a WhatsApp shortcut. Applying
 migration `…00008` is what makes the value persist at all.
 
+#### Passwords: access the library with no email at all
+
+The sign-in link above is deliberate, but it is still a link somebody has to
+deliver. Once a customer is inside the library they can **set a password**, and
+from then on they open their library whenever they want with **email +
+password** — a path that generates no email at all, so the mailer's hourly
+limit can never be in their way.
+
+- `/library` shows two sign-in tabs: **Email + password** (default) and
+  **Email me a link** (the original one-time link).
+- Signed in, a panel above the library offers **Set a password** (or
+  *Change password*). It calls `supabase.auth.updateUser({ password })` on the
+  live session and records `user_metadata.has_password`, which is only ever
+  used to word the panel — never to gate access.
+- The session is persisted by supabase-js in the browser, so a returning
+  customer is usually still signed in and goes straight to the library.
+- The admin's *Open in my mail app* / *Share on WhatsApp* messages now tell the
+  customer to set a password, so one delivery per customer is enough.
+
+Password sign-in hits Supabase's token endpoint, which is limited per IP
+(150 requests / 5 minutes) and **not** by mail — so the practical ceiling that
+caused `email rate limit exceeded` disappears for every returning customer.
+
+Two project settings matter:
+
+- **Authentication → Email → “Secure password change”** must stay **off**. With
+  it on, changing a password requires a re-authentication email first — which
+  puts the rate limit back in the way. The UI recognises that error and tells
+  the customer to use a link once instead.
+- **Authentication → Email Templates → Security notifications → “Password
+  changed”** is optional; switch it off if you want password changes to send
+  nothing at all.
+
+Email is now needed only for an address's **first** sign-in (or a forgotten
+password), and the admin "Sign-in link" covers even that without the mailer.
+
 ---
 
 ## 6. Production checklist
@@ -448,6 +486,11 @@ migration `…00008` is what makes the value persist at all.
       Authentication → Rate Limits → *emails per hour* (default 30). Until then,
       a customer who cannot receive mail can still be let in with
       **Admin → Orders → “Sign-in link”**.
+- [ ] **Authentication → Email → “Secure password change” left OFF**, so a
+      signed-in customer can set a password from their library without a
+      re-authentication email (see *Passwords: access the library with no email
+      at all*). With SMTP configured this is a convenience; without it, it is
+      what lets a delivered link become email-free access forever.
 - [ ] Live Razorpay keys swapped in for `rzp_test_…` when going live.
 - [ ] A test purchase verified end to end in the hosted environment.
 - [ ] Optional: schedule `purge_expired_download_records()` via `pg_cron` (it is

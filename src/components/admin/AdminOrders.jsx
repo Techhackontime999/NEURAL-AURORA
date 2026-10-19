@@ -186,7 +186,9 @@ export default function AdminOrders() {
   }
 
   // Ready-made messages so the admin can deliver the link with one click, from
-  // their own mail client or WhatsApp, with no SMTP configured anywhere.
+  // their own mail client or WhatsApp, with no SMTP configured anywhere. Both
+  // messages also tell the customer to set a password, so a single delivery is
+  // enough — after that they sign in without any email at all.
   const mailtoHref = useMemo(() => {
     if (!accessLink?.link) return '#'
     const subject = 'Your NEURAL AURORA download link'
@@ -197,7 +199,9 @@ export default function AdminOrders() {
       '',
       accessLink.link,
       '',
-      'The link signs you straight into your library. If it has expired, just reply and I will send a new one.',
+      'Once you are inside, open your library and set a password. After that you can sign in any time with your email and password — no waiting for another link.',
+      '',
+      'If this link has expired, just reply and I will send a new one.',
       '',
       '— NEURAL AURORA',
     ].join('\n')
@@ -211,7 +215,13 @@ export default function AdminOrders() {
     if (!accessLink?.link) return '#'
     return whatsappLink(
       accessLink.phone,
-      `Your NEURAL AURORA download is ready. Use this link to sign in: ${accessLink.link}`
+      [
+        'Your NEURAL AURORA download is ready. Use this link to sign in:',
+        '',
+        accessLink.link,
+        '',
+        'Tip: open your library and set a password so you can sign in any time without waiting for another link.',
+      ].join('\n')
     )
   }, [accessLink])
 
@@ -497,7 +507,8 @@ export default function AdminOrders() {
             <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               Send this to <span className="font-medium">{accessLink.email}</span>. It signs them
               straight into their library and needs no email from us, so the mail rate limit
-              cannot block it.
+              cannot block it. Ask them to set a password from inside the library — after that they
+              never need a link again.
             </p>
 
             <textarea

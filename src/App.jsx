@@ -212,11 +212,18 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
-  const [loaderDone, setLoaderDone] = useState(isAuthRoute)
+  const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
   useEffect(() => {
     import('@splinetool/react-spline')
   }, [])
+
+  useEffect(() => {
+    // If user navigates away from home, skip the full verification loader.
+    if (location.pathname !== '/') {
+      setLoaderDone(true)
+    }
+  }, [location.pathname])
 
   return (
     <>

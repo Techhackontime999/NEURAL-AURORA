@@ -83,6 +83,7 @@ const TONES = {
     subtitle: 'text-white/60',
     arrow: 'border-white/25 bg-white/10 text-white/75 hover:bg-white/20 hover:text-white',
     card: 'border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/35 text-white',
+    cardBlur: 'backdrop-blur-xl',
     cardLabel: 'text-white',
     cardHint: 'text-white/45',
     iconWrap: 'bg-white/15 border-white/20 group-hover:bg-[#00f0ff]/25 group-hover:border-[#00f0ff]/50',
@@ -94,14 +95,15 @@ const TONES = {
   },
   light: {
     shell: 'bg-[var(--bg-secondary)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.25)]',
-    overlay: 'bg-gradient-to-b from-white/75 via-white/45 to-white/85',
-    vignette: 'bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(255,255,255,0.5)_100%)]',
+    overlay: 'bg-gradient-to-b from-white/55 via-white/20 to-white/65',
+    vignette: 'bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(255,255,255,0.3)_100%)]',
     eyebrow: 'border-[#007a87]/30 bg-[#007a87]/10 text-[#00656f]',
     pulse: 'bg-[#007a87]',
     title: 'text-[var(--text-primary)]',
     subtitle: 'text-[var(--text-secondary)]',
     arrow: 'border-black/15 bg-white/60 text-black/60 hover:bg-white hover:text-black',
-    card: 'border-black/10 bg-white/55 hover:bg-white/90 hover:border-black/25 text-[var(--text-primary)]',
+    card: 'border-black/10 bg-white/65 hover:bg-white/90 hover:border-black/25 text-[var(--text-primary)]',
+    cardBlur: 'backdrop-blur-md',
     cardLabel: 'text-[var(--text-primary)]',
     cardHint: 'text-[var(--text-tertiary)]',
     iconWrap: 'bg-white/70 border-black/10 group-hover:bg-[#00f0ff]/20 group-hover:border-[#007a87]/40',
@@ -204,7 +206,7 @@ export default function VideoHero() {
   const resolveHint = (link) =>
     link.hint || (PRESET_LINK_KEYS.includes(link.key) ? t(`videoHero.hints.${link.key}`) : '')
 
-  const arrowClass = `shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border backdrop-blur-xl active:scale-95 transition-all duration-300 focus:outline-none focus-visible:ring-2 ${tone.arrow} ${tone.ring}`
+  const arrowClass = `shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border active:scale-95 transition-all duration-300 focus:outline-none focus-visible:ring-2 ${tone.cardBlur} ${tone.arrow} ${tone.ring}`
 
   return (
     <section id="showcase" className="relative z-10 w-full max-w-[1400px] mx-auto px-5 sm:px-6 md:px-12 py-8 sm:py-10">
@@ -314,7 +316,7 @@ export default function VideoHero() {
                           }
                           whileHover={{ y: 0, scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          className={`group w-full h-full flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl sm:rounded-full border backdrop-blur-xl transition-colors duration-300 text-left focus:outline-none focus-visible:ring-2 ${tone.card} ${tone.ring}`}
+                          className={`group w-full h-full flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl sm:rounded-full border transition-colors duration-300 text-left focus:outline-none focus-visible:ring-2 ${tone.card} ${tone.cardBlur} ${tone.ring}`}
                         >
                           <span
                             className={`shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-colors duration-300 ${tone.iconWrap}`}

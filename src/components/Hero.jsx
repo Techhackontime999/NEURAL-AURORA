@@ -119,6 +119,18 @@ export default function Hero() {
               </MagneticButton>
               <MagneticButton
                 as="a"
+                href="/offerings/products"
+                className="group inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#00f0ff]/80 via-[#b829dd]/80 to-[#f0c040]/80 text-white shadow-[0_10px_40px_-20px_rgba(184,41,221,0.5)] border border-white/20 hover:brightness-110 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+              >
+                Browse my Products
+                <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </span>
+              </MagneticButton>
+              <MagneticButton
+                as="a"
                 href={personalInfo.resume}
                 download
                 className="group inline-flex items-center gap-3 px-6 py-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/80 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"

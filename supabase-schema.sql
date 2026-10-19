@@ -239,6 +239,10 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   maintenance_mode BOOLEAN DEFAULT FALSE,
   crm_url TEXT DEFAULT '',
   youtube_channel_id TEXT DEFAULT '',
+  -- Admin-managed Video Hero showcase (dark/light videos, copy, quick links).
+  -- JSONB so new fields can ship without another migration; '{}' means
+  -- "use the built-in defaults".
+  video_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)

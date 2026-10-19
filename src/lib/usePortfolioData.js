@@ -15,6 +15,7 @@ import {
   getCertificates,
   getAchievements,
   getGallery,
+  getAdminSettings,
 } from './supabase'
 import {
   personalInfo as staticPersonalInfo,
@@ -318,4 +319,20 @@ export function useAchievements() {
 
 export function useGallery() {
   return usePortfolioResource('gallery', getGallery, staticGalleryItems)
+}
+
+/**
+ * Admin-managed configuration for the Video Hero showcase section
+ * (videos per theme, copy, quick links). The static default is an empty
+ * object: VideoHero.jsx merges these fields over its built-in defaults, so
+ * an empty/partial document never blanks the section out.
+ *
+ * Call invalidatePortfolioCache('videoHeroSettings') after an admin save to
+ * refresh already-mounted copies.
+ */
+export function useVideoHeroSettings() {
+  return usePortfolioResource('videoHeroSettings', async () => {
+    const settings = await getAdminSettings()
+    return settings?.video_hero || {}
+  }, {})
 }

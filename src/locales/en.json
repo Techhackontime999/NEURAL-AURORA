@@ -26,6 +26,35 @@
     "title": "Crafting digital experiences",
     "subtitle": "where neural networks meet aurora light"
   },
+  "videoHero": {
+    "eyebrow": "Inside the portfolio",
+    "titleA": "Watch the work",
+    "titleB": "come alive",
+    "subtitle": "A short reel of what I build — then jump straight to the parts that matter most.",
+    "prev": "Previous shortcuts",
+    "next": "Next shortcuts",
+    "page": "Shortcut page",
+    "links": {
+      "store": "Digital Store",
+      "offerings": "Offerings",
+      "blog": "Blog",
+      "projects": "Projects",
+      "library": "Library",
+      "more": "More",
+      "support": "Support",
+      "contact": "Contact"
+    },
+    "hints": {
+      "store": "Templates & products",
+      "offerings": "Services",
+      "blog": "Writing",
+      "projects": "Case studies",
+      "library": "Your purchases",
+      "more": "Gallery & more",
+      "support": "Get help",
+      "contact": "Say hello"
+    }
+  },
   "about": {
     "eyebrow": "About",
     "titleArchitect": "Architect of",

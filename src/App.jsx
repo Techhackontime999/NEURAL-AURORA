@@ -10,6 +10,7 @@ import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
 import AuroraBackground from './components/AuroraBackground'
 import Hero from './components/Hero'
+import VideoHero from './components/VideoHero'
 import About from './components/About'
 import Skills from './components/Skills'
 import Projects from './components/Projects'
@@ -89,6 +90,7 @@ function HomePage() {
       <AuroraBackground mouse={mouse} />
       <Navbar />
       <Hero />
+      <VideoHero />
       <SectionSeparator />
       <About />
       <SectionSeparator />

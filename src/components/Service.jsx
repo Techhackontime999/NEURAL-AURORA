@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useInView, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as LucideIcons from 'lucide-react'
@@ -8,6 +8,8 @@ import { useSocialLinks, useServices, useServicePage } from '../lib/usePortfolio
 import { sanitizeHtml } from '../lib/utils'
 import { submitContactMessage } from '../lib/supabase'
 import { openRazorpayCheckout } from '../lib/razorpay'
+import { getPublishedProducts } from '../lib/products'
+import ProductCard from './offerings/ProductCard'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -465,6 +467,7 @@ export default function Service() {
   const { data: page } = useServicePage()
   const [openFAQ, setOpenFAQ] = useState(null)
   const [payingPackage, setPayingPackage] = useState(null)
+  const [productsPreview, setProductsPreview] = useState([])
   const [payingService, setPayingService] = useState(null)
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactStatus, setContactStatus] = useState('idle')
@@ -544,6 +547,20 @@ export default function Service() {
     }
   }
 
+  useEffect(() => {
+    let cancelled = false
+    const loadPreview = async () => {
+      try {
+        const products = await getPublishedProducts({ sort: 'featured' }, 3)
+        if (!cancelled) setProductsPreview(products)
+      } catch (err) {
+        if (!cancelled) setProductsPreview([])
+      }
+    }
+    loadPreview()
+    return () => { cancelled = true }
+  }, [])
+
   const heroTitle = page?.hero_title || 'What I Can Do For You'
   const heroDesc = page?.hero_description || ''
   const processTitle = page?.process_title || 'How I Work'
@@ -599,6 +616,45 @@ export default function Service() {
             ))}
           </motion.div>
         </div>
+
+        {productsPreview.length > 0 && (
+          <div className="mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8"
+            >
+              <div>
+                <span className="eyebrow">Digital Store</span>
+                <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-black/80 dark:text-white/90 mt-4">
+                  Featured Digital Products
+                </h2>
+                <p className="text-sm text-black/50 dark:text-white/50 mt-2">
+                  Downloadable assets, templates and tools ready to use.
+                </p>
+              </div>
+              <Link
+                to="/offerings/products"
+                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/60 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] self-start"
+              >
+                View all
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              </Link>
+            </motion.div>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-100px' }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {productsPreview.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </motion.div>
+          </div>
+        )}
 
         {stats.length > 0 && (
           <div className="grid md:grid-cols-4 gap-4 mb-24">

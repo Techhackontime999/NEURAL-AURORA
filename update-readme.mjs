@@ -3,7 +3,7 @@ const content = `# NEURAL AURORA — The Synaptic Portfolio
 
 <div align="center">
 
-**v2.0.0** — *A living neural network suspended in an aurora field*
+**v3.0.0** — *A living neural network suspended in an aurora field*
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
@@ -40,9 +40,11 @@ NEURAL AURORA is **source-available** software. The source code is publicly visi
 - **Mood Swing** – Mood-based ambient music system
 - **Digital Store** – Razorpay checkout + secure downloads + password/link sign-in + phone capture
 - **Admin Dashboard** – Manage products, orders, entitlements, users & settings
+- **Internationalization** – 24 languages with RTL support
+- **PWA Ready** – Installable, offline-aware service worker
+- **Certificates, Achievements & Gallery** – Dedicated sections with admin panels
 - **Auto-Traverse Tour** – Interactive site walkthrough
 - **3D Aurora Background** – React Three Fiber powered immersive UI
-- **PWA Ready** – Installable with service worker
 - **Reviews, Blog, Case Studies & Services**
 
 ---
@@ -113,4 +115,3 @@ Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md]
 `;
 fs.writeFileSync('README.md', content);
 console.log('ok');
-`

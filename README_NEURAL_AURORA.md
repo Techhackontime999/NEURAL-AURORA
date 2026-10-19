@@ -1,10 +1,28 @@
-# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v2.0.0 — Neural Reverie Release</sup>
+# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v3.0.0 — Aurora Commerce Release</sup>
 
 **A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
 
-Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 11**, **Tailwind CSS 3**, **Vite 6**, and **Supabase**.
+Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 11**, **Tailwind CSS 4**, **Vite 6**, and **Supabase** — with a serverless **Razorpay** store backend, **i18next** internationalization (24 languages), and **PWA** support.
 
 ---
+
+## What's New in v3.0.0
+
+| Feature | Description |
+|---------|-------------|
+| **Digital Store & Commerce** | Full self-hostable storefront at `/offerings/products`. Product catalogue with search, category/format filters and sorting; product pages with media, licence, FAQs and purchase panel; Razorpay Checkout integration. Payments are **verified server-side** over the raw webhook body (HMAC `timingSafeEqual`) — the browser never supplies a price and purchases **fail closed**. Secure, entitlement-gated downloads from a private `digital-products` bucket via short-lived signed URLs, a customer purchase library at `/library`, and an order-status screen that polls the server rather than trusting the redirect. |
+| **Admin Products, Orders & Payments** | New admin panels for products (`/admin/products`), orders with revenue summary and entitlement revocation (`/admin/orders`), payments, payment settings, and admin-verified payment reconciliation for lost webhooks. Checkout also captures a WhatsApp number and lets paying customers sign in with a password or an on-screen link when SMTP is unavailable. |
+| **Internationalization (i18n)** | Full i18n for all public components via `i18next`/`react-i18next` — 24 languages including RTL (Arabic, Hebrew, Persian, Urdu), with a redesigned language switcher and document direction handling. |
+| **PWA** | Installable Progressive Web App with service worker, offline detection, update prompt, and generated icons (`vite-plugin-pwa`). |
+| **Certificates, Achievements & Gallery** | New portfolio sections under `/more/certificates`, `/more/achievements` and `/more/gallery`, each with dedicated admin panels and database tables. |
+| **Offerings Rename** | Services renamed to **Offerings** and moved to `/offerings`. Legacy `/services` URLs redirect automatically and unknown routes fall back to a 404 page. |
+| **Security Hardening** | DOMPurify sanitization of admin-authored HTML (XSS), rate limiting on login/contact/review, server-side verification of payment amounts, verified Razorpay webhook, first-user-is-admin race fix, `set_admin_email` privilege-escalation fix, and locked-down payments table. |
+| **Accessibility & Motion** | WCAG AA contrast fixes, mobile-nav accessibility, social-link labels, and extended `prefers-reduced-motion` support across animations. |
+| **Neural Spark Cursor** | Custom cursor with speed-reactive neural spark effects (with graceful fallback / reduced-motion support). |
+| **Gateway Refinements** | Skip button on the verification entry screen, auto-enter after 10s idle on the boot sequence, and the gateway now runs only on the home page (other routes skip it). |
+| **AI Automation & Support** | Admin AI Automation panel, Docs Config, support/donations, and a contributors section. |
+| **Unified Toasts & Cleanup** | A unified toast/confirm system replacing `window.alert`/`window.confirm`, plus dead-component cleanup. |
+| **Source-Available Licensing** | New legal suite: `LICENSE`, `COMMERCIAL-LICENSE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `TERMS_OF_USE.md`, `PRIVACY_POLICY.md`, `TRADEMARK.md`, and `docs/`. |
 
 ## What's New in v2.3.0
 
@@ -52,6 +70,10 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ## Features
 
+- **Digital Store** — Self-hostable commerce at `/offerings/products`. Searchable/filterable product catalogue, product detail pages (media, licence, FAQs), Razorpay Checkout, server-verified payments, entitlement-gated secure downloads, a customer purchase library, and admin product/order/revenue management. See [docs/DIGITAL-STORE.md](docs/DIGITAL-STORE.md).
+- **Internationalization** — 24 languages via i18next/react-i18next, including RTL layouts (Arabic, Hebrew, Persian, Urdu), with a language switcher and automatic document direction.
+- **Progressive Web App** — Installable app with service worker, offline detection, update prompt, and custom icons via `vite-plugin-pwa`.
+- **Certificates, Achievements & Gallery** — Dedicated portfolio sections (`/more/certificates`, `/more/achievements`, `/more/gallery`) with admin panels and database-backed content.
 - **Neural Pattern Lock** — Memory-sequence gateway verification. A random 3×3, 4×4, or 5×5 grid of glowing nodes displays a neural path that the visitor must memorize and repeat. Three rounds of increasing difficulty must be passed to unlock the portfolio. Features spring-animated node traversal, pulsing demo highlights, numbered click feedback (green confirm / red error), and round progress indicators.
 - **YouTube Channel Stream** — Gateway verification via content browsing. Visitors can browse a YouTube channel's videos (grid layout with video duration badges), Shorts (horizontal snap-scroll with tall 9:16 cards), and playlists (expandable accordions with lazy-loaded items). Selecting a video opens an embedded YouTube IFrame Player with autoplay, live watch timer, and progress bar. Access is granted when the video ends, or visitors can close the player to browse further. Supports keyword search, Load More pagination, and error-resilient playback with retry.
 - **Mood Swing** — Choose your vibe before entering from 6 moods (Energetic ⚡, Calm 🌊, Happy 😊, Melancholic 🌧️, Focused 🎯, Night Owl 🌙) with emoji cards and swing animations. Background music plays based on your selected mood via Jamendo API (or Web Audio synth fallback).
@@ -62,7 +84,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 - **3D Aurora Background** — Neural particles, aurora waves, floating nodes with synaptic connections, and cursor-following "synaptic fire" particle system (React Three Fiber + Drei)
 - **Spline 3D Hero** — Embedded Spline interactive 3D scene in the hero section (preloaded during gateway for instant reveal)
 - **Full Portfolio** — Hero, About, Skills (animated bars by category), Projects (expandable cards), Resume download, Contact form
-- **Extended Pages** — `/services` (consulting/pricing), `/more` (experience, education, blog, case studies), `/blog` (blog listing + individual posts)
+- **Extended Pages** — `/offerings` (consulting/pricing + digital products), `/more` (experience, education, blog, case studies, certificates, achievements, gallery), `/blog` (blog listing + individual posts), `/library` (customer purchases)
 - **Dynamic Data** — All portfolio content is loaded from **Supabase** (PostgreSQL), with automatic fallback to static data when Supabase is not configured.
 - **Admin Dashboard** — Full CRUD admin panel at `/admin` to manage personal info, skills, projects, education, experience, blog posts, case studies, social links, reviews, contact messages, user roles, and dev ads.
 - **Authentication & Authorization** — Email/password auth via Supabase Auth. First user to register gets the `admin` role; subsequent registrations are blocked from admin routes.
@@ -139,6 +161,18 @@ VITE_AI_API_KEY=your_api_key_here
 VITE_AI_MODEL=openai/gpt-4o-mini
 ```
 
+For the digital store and donations, also configure Razorpay (see [docs/DIGITAL-STORE.md](docs/DIGITAL-STORE.md)):
+
+```
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+VITE_RAZORPAY_KEY_ID=rzp_xxxxxxxx
+RAZORPAY_KEY_ID=rzp_xxxxxxxx
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+```
+
+> Purchases **fail closed** — the store will not create orders if the database or service-role key is missing. There is no client-side price fallback.
+
 ### 5. Create your admin account
 
 1. Start the dev server and navigate to `/login`
@@ -161,6 +195,15 @@ VITE_AI_MODEL=openai/gpt-4o-mini
 | `/admin/experience` | Manage work experience |
 | `/admin/blog` | Create/edit blog posts |
 | `/admin/case-studies` | Manage case studies |
+| `/admin/certificates` | Manage certificates |
+| `/admin/achievements` | Manage achievements |
+| `/admin/gallery` | Manage gallery images |
+| `/admin/services` | Manage services/offerings |
+| `/admin/products` | Manage store products (create/edit/publish/archive, upload paid files) |
+| `/admin/orders` | Orders, revenue summary, entitlements and revocation |
+| `/admin/payments` | View and manage payments |
+| `/admin/payment-settings` | Configure Razorpay payment settings |
+| `/admin/ai-automation` | Configure AI automation |
 | `/admin/social-links` | Manage social media links |
 | `/admin/reviews` | Approve/reject public reviews |
 | `/admin/messages` | View and manage visitor contact submissions |
@@ -168,6 +211,7 @@ VITE_AI_MODEL=openai/gpt-4o-mini
 | `/admin/youtube-config` | Configure YouTube Channel ID for Channel Stream gateway verification (with Test Connection and setup guide) |
 | `/admin/users` | Manage user roles (promote/demote) |
 | `/admin/crm-config` | Configure the hosted wacrm CRM dashboard URL |
+| `/admin/docs-config` | Configure documentation links |
 
 ## Dev Ads (Gateway Verification)
 
@@ -402,15 +446,20 @@ All three platforms require these in your deployment dashboard:
 
 - **Framework:** React 18 with Vite 6
 - **Backend & Auth:** Supabase (PostgreSQL, Auth, Storage)
+- **Serverless API:** Vercel Functions (`/api`) — order creation, Razorpay webhook, secure downloads, reconciliation
+- **Payments:** Razorpay (Checkout + server-verified webhooks)
 - **CLI:** Supabase CLI (`supabase db push` for migrations)
 - **AI:** OpenAI-compatible API (OpenRouter, OpenAI, Groq, etc.) — dynamic puzzle generation
+- **Internationalization:** i18next, react-i18next (24 languages, RTL support)
+- **PWA:** vite-plugin-pwa (service worker, offline detection, update prompt)
+- **Security:** DOMPurify (HTML sanitization), HMAC-verified webhooks, rate limiting
 - **Speech:** Web SpeechRecognition API — voice verification
 - **Ads:** Google AdSense (auto-served) + YouTube IFrame Player API
 - **YouTube:** YouTube Data API v3 (channel content, video durations) + YouTube IFrame Player API (embedded playback)
 - **3D Graphics:** React Three Fiber, Drei, Three.js
 - **3D Embed:** Spline (`@splinetool/react-spline`)
 - **Animation:** Framer Motion 11
-- **Styling:** Tailwind CSS 3, PostCSS, Autoprefixer
+- **Styling:** Tailwind CSS 4, PostCSS, Autoprefixer
 - **Routing:** React Router DOM 7
 - **Icons:** Lucide React
 - **Utilities:** clsx
@@ -432,11 +481,48 @@ All three platforms require these in your deployment dashboard:
 
 ## License
 
-MIT License — see [LICENSE](LICENSE).
+NEURAL AURORA is **source-available** software — not OSI-approved "Open source".
+
+- ✅ **Free for Contributors** — anyone with **at least one merged Pull Request** into [Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA) may use, run, modify and self-host it for personal, educational or commercial use.
+- ✅ **Free for Verified Students** — students who meaningfully contribute may qualify for the same benefit.
+- ✅ **Free for Evaluation** — clone, read, modify and run locally for evaluation/testing.
+- ❌ **Commercial use by others** requires a valid [Commercial License](COMMERCIAL-LICENSE.md).
+
+See [LICENSE](LICENSE) and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For commercial licensing, email **techhackontime999@gmail.com**.
 
 ---
 
 ## Changelog
+
+### v3.0.0 (Aurora Commerce Release)
+
+**Added**
+- Digital Store — product catalogue, storefront (`/offerings/products`), Razorpay Checkout, server-verified payments, entitlement-gated secure downloads, purchase library (`/library`), and order status screen
+- Serverless `/api` backend — `create-order`, `razorpay-webhook`, `download`, `order-status`, `admin-reconcile-order`, `admin-access-link`, `customer-signin-link`
+- Admin panels — Products, Orders (revenue + entitlements), Payments, Payment Settings, AI Automation, Docs Config, Certificates, Achievements, Gallery
+- Certificates, Achievements & Gallery public sections under `/more`
+- Full i18n (24 languages) via i18next/react-i18next with RTL support and a redesigned language switcher
+- PWA support — service worker, offline detection, update prompt, generated icons
+- Neural Spark custom cursor with speed-reactive effects
+- Support/donations and contributors section
+- Source-available legal suite (`LICENSE`, `COMMERCIAL-LICENSE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `TERMS_OF_USE.md`, `PRIVACY_POLICY.md`, `TRADEMARK.md`, `docs/`)
+- Check/test scripts: `npm run check` (routes, i18n, SQL lint) and `npm test` (pricing, API guards)
+
+**Changed**
+- Services renamed to **Offerings** and moved to `/offerings` (legacy `/services` redirects preserved)
+- Verification gateway now runs only on the home page; added Skip button and 10s idle auto-enter
+- Tailwind CSS 3 → 4 migration
+- Unified toast/confirm system replaces `window.alert`/`window.confirm`
+- Hero robot shown on all devices
+
+**Fixed / Secured**
+- Server-side verification of payment amounts (client-supplied amounts ignored)
+- Verified Razorpay webhook (HMAC over raw body) with locked-down payments table
+- First-user-is-admin race condition and `set_admin_email` privilege escalation
+- DOMPurify sanitization of admin-authored HTML (XSS hardening)
+- Rate limiting on login, contact and review submissions
+- WCAG AA contrast fixes, mobile-nav accessibility, social-link labels, extended reduced-motion support
+- Duplicate visitor-count increments, duplicate Supabase fetches, image CLS (lazy loading + intrinsic dimensions)
 
 ### v2.3.0
 

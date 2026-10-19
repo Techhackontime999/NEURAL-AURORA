@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence, useScroll, useSpring , MotionConfig } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
@@ -78,19 +78,39 @@ function HomePage() {
     }
   }
 
+  const videoRevealRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: videoRevealRef,
+    offset: ['start 92%', 'start 20%'],
+  })
+  const videoOpacity = useTransform(scrollYProgress, [0, 1], [0, 1])
+  const videoScale = useTransform(scrollYProgress, [0, 1], [0.98, 1])
+  const videoY = useTransform(scrollYProgress, [0, 1], [40, 0])
+
   if (!hasLoaded) {
-    return <div className="relative min-h-[100dvh] overflow-hidden" />
+    return <div className="relative min-h-[100dvh] overflow-clip" />
   }
 
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="relative min-h-[100dvh] overflow-hidden"
+      className="relative min-h-[100dvh] overflow-clip"
     >
       <AuroraBackground mouse={mouse} />
       <Navbar />
       <Hero />
-      <VideoHero />
+      <motion.div
+        ref={videoRevealRef}
+        style={{
+          opacity: videoOpacity,
+          scale: videoScale,
+          y: videoY,
+          willChange: 'transform, opacity',
+        }}
+        className="relative z-10 origin-top"
+      >
+        <VideoHero />
+      </motion.div>
       <SectionSeparator />
       <About />
       <SectionSeparator />

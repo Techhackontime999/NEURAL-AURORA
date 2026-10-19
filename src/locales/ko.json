@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "후원",
-    "heroSubtitle": "오픈소스 & 영원히 무료",
-    "heroDescription": "이 프로젝트는 100% 무료이며 오픈소스입니다. 여러분의 기부는 이 프로젝트를 살아있게 하고 새 기능에 자금을 제공하며 유료 대안과 경쟁하는 데 도움을 줍니다 — NEURAL AURORA는 모두를 위해 무료로 유지됩니다.",
+    "heroSubtitle": "소스 이용 가능 및 기여자에게 무료",
+    "heroDescription": "NEURAL AURORA는 소스 이용 가능(source-available) 소프트웨어입니다. 여러분의 기여는 이 프로젝트를 살아 있게 하고 새 기능에 자금을 제공하며 유료 대안과 경쟁하는 데 도움을 줍니다 — 기여자, 학생, 평가 목적에는 무료로 유지됩니다.",
     "floatingButton": "후원",
     "sponsorPlaceholder": "프로젝트나 후원 아이디어에 대해 알려주세요...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "기여자",
     "titlePrefix": "프로젝트의",
-    "subtitle": "모든 기여자 — 개발자든 후원자든 — 이 프로젝트를 무료·오픈소스로 유지하는 데 도움을 줍니다.",
+    "subtitle": "모든 기여자 — 개발자든 후원자든 — 이 프로젝트를 살아 있게 하고 기여자에게 무료로 유지하는 데 도움을 줍니다.",
     "becomeContributor": "기여자가 되기",
     "becomeContributorSubtitle": "프로젝트를 지원하고 여기에 등록되세요"
   },

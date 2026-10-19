@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "Ủng hộ",
-    "heroSubtitle": "Mã nguồn mở & Miễn phí mãi mãi",
-    "heroDescription": "Dự án này 100% miễn phí và mã nguồn mở. Đóng góp của bạn giúp dự án tồn tại, tài trợ các tính năng mới và giúp chúng tôi cạnh tranh với các giải pháp trả phí — đồng thời giữ NEURAL AURORA miễn phí cho mọi người.",
+    "heroSubtitle": "Source-Available & Miễn phí cho Cộng tác viên",
+    "heroDescription": "NEURAL AURORA là phần mềm source-available. Đóng góp của bạn giúp dự án tồn tại, tài trợ các tính năng mới và giúp chúng tôi cạnh tranh với các giải pháp trả phí — đồng thời giữ miễn phí cho cộng tác viên, sinh viên và đánh giá.",
     "floatingButton": "Ủng hộ",
     "sponsorPlaceholder": "Kể cho tôi về dự án hoặc ý tưởng tài trợ của bạn...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "Người đóng góp",
     "titlePrefix": "Những người đứng sau",
-    "subtitle": "Mỗi người đóng góp — lập trình viên hay nhà tài trợ — giúp duy trì dự án miễn phí và mã nguồn mở này.",
+    "subtitle": "Mỗi người đóng góp — lập trình viên hay nhà tài trợ — giúp duy trì dự án này tồn tại và miễn phí cho cộng tác viên.",
     "becomeContributor": "Trở thành người đóng góp",
     "becomeContributorSubtitle": "Ủng hộ dự án và được liệt kê ở đây"
   },

@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "Supporto",
-    "heroSubtitle": "Open source e gratuito per sempre",
-    "heroDescription": "Questo progetto è gratuito al 100% e open source. Il tuo contributo lo mantiene vivo, finanzia nuove funzionalità e ci aiuta a competere con le alternative a pagamento — mantenendo NEURAL AURORA gratuito per tutti.",
+    "heroSubtitle": "Source-Available e gratuito per i contributori",
+    "heroDescription": "NEURAL AURORA è un software source-available. Il tuo contributo lo mantiene vivo, finanzia nuove funzionalità e ci aiuta a competere con le alternative a pagamento — restando gratuito per i contributori, gli studenti e la valutazione.",
     "floatingButton": "Sostieni",
     "sponsorPlaceholder": "Parlami del tuo progetto o delle tue idee di sponsorizzazione...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "Contributori",
     "titlePrefix": "Le persone dietro",
-    "subtitle": "Ogni contributore — sviluppatore o donatore — aiuta a mantenere questo progetto gratuito e open source.",
+    "subtitle": "Ogni contributore — sviluppatore o donatore — aiuta a mantenere questo progetto vivo e gratuito per i contributori.",
     "becomeContributor": "Diventa un contributore",
     "becomeContributorSubtitle": "Sostieni il progetto e sii incluso qui"
   },

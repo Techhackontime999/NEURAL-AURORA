@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "支持",
-    "heroSubtitle": "开源且永久免费",
-    "heroDescription": "这个项目 100% 免费且开源。您的贡献让它保持活力，资助新功能，并帮助我们与付费替代品竞争——同时让 NEURAL AURORA 对所有人保持免费。",
+    "heroSubtitle": "源码可用且对贡献者免费",
+    "heroDescription": "NEURAL AURORA 是一款源码可用（source-available）软件。您的贡献让它保持活力、资助新功能，并帮助我们与付费替代品竞争——同时对贡献者、学生和评估用途保持免费。",
     "floatingButton": "支持",
     "sponsorPlaceholder": "告诉我您的项目或赞助想法...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "贡献者",
     "titlePrefix": "幕后的",
-    "subtitle": "每位贡献者——开发者或捐赠者——都帮助保持这个项目的免费和开源。",
+    "subtitle": "每位贡献者——开发者或捐赠者——都帮助让这个项目保持活力，并对贡献者免费。",
     "becomeContributor": "成为贡献者",
     "becomeContributorSubtitle": "支持项目并在列表中展示"
   },

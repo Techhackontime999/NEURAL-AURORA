@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "Stöd",
-    "heroSubtitle": "Öppen källkod & gratis för alltid",
-    "heroDescription": "Detta projekt är 100% gratis och öppen källkod. Ditt bidrag håller det vid liv, finansierar nya funktioner och hjälper oss konkurrera med betalda alternativ — samtidigt som NEURAL AURORA förblir gratis för alla.",
+    "heroSubtitle": "Source-Available & gratis för bidragsgivare",
+    "heroDescription": "NEURAL AURORA är programvara med tillgänglig källkod (source-available). Ditt bidrag håller det vid liv, finansierar nya funktioner och hjälper oss konkurrera med betalda alternativ — och förblir gratis för bidragsgivare, studenter och utvärdering.",
     "floatingButton": "Stöd",
     "sponsorPlaceholder": "Berätta om ditt projekt eller sponsor-idéer...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "Bidragsgivare",
     "titlePrefix": "Personerna bakom",
-    "subtitle": "Varje bidragsgivare — utvecklare eller donator — hjälper till att hålla projektet gratis och som öppen källkod.",
+    "subtitle": "Varje bidragsgivare — utvecklare eller donator — hjälper till att hålla projektet vid live och gratis för bidragsgivare.",
     "becomeContributor": "Bli en bidragsgivare",
     "becomeContributorSubtitle": "Stöd projektet och bli listad här"
   },

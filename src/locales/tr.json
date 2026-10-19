@@ -224,8 +224,8 @@
   },
   "support": {
     "eyebrow": "Destek",
-    "heroSubtitle": "Açık Kaynak ve Sonsuza Kadar Ücretsiz",
-    "heroDescription": "Bu proje %100 ücretsiz ve açık kaynaktır. Katkınız onu hayatta tutar, yeni özellikleri finanse eder ve ücretli alternatiflerle rekabet etmemize yardımcı olur — NEURAL AURORA herkes için ücretsiz kalır.",
+    "heroSubtitle": "Kaynak Kodu Kullanılabilir & Katkıda Bulunanlara Ücretsiz",
+    "heroDescription": "NEURAL AURORA, kaynak kodu erişilebilir (source-available) bir yazılımdır. Katkınız onu hayatta tutar, yeni özellikleri finanse eder ve ücretli alternatiflerle rekabet etmemize yardımcı olur — katkıda bulunanlar, öğrenciler ve değerlendirme için ücretsiz kalır.",
     "floatingButton": "Destekle",
     "sponsorPlaceholder": "Projenizden veya sponsorluk fikirlerinizden bahsedin...",
     "nav": {
@@ -270,7 +270,7 @@
   "contributors": {
     "eyebrow": "Katkıda Bulunanlar",
     "titlePrefix": "Arkasındaki Kişiler",
-    "subtitle": "Her katkıda bulunan — geliştirici veya bağışçı — bu projeyi ücretsiz ve açık kaynak tutmaya yardımcı olur.",
+    "subtitle": "Her katkıda bulunan — geliştirici veya bağışçı — bu projeyi hayatta tutmaya ve katkıda bulunanlara ücretsiz bırakmaya yardımcı olur.",
     "becomeContributor": "Katkıda Bulunan Ol",
     "becomeContributorSubtitle": "Projeyi destekleyin ve burada listelenin"
   },

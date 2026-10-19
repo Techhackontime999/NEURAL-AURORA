@@ -54,4 +54,4 @@ We may update these Terms from time to time. Changes take effect when posted. Co
 
 ## 9. Contact
 
-Questions about these Terms: **techhackontime999@gmail.com**
+Questions about these Terms: **amitkumarkh01012006@gmail.com**

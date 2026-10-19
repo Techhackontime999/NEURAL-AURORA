@@ -22,7 +22,7 @@ A: You can use it **free for personal, educational, or commercial** purposes if 
 A: Bas ek meaningful PR bhejo aur jab wo **merged** ho jaye, tum automatically free license qualify karte ho.
 
 **Q: I'm a student and I contributed — can I use it for free?**  
-A: Yes. **Verified students** who have meaningfully contributed qualify for the same free license. Email `techhackontime999@gmail.com` with proof (student ID/card/email) if you need confirmation.
+A: Yes. **Verified students** who have meaningfully contributed qualify for the same free license. Email `amitkumarkh01012006@gmail.com` with proof (student ID/card/email) if you need confirmation.
 
 **Q: Can I run it locally for testing/evaluation?**  
 A: Yes. **Evaluation and local testing** are completely free for everyone.
@@ -36,7 +36,7 @@ A: **No, not without a license.** If you want to use NEURAL AURORA in production
 A: Nahi. Us case me **commercial license** lena hoga.
 
 **Q: How much does a commercial license cost?**  
-A: Depends on use case (Single Project / Agency / SaaS). Email `techhackontime999@gmail.com` with details and you'll get a quote.
+A: Depends on use case (Single Project / Agency / SaaS). Email `amitkumarkh01012006@gmail.com` with details and you'll get a quote.
 
 ## Technical
 
@@ -51,4 +51,4 @@ A: Not without explicit written permission. See [TRADEMARK.md](../TRADEMARK.md).
 
 ## Still Confused?
 
-Email: **techhackontime999@gmail.com** with your question. We'll help you out.
+Email: **amitkumarkh01012006@gmail.com** with your question. We'll help you out.

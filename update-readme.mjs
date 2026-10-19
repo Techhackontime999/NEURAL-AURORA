@@ -22,7 +22,7 @@ const content = `# NEURAL AURORA — The Synaptic Portfolio
 NEURAL AURORA is **source-available** software. The source code is publicly visible, but general commercial usage is **not** free.
 
 - ✅ **Free for Contributors** – If you have **at least one Pull Request merged** into the official repo [Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA), you may use, run, modify, self-host this software for **personal, educational or commercial** use **without** purchasing a commercial license.
-- ✅ **Free for Verified Students** – Students who have meaningfully contributed to this project may qualify for the same benefit. Email proof to **techhackontime999@gmail.com**.
+- ✅ **Free for Verified Students** – Students who have meaningfully contributed to this project may qualify for the same benefit. Email proof to **amitkumarkh01012006@gmail.com**.
 - ✅ **Free for Evaluation** – You may clone, read, modify and run locally **strictly for evaluation/testing** purposes.
 - ❌ **Commercial Use by Others** – If you do **not** meet the above criteria, you **must** obtain a valid [Commercial License](COMMERCIAL-LICENSE.md) before using NEURAL AURORA in production, client work, agency projects, SaaS, white-label, or any revenue-generating context.
 - ✅ **Forking for Contribution** – You are encouraged to fork this repo and submit PRs to improve it.
@@ -89,7 +89,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). **Having >=1 merged PR makes you eligibl
 
 ## 💼 Commercial Licensing
 
-Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email **techhackontime999@gmail.com** with subject \`NEURAL AURORA COMMERCIAL LICENSE\`.
+Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email **amitkumarkh01012006@gmail.com** with subject \`NEURAL AURORA COMMERCIAL LICENSE\`.
 
 ## 📚 Documentation
 

@@ -28,7 +28,7 @@ If you have a valid [Commercial License](COMMERCIAL-LICENSE.md), you may use NEU
 
 ## Requesting Permission
 
-To request permission to use the Trademarks beyond the above, email **techhackontime999@gmail.com** with subject `TRADEMARK USAGE REQUEST`.
+To request permission to use the Trademarks beyond the above, email **amitkumarkh01012006@gmail.com** with subject `TRADEMARK USAGE REQUEST`.
 
 ## Policy Updates
 

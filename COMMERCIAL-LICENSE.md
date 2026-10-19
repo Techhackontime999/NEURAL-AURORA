@@ -33,7 +33,7 @@ Final pricing is agreed upon via email based on your exact use case.
 
 ## How to Purchase
 
-Email: **techhackontime999@gmail.com**
+Email: **amitkumarkh01012006@gmail.com**
 
 Subject: `NEURAL AURORA COMMERCIAL LICENSE - [Your Name/Company]`
 

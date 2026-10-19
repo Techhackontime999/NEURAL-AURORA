@@ -488,7 +488,7 @@ NEURAL AURORA is **source-available** software — not OSI-approved "Open source
 - ✅ **Free for Evaluation** — clone, read, modify and run locally for evaluation/testing.
 - ❌ **Commercial use by others** requires a valid [Commercial License](COMMERCIAL-LICENSE.md).
 
-See [LICENSE](LICENSE) and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For commercial licensing, email **techhackontime999@gmail.com**.
+See [LICENSE](LICENSE) and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For commercial licensing, email **amitkumarkh01012006@gmail.com**.
 
 ---
 

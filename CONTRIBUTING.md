@@ -77,7 +77,7 @@ docs(readme): update license section
 
 As a verified Contributor, you receive a **perpetual, royalty-free license** to use NEURAL AURORA for **personal, educational, or commercial** purposes under the terms of the [LICENSE](LICENSE) — **no commercial license purchase required**.
 
-**Verified Students** who meaningfully contribute may also qualify for the same benefit. Reach out to `techhackontime999@gmail.com` with proof if needed.
+**Verified Students** who meaningfully contribute may also qualify for the same benefit. Reach out to `amitkumarkh01012006@gmail.com` with proof if needed.
 
 ---
 

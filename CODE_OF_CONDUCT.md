@@ -34,7 +34,7 @@ This Code of Conduct applies within project spaces (GitHub issues, PRs, discussi
 
 ## Reporting
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by emailing **techhackontime999@gmail.com** with subject `CODE OF CONDUCT REPORT`.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by emailing **amitkumarkh01012006@gmail.com** with subject `CODE OF CONDUCT REPORT`.
 
 All reports will be reviewed, investigated, and handled with discretion.
 

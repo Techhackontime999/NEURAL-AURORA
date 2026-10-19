@@ -54,7 +54,7 @@ Depending on your jurisdiction, you may have rights to:
 - Restrict or object to processing
 - Withdraw consent
 
-To exercise these rights, email **techhackontime999@gmail.com** with subject `PRIVACY REQUEST`. We will respond reasonably and in accordance with applicable law.
+To exercise these rights, email **amitkumarkh01012006@gmail.com** with subject `PRIVACY REQUEST`. We will respond reasonably and in accordance with applicable law.
 
 ## 7. Cookies & Tracking
 
@@ -74,4 +74,4 @@ We may update this Privacy Policy from time to time. Updates are effective when 
 
 ## 11. Contact
 
-Privacy questions: **techhackontime999@gmail.com**
+Privacy questions: **amitkumarkh01012006@gmail.com**

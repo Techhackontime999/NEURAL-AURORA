@@ -6,14 +6,13 @@ import { getAllOrders, summariseOrders } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
 
 const categoryConfig = [
-  { key: 'projects', label: 'Projects', color: '#3b82f6', table: 'projects' },
-  { key: 'skills', label: 'Skills', color: '#10b981', table: 'skills' },
-  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6', table: 'blog_posts' },
-  { key: 'reviews', label: 'Reviews', color: '#f59e0b', table: 'reviews' },
-  { key: 'education', label: 'Education', color: '#ec4899', table: 'education' },
-  { key: 'experience', label: 'Experience', color: '#f97316', table: 'experience' },
-  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4', table: 'case_studies' },
-  { key: 'services', label: 'Services', color: '#14b8a6', table: 'services' },
+  { key: 'projects', label: 'Projects', color: '#3b82f6', table: 'projects', href: '/admin/projects' },
+  { key: 'skills', label: 'Skills', color: '#10b981', table: 'skills', href: '/admin/skills' },
+  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6', table: 'blog_posts', href: '/admin/blog' },
+  { key: 'education', label: 'Education', color: '#ec4899', table: 'education', href: '/admin/education' },
+  { key: 'experience', label: 'Experience', color: '#f97316', table: 'experience', href: '/admin/experience' },
+  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4', table: 'case_studies', href: '/admin/case-studies' },
+  { key: 'services', label: 'Services', color: '#14b8a6', table: 'services', href: '/admin/services' },
 ]
 
 const quickActionGroups = [
@@ -401,9 +400,10 @@ export default function AdminOverview() {
           animate="show"
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
-          {categoryConfig.map(({ key, label, color }) => (
-            <motion.div
+          {categoryConfig.map(({ key, label, color, href }) => (
+            <motion.a
               key={key}
+              href={href}
               variants={item}
               className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
               style={{
@@ -420,7 +420,7 @@ export default function AdminOverview() {
               >
                 {stats?.[key] ?? '—'}
               </p>
-            </motion.div>
+            </motion.a>
           ))}
 
           {/* Pending Reviews */}

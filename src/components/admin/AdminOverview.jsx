@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { generateTestData } from '../../lib/supabase'
-import { getAllOrders, summariseOrders } from '../../lib/adminProducts'
+import { getOrderStats } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
 
 const categoryConfig = [
@@ -67,32 +67,35 @@ const quickActionGroups = [
 
 export default function AdminOverview() {
   const [stats, setStats] = useState(null)
-  const [pendingCount, setPendingCount] = useState(0)
   const [generating, setGenerating] = useState(null)
   const [genMessage, setGenMessage] = useState('')
   const [genCategory, setGenCategory] = useState('projects')
   const [genCount, setGenCount] = useState(3)
   const [analytics, setAnalytics] = useState({
-    orders: 0,
-    paidOrders: 0,
-    revenuePaise: 0,
-    pendingOrders: 0,
-    failedOrders: 0,
-    products: 0,
-    publishedProducts: 0,
-    draftProducts: 0,
-    messages: 0,
-    unreadMessages: 0,
-    users: 0,
-    ads: 0,
-    activeAds: 0,
-    visitors: 0,
-    blogPosts: 0,
-    caseStudies: 0,
-    projects: 0,
-    services: 0,
-    reviews: 0,
-    approvedReviews: 0,
+    orders: null,
+    paidOrders: null,
+    revenuePaise: null,
+    pendingOrders: null,
+    failedOrders: null,
+    cancelledOrders: null,
+    refundedOrders: null,
+    products: null,
+    publishedProducts: null,
+    draftProducts: null,
+    archivedProducts: null,
+    messages: null,
+    unreadMessages: null,
+    users: null,
+    ads: null,
+    activeAds: null,
+    visitors: null,
+    blogPosts: null,
+    caseStudies: null,
+    projects: null,
+    services: null,
+    reviews: null,
+    approvedReviews: null,
+    pendingReviews: null,
     recentOrders: [],
     recentMessages: [],
     topProducts: [],
@@ -101,96 +104,142 @@ export default function AdminOverview() {
 
   useEffect(() => { fetchStats() }, [])
 
+  /**
+   * Load every dashboard figure from one place. Each number is an exact
+   * server-side count (or a whole-table aggregate for orders), never a
+   * `.length` of a capped list, so the cards cannot drift from the data.
+   *
+   * Counts are `null` when their query fails, which renders as "—" instead of
+   * a misleading zero. Boolean totals are derived as `total − true` rather than
+   * filtering on `false`, because legacy rows can have `NULL` in those columns.
+   */
   async function fetchStats() {
-    const results = await Promise.all(
-      categoryConfig.map(({ table }) =>
-        supabase.from(table).select('*', { count: 'exact', head: true })
-      )
-    )
-    const statsMap = {}
-    categoryConfig.forEach(({ key }, i) => {
-      statsMap[key] = results[i].count ?? 0
-    })
-    setStats(statsMap)
+    const count = (table, filter) => {
+      let query = supabase.from(table).select('*', { count: 'exact', head: true })
+      if (filter) query = filter(query)
+      // PostgREST builders are thenables, not Promises — they have no `.catch`.
+      // Wrap before attaching handlers so a failed count never throws.
+      return Promise.resolve(query).catch(() => ({ count: null }))
+    }
 
-    const { count } = await supabase
-      .from('reviews')
-      .select('*', { count: 'exact', head: true })
-      .eq('approved', false)
-    setPendingCount(count ?? 0)
-
-    // Fetch comprehensive analytics
     try {
       const [
-        ordersRes,
-        productsAllRes,
-        productsPubRes,
-        productsDraftRes,
+        projectsRes,
+        skillsRes,
+        blogRes,
+        educationRes,
+        experienceRes,
+        caseStudiesRes,
+        servicesRes,
+        reviewsRes,
+        approvedReviewsRes,
+        productsRes,
+        publishedRes,
+        draftRes,
+        archivedRes,
         messagesRes,
-        unreadRes,
+        readMessagesRes,
         usersRes,
         adsRes,
         activeAdsRes,
         visitorsRes,
+        orderStatsRes,
         recentOrdersRes,
         recentMessagesRes,
-        blogRes,
-        caseRes,
-        projectRes,
-        serviceRes,
-        reviewsRes,
-        approvedRes,
       ] = await Promise.all([
-        getAllOrders(1000).catch(() => []),
-        supabase.from('products').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'published').catch(() => ({ count: 0 })),
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'draft').catch(() => ({ count: 0 })),
-        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('read', false).catch(() => ({ count: 0 })),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('dev_ads').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('dev_ads').select('*', { count: 'exact', head: true }).eq('active', true).catch(() => ({ count: 0 })),
-        supabase.from('visitor_stats').select('count').maybeSingle().catch(() => ({ data: null })),
-        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
-        supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
-        supabase.from('blog_posts').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('case_studies').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('projects').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('services').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('reviews').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('approved', true).catch(() => ({ count: 0 })),
+        count('projects'),
+        count('skills'),
+        count('blog_posts'),
+        count('education'),
+        count('experience'),
+        count('case_studies'),
+        count('services'),
+        count('reviews'),
+        count('reviews', (q) => q.eq('approved', true)),
+        count('products'),
+        count('products', (q) => q.eq('status', 'published')),
+        count('products', (q) => q.eq('status', 'draft')),
+        count('products', (q) => q.eq('status', 'archived')),
+        count('contact_messages'),
+        count('contact_messages', (q) => q.eq('read', true)),
+        count('profiles'),
+        count('dev_ads'),
+        count('dev_ads', (q) => q.eq('active', true)),
+        Promise.resolve(
+          supabase.from('visitor_stats').select('count').maybeSingle()
+        ).catch(() => ({ data: null })),
+        getOrderStats().catch(() => null),
+        Promise.resolve(
+          supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5)
+        ).catch(() => ({ data: [] })),
+        Promise.resolve(
+          supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5)
+        ).catch(() => ({ data: [] })),
       ])
 
-      const orders = ordersRes || []
-      const summary = summariseOrders(orders)
+      const value = (res) => (res && res.count != null ? res.count : null)
+
+      const reviews = value(reviewsRes)
+      const approvedReviews = value(approvedReviewsRes)
+      const messages = value(messagesRes)
+      const readMessages = value(readMessagesRes)
+
+      const counts = {
+        projects: value(projectsRes),
+        skills: value(skillsRes),
+        blog: value(blogRes),
+        education: value(educationRes),
+        experience: value(experienceRes),
+        case_studies: value(caseStudiesRes),
+        services: value(servicesRes),
+      }
+      setStats(counts)
+
+      const orders = orderStatsRes || {}
 
       setAnalytics({
-        orders: summary.total,
-        paidOrders: summary.paid,
-        revenuePaise: summary.revenuePaise,
-        pendingOrders: summary.pending,
-        failedOrders: summary.failed,
-        products: productsAllRes.count ?? 0,
-        publishedProducts: productsPubRes.count ?? 0,
-        draftProducts: productsDraftRes.count ?? 0,
-        messages: messagesRes.count ?? 0,
-        unreadMessages: unreadRes.count ?? 0,
-        users: usersRes.count ?? 0,
-        ads: adsRes.count ?? 0,
-        activeAds: activeAdsRes.count ?? 0,
-        visitors: visitorsRes.data?.count ?? 0,
-        blogPosts: blogRes.count ?? 0,
-        caseStudies: caseRes.count ?? 0,
-        projects: projectRes.count ?? 0,
-        services: serviceRes.count ?? 0,
-        reviews: reviewsRes.count ?? 0,
-        approvedReviews: approvedRes.count ?? 0,
-        recentOrders: recentOrdersRes.data || [],
-        recentMessages: recentMessagesRes.data || [],
+        orders: orders.total ?? null,
+        paidOrders: orders.paid ?? null,
+        revenuePaise: orders.revenuePaise ?? null,
+        pendingOrders: orders.pending ?? null,
+        failedOrders: orders.failed ?? null,
+        cancelledOrders: orders.cancelled ?? null,
+        refundedOrders: orders.refunded ?? null,
+        products: value(productsRes),
+        publishedProducts: value(publishedRes),
+        draftProducts: value(draftRes),
+        archivedProducts: value(archivedRes),
+        messages,
+        unreadMessages:
+          messages != null && readMessages != null ? Math.max(0, messages - readMessages) : null,
+        users: value(usersRes),
+        ads: value(adsRes),
+        activeAds: value(activeAdsRes),
+        visitors: visitorsRes?.data?.count ?? null,
+        blogPosts: value(blogRes),
+        caseStudies: value(caseStudiesRes),
+        projects: value(projectsRes),
+        services: value(servicesRes),
+        reviews,
+        approvedReviews,
+        pendingReviews:
+          reviews != null && approvedReviews != null
+            ? Math.max(0, reviews - approvedReviews)
+            : null,
+        recentOrders: recentOrdersRes?.data || [],
+        recentMessages: recentMessagesRes?.data || [],
         topProducts: [],
       })
     } catch (err) {
-      console.error('Failed to fetch analytics:', err)
+      console.error('Failed to fetch dashboard stats:', err)
     } finally {
       setLoadingAnalytics(false)
     }
@@ -222,6 +271,22 @@ export default function AdminOverview() {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
   }
+
+  // Render a failed/unknown count as "—" rather than a fake zero.
+  const show = (value) => (value == null ? '—' : value)
+
+  const orderStatusNote = (() => {
+    const failed = analytics.failedOrders || 0
+    const cancelled = analytics.cancelledOrders || 0
+    if (failed || cancelled) {
+      return [
+        failed ? `${failed} failed` : '',
+        cancelled ? `${cancelled} cancelled` : '',
+      ].filter(Boolean).join(' · ')
+    }
+    const pending = analytics.pendingOrders || 0
+    return pending ? `${pending} pending` : 'All tracked'
+  })()
 
   return (
     <div>
@@ -279,13 +344,15 @@ export default function AdminOverview() {
           }}
         >
           <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-            Total Revenue
+            Store Revenue
           </p>
           <p className="mt-2 font-display text-xl font-bold tracking-tight" style={{ color: '#10b981' }}>
-            {loadingAnalytics ? '—' : formatPrice(analytics.revenuePaise)}
+            {loadingAnalytics || analytics.revenuePaise == null
+              ? '—'
+              : formatPrice(analytics.revenuePaise, 'INR')}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {analytics.paidOrders} paid · {analytics.pendingOrders} pending
+            {show(analytics.paidOrders)} paid · {show(analytics.pendingOrders)} pending
           </p>
         </motion.a>
 
@@ -302,10 +369,10 @@ export default function AdminOverview() {
             Orders
           </p>
           <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#3b82f6' }}>
-            {loadingAnalytics ? '—' : analytics.orders}
+            {loadingAnalytics ? '—' : show(analytics.orders)}
           </p>
-          <p className="mt-1 text-xs" style={{ color: analytics.pendingOrders > 0 ? '#f59e0b' : 'var(--text-tertiary)' }}>
-            {analytics.failedOrders > 0 ? `${analytics.failedOrders} failed` : 'All tracked'}
+          <p className="mt-1 text-xs" style={{ color: analytics.pendingOrders > 0 || analytics.failedOrders > 0 ? '#f59e0b' : 'var(--text-tertiary)' }}>
+            {orderStatusNote}
           </p>
         </motion.a>
 
@@ -322,10 +389,11 @@ export default function AdminOverview() {
             Products
           </p>
           <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#8b5cf6' }}>
-            {loadingAnalytics ? '—' : analytics.products}
+            {loadingAnalytics ? '—' : show(analytics.products)}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {analytics.publishedProducts} pub · {analytics.draftProducts} draft
+            {show(analytics.publishedProducts)} pub · {show(analytics.draftProducts)} draft
+            {analytics.archivedProducts > 0 ? ` · ${analytics.archivedProducts} archived` : ''}
           </p>
         </motion.a>
 
@@ -342,10 +410,10 @@ export default function AdminOverview() {
             Messages
           </p>
           <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: analytics.unreadMessages > 0 ? '#ef4444' : '#10b981' }}>
-            {loadingAnalytics ? '—' : analytics.messages}
+            {loadingAnalytics ? '—' : show(analytics.messages)}
           </p>
           <p className="mt-1 text-xs" style={{ color: analytics.unreadMessages > 0 ? '#ef4444' : 'var(--text-tertiary)' }}>
-            {analytics.unreadMessages} unread
+            {show(analytics.unreadMessages)} unread
           </p>
         </motion.a>
 
@@ -362,7 +430,7 @@ export default function AdminOverview() {
             Users
           </p>
           <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#06b6d4' }}>
-            {loadingAnalytics ? '—' : analytics.users}
+            {loadingAnalytics ? '—' : show(analytics.users)}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
             Registered Profiles
@@ -381,7 +449,11 @@ export default function AdminOverview() {
             Visitors
           </p>
           <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#f59e0b' }}>
-            {loadingAnalytics ? '—' : analytics.visitors.toLocaleString()}
+            {loadingAnalytics
+              ? '—'
+              : analytics.visitors == null
+                ? '—'
+                : analytics.visitors.toLocaleString()}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
             Total Site Visits
@@ -438,9 +510,16 @@ export default function AdminOverview() {
             </p>
             <p
               className="mt-2 font-display text-2xl font-bold tracking-tight"
-              style={{ color: pendingCount > 0 ? '#ef4444' : '#10b981' }}
+              style={{
+                color:
+                  analytics.pendingReviews == null
+                    ? 'var(--text-tertiary)'
+                    : analytics.pendingReviews > 0
+                      ? '#ef4444'
+                      : '#10b981',
+              }}
             >
-              {pendingCount}
+              {loadingAnalytics ? '—' : show(analytics.pendingReviews)}
             </p>
           </motion.a>
 
@@ -460,10 +539,10 @@ export default function AdminOverview() {
               className="mt-2 font-display text-2xl font-bold tracking-tight"
               style={{ color: '#f97316' }}
             >
-              {loadingAnalytics ? '—' : analytics.ads}
+              {loadingAnalytics ? '—' : show(analytics.ads)}
             </p>
             <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {analytics.activeAds} active
+              {show(analytics.activeAds)} active
             </p>
           </motion.a>
 
@@ -480,7 +559,7 @@ export default function AdminOverview() {
               Blog Posts
             </p>
             <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#8b5cf6' }}>
-              {loadingAnalytics ? '—' : analytics.blogPosts}
+              {loadingAnalytics ? '—' : show(analytics.blogPosts)}
             </p>
           </motion.a>
 
@@ -497,7 +576,7 @@ export default function AdminOverview() {
               Case Studies
             </p>
             <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#06b6d4' }}>
-              {loadingAnalytics ? '—' : analytics.caseStudies}
+              {loadingAnalytics ? '—' : show(analytics.caseStudies)}
             </p>
           </motion.a>
 
@@ -514,7 +593,7 @@ export default function AdminOverview() {
               Services
             </p>
             <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#14b8a6' }}>
-              {loadingAnalytics ? '—' : analytics.services}
+              {loadingAnalytics ? '—' : show(analytics.services)}
             </p>
           </motion.a>
 
@@ -531,10 +610,10 @@ export default function AdminOverview() {
               Reviews
             </p>
             <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#f59e0b' }}>
-              {loadingAnalytics ? '—' : analytics.reviews}
+              {loadingAnalytics ? '—' : show(analytics.reviews)}
             </p>
             <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {analytics.approvedReviews} approved
+              {show(analytics.approvedReviews)} approved
             </p>
           </motion.a>
         </motion.div>
@@ -599,27 +678,29 @@ export default function AdminOverview() {
         </div>
         <div className="grid gap-4 sm:grid-cols-4">
           <div>
-            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Total Revenue</p>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Store Revenue</p>
             <p className="mt-1 text-lg font-semibold" style={{ color: '#10b981' }}>
-              {loadingAnalytics ? '—' : formatPrice(analytics.revenuePaise)}
+              {loadingAnalytics || analytics.revenuePaise == null
+                ? '—'
+                : formatPrice(analytics.revenuePaise, 'INR')}
             </p>
           </div>
           <div>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Paid Orders</p>
             <p className="mt-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {loadingAnalytics ? '—' : analytics.paidOrders}
+              {loadingAnalytics ? '—' : show(analytics.paidOrders)}
             </p>
           </div>
           <div>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Pending</p>
             <p className="mt-1 text-lg font-semibold" style={{ color: analytics.pendingOrders > 0 ? '#f59e0b' : 'var(--text-primary)' }}>
-              {loadingAnalytics ? '—' : analytics.pendingOrders}
+              {loadingAnalytics ? '—' : show(analytics.pendingOrders)}
             </p>
           </div>
           <div>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Published Products</p>
             <p className="mt-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {loadingAnalytics ? '—' : analytics.publishedProducts} / {analytics.products}
+              {loadingAnalytics ? '—' : show(analytics.publishedProducts)} / {show(analytics.products)}
             </p>
           </div>
         </div>
@@ -665,7 +746,7 @@ export default function AdminOverview() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium" style={{ color: order.payment_status === 'paid' ? '#10b981' : 'var(--text-secondary)' }}>
-                      {formatPrice(order.total_paise)}
+                      {formatPrice(order.total_paise, order.currency || 'INR')}
                     </p>
                     <p
                       className="text-xs capitalize"

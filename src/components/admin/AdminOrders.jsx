@@ -3,6 +3,8 @@ import {
   getAllOrders,
   getOrderItems,
   getAllEntitlements,
+  getEntitlementCount,
+  getOrderStats,
   revokeEntitlement,
   deleteOrders,
   reconcileOrder,
@@ -29,8 +31,10 @@ export default function AdminOrders() {
   const { toast, confirm } = useToast()
 
   const [orders, setOrders] = useState([])
+  const [orderStats, setOrderStats] = useState(null)
   const [itemsByOrder, setItemsByOrder] = useState({})
   const [entitlements, setEntitlements] = useState([])
+  const [entitlementCount, setEntitlementCount] = useState(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [tab, setTab] = useState('orders')
@@ -49,12 +53,18 @@ export default function AdminOrders() {
   async function load() {
     setLoading(true)
     try {
-      const [orderRows, entitlementRows] = await Promise.all([
+      const [orderRows, entitlementRows, stats, entitlementTotal] = await Promise.all([
         getAllOrders(),
         getAllEntitlements(),
+        // Stats are whole-table aggregates, so they must not come from the
+        // capped lists above (200 orders / 500 entitlements).
+        getOrderStats().catch(() => null),
+        getEntitlementCount().catch(() => null),
       ])
       setOrders(orderRows)
       setEntitlements(entitlementRows)
+      setOrderStats(stats)
+      setEntitlementCount(entitlementTotal)
 
       const items = await getOrderItems(orderRows.map((o) => o.id))
       const grouped = {}
@@ -70,7 +80,10 @@ export default function AdminOrders() {
     }
   }
 
-  const summary = useMemo(() => summariseOrders(orders), [orders])
+  const summary = useMemo(
+    () => orderStats || summariseOrders(orders),
+    [orderStats, orders]
+  )
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase()
@@ -303,7 +316,11 @@ export default function AdminOrders() {
         <Stat label="Orders" value={summary.total} />
         <Stat label="Paid" value={summary.paid} color="#10b981" />
         <Stat label="Pending" value={summary.pending} color="#f59e0b" />
-        <Stat label="Failed" value={summary.failed} color="#ef4444" />
+        <Stat
+          label="Failed / Cancelled"
+          value={(summary.failed || 0) + (summary.cancelled || 0)}
+          color="#ef4444"
+        />
         <Stat label="Refunded" value={summary.refunded} color="#8b5cf6" />
         <Stat label="Revenue" value={formatPrice(summary.revenuePaise, 'INR')} color="#06b6d4" />
       </div>
@@ -311,8 +328,11 @@ export default function AdminOrders() {
       {/* --- tabs ---------------------------------------------------------- */}
       <div className="mb-4 flex gap-2">
         {[
-          { key: 'orders', label: `Orders (${orders.length})` },
-          { key: 'entitlements', label: `Entitlements (${entitlements.length})` },
+          { key: 'orders', label: `Orders (${orderStats?.total ?? orders.length})` },
+          {
+            key: 'entitlements',
+            label: `Entitlements (${entitlementCount ?? entitlements.length})`,
+          },
         ].map((entry) => (
           <button
             key={entry.key}
@@ -366,6 +386,9 @@ export default function AdminOrders() {
             </label>
 
             <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+              {summary.total > orders.length
+                ? `Showing latest ${orders.length} of ${summary.total} · `
+                : ''}
               Tick orders to delete them in bulk
             </span>
           </div>

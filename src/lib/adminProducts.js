@@ -241,6 +241,75 @@ export async function getAllEntitlements(limit = 500) {
   return data || []
 }
 
+/** Total entitlement rows, ignoring the list's display limit. */
+export async function getEntitlementCount() {
+  const { count, error } = await supabase
+    .from('entitlements')
+    .select('*', { count: 'exact', head: true })
+
+  if (error) throw error
+  return count ?? 0
+}
+
+const ORDER_STATUSES = ['pending', 'paid', 'failed', 'cancelled', 'refunded']
+
+/**
+ * Whole-store order statistics, independent of how many rows the UI displays.
+ *
+ * The previous implementation derived these numbers from the loaded order list,
+ * which is capped at 200 rows — so revenue and status counts silently stopped
+ * growing once the store passed that mark. Here every count is a server-side
+ * `count: exact` query, and paid revenue is paged through all paid orders.
+ */
+export async function getOrderStats() {
+  const statusCounts = await Promise.all(
+    ORDER_STATUSES.map(async (status) => {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('payment_status', status)
+      if (error) throw error
+      return [status, count ?? 0]
+    })
+  )
+
+  const byStatus = Object.fromEntries(statusCounts)
+  const total = ORDER_STATUSES.reduce((sum, status) => sum + byStatus[status], 0)
+
+  // Revenue is summed per currency so two currencies are never added together.
+  const revenueByCurrency = {}
+  const PAGE_SIZE = 1000
+  let from = 0
+  for (;;) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id, total_paise, currency')
+      .eq('payment_status', 'paid')
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+
+    for (const order of data || []) {
+      const currency = order.currency || 'INR'
+      revenueByCurrency[currency] =
+        (revenueByCurrency[currency] || 0) + (Number(order.total_paise) || 0)
+    }
+    if (!data || data.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+
+  return {
+    total,
+    paid: byStatus.paid,
+    pending: byStatus.pending,
+    failed: byStatus.failed,
+    cancelled: byStatus.cancelled,
+    refunded: byStatus.refunded,
+    revenuePaise: revenueByCurrency.INR || 0,
+    revenueByCurrency,
+  }
+}
+
 export async function revokeEntitlement(id) {
   const { error } = await supabase
     .from('entitlements')
@@ -340,20 +409,28 @@ export async function createAccessLink({ orderRef, email } = {}) {
 }
 
 /**
- * Aggregate a coarse sales summary on the client from the orders the admin
- * is allowed to see. Kept deliberately simple; a real reporting workload
- * should move to a SQL view or RPC.
+ * Aggregate a sales summary from whatever order rows are available. This is
+ * only a fallback for the list the admin is currently viewing — prefer
+ * `getOrderStats()` for dashboard figures, because that list is capped.
  */
 export function summariseOrders(orders) {
   const paid = orders.filter((o) => o.payment_status === 'paid')
-  const totalPaise = paid.reduce((sum, o) => sum + (Number(o.total_paise) || 0), 0)
+
+  const revenueByCurrency = {}
+  for (const order of paid) {
+    const currency = order.currency || 'INR'
+    revenueByCurrency[currency] =
+      (revenueByCurrency[currency] || 0) + (Number(order.total_paise) || 0)
+  }
 
   return {
     total: orders.length,
     paid: paid.length,
     pending: orders.filter((o) => o.payment_status === 'pending').length,
-    failed: orders.filter((o) => ['failed', 'cancelled'].includes(o.payment_status)).length,
+    failed: orders.filter((o) => o.payment_status === 'failed').length,
+    cancelled: orders.filter((o) => o.payment_status === 'cancelled').length,
     refunded: orders.filter((o) => o.payment_status === 'refunded').length,
-    revenuePaise: totalPaise,
+    revenuePaise: revenueByCurrency.INR || 0,
+    revenueByCurrency,
   }
 }

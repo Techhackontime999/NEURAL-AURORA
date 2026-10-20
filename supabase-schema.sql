@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS projects (
   description TEXT DEFAULT '',
   technologies TEXT[] DEFAULT '{}',
   image TEXT DEFAULT '/images/project-placeholder.png',
+  images TEXT[] NOT NULL DEFAULT '{}',
   github TEXT,
   link TEXT,
   demo TEXT,

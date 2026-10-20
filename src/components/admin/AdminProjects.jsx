@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getProjects, updateProject, createProject, deleteProject } from '../../lib/supabase'
+import { invalidatePortfolioCache } from '../../lib/usePortfolioData'
 import RichTextEditor from './RichTextEditor'
 import { stripHtml } from '../../lib/utils'
 import ImageUpload from '../ui/ImageUpload'
+import MultiImageUpload from '../ui/MultiImageUpload'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
@@ -16,7 +18,7 @@ export default function AdminProjects() {
   const [editForm, setEditForm] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({
-    project_id: '', title: '', description: '', technologies: [], image: '',
+    project_id: '', title: '', description: '', technologies: [], image: '', images: [],
     github: '', link: '', demo: '', display_order: 0,
   })
 
@@ -45,6 +47,7 @@ export default function AdminProjects() {
       await updateProject(id, payload)
       setEditingId(null)
       toast.success('Project updated successfully')
+      invalidatePortfolioCache('projects')
       load()
     } catch (err) {
       toast.error('Failed to save: ' + err.message)
@@ -60,8 +63,9 @@ export default function AdminProjects() {
       }
       await createProject(payload)
       setShowNew(false)
-      setNewForm({ project_id: '', title: '', description: '', technologies: [], image: '', github: '', link: '', demo: '', display_order: 0 })
+      setNewForm({ project_id: '', title: '', description: '', technologies: [], image: '', images: [], github: '', link: '', demo: '', display_order: 0 })
       toast.success('Project created successfully')
+      invalidatePortfolioCache('projects')
       load()
     } catch (err) {
       toast.error('Failed to create: ' + err.message)
@@ -80,6 +84,7 @@ export default function AdminProjects() {
     try {
       await deleteProject(id)
       toast.success('Project deleted')
+      invalidatePortfolioCache('projects')
       load()
     } catch (err) {
       toast.error('Failed to delete: ' + err.message)
@@ -97,7 +102,10 @@ export default function AdminProjects() {
     if (!ok) return
 
     const { deleted, errors } = await handleBulkDelete(deleteProject)
-    if (deleted > 0) toast.success(`Deleted ${deleted} project(s)`)
+    if (deleted > 0) {
+      toast.success(`Deleted ${deleted} project(s)`)
+      invalidatePortfolioCache('projects')
+    }
     if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} project(s)`)
     clearSelection()
     load()
@@ -105,14 +113,19 @@ export default function AdminProjects() {
 
   function startEdit(project) {
     setEditingId(project.id)
-    setEditForm({ ...project, technologies: project.technologies?.join(', ') || '' })
+    setEditForm({
+      ...project,
+      technologies: project.technologies?.join(', ') || '',
+      images: Array.isArray(project.images) ? project.images : [],
+    })
   }
 
   const fields = [
     { key: 'project_id', label: 'Project ID' },
     { key: 'title', label: 'Title' },
     { key: 'technologies', label: 'Technologies (comma-separated)' },
-    { key: 'image', label: 'Image', type: 'image' },
+    { key: 'image', label: 'Main Image', type: 'image' },
+    { key: 'images', label: 'Gallery Images (extra views)', type: 'images' },
     { key: 'github', label: 'GitHub URL' },
     { key: 'link', label: 'Link URL' },
     { key: 'demo', label: 'Demo URL' },
@@ -155,7 +168,7 @@ export default function AdminProjects() {
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {fields.map(({ key, label, type }) => (
-              <div key={key} className={type === 'textarea' || type === 'image' ? 'sm:col-span-2' : ''}>
+              <div key={key} className={type === 'textarea' || type === 'image' || type === 'images' ? 'sm:col-span-2' : ''}>
                 <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                 {type === 'textarea' ? (
                   <textarea
@@ -169,7 +182,13 @@ export default function AdminProjects() {
                   <ImageUpload
                     value={newForm.image}
                     onChange={(url) => setNewForm({ ...newForm, image: url })}
-                    label="Project Image"
+                    label="Project Main Image"
+                  />
+                ) : type === 'images' ? (
+                  <MultiImageUpload
+                    value={newForm.images}
+                    onChange={(urls) => setNewForm({ ...newForm, images: urls })}
+                    label="Project Gallery Image"
                   />
                 ) : (
                   <input
@@ -229,7 +248,7 @@ export default function AdminProjects() {
             {editingId === project.id ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {fields.map(({ key, label, type }) => (
-                  <div key={key} className={type === 'textarea' || type === 'image' ? 'sm:col-span-2' : ''}>
+                  <div key={key} className={type === 'textarea' || type === 'image' || type === 'images' ? 'sm:col-span-2' : ''}>
                     <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                     {type === 'textarea' ? (
                       <textarea value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })} rows={3} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
@@ -237,7 +256,13 @@ export default function AdminProjects() {
                       <ImageUpload
                         value={editForm.image}
                         onChange={(url) => setEditForm({ ...editForm, image: url })}
-                        label="Project Image"
+                        label="Project Main Image"
+                      />
+                    ) : type === 'images' ? (
+                      <MultiImageUpload
+                        value={editForm.images}
+                        onChange={(urls) => setEditForm({ ...editForm, images: urls })}
+                        label="Project Gallery Image"
                       />
                     ) : (
                       <input type={type || 'text'} value={editForm[key]} onChange={(e) => setEditForm({ ...editForm, [key]: type === 'number' ? +e.target.value : e.target.value })} className="w-full rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />

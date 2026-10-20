@@ -107,9 +107,10 @@ export default function Skills() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {categories.map((cat, catIdx) => {
-              const catSkills = skills.filter((s) => s.category === cat.key)
-              return (
+            {categories
+              .map((cat) => ({ cat, catSkills: skills.filter((s) => s.category === cat.key) }))
+              .filter(({ catSkills }) => catSkills.length > 0)
+              .map(({ cat, catSkills }, catIdx) => (
                 <motion.div
                   key={cat.key}
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
@@ -128,25 +129,18 @@ export default function Skills() {
                     </span>
                   </div>
                   <div className="space-y-5">
-                    {catSkills.length > 0 ? (
-                      catSkills.map((skill, i) => (
-                        <SkillBar
-                          key={`${cat.key}-${skill.name}-${i}`}
-                          {...skill}
-                          color={cat.color}
-                          index={i}
-                          shouldReduceMotion={shouldReduceMotion}
-                        />
-                      ))
-                    ) : (
-                      <p className="text-xs text-black/30 dark:text-white/30 italic font-mono">
-                        {t('skills.noSkillsInCategory')}
-                      </p>
-                    )}
+                    {catSkills.map((skill, i) => (
+                      <SkillBar
+                        key={`${cat.key}-${skill.name}-${i}`}
+                        {...skill}
+                        color={cat.color}
+                        index={i}
+                        shouldReduceMotion={shouldReduceMotion}
+                      />
+                    ))}
                   </div>
                 </motion.div>
-              )
-            })}
+              ))}
           </div>
         )}
       </div>

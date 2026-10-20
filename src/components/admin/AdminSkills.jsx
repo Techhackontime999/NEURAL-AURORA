@@ -5,7 +5,21 @@ import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 
-const categories = ['frontend', 'backend', 'language', 'devops', 'design']
+const categories = [
+  'frontend',
+  'backend',
+  'language',
+  'devops',
+  'design',
+  'database',
+  'cloud',
+  'ai',
+  'mobile',
+  'testing',
+  'security',
+  'tools',
+  'other',
+]
 
 export default function AdminSkills() {
   const { toast, confirm } = useToast()

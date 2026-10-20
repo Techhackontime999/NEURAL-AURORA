@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { generateTestData } from '../../lib/supabase'
+import { getAllOrders, summariseOrders } from '../../lib/adminProducts'
+import { formatPrice } from '../../lib/products'
 
 const categoryConfig = [
   { key: 'projects', label: 'Projects', color: '#3b82f6', table: 'projects' },
@@ -14,6 +16,56 @@ const categoryConfig = [
   { key: 'services', label: 'Services', color: '#14b8a6', table: 'services' },
 ]
 
+const quickActionGroups = [
+  {
+    group: 'Content',
+    actions: [
+      { href: '/admin/personal-info', label: 'Edit Personal Info' },
+      { href: '/admin/projects', label: 'Manage Projects' },
+      { href: '/admin/blog', label: 'Write Blog Post' },
+      { href: '/admin/case-studies', label: 'Add Case Study' },
+      { href: '/admin/skills', label: 'Manage Skills' },
+      { href: '/admin/education', label: 'Manage Education' },
+      { href: '/admin/experience', label: 'Manage Experience' },
+      { href: '/admin/certificates', label: 'Manage Certificates' },
+      { href: '/admin/achievements', label: 'Manage Achievements' },
+      { href: '/admin/services', label: 'Manage Services' },
+      { href: '/admin/gallery', label: 'Manage Gallery' },
+    ],
+  },
+  {
+    group: 'Commerce',
+    actions: [
+      { href: '/admin/products', label: 'Manage Products' },
+      { href: '/admin/orders', label: 'View Orders' },
+      { href: '/admin/payments', label: 'View Payments' },
+      { href: '/admin/payment-settings', label: 'Payment Settings' },
+    ],
+  },
+  {
+    group: 'Engagement',
+    actions: [
+      { href: '/admin/reviews', label: 'Moderate Reviews' },
+      { href: '/admin/messages', label: 'Read Messages' },
+      { href: '/admin/social-links', label: 'Edit Social Links' },
+      { href: '/admin/users', label: 'Manage Users' },
+      { href: '/admin/ads', label: 'Manage Dev Ads' },
+    ],
+  },
+  {
+    group: 'Settings & Tools',
+    actions: [
+      { href: '/admin/ai-automation', label: 'AI Automation' },
+      { href: '/admin/crm-config', label: 'CRM Config' },
+      { href: '/admin/docs-config', label: 'Docs Config' },
+      { href: '/admin/youtube-config', label: 'YouTube Config' },
+      { href: '/admin/video-hero', label: 'Video Hero' },
+      { href: '/admin/store-hero', label: 'Store Hero Carousel' },
+      { href: '/admin/data', label: 'Backup / Restore Data' },
+    ],
+  },
+]
+
 export default function AdminOverview() {
   const [stats, setStats] = useState(null)
   const [pendingCount, setPendingCount] = useState(0)
@@ -21,6 +73,21 @@ export default function AdminOverview() {
   const [genMessage, setGenMessage] = useState('')
   const [genCategory, setGenCategory] = useState('projects')
   const [genCount, setGenCount] = useState(3)
+  const [analytics, setAnalytics] = useState({
+    orders: 0,
+    paidOrders: 0,
+    revenuePaise: 0,
+    pendingOrders: 0,
+    products: 0,
+    messages: 0,
+    unreadMessages: 0,
+    users: 0,
+    ads: 0,
+    visitors: 0,
+    recentOrders: [],
+    recentMessages: [],
+  })
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true)
 
   useEffect(() => { fetchStats() }, [])
 
@@ -41,6 +108,53 @@ export default function AdminOverview() {
       .select('*', { count: 'exact', head: true })
       .eq('approved', false)
     setPendingCount(count ?? 0)
+
+    // Fetch comprehensive analytics
+    try {
+      const [
+        ordersRes,
+        productsRes,
+        messagesRes,
+        unreadRes,
+        usersRes,
+        adsRes,
+        visitorsRes,
+        recentOrdersRes,
+        recentMessagesRes,
+      ] = await Promise.all([
+        getAllOrders(500).catch(() => []),
+        supabase.from('products').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('read', false).catch(() => ({ count: 0 })),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('dev_ads').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('visitor_stats').select('count').single().catch(() => ({ data: null })),
+        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
+        supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
+      ])
+
+      const orders = ordersRes || []
+      const summary = summariseOrders(orders)
+
+      setAnalytics({
+        orders: summary.total,
+        paidOrders: summary.paid,
+        revenuePaise: summary.revenuePaise,
+        pendingOrders: summary.pending,
+        products: productsRes.count ?? 0,
+        messages: messagesRes.count ?? 0,
+        unreadMessages: unreadRes.count ?? 0,
+        users: usersRes.count ?? 0,
+        ads: adsRes.count ?? 0,
+        visitors: visitorsRes.data?.count ?? 0,
+        recentOrders: recentOrdersRes.data || [],
+        recentMessages: recentMessagesRes.data || [],
+      })
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err)
+    } finally {
+      setLoadingAnalytics(false)
+    }
   }
 
   async function handleGenerate() {
@@ -81,55 +195,208 @@ export default function AdminOverview() {
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Key Analytics */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
       >
-        {categoryConfig.map(({ key, label, color }) => (
-          <motion.div
-            key={key}
-            variants={item}
-            className="rounded-xl border p-5 transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              borderColor: 'var(--border-color)',
-              background: 'var(--card-bg)',
-            }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-              {label}
-            </p>
-            <p
-              className="mt-2 font-display text-3xl font-bold tracking-tight"
-              style={{ color }}
-            >
-              {stats?.[key] ?? '—'}
-            </p>
-          </motion.div>
-        ))}
-
-        {/* Pending Reviews */}
-        <motion.div
+        <motion.a
+          href="/admin/orders"
           variants={item}
-          className="rounded-xl border p-5 transition-all duration-300 hover:scale-[1.02]"
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
           style={{
             borderColor: 'var(--border-color)',
             background: 'var(--card-bg)',
           }}
         >
           <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-            Pending Reviews
+            Total Revenue
           </p>
-          <p
-            className="mt-2 font-display text-3xl font-bold tracking-tight"
-            style={{ color: pendingCount > 0 ? '#ef4444' : '#10b981' }}
-          >
-            {pendingCount}
+          <p className="mt-2 font-display text-xl font-bold tracking-tight" style={{ color: '#10b981' }}>
+            {loadingAnalytics ? '—' : formatPrice(analytics.revenuePaise)}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            {analytics.paidOrders} paid orders
+          </p>
+        </motion.a>
+
+        <motion.a
+          href="/admin/orders"
+          variants={item}
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            Orders
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#3b82f6' }}>
+            {loadingAnalytics ? '—' : analytics.orders}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: analytics.pendingOrders > 0 ? '#f59e0b' : 'var(--text-tertiary)' }}>
+            {analytics.pendingOrders} pending
+          </p>
+        </motion.a>
+
+        <motion.a
+          href="/admin/products"
+          variants={item}
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            Products
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#8b5cf6' }}>
+            {loadingAnalytics ? '—' : analytics.products}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Digital Store
+          </p>
+        </motion.a>
+
+        <motion.a
+          href="/admin/messages"
+          variants={item}
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            Messages
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: analytics.unreadMessages > 0 ? '#ef4444' : '#10b981' }}>
+            {loadingAnalytics ? '—' : analytics.messages}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: analytics.unreadMessages > 0 ? '#ef4444' : 'var(--text-tertiary)' }}>
+            {analytics.unreadMessages} unread
+          </p>
+        </motion.a>
+
+        <motion.a
+          href="/admin/users"
+          variants={item}
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            Users
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#06b6d4' }}>
+            {loadingAnalytics ? '—' : analytics.users}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Registered
+          </p>
+        </motion.a>
+
+        <motion.div
+          variants={item}
+          className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            Visitors
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#f59e0b' }}>
+            {loadingAnalytics ? '—' : analytics.visitors.toLocaleString()}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Total Visits
           </p>
         </motion.div>
       </motion.div>
+
+      {/* Portfolio Content Stats */}
+      <div className="mt-6">
+        <h3 className="mb-3 font-display text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+          Portfolio Content
+        </h3>
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
+          {categoryConfig.map(({ key, label, color }) => (
+            <motion.div
+              key={key}
+              variants={item}
+              className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+              style={{
+                borderColor: 'var(--border-color)',
+                background: 'var(--card-bg)',
+              }}
+            >
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                {label}
+              </p>
+              <p
+                className="mt-2 font-display text-2xl font-bold tracking-tight"
+                style={{ color }}
+              >
+                {stats?.[key] ?? '—'}
+              </p>
+            </motion.div>
+          ))}
+
+          {/* Pending Reviews */}
+          <motion.a
+            href="/admin/reviews"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Pending Reviews
+            </p>
+            <p
+              className="mt-2 font-display text-2xl font-bold tracking-tight"
+              style={{ color: pendingCount > 0 ? '#ef4444' : '#10b981' }}
+            >
+              {pendingCount}
+            </p>
+          </motion.a>
+
+          <motion.a
+            href="/admin/ads"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Dev Ads
+            </p>
+            <p
+              className="mt-2 font-display text-2xl font-bold tracking-tight"
+              style={{ color: '#f97316' }}
+            >
+              {loadingAnalytics ? '—' : analytics.ads}
+            </p>
+          </motion.a>
+        </motion.div>
+      </div>
 
       {/* Quick Actions */}
       <div
@@ -142,27 +409,148 @@ export default function AdminOverview() {
         <h2 className="mb-4 font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>
           Quick Actions
         </h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { href: '/admin/personal-info', label: 'Edit Personal Info' },
-            { href: '/admin/projects', label: 'Manage Projects' },
-            { href: '/admin/blog', label: 'Write Blog Post' },
-            { href: '/admin/reviews', label: 'Moderate Reviews' },
-            { href: '/admin/data', label: 'Backup / Restore Data' },
-          ].map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              className="rounded-lg border px-4 py-3 text-sm transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-secondary)',
-                background: 'var(--hover-bg)',
-              }}
-            >
-              {label}
-            </a>
+        <div className="space-y-5">
+          {quickActionGroups.map(({ group, actions }) => (
+            <div key={group}>
+              <p
+                className="mb-2 text-xs font-medium uppercase tracking-wider"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {group}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {actions.map(({ href, label }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    className="rounded-lg border px-4 py-3 text-sm transition-all duration-200 hover:scale-[1.02]"
+                    style={{
+                      borderColor: 'var(--border-color)',
+                      color: 'var(--text-secondary)',
+                      background: 'var(--hover-bg)',
+                    }}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </div>
           ))}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* Recent Orders */}
+        <div
+          className="rounded-xl border"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--border-color)' }}>
+            <h2 className="font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+              Recent Orders
+            </h2>
+            <a href="/admin/orders" className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>
+              View All
+            </a>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+            {loadingAnalytics ? (
+              <div className="p-5 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                Loading...
+              </div>
+            ) : analytics.recentOrders.length === 0 ? (
+              <div className="p-5 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                No orders yet
+              </div>
+            ) : (
+              analytics.recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between px-5 py-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {order.order_ref}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {order.customer_name || order.email} • {new Date(order.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium" style={{ color: order.payment_status === 'paid' ? '#10b981' : 'var(--text-secondary)' }}>
+                      {formatPrice(order.total_paise)}
+                    </p>
+                    <p
+                      className="text-xs capitalize"
+                      style={{
+                        color:
+                          order.payment_status === 'paid'
+                            ? '#10b981'
+                            : order.payment_status === 'pending'
+                              ? '#f59e0b'
+                              : order.payment_status === 'failed'
+                                ? '#ef4444'
+                                : 'var(--text-tertiary)',
+                      }}
+                    >
+                      {order.payment_status}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Recent Messages */}
+        <div
+          className="rounded-xl border"
+          style={{
+            borderColor: 'var(--border-color)',
+            background: 'var(--card-bg)',
+          }}
+        >
+          <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--border-color)' }}>
+            <h2 className="font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+              Recent Messages
+            </h2>
+            <a href="/admin/messages" className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>
+              View All
+            </a>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+            {loadingAnalytics ? (
+              <div className="p-5 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                Loading...
+              </div>
+            ) : analytics.recentMessages.length === 0 ? (
+              <div className="p-5 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                No messages yet
+              </div>
+            ) : (
+              analytics.recentMessages.map((msg) => (
+                <div key={msg.id} className="px-5 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {msg.name}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {new Date(msg.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {msg.message}
+                  </p>
+                  {!msg.read && (
+                    <span className="mt-1 inline-block text-xs font-medium" style={{ color: '#ef4444' }}>
+                      Unread
+                    </span>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

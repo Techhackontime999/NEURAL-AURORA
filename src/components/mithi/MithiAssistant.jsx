@@ -272,8 +272,6 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
           </div>
         )}
 
-        )}
-
         {unavailable && !error && messages.length === 1 && (
           <div
             className="rounded-2xl border px-3 py-2.5 text-[11px] leading-relaxed"

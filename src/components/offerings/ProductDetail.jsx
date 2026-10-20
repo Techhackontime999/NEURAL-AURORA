@@ -23,6 +23,7 @@ import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
+import ImageLightbox from '../ui/ImageLightbox'
 
 export default function ProductDetail() {
   const { t } = useTranslation()
@@ -35,6 +36,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [activeImage, setActiveImage] = useState(null)
+  const [galleryIndex, setGalleryIndex] = useState(null)
 
   // Purchase panel state.
   const [email, setEmail] = useState('')
@@ -52,6 +54,7 @@ export default function ProductDetail() {
       setNotFound(false)
       setActionError(null)
       setActionNotice(null)
+      setGalleryIndex(null)
       try {
         const item = await getProductBySlug(slug)
         if (cancelled) return
@@ -181,9 +184,13 @@ export default function ProductDetail() {
     )
   }
 
-  const gallery = (Array.isArray(product.gallery_urls) ? product.gallery_urls : []).filter(
+  const extraImages = (Array.isArray(product.gallery_urls) ? product.gallery_urls : []).filter(
     (url) => url && url !== product.cover_image_url
   )
+  const galleryImages = Array.from(
+    new Set([product.cover_image_url, ...extraImages].filter(Boolean))
+  )
+  const hasGallery = galleryImages.length > 1
 
   return (
     <StoreShell>
@@ -206,12 +213,36 @@ export default function ProductDetail() {
           >
             <div className="aspect-[16/10] bg-black/5 dark:bg-white/5">
               {activeImage ? (
-                <img
-                  src={activeImage}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                  decoding="async"
-                />
+                <button
+                  type="button"
+                  disabled={!hasGallery}
+                  onClick={
+                    hasGallery
+                      ? () =>
+                          setGalleryIndex(
+                            Math.max(0, galleryImages.indexOf(activeImage))
+                          )
+                      : undefined
+                  }
+                  aria-label={
+                    hasGallery ? `${product.title} — open image gallery` : undefined
+                  }
+                  className={`relative block h-full w-full ${
+                    hasGallery ? 'cursor-zoom-in' : 'cursor-default'
+                  }`}
+                >
+                  <img
+                    src={activeImage}
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                    decoding="async"
+                  />
+                  {hasGallery && (
+                    <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
+                      {galleryImages.length} views
+                    </span>
+                  )}
+                </button>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <FileText
@@ -222,14 +253,15 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {gallery.length > 0 && (
+            {galleryImages.length > 1 && (
               <div className="flex gap-2 p-3 overflow-x-auto">
-                {gallery.map((url, i) => (
+                {galleryImages.map((url, i) => (
                   <button
                     key={`${url}-${i}`}
                     type="button"
                     onClick={() => setActiveImage(url)}
                     aria-label={t('store.previewImage', { index: i + 1 })}
+                    aria-current={activeImage === url}
                     className={`h-14 w-20 shrink-0 overflow-hidden rounded-md border transition-colors ${
                       activeImage === url
                         ? 'border-cyan-500/60'
@@ -480,6 +512,17 @@ export default function ProductDetail() {
           </div>
         </section>
       )}
+
+      <AnimatePresence>
+        {galleryIndex !== null && (
+          <ImageLightbox
+            images={galleryImages}
+            startIndex={galleryIndex}
+            title={product.title}
+            onClose={() => setGalleryIndex(null)}
+          />
+        )}
+      </AnimatePresence>
     </StoreShell>
   )
 }

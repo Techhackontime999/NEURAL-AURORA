@@ -16,6 +16,7 @@ import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 import ImageUpload from '../ui/ImageUpload'
+import MultiImageUpload from '../ui/MultiImageUpload'
 
 const STATUS_META = {
   draft: { label: 'Draft', color: 'var(--text-tertiary)' },
@@ -36,6 +37,7 @@ const emptyForm = {
   status: 'draft',
   featured: false,
   cover_image_url: '',
+  gallery_urls: [],
   includesText: '',
   requirementsText: '',
   tagsText: '',
@@ -104,6 +106,7 @@ export default function AdminProducts() {
     ...p,
     price: p.price_paise != null ? String(p.price_paise / 100) : '',
     compare_at: p.compare_at_paise != null ? String(p.compare_at_paise / 100) : '',
+    gallery_urls: (Array.isArray(p.gallery_urls) ? p.gallery_urls : []).filter(Boolean),
     includesText: linesOf(p.includes).join('\n'),
     requirementsText: linesOf(p.requirements).join('\n'),
     tagsText: (Array.isArray(p.tags) ? p.tags : []).join(', '),
@@ -128,6 +131,9 @@ export default function AdminProducts() {
       status: form.status,
       featured: Boolean(form.featured),
       cover_image_url: form.cover_image_url,
+      gallery_urls: (Array.isArray(form.gallery_urls) ? form.gallery_urls : []).filter(
+        (url) => typeof url === 'string' && url
+      ),
       includes: textToLines(form.includesText),
       requirements: textToLines(form.requirementsText),
       tags: form.tagsText
@@ -309,6 +315,8 @@ export default function AdminProducts() {
   const fields = [
     { key: 'title', label: 'Title' },
     { key: 'slug', label: 'Slug (URL)' },
+    { key: 'cover_image_url', label: 'Main image', type: 'image' },
+    { key: 'gallery_urls', label: 'Gallery images (extra views)', type: 'images' },
     { key: 'category_slug', label: 'Category', type: 'select' },
     { key: 'format', label: 'Format (e.g. pdf, source-code, template)' },
     { key: 'price', label: 'Price (rupees — 0 = free)', type: 'number' },
@@ -326,7 +334,6 @@ export default function AdminProducts() {
     { key: 'support_policy', label: 'Support policy', type: 'textarea' },
     { key: 'refund_policy', label: 'Refund policy', type: 'textarea' },
     { key: 'release_notes', label: 'Release notes', type: 'textarea' },
-    { key: 'cover_image_url', label: 'Cover image', type: 'image' },
     { key: 'status', label: 'Status', type: 'status' },
     { key: 'featured', label: 'Featured', type: 'checkbox' },
   ]
@@ -343,6 +350,19 @@ export default function AdminProducts() {
         <div key={field.key} className="sm:col-span-2">
           {label}
           <ImageUpload value={value} onChange={setValue} label={field.label} />
+        </div>
+      )
+    }
+
+    if (field.type === 'images') {
+      return (
+        <div key={field.key} className="sm:col-span-2">
+          {label}
+          <MultiImageUpload
+            value={Array.isArray(value) ? value : []}
+            onChange={setValue}
+            label={field.label}
+          />
         </div>
       )
     }

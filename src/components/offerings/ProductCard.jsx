@@ -14,7 +14,12 @@ export default function ProductCard({ product, index = 0 }) {
   const navigate = useNavigate()
 
   const isFree = product.price_paise === 0
-  const hasCover = Boolean(product.cover_image_url)
+  const galleryUrls = Array.isArray(product.gallery_urls)
+    ? product.gallery_urls.filter(Boolean)
+    : []
+  const cover = product.cover_image_url || galleryUrls[0] || null
+  const hasCover = Boolean(cover)
+  const pictureCount = new Set([product.cover_image_url, ...galleryUrls].filter(Boolean)).size
 
   const open = () => navigate(`/offerings/products/${product.slug}`)
 
@@ -40,7 +45,7 @@ export default function ProductCard({ product, index = 0 }) {
       >
         {hasCover ? (
           <img
-            src={product.cover_image_url}
+            src={cover}
             alt=""
             loading="lazy"
             decoding="async"
@@ -63,6 +68,12 @@ export default function ProductCard({ product, index = 0 }) {
             </span>
           ) : null}
         </div>
+
+        {pictureCount > 1 && (
+          <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
+            {pictureCount} views
+          </span>
+        )}
       </div>
 
       <div className="p-5 flex flex-col flex-1">

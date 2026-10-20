@@ -1,0 +1,30 @@
+-- Backs the admin-managed site appearance preferences
+-- (/admin/appearance, src/components/admin/AdminAppearance.jsx).
+--
+-- A single JSONB document keeps the shape flexible so new controls can ship
+-- without further migrations. Shape (all keys optional):
+--
+-- {
+--   "accent": "#00f0ff",
+--   "accentDark": "#00f0ff",
+--   "bgLight": "#faf8f5",
+--   "bgDark": "#050508",
+--   "surfaceLight": "#ffffff",
+--   "surfaceDark": "#0a0a12",
+--   "defaultTheme": "dark",            -- "light" | "dark" | "system"
+--   "fontBody": "Satoshi",
+--   "fontDisplay": "Cabinet Grotesk",
+--   "fontMono": "JetBrains Mono",
+--   "fontScale": 1,                    -- 0.85 - 1.25
+--   "radiusScale": 1,                  -- 0 - 2
+--   "enabled": true
+-- }
+--
+-- The public site reads this via useSiteAppearance() (src/lib/useSiteAppearance.js)
+-- and applies it as inline CSS custom properties on <html>. Missing or partial
+-- documents fall back to the built-in defaults (src/lib/appearanceDefaults.js),
+-- so an empty object never breaks the theme.
+--
+-- RLS already applies: anon/authenticated can SELECT, only admins can UPDATE.
+ALTER TABLE admin_settings
+  ADD COLUMN IF NOT EXISTS appearance JSONB NOT NULL DEFAULT '{}'::jsonb;

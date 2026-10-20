@@ -74,11 +74,34 @@
   }
 
   body {
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: var(--font-body, 'Satoshi', system-ui, sans-serif);
+    font-size: var(--app-font-size, 16px);
     overflow-x: hidden;
   }
 
+  /* Appearance: admin-managed values are applied as inline CSS variables on
+     <html> by src/lib/useSiteAppearance.js. The --bg-dark* / --accent-dark
+     vars are consumed by the .dark block below. */
+  .font-display,
+  .font-display * {
+    font-family: var(--font-display, 'Cabinet Grotesk', 'Satoshi', sans-serif);
+  }
+
+  pre,
+  code,
+  kbd,
+  samp,
+  .font-mono {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+
   :root {
+    --font-body: 'Satoshi', system-ui, sans-serif;
+    --font-display: 'Cabinet Grotesk', 'Satoshi', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --app-font-scale: 1;
+    --app-font-size: 16px;
+    --app-radius-scale: 1;
     --bg-primary: #faf8f5;
     --bg-secondary: #ffffff;
     --text-primary: #1d1d1f;
@@ -125,6 +148,18 @@
     --scrollbar-track: #0a0a12;
     --scrollbar-thumb: #2a2a45;
     --mithi-bubble-bg: rgba(12, 14, 22, 0.97);
+  }
+
+  /* Admin-managed dark palette (from /admin/appearance). These sit after the
+     .dark block so they win in source order; when no custom appearance is
+     saved the --bg-dark* / --accent-dark vars are unset by JS and these fall
+     back to the built-in dark defaults. */
+  .dark {
+    --accent: var(--accent-dark, #52527a);
+    --accent-glow: var(--accent-dark, #00f0ff);
+    --bg-primary: var(--bg-dark, #050508);
+    --bg-secondary: var(--bg-dark-secondary, #0a0a12);
+    --card-bg: var(--bg-dark-secondary, rgba(255,255,255,0.02));
   }
 
   body {

@@ -244,6 +244,10 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   -- JSONB so new fields can ship without another migration; '{}' means
   -- "use the built-in defaults".
   video_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
+  -- Admin-managed site appearance (colors, fonts, default theme) from
+  -- /admin/appearance. '{}' means "use the built-in defaults"
+  -- (src/lib/appearanceDefaults.js).
+  appearance JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)

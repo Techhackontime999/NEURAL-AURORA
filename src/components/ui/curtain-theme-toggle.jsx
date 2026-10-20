@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Moon, Sun, Search, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { writeStoredTheme } from "../../lib/useSiteAppearance";
 
 const TOKENS = {
   light: {
@@ -82,6 +83,9 @@ export function ThemeToggle({
         } else {
           document.documentElement.classList.remove("dark");
         }
+        // Remember the visitor's explicit choice so it survives reload and
+        // overrides the admin-configured default theme.
+        writeStoredTheme(next);
       }
 
       setPhase("rising");

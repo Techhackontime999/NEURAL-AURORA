@@ -353,3 +353,19 @@ export function useStoreHeroSettings() {
     return settings?.store_hero || {}
   }, {})
 }
+
+/**
+ * Admin-managed site appearance (colors, fonts, default theme) from
+ * admin_settings.appearance. The static default is an empty object, which
+ * useSiteAppearance.js merges over its built-in defaults, so an empty/partial
+ * document never breaks the theme.
+ *
+ * Call invalidatePortfolioCache('siteAppearance') after an admin save to
+ * refresh already-mounted copies.
+ */
+export function useSiteAppearanceSettings() {
+  return usePortfolioResource('siteAppearance', async () => {
+    const settings = await getAdminSettings()
+    return settings?.appearance || {}
+  }, {})
+}

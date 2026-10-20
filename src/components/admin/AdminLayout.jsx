@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { setTheme } from '../../lib/useSiteAppearance'
 
 const navItems = [
   { path: '/admin', label: 'Overview', icon: '◈' },
@@ -31,6 +32,7 @@ const navItems = [
   { path: '/admin/youtube-config', label: 'YouTube Config', icon: '⊡' },
   { path: '/admin/video-hero', label: 'Video Hero', icon: '▶' },
   { path: '/admin/store-hero', label: 'Store Hero Carousel', icon: '▦' },
+  { path: '/admin/appearance', label: 'Site Appearance', icon: '◑' },
   { path: '/admin/payment-settings', label: 'Payment Settings', icon: '₹' },
   { path: '/admin/data', label: 'Import / Export Data', icon: '⇅' },
 ]
@@ -50,11 +52,9 @@ export default function AdminLayout({ children }) {
   function toggleTheme() {
     const next = !isDark
     setIsDark(next)
-    if (next) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    // Persist through setTheme so the choice survives reload and overrides the
+    // admin-configured default (see src/lib/useSiteAppearance.js).
+    setTheme(next ? 'dark' : 'light')
   }
 
   async function handleSignOut() {

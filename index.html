@@ -36,6 +36,60 @@
     <link rel="preconnect" href="https://prod.spline.design" />
     <link rel="dns-prefetch" href="https://prod.spline.design" />
     <link rel="preconnect" href="https://prod.spline.design/kZDDjO5HuC9GJUM2" />
+    <script>
+      /*
+       * Applies the admin-managed appearance (colors, fonts, theme) before
+       * first paint so there is no flash of the default theme. src/lib/
+       * useSiteAppearance.js writes this cache and reconciles with Supabase
+       * once React mounts. Kept inline and dependency-free on purpose.
+       */
+      (function () {
+        try {
+          var raw = localStorage.getItem('neural-aurora:appearance:v1')
+          var cfg = raw ? JSON.parse(raw) : null
+          if (!cfg || cfg.enabled === false) return
+          var root = document.documentElement
+          var fontStacks = {
+            Satoshi: "'Satoshi', system-ui, sans-serif",
+            'Cabinet Grotesk': "'Cabinet Grotesk', 'Satoshi', sans-serif",
+            'JetBrains Mono': "'JetBrains Mono', monospace",
+            'system-ui': 'system-ui, -apple-system, Segoe UI, sans-serif',
+            Georgia: "Georgia, 'Times New Roman', serif",
+          }
+          var scale = Number(cfg.fontScale)
+          if (!isFinite(scale) || scale < 0.85 || scale > 1.25) scale = 1
+          var vars = {
+            '--accent': cfg.accent,
+            '--accent-glow': cfg.accent,
+            '--bg-primary': cfg.bgLight,
+            '--bg-secondary': cfg.surfaceLight,
+            '--card-bg': cfg.surfaceLight,
+            '--accent-dark': cfg.accentDark,
+            '--bg-dark': cfg.bgDark,
+            '--bg-dark-secondary': cfg.surfaceDark,
+            '--font-body': fontStacks[cfg.fontBody] || fontStacks.Satoshi,
+            '--font-display': fontStacks[cfg.fontDisplay] || fontStacks['Cabinet Grotesk'],
+            '--font-mono': fontStacks[cfg.fontMono] || fontStacks['JetBrains Mono'],
+            '--app-font-scale': String(scale),
+            '--app-font-size': Math.max(12, Math.round(16 * scale)) + 'px',
+          }
+          for (var name in vars) {
+            if (vars[name]) root.style.setProperty(name, vars[name])
+          }
+          var stored = localStorage.getItem('neural-aurora:theme:v1')
+          var pref = stored === 'light' || stored === 'dark' ? stored : cfg.defaultTheme || 'dark'
+          var isDark =
+            pref === 'dark' ||
+            (pref === 'system' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          root.classList.toggle('dark', !!isDark)
+          root.style.colorScheme = isDark ? 'dark' : 'light'
+        } catch (e) {
+          /* keep the default dark theme when storage is unavailable */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

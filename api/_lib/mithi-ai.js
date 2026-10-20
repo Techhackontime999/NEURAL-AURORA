@@ -1,16 +1,19 @@
 const { envPresence } = require('./diag')
 
 // ---------------------------------------------------------------------------
-// Server-only AI provider for Mithi, the portfolio companion.
+// Server-only AI provider for Mithi, the site companion.
 //
 // API keys are read with `process.env` and never returned to the browser and
-// never logged. Two provider shapes are supported:
+// never logged. Providers are tried in this order:
 //
-//   * Gemini      GEMINI_API_KEY (or GOOGLE_AI_API_KEY / GOOGLE_API_KEY)
-//                 GEMINI_MODEL        default gemini-2.0-flash
-//   * OpenAI-ish  AI_API_KEY (or OPENAI_API_KEY)
-//                 AI_API_BASE         default https://api.openai.com/v1
-//                 AI_MODEL            default gpt-4o-mini
+//   1. OpenRouter (DEFAULT)  OPENROUTER_API_KEY
+//                            OPENROUTER_MODEL  default openai/gpt-4o-mini
+//                            (base is fixed to https://openrouter.ai/api/v1)
+//   2. Any OpenAI-shaped key AI_API_KEY (or OPENAI_API_KEY)
+//                            AI_API_BASE       default https://api.openai.com/v1
+//                            AI_MODEL          default gpt-4o-mini
+//   3. Google Gemini         GEMINI_API_KEY (or GOOGLE_AI_API_KEY / GOOGLE_API_KEY)
+//                            GEMINI_MODEL      default gemini-2.0-flash
 //
 // VITE_* keys are deliberately ignored: those are bundled into the browser
 // build, so they are not treated as secrets.
@@ -20,13 +23,34 @@ const { envPresence } = require('./diag')
 // says so instead of pretending the assistant is live.
 // ---------------------------------------------------------------------------
 
-const GEMINI_ENV_NAMES = ['GEMINI_API_KEY', 'GOOGLE_AI_API_KEY', 'GOOGLE_API_KEY']
+const OPENROUTER_ENV_NAMES = ['OPENROUTER_API_KEY']
 const OPENAI_ENV_NAMES = ['AI_API_KEY', 'OPENAI_API_KEY']
-const PROVIDER_ENV_NAMES = [...GEMINI_ENV_NAMES, ...OPENAI_ENV_NAMES, 'AI_API_BASE', 'AI_MODEL', 'GEMINI_MODEL']
+const GEMINI_ENV_NAMES = ['GEMINI_API_KEY', 'GOOGLE_AI_API_KEY', 'GOOGLE_API_KEY']
+const PROVIDER_ENV_NAMES = [
+  ...OPENROUTER_ENV_NAMES,
+  ...OPENAI_ENV_NAMES,
+  ...GEMINI_ENV_NAMES,
+  'OPENROUTER_MODEL',
+  'AI_API_BASE',
+  'AI_MODEL',
+  'GEMINI_MODEL',
+]
 
+const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
+const DEFAULT_OPENROUTER_MODEL = 'openai/gpt-4o-mini'
 const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini'
 const REQUEST_TIMEOUT_MS = 25000
+
+// OpenRouter asks callers to identify themselves. These are the site's own
+// URLs, supplied by the deployment; they are never secrets.
+function openRouterAttribution() {
+  const siteUrl = (process.env.SITE_URL || process.env.VITE_SITE_URL || '').trim()
+  const title = (process.env.SITE_NAME || process.env.VITE_SITE_NAME || 'NEURAL AURORA').trim()
+  const headers = { 'X-Title': title }
+  if (siteUrl) headers['HTTP-Referer'] = siteUrl
+  return headers
+}
 
 function firstSet(names) {
   for (const name of names) {
@@ -38,14 +62,15 @@ function firstSet(names) {
 
 /** Describe the configured provider without ever returning the key. */
 function getProvider() {
-  const gemini = firstSet(GEMINI_ENV_NAMES)
-  if (gemini) {
+  const openrouter = firstSet(OPENROUTER_ENV_NAMES)
+  if (openrouter) {
     return {
-      kind: 'gemini',
-      key: gemini.value,
-      keyEnv: gemini.name,
-      model: (process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim(),
-      base: 'https://generativelanguage.googleapis.com/v1beta',
+      kind: 'openrouter',
+      key: openrouter.value,
+      keyEnv: openrouter.name,
+      model: (process.env.OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL).trim(),
+      base: OPENROUTER_BASE,
+      extraHeaders: openRouterAttribution(),
     }
   }
 
@@ -57,6 +82,19 @@ function getProvider() {
       keyEnv: openai.name,
       model: (process.env.AI_MODEL || DEFAULT_OPENAI_MODEL).trim(),
       base: (process.env.AI_API_BASE || 'https://api.openai.com/v1').replace(/\/+$/, ''),
+      extraHeaders: {},
+    }
+  }
+
+  const gemini = firstSet(GEMINI_ENV_NAMES)
+  if (gemini) {
+    return {
+      kind: 'gemini',
+      key: gemini.value,
+      keyEnv: gemini.name,
+      model: (process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim(),
+      base: 'https://generativelanguage.googleapis.com/v1beta',
+      extraHeaders: {},
     }
   }
 
@@ -108,11 +146,14 @@ function providerError(message, code = 'provider_error') {
   return error
 }
 
-async function callGemini(provider, { system, messages }) {
+async function callGemini(provider, { system, messages, jsonMode = false }) {
   const contents = messages.map((message) => ({
     role: message.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: message.content }],
   }))
+
+  const generationConfig = { temperature: 0.75, maxOutputTokens: 700 }
+  if (jsonMode) generationConfig.responseMimeType = 'application/json'
 
   const response = await fetchWithTimeout(
     `${provider.base}/models/${encodeURIComponent(provider.model)}:generateContent`,
@@ -125,7 +166,7 @@ async function callGemini(provider, { system, messages }) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents,
-        generationConfig: { temperature: 0.75, maxOutputTokens: 600 },
+        generationConfig,
       }),
     }
   )
@@ -152,19 +193,27 @@ async function callGemini(provider, { system, messages }) {
   return text
 }
 
-async function callOpenAiCompatible(provider, { system, messages }) {
+async function callOpenAiCompatible(provider, { system, messages, jsonMode = false }) {
+  const body = {
+    model: provider.model,
+    temperature: 0.75,
+    max_tokens: 700,
+    messages: [{ role: 'system', content: system }, ...messages],
+  }
+  // Ask for a JSON object when the caller wants structured actions. Providers
+  // that do not support response_format simply ignore it.
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' }
+  }
+
   const response = await fetchWithTimeout(`${provider.base}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${provider.key}`,
+      ...(provider.extraHeaders || {}),
     },
-    body: JSON.stringify({
-      model: provider.model,
-      temperature: 0.75,
-      max_tokens: 600,
-      messages: [{ role: 'system', content: system }, ...messages],
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -187,7 +236,7 @@ async function callOpenAiCompatible(provider, { system, messages }) {
 }
 
 /** Run one chat turn through whichever provider is configured. */
-async function chat({ system, messages }) {
+async function chat({ system, messages, jsonMode = false }) {
   const provider = getProvider()
   if (!provider) {
     const error = new Error('No AI provider is configured for this deployment.')
@@ -196,9 +245,12 @@ async function chat({ system, messages }) {
     throw error
   }
 
-  return provider.kind === 'gemini'
-    ? callGemini(provider, { system, messages })
-    : callOpenAiCompatible(provider, { system, messages })
+  // Gemini supports a JSON response MIME type; the OpenAI path uses
+  // response_format. Both are best-effort — the handler still parses text.
+  if (provider.kind === 'gemini') {
+    return callGemini(provider, { system, messages, jsonMode })
+  }
+  return callOpenAiCompatible(provider, { system, messages, jsonMode })
 }
 
 module.exports = {

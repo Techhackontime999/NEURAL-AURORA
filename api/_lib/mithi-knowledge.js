@@ -70,7 +70,7 @@ async function loadPortfolioContext() {
       client.from('personal_info').select('name, handle, title, tagline, bio').eq('id', 1).maybeSingle()
     ),
     safeQuery(client, 'admin_settings', () =>
-      client.from('admin_settings').select('site_name, docs_url').eq('id', 1).maybeSingle()
+      client.from('admin_settings').select('site_name, site_tagline, docs_url').eq('id', 1).maybeSingle()
     ),
     safeQuery(client, 'skills', () =>
       client.from('skills').select('name, level, category').order('display_order', { ascending: true }).limit(60)
@@ -132,6 +132,7 @@ async function loadPortfolioContext() {
       [
         'SITE',
         settings.site_name ? `Site name: ${clip(settings.site_name, 80)}` : '',
+        settings.site_tagline ? `Site tagline: ${clip(settings.site_tagline, 160)}` : '',
         settings.docs_url ? `Documentation URL: ${clip(settings.docs_url, 200)}` : '',
       ]
         .filter(Boolean)
@@ -246,7 +247,9 @@ async function loadPortfolioContext() {
   if (!sections.length) return null
 
   const context = sections.join('\n\n')
-  return context.length > MAX_CONTEXT_CHARS ? `${context.slice(0, MAX_CONTEXT_CHARS)}…` : context
+  const clipped = context.length > MAX_CONTEXT_CHARS ? `${context.slice(0, MAX_CONTEXT_CHARS)}…` : context
+  const siteName = settings?.site_name ? clip(settings.site_name, 80) : ''
+  return { context: clipped, siteName }
 }
 
 function contextDiagnostics() {

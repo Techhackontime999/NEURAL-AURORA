@@ -1,4 +1,5 @@
 const ENDPOINT = '/api/mithi-chat'
+import { sanitiseActions } from './siteActions'
 
 export class MithiApiError extends Error {
   constructor(message, { code = 'mithi_error', status = 0, retryable = true } = {}) {
@@ -116,5 +117,8 @@ export async function askMithi(messages, signal) {
     })
   }
 
-  return data.reply.trim()
+  return {
+    reply: data.reply.trim(),
+    actions: sanitiseActions(data.actions),
+  }
 }

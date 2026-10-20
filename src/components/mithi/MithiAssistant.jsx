@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ArrowUp, RefreshCw, Sparkles, Square, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowUp, ArrowRight, Compass, ExternalLink, RefreshCw, Sparkles, Square, Trash2 } from 'lucide-react'
 import { askMithi, MithiApiError } from '../../lib/mithi/api'
 import { trackMithiEvent } from '../../lib/mithi/analytics'
 import { AI_LOADING_MESSAGE, ASSISTANT_INTRO, QUICK_PROMPTS } from './mithiMessages'
+import { getSiteAction } from '../../lib/mithi/siteActions'
+import { useNavigate } from 'react-router-dom'
 
 const GREETING = {
   role: 'assistant',
   content:
-    "Hey! Main Mithi hoon — Amit ka portfolio parrotssistant. 🦜 Poochho jo jaanna hai: projects, stack, services, ya docs kahan hain. Agar mujhe nahi pata, saaf bol dungi. No fake confidence.",
+    'Hey! Main Mithi hoon — aapki site guide. 🦜 Poochho jo jaanna hai: projects, products, services, blog ya docs. Agar mujhe nahi pata, saaf bol dungi.',
 }
 
 function Bubble({ children }) {
@@ -30,10 +31,12 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
   const [input, setInput] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
+  const [actions, setActions] = useState([])
 
   const listRef = useRef(null)
   const inputRef = useRef(null)
   const abortRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     return () => {
@@ -59,17 +62,19 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
     setInput('')
     setPending(true)
     setError(null)
+    setActions([])
     trackMithiEvent('mithi_ai_message_sent')
 
     const controller = new AbortController()
     abortRef.current = controller
 
     try {
-      const reply = await askMithi(
+      const result = await askMithi(
         nextMessages.map(({ role, content }) => ({ role, content })),
         controller.signal
       )
-      setMessages((current) => [...current, { role: 'assistant', content: reply }])
+      setMessages((current) => [...current, { role: 'assistant', content: result.reply }])
+      setActions(Array.isArray(result.actions) ? result.actions : [])
     } catch (err) {
       if (err?.name === 'AbortError') return
       const apiError =
@@ -109,6 +114,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
     setMessages([GREETING])
     setError(null)
     setInput('')
+    setActions([])
     inputRef.current?.focus()
   }
 
@@ -126,7 +132,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
             Talk to Mithi AI
           </p>
           <p className="truncate text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-            Grounded in this portfolio
+            Guided by this site
           </p>
         </div>
         <button
@@ -192,6 +198,37 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
           </div>
         )}
 
+        {actions.length > 0 && !pending && (
+          <div className="flex flex-wrap gap-1.5">
+            {actions.map((action) => {
+              const def = getSiteAction(action.id)
+              const path = def?.path || action.path
+              if (!path) return null
+              const isExternal = /^https?:\/\//.test(path)
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => {
+                    trackMithiEvent('mithi_action_clicked')
+                    if (isExternal) {
+                      window.open(path, '_blank', 'noopener,noreferrer')
+                    } else {
+                      navigate(path)
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10.5px] transition-colors hover:bg-[var(--hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
+                  style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+                >
+                  <Compass className="h-3 w-3 text-emerald-500" />
+                  {action.label || def?.label || action.id}
+                  {isExternal ? <ExternalLink className="h-2.5 w-2.5" /> : <ArrowRight className="h-2.5 w-2.5" />}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {error && (
           <div
             className="rounded-2xl border px-3 py-2.5"
@@ -207,7 +244,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
             </p>
             <p className="mt-1 text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               {error.code === 'unconfigured'
-                ? `${error.message} The docs option above still works — knowledge na mile toh manual hi sahara hai. 📚`
+                ? `${error.message} The docs option above still works — guide ka intezaam to hai.`
                 : error.message}
             </p>
             {error.retryable && messages.length > 0 && (
@@ -235,6 +272,8 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
           </div>
         )}
 
+        )}
+
         {unavailable && !error && messages.length === 1 && (
           <div
             className="rounded-2xl border px-3 py-2.5 text-[11px] leading-relaxed"
@@ -249,8 +288,8 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
             </p>
             <p className="mt-1">{statusReason || 'No server-side AI provider key was found.'}</p>
             <p className="mt-1">
-              Set a server-only key (for example <span className="font-mono">GEMINI_API_KEY</span> or{' '}
-              <span className="font-mono">AI_API_KEY</span>) in Vercel. No key is ever sent to the browser.
+              Set a server-only key (for example <span className="font-mono">OPENROUTER_API_KEY</span>) in your
+              environment. No key is ever sent to the browser.
             </p>
             <button
               type="button"
@@ -332,7 +371,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
           )}
         </div>
         <p className="mt-1.5 text-center text-[9px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-          Mithi answers from this portfolio&apos;s admin content. She won&apos;t invent facts — verify important details on the docs or contact page.
+          Mithi guides this site using admin-managed content. Navigation goes only to known pages.
         </p>
       </form>
     </div>

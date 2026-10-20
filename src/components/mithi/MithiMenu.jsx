@@ -1,7 +1,6 @@
 import {
   ArrowUpRight,
   BookOpen,
-  ExternalLink,
   MessageCircle,
   RefreshCw,
   Sparkles,
@@ -50,11 +49,8 @@ export default function MithiMenu({
   const docsReady = docsStatus === 'ready' && Boolean(docsUrl)
   const docsLoading = docsStatus === 'loading'
 
-  function handleDocsClick(event) {
-    if (!docsReady) {
-      event.preventDefault()
-      return
-    }
+  function handleDocsClick() {
+    if (!docsReady) return
     onDocsSelected?.()
     onDocsOpened?.()
   }
@@ -134,10 +130,8 @@ export default function MithiMenu({
         </button>
 
         {docsReady ? (
-          <a
-            href={docsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
             onClick={handleDocsClick}
             onMouseEnter={onDocsHover}
             onMouseLeave={onDocsLeave}
@@ -160,15 +154,15 @@ export default function MithiMenu({
                 The documentation awaits. Even parrots read the manual.
               </span>
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-300/80">
-                <ExternalLink className="h-2.5 w-2.5" />
-                {host || 'docs'} · new tab{docs?.source === 'admin' ? '' : ' · default'}
+                <BookOpen className="h-2.5 w-2.5" />
+                {host || 'docs'} · opens here{docs?.source === 'admin' ? '' : ' · default'}
               </span>
             </span>
             <ArrowUpRight
               className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               style={{ color: 'var(--text-tertiary)' }}
             />
-          </a>
+          </button>
         ) : (
           <div
             className="flex w-full items-center gap-3 rounded-2xl border p-3 text-left"
@@ -211,7 +205,7 @@ export default function MithiMenu({
             className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-200"
             role="status"
           >
-            Docs opened in a new tab. Go get that knowledge. 📚
+            Docs opened here in the viewer. Go get that knowledge. 📚
           </p>
         )}
       </div>

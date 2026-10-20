@@ -38,7 +38,6 @@ import Register from './components/admin/Register'
 import ForgotPassword from './components/admin/ForgotPassword'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
-import BottomToTop from './components/ui/bottom-to-top'
 import PwaStatus from './components/ui/PwaStatus'
 import { NeuralCursor } from './components/ui/neural-cursor'
 import MithiWidget from './components/mithi/MithiWidget'
@@ -254,11 +253,11 @@ function AppContent() {
     <>
       <ScrollProgress />
       <AutoTraverseEffect />
-      <BottomToTop />
-      <PwaStatus />
       {loaderDone && <MoodMusicToggle />}
       <NeuralCursor />
       {loaderDone && showMithi && <MithiWidget />}
+      <PwaStatus />
+      <PwaStatus />
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
         {loaderDone && (

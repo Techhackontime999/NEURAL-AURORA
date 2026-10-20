@@ -1,20 +1,17 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Wifi, WifiOff, RefreshCw, X } from 'lucide-react'
+import { WifiOff, RefreshCw, X } from 'lucide-react'
 
 export default function PwaStatus() {
-  const [online, setOnline] = useState(navigator.onLine)
   const [showOffline, setShowOffline] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
     function goOnline() {
-      setOnline(true)
       setShowOffline(false)
     }
     function goOffline() {
-      setOnline(false)
       setShowOffline(true)
     }
     window.addEventListener('online', goOnline)
@@ -43,7 +40,7 @@ export default function PwaStatus() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2">
+    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[9998] flex flex-col items-end gap-2 sm:inset-x-auto sm:bottom-28 sm:right-6">
       <AnimatePresence>
         {showOffline && (
           <motion.div
@@ -55,7 +52,7 @@ export default function PwaStatus() {
                 ? { duration: 0 }
                 : { type: 'spring', stiffness: 400, damping: 25 }
             }
-            className="flex items-center gap-3 rounded-2xl border border-rose-500/20 px-4 py-3 shadow-lg backdrop-blur-xl"
+            className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-rose-500/20 px-4 py-3 shadow-lg backdrop-blur-xl"
             style={{ background: 'rgba(15, 5, 10, 0.9)' }}
           >
             <WifiOff className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.5} />
@@ -81,7 +78,7 @@ export default function PwaStatus() {
                 ? { duration: 0 }
                 : { type: 'spring', stiffness: 400, damping: 25 }
             }
-            className="flex items-center gap-3 rounded-2xl border border-cyan-500/20 px-4 py-3 shadow-lg backdrop-blur-xl"
+            className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-cyan-500/20 px-4 py-3 shadow-lg backdrop-blur-xl"
             style={{ background: 'rgba(5, 15, 20, 0.9)' }}
           >
             <RefreshCw className="w-4 h-4 text-cyan-400 shrink-0" strokeWidth={1.5} />
@@ -99,30 +96,6 @@ export default function PwaStatus() {
             >
               <X className="w-3 h-3 text-cyan-300/50" strokeWidth={1.5} />
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {online && !showOffline && !updateAvailable && (
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.8 }}
-            transition={shouldReduceMotion ? { duration: 0 } : undefined}
-            className="w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/5"
-            style={{ background: 'rgba(5, 15, 10, 0.6)' }}
-          >
-            <motion.div
-              animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
-              }
-            >
-              <Wifi className="w-3.5 h-3.5 text-emerald-400/60" strokeWidth={1.5} />
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

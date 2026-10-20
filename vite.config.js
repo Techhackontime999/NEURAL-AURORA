@@ -151,6 +151,51 @@ export default defineConfig(({ mode }) => {
             })
           })
 
+          server.middlewares.use('/api/mithi-chat', async (req, res) => {
+            if (req.method !== 'GET' && req.method !== 'POST') {
+              res.statusCode = 405
+              res.setHeader('Allow', 'GET, POST')
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Method not allowed' }))
+              return
+            }
+            try {
+              const mithiHandler = requireCjs('./api/mithi-chat.js')
+              // Adapter for Vercel handler style in connect middleware
+              res.status = (code) => {
+                res.statusCode = code
+                return res
+              }
+              res.json = (data) => {
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify(data))
+                return res
+              }
+              if (req.method === 'POST') {
+                let raw = ''
+                await new Promise((resolve) => {
+                  req.on('data', (chunk) => {
+                    raw += chunk
+                  })
+                  req.on('end', resolve)
+                })
+                try {
+                  req.body = raw ? JSON.parse(raw) : {}
+                } catch {
+                  req.body = null
+                }
+              } else {
+                req.body = null
+              }
+              await mithiHandler(req, res)
+            } catch (err) {
+              console.error('[API] Mithi chat error:', err)
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Mithi is unavailable right now.', code: 'mithi_error' }))
+            }
+          })
+
           server.middlewares.use('/api/razorpay-webhook', async (req, res) => {
             if (req.method !== 'POST') {
               res.statusCode = 405

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, ArrowUp, ArrowRight, Compass, ExternalLink, RefreshCw, Sparkles, Square, Trash2 } from 'lucide-react'
 import { askMithi, MithiApiError } from '../../lib/mithi/api'
 import { trackMithiEvent } from '../../lib/mithi/analytics'
@@ -316,7 +317,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
                 key={item.label}
                 type="button"
                 onClick={() => send(item.prompt)}
-                disabled={pending || unavailable}
+                disabled={pending}
                 className="rounded-full border px-2.5 py-1.5 text-[10.5px] transition-colors hover:bg-[var(--hover-bg)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
                 style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
               >
@@ -344,7 +345,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
             rows={1}
             maxLength={1200}
             placeholder="Poochho kuch bhi…"
-            disabled={pending || unavailable}
+            disabled={pending}
             className="max-h-24 min-h-[34px] flex-1 resize-none bg-transparent px-1.5 py-1.5 text-[12.5px] leading-snug outline-none placeholder:text-[var(--text-tertiary)] disabled:opacity-60"
             style={{ color: 'var(--text-primary)' }}
           />

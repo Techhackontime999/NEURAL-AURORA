@@ -78,14 +78,25 @@ export default function AdminOverview() {
     paidOrders: 0,
     revenuePaise: 0,
     pendingOrders: 0,
+    failedOrders: 0,
     products: 0,
+    publishedProducts: 0,
+    draftProducts: 0,
     messages: 0,
     unreadMessages: 0,
     users: 0,
     ads: 0,
+    activeAds: 0,
     visitors: 0,
+    blogPosts: 0,
+    caseStudies: 0,
+    projects: 0,
+    services: 0,
+    reviews: 0,
+    approvedReviews: 0,
     recentOrders: [],
     recentMessages: [],
+    topProducts: [],
   })
   const [loadingAnalytics, setLoadingAnalytics] = useState(true)
 
@@ -113,24 +124,42 @@ export default function AdminOverview() {
     try {
       const [
         ordersRes,
-        productsRes,
+        productsAllRes,
+        productsPubRes,
+        productsDraftRes,
         messagesRes,
         unreadRes,
         usersRes,
         adsRes,
+        activeAdsRes,
         visitorsRes,
         recentOrdersRes,
         recentMessagesRes,
+        blogRes,
+        caseRes,
+        projectRes,
+        serviceRes,
+        reviewsRes,
+        approvedRes,
       ] = await Promise.all([
-        getAllOrders(500).catch(() => []),
+        getAllOrders(1000).catch(() => []),
         supabase.from('products').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'published').catch(() => ({ count: 0 })),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'draft').catch(() => ({ count: 0 })),
         supabase.from('contact_messages').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
         supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('read', false).catch(() => ({ count: 0 })),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
         supabase.from('dev_ads').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-        supabase.from('visitor_stats').select('count').single().catch(() => ({ data: null })),
+        supabase.from('dev_ads').select('*', { count: 'exact', head: true }).eq('active', true).catch(() => ({ count: 0 })),
+        supabase.from('visitor_stats').select('count').maybeSingle().catch(() => ({ data: null })),
         supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
         supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
+        supabase.from('blog_posts').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('case_studies').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('projects').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('services').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('reviews').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+        supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('approved', true).catch(() => ({ count: 0 })),
       ])
 
       const orders = ordersRes || []
@@ -141,14 +170,25 @@ export default function AdminOverview() {
         paidOrders: summary.paid,
         revenuePaise: summary.revenuePaise,
         pendingOrders: summary.pending,
-        products: productsRes.count ?? 0,
+        failedOrders: summary.failed,
+        products: productsAllRes.count ?? 0,
+        publishedProducts: productsPubRes.count ?? 0,
+        draftProducts: productsDraftRes.count ?? 0,
         messages: messagesRes.count ?? 0,
         unreadMessages: unreadRes.count ?? 0,
         users: usersRes.count ?? 0,
         ads: adsRes.count ?? 0,
+        activeAds: activeAdsRes.count ?? 0,
         visitors: visitorsRes.data?.count ?? 0,
+        blogPosts: blogRes.count ?? 0,
+        caseStudies: caseRes.count ?? 0,
+        projects: projectRes.count ?? 0,
+        services: serviceRes.count ?? 0,
+        reviews: reviewsRes.count ?? 0,
+        approvedReviews: approvedRes.count ?? 0,
         recentOrders: recentOrdersRes.data || [],
         recentMessages: recentMessagesRes.data || [],
+        topProducts: [],
       })
     } catch (err) {
       console.error('Failed to fetch analytics:', err)
@@ -218,7 +258,7 @@ export default function AdminOverview() {
             {loadingAnalytics ? '—' : formatPrice(analytics.revenuePaise)}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {analytics.paidOrders} paid orders
+            {analytics.paidOrders} paid · {analytics.pendingOrders} pending
           </p>
         </motion.a>
 
@@ -238,7 +278,7 @@ export default function AdminOverview() {
             {loadingAnalytics ? '—' : analytics.orders}
           </p>
           <p className="mt-1 text-xs" style={{ color: analytics.pendingOrders > 0 ? '#f59e0b' : 'var(--text-tertiary)' }}>
-            {analytics.pendingOrders} pending
+            {analytics.failedOrders > 0 ? `${analytics.failedOrders} failed` : 'All tracked'}
           </p>
         </motion.a>
 
@@ -258,7 +298,7 @@ export default function AdminOverview() {
             {loadingAnalytics ? '—' : analytics.products}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Digital Store
+            {analytics.publishedProducts} pub · {analytics.draftProducts} draft
           </p>
         </motion.a>
 
@@ -298,7 +338,7 @@ export default function AdminOverview() {
             {loadingAnalytics ? '—' : analytics.users}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Registered
+            Registered Profiles
           </p>
         </motion.a>
 
@@ -317,7 +357,7 @@ export default function AdminOverview() {
             {loadingAnalytics ? '—' : analytics.visitors.toLocaleString()}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Total Visits
+            Total Site Visits
           </p>
         </motion.div>
       </motion.div>
@@ -394,6 +434,80 @@ export default function AdminOverview() {
             >
               {loadingAnalytics ? '—' : analytics.ads}
             </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {analytics.activeAds} active
+            </p>
+          </motion.a>
+
+          <motion.a
+            href="/admin/blog"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Blog Posts
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#8b5cf6' }}>
+              {loadingAnalytics ? '—' : analytics.blogPosts}
+            </p>
+          </motion.a>
+
+          <motion.a
+            href="/admin/case-studies"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Case Studies
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#06b6d4' }}>
+              {loadingAnalytics ? '—' : analytics.caseStudies}
+            </p>
+          </motion.a>
+
+          <motion.a
+            href="/admin/services"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Services
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#14b8a6' }}>
+              {loadingAnalytics ? '—' : analytics.services}
+            </p>
+          </motion.a>
+
+          <motion.a
+            href="/admin/reviews"
+            variants={item}
+            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'var(--card-bg)',
+            }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Reviews
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#f59e0b' }}>
+              {loadingAnalytics ? '—' : analytics.reviews}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {analytics.approvedReviews} approved
+            </p>
           </motion.a>
         </motion.div>
       </div>
@@ -436,6 +550,50 @@ export default function AdminOverview() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Quick Stats Summary */}
+      <div
+        className="mt-6 rounded-xl border p-5"
+        style={{
+          borderColor: 'var(--border-color)',
+          background: 'var(--card-bg)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+            Commerce Overview
+          </h3>
+          <a href="/admin/orders" className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>
+            Manage Orders
+          </a>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <div>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Total Revenue</p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: '#10b981' }}>
+              {loadingAnalytics ? '—' : formatPrice(analytics.revenuePaise)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Paid Orders</p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {loadingAnalytics ? '—' : analytics.paidOrders}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Pending</p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: analytics.pendingOrders > 0 ? '#f59e0b' : 'var(--text-primary)' }}>
+              {loadingAnalytics ? '—' : analytics.pendingOrders}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Published Products</p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {loadingAnalytics ? '—' : analytics.publishedProducts} / {analytics.products}
+            </p>
+          </div>
         </div>
       </div>
 

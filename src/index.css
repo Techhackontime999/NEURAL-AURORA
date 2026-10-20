@@ -101,6 +101,7 @@
     --eyebrow-bg: rgba(0, 240, 255, 0.12);
     --eyebrow-text: #007a87;
     --eyebrow-border: rgba(0, 240, 255, 0.25);
+    --mithi-bubble-bg: rgba(250, 248, 245, 0.97);
   }
 
   .dark {
@@ -123,6 +124,7 @@
     --sidebar-bg: #0a0a12;
     --scrollbar-track: #0a0a12;
     --scrollbar-thumb: #2a2a45;
+    --mithi-bubble-bg: rgba(12, 14, 22, 0.97);
   }
 
   body {
@@ -200,6 +202,24 @@
 
   .dark .glass-panel-strong:hover {
     box-shadow: var(--glass-inner), 0 25px 70px -15px rgba(0,0,0,0.5);
+  }
+
+  /*
+   * Mithi needs a far more solid surface than the site-wide glass panels:
+   * chat bubbles and text were hard to read over busy backgrounds. This is
+   * scoped to Mithi only so the rest of the site keeps its lighter glass.
+   */
+  .mithi-surface {
+    background: rgba(250, 248, 245, 0.97);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--glass-inner), var(--shadow-diffusion);
+  }
+
+  .dark .mithi-surface {
+    background: rgba(12, 14, 22, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .text-gradient {

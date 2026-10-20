@@ -199,7 +199,7 @@ export default function MithiWidget() {
                 role="dialog"
                 aria-modal="false"
                 aria-label={view === 'assistant' ? 'Talk to Mithi AI' : 'Mithi'}
-                className="glass-panel-strong flex max-h-[min(78dvh,640px)] w-full max-w-[368px] flex-col overflow-hidden rounded-3xl sm:w-[368px]"
+                className="mithi-surface flex max-h-[min(78dvh,640px)] w-full max-w-[368px] flex-col overflow-hidden rounded-3xl sm:w-[368px]"
               >
                 {view === 'assistant' ? (
                   <>
@@ -269,7 +269,7 @@ export default function MithiWidget() {
                 className="pointer-events-none mb-2 hidden max-w-[240px] rounded-2xl rounded-br-md border px-3 py-2 text-[11px] leading-snug backdrop-blur-xl sm:block"
                 style={{
                   borderColor: 'var(--border-color)',
-                  background: 'var(--glass-bg)',
+                  background: 'var(--mithi-bubble-bg)',
                   color: 'var(--text-secondary)',
                   boxShadow: 'var(--shadow-diffusion)',
                 }}
@@ -295,7 +295,7 @@ export default function MithiWidget() {
             >
               <span
                 className="absolute inset-0 rounded-full border border-emerald-400/30"
-                style={{ background: 'var(--glass-bg)', boxShadow: 'var(--shadow-diffusion)', backdropFilter: 'blur(18px)' }}
+                style={{ background: 'var(--mithi-bubble-bg)', boxShadow: 'var(--shadow-diffusion)', backdropFilter: 'blur(18px)' }}
               />
               {celebrating && (
                 <motion.span

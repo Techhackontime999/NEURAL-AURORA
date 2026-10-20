@@ -71,7 +71,7 @@ export default function MithiDocsModal({ url, onClose }) {
 
       <div
         ref={dialogRef}
-        className="glass-panel-strong relative flex h-full w-full flex-col overflow-hidden rounded-none sm:h-[min(90dvh,820px)] sm:max-w-5xl sm:rounded-3xl"
+        className="mithi-surface relative flex h-full w-full flex-col overflow-hidden rounded-none sm:h-[min(90dvh,820px)] sm:max-w-5xl sm:rounded-3xl"
       >
         <header
           className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5"

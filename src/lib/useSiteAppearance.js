@@ -119,9 +119,6 @@ function applyVars(cfg) {
   const root = document.documentElement
   const vars = appearanceToCssVars(cfg)
   const darkVars = appearanceToDarkCssVars(cfg)
-  // Light values go inline on <html>; the dark palette is stored in separate
-  // --bg-dark* / --accent-dark vars that the `.dark` rule consumes, so a
-  // theme toggle never needs JS to rewrite the whole palette.
   for (const [name, value] of Object.entries(vars)) {
     root.style.setProperty(name, value)
   }

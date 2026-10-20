@@ -35,6 +35,22 @@ export const DEFAULT_APPEARANCE = {
   bgDark: '#050508',
   surfaceLight: '#ffffff',
   surfaceDark: '#0a0a12',
+  textPrimaryLight: '#1d1d1f',
+  textSecondaryLight: '#52525b',
+  textTertiaryLight: '#6b6b76',
+  textPrimaryDark: '#f1f1f5',
+  textSecondaryDark: 'rgba(241, 241, 245, 0.72)',
+  textTertiaryDark: 'rgba(241, 241, 245, 0.55)',
+  borderLight: 'rgba(0,0,0,0.06)',
+  borderDark: 'rgba(255,255,255,0.06)',
+  glassOpacityLight: 0.8,
+  glassOpacityDark: 0.03,
+  blurStrength: 20,
+  gradientEnabled: false,
+  gradientStart: '#00f0ff',
+  gradientMiddle: '#b829dd',
+  gradientEnd: '#f0c040',
+  gradientAngle: 135,
   fontBody: 'Satoshi',
   fontDisplay: 'Cabinet Grotesk',
   fontMono: 'JetBrains Mono',
@@ -78,6 +94,12 @@ export const MIN_FONT_SCALE = 0.85
 export const MAX_FONT_SCALE = 1.25
 export const MIN_RADIUS_SCALE = 0
 export const MAX_RADIUS_SCALE = 2
+export const MIN_BLUR = 0
+export const MAX_BLUR = 60
+export const MIN_OPACITY = 0
+export const MAX_OPACITY = 1
+export const MIN_GRADIENT_ANGLE = 0
+export const MAX_GRADIENT_ANGLE = 360
 
 /** A hex string or null — anything else (XSS attempts, garbage) is rejected. */
 export function sanitiseColor(value, fallback) {
@@ -97,6 +119,29 @@ function clampScale(value, min, max, fallback) {
  * render-safe config. Unknown font names and malformed colors fall back to the
  * built-in defaults rather than reaching the DOM.
  */
+function sanitiseAlpha(value, fallback) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return fallback
+  return Math.min(1, Math.max(0, Number(num.toFixed(3))))
+}
+
+function sanitiseNumber(value, min, max, fallback) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return fallback
+  return Math.min(max, Math.max(min, Number(num.toFixed(2))))
+}
+
+function sanitiseRgbaOrHex(value, fallback) {
+  if (typeof value !== 'string') return fallback
+  const trimmed = value.trim()
+  if (HEX_COLOR.test(trimmed)) return trimmed
+  // Allow rgba() with basic validation
+  if (/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(0|1|0?\.\d+))?\s*\)$/i.test(trimmed)) {
+    return trimmed
+  }
+  return fallback
+}
+
 export function mergeSiteAppearance(raw) {
   const cfg = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
 
@@ -118,6 +163,22 @@ export function mergeSiteAppearance(raw) {
     bgDark: sanitiseColor(cfg.bgDark, DEFAULT_APPEARANCE.bgDark),
     surfaceLight: sanitiseColor(cfg.surfaceLight, DEFAULT_APPEARANCE.surfaceLight),
     surfaceDark: sanitiseColor(cfg.surfaceDark, DEFAULT_APPEARANCE.surfaceDark),
+    textPrimaryLight: sanitiseRgbaOrHex(cfg.textPrimaryLight, DEFAULT_APPEARANCE.textPrimaryLight),
+    textSecondaryLight: sanitiseRgbaOrHex(cfg.textSecondaryLight, DEFAULT_APPEARANCE.textSecondaryLight),
+    textTertiaryLight: sanitiseRgbaOrHex(cfg.textTertiaryLight, DEFAULT_APPEARANCE.textTertiaryLight),
+    textPrimaryDark: sanitiseRgbaOrHex(cfg.textPrimaryDark, DEFAULT_APPEARANCE.textPrimaryDark),
+    textSecondaryDark: sanitiseRgbaOrHex(cfg.textSecondaryDark, DEFAULT_APPEARANCE.textSecondaryDark),
+    textTertiaryDark: sanitiseRgbaOrHex(cfg.textTertiaryDark, DEFAULT_APPEARANCE.textTertiaryDark),
+    borderLight: sanitiseRgbaOrHex(cfg.borderLight, DEFAULT_APPEARANCE.borderLight),
+    borderDark: sanitiseRgbaOrHex(cfg.borderDark, DEFAULT_APPEARANCE.borderDark),
+    glassOpacityLight: sanitiseAlpha(cfg.glassOpacityLight, DEFAULT_APPEARANCE.glassOpacityLight),
+    glassOpacityDark: sanitiseAlpha(cfg.glassOpacityDark, DEFAULT_APPEARANCE.glassOpacityDark),
+    blurStrength: sanitiseNumber(cfg.blurStrength, 0, 60, DEFAULT_APPEARANCE.blurStrength),
+    gradientEnabled: cfg.gradientEnabled === true,
+    gradientStart: sanitiseColor(cfg.gradientStart, DEFAULT_APPEARANCE.gradientStart),
+    gradientMiddle: sanitiseColor(cfg.gradientMiddle, DEFAULT_APPEARANCE.gradientMiddle),
+    gradientEnd: sanitiseColor(cfg.gradientEnd, DEFAULT_APPEARANCE.gradientEnd),
+    gradientAngle: sanitiseNumber(cfg.gradientAngle, 0, 360, DEFAULT_APPEARANCE.gradientAngle),
     fontBody,
     fontDisplay,
     fontMono,
@@ -145,26 +206,47 @@ export function fontStack(value, fallbackValue) {
  */
 export function appearanceToCssVars(cfg) {
   const scaled = Math.max(12, Math.round(16 * cfg.fontScale))
-  return {
+  const glassBg = `rgba(255,255,255,${cfg.glassOpacityLight ?? DEFAULT_APPEARANCE.glassOpacityLight})`
+  const vars = {
     '--accent': cfg.accent,
     '--accent-glow': cfg.accent,
     '--bg-primary': cfg.bgLight,
     '--bg-secondary': cfg.surfaceLight,
     '--card-bg': cfg.surfaceLight,
+    '--text-primary': cfg.textPrimaryLight ?? DEFAULT_APPEARANCE.textPrimaryLight,
+    '--text-secondary': cfg.textSecondaryLight ?? DEFAULT_APPEARANCE.textSecondaryLight,
+    '--text-tertiary': cfg.textTertiaryLight ?? DEFAULT_APPEARANCE.textTertiaryLight,
+    '--border-color': cfg.borderLight ?? DEFAULT_APPEARANCE.borderLight,
+    '--glass-bg': glassBg,
     '--font-body': fontStack(cfg.fontBody, DEFAULT_APPEARANCE.fontBody),
     '--font-display': fontStack(cfg.fontDisplay, DEFAULT_APPEARANCE.fontDisplay),
     '--font-mono': fontStack(cfg.fontMono, DEFAULT_APPEARANCE.fontMono),
     '--app-font-scale': String(cfg.fontScale),
     '--app-font-size': `${scaled}px`,
     '--app-radius-scale': String(cfg.radiusScale),
+    '--app-blur': `${cfg.blurStrength ?? DEFAULT_APPEARANCE.blurStrength}px`,
   }
+  if (cfg.gradientEnabled) {
+    const angle = cfg.gradientAngle ?? DEFAULT_APPEARANCE.gradientAngle
+    const start = cfg.gradientStart ?? DEFAULT_APPEARANCE.gradientStart
+    const middle = cfg.gradientMiddle ?? DEFAULT_APPEARANCE.gradientMiddle
+    const end = cfg.gradientEnd ?? DEFAULT_APPEARANCE.gradientEnd
+    vars['--text-gradient'] = `linear-gradient(${angle}deg, ${start} 0%, ${middle} 50%, ${end} 100%)`
+  }
+  return vars
 }
 
 /** Dark-mode overrides. The `.dark` rule in index.css reads these. */
 export function appearanceToDarkCssVars(cfg) {
+  const glassBg = `rgba(255,255,255,${cfg.glassOpacityDark ?? DEFAULT_APPEARANCE.glassOpacityDark})`
   return {
     '--accent-dark': cfg.accentDark,
     '--bg-dark': cfg.bgDark,
     '--bg-dark-secondary': cfg.surfaceDark,
+    '--text-primary-dark': cfg.textPrimaryDark ?? DEFAULT_APPEARANCE.textPrimaryDark,
+    '--text-secondary-dark': cfg.textSecondaryDark ?? DEFAULT_APPEARANCE.textSecondaryDark,
+    '--text-tertiary-dark': cfg.textTertiaryDark ?? DEFAULT_APPEARANCE.textTertiaryDark,
+    '--border-color-dark': cfg.borderDark ?? DEFAULT_APPEARANCE.borderDark,
+    '--glass-bg-dark': glassBg,
   }
 }

@@ -150,16 +150,18 @@
     --mithi-bubble-bg: rgba(12, 14, 22, 0.97);
   }
 
-  /* Admin-managed dark palette (from /admin/appearance). These sit after the
-     .dark block so they win in source order; when no custom appearance is
-     saved the --bg-dark* / --accent-dark vars are unset by JS and these fall
-     back to the built-in dark defaults. */
+  /* Admin-managed dark palette (from /admin/appearance). */
   .dark {
     --accent: var(--accent-dark, #52527a);
     --accent-glow: var(--accent-dark, #00f0ff);
     --bg-primary: var(--bg-dark, #050508);
     --bg-secondary: var(--bg-dark-secondary, #0a0a12);
     --card-bg: var(--bg-dark-secondary, rgba(255,255,255,0.02));
+    --text-primary: var(--text-primary-dark, var(--text-primary));
+    --text-secondary: var(--text-secondary-dark, var(--text-secondary));
+    --text-tertiary: var(--text-tertiary-dark, var(--text-tertiary));
+    --border-color: var(--border-color-dark, var(--border-color));
+    --glass-bg: var(--glass-bg-dark, var(--glass-bg));
   }
 
   body {

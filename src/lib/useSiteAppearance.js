@@ -121,12 +121,27 @@ function applyVars(cfg) {
   }
 }
 
-/**
- * The active theme preference: a visitor's explicit toggle beats the
- * admin-configured default, which beats dark.
- */
-function activeThemePreference() {
-  return readStoredTheme() || current.defaultTheme || 'dark'
+function applyLanguage(cfg) {
+  if (typeof document === 'undefined') return
+  const preferred = localStorage.getItem('language')
+  if (preferred) return
+  if (cfg.enabled && cfg.defaultLanguage) {
+    const lang = cfg.defaultLanguage
+    try {
+      import('i18next').then((i18n) => {
+        const i18nInstance = i18n.default || i18n
+        if (i18nInstance && typeof i18nInstance.changeLanguage === 'function') {
+          i18nInstance.changeLanguage(lang)
+        }
+      })
+      document.documentElement.lang = lang
+      const rtlLanguages = ['ar', 'he', 'fa', 'ur']
+      document.documentElement.dir = rtlLanguages.includes(lang) ? 'rtl' : 'ltr'
+      localStorage.setItem('language', lang)
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /**
@@ -149,11 +164,13 @@ export function applyAppearance(cfg = current) {
       root.style.removeProperty(name)
     }
     applyTheme(resolveTheme(normalised.defaultTheme))
+    applyLanguage(normalised)
     return
   }
 
   applyVars(normalised)
   applyTheme(resolveTheme(activeThemePreference()))
+  applyLanguage(normalised)
 }
 
 /** Toggle used by the public theme switch: persists the visitor's choice. */

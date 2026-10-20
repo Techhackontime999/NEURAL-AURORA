@@ -48,7 +48,7 @@ check('unknown defaultTheme falls back', mergeSiteAppearance({ defaultTheme: 'ne
 check('valid defaultTheme kept', mergeSiteAppearance({ defaultTheme: 'system' }).defaultTheme === 'system')
 
 // --- enabled flag ---
-check('enabled defaults true', mergeSiteAppearance({}).enabled === true)
+check('enabled defaults false (admin must opt in)', mergeSiteAppearance({}).enabled === false)
 check('enabled false honored', mergeSiteAppearance({ enabled: false }).enabled === false)
 
 // --- CSS var output ---

@@ -26,10 +26,11 @@ export const THEME_OPTIONS = [
 ]
 
 export const DEFAULT_APPEARANCE = {
-  enabled: true,
+  enabled: false,
   defaultTheme: 'dark',
-  accent: '#00f0ff',
-  accentDark: '#00f0ff',
+  defaultLanguage: 'en',
+  accent: '#3a3a5c',
+  accentDark: '#52527a',
   bgLight: '#faf8f5',
   bgDark: '#050508',
   surfaceLight: '#ffffff',
@@ -44,6 +45,7 @@ export const DEFAULT_APPEARANCE = {
 const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
 const FONT_VALUES = new Set(FONT_OPTIONS.map((option) => option.value))
 const THEME_VALUES = new Set(THEME_OPTIONS.map((option) => option.value))
+const LANG_VALUES = new Set(['en','es','hi','zh','ar','fr','de','pt','ru','ja','ko','it','tr','id','nl','vi','pl','th','he','uk','bn','ur','fa','sv'])
 
 export const MIN_FONT_SCALE = 0.85
 export const MAX_FONT_SCALE = 1.25
@@ -78,10 +80,11 @@ export function mergeSiteAppearance(raw) {
   const fontMono = FONT_VALUES.has(cfg.fontMono) ? cfg.fontMono : DEFAULT_APPEARANCE.fontMono
 
   return {
-    enabled: cfg.enabled !== false,
+    enabled: cfg.enabled === true,
     defaultTheme: THEME_VALUES.has(cfg.defaultTheme)
       ? cfg.defaultTheme
       : DEFAULT_APPEARANCE.defaultTheme,
+    defaultLanguage: LANG_VALUES.has(cfg.defaultLanguage) ? cfg.defaultLanguage : DEFAULT_APPEARANCE.defaultLanguage,
     accent: sanitiseColor(cfg.accent, DEFAULT_APPEARANCE.accent),
     accentDark: sanitiseColor(cfg.accentDark, DEFAULT_APPEARANCE.accentDark),
     bgLight: sanitiseColor(cfg.bgLight, DEFAULT_APPEARANCE.bgLight),

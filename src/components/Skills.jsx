@@ -5,9 +5,23 @@ import { useSkills } from '../lib/usePortfolioData'
 const categories = [
   { key: 'frontend', labelKey: 'skills.categories.frontend', color: '#00f0ff' },
   { key: 'backend', labelKey: 'skills.categories.backend', color: '#b829dd' },
+  { key: 'webdev', labelKey: 'skills.categories.webdev', color: '#22d3ee' },
+  { key: 'appdev', labelKey: 'skills.categories.appdev', color: '#a78bfa' },
+  { key: 'ai', labelKey: 'skills.categories.ai', color: '#34d399' },
+  { key: 'ai-automation', labelKey: 'skills.categories.aiAutomation', color: '#10b981' },
+  { key: 'vibecoding', labelKey: 'skills.categories.vibecoding', color: '#f59e0b' },
+  { key: 'ai-tools', labelKey: 'skills.categories.aiTools', color: '#f97316' },
+  { key: 'soft-skills', labelKey: 'skills.categories.softSkills', color: '#ec4899' },
   { key: 'language', labelKey: 'skills.categories.language', color: '#f0c040' },
+  { key: 'database', labelKey: 'skills.categories.database', color: '#38bdf8' },
+  { key: 'cloud', labelKey: 'skills.categories.cloud', color: '#60a5fa' },
   { key: 'devops', labelKey: 'skills.categories.devops', color: '#ff006e' },
+  { key: 'mobile', labelKey: 'skills.categories.mobile', color: '#a3e635' },
+  { key: 'testing', labelKey: 'skills.categories.testing', color: '#c084fc' },
+  { key: 'security', labelKey: 'skills.categories.security', color: '#ef4444' },
+  { key: 'tools', labelKey: 'skills.categories.tools', color: '#94a3b8' },
   { key: 'design', labelKey: 'skills.categories.design', color: '#00ff87' },
+  { key: 'other', labelKey: 'skills.categories.other', color: '#9ca3af' },
 ]
 
 function SkillBar({ name, level, color, index, shouldReduceMotion }) {

@@ -75,9 +75,23 @@
     "categories": {
       "frontend": "Frontend",
       "backend": "Backend",
+      "webdev": "Web Development",
+      "appdev": "App Development",
+      "ai": "AI & ML",
+      "aiAutomation": "AI & Automation",
+      "vibecoding": "Vibe Coding",
+      "aiTools": "AI Tools",
+      "softSkills": "Soft Skills",
       "language": "Languages",
+      "database": "Database",
+      "cloud": "Cloud",
       "devops": "DevOps",
-      "design": "Design"
+      "mobile": "Mobile",
+      "testing": "Testing",
+      "security": "Security",
+      "tools": "Tools",
+      "design": "Design",
+      "other": "Other"
     }
   },
   "projects": {

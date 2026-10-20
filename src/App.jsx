@@ -41,6 +41,7 @@ import { AdminRoute } from './components/admin/ProtectedRoute'
 import BottomToTop from './components/ui/bottom-to-top'
 import PwaStatus from './components/ui/PwaStatus'
 import { NeuralCursor } from './components/ui/neural-cursor'
+import MithiWidget from './components/mithi/MithiWidget'
 import { usePersonalInfo } from './lib/usePortfolioData'
 import { useMood } from './context/MoodContext'
 
@@ -234,6 +235,8 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  // Mithi is a portfolio companion: no admin, auth, or payment screens.
+  const showMithi = !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
   useEffect(() => {
@@ -255,6 +258,7 @@ function AppContent() {
       <PwaStatus />
       {loaderDone && <MoodMusicToggle />}
       <NeuralCursor />
+      {loaderDone && showMithi && <MithiWidget />}
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
         {loaderDone && (

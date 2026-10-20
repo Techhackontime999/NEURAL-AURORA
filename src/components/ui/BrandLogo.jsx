@@ -108,7 +108,7 @@ function NeuralIcon({ size = 32 }) {
           stroke="#7F77DD"
           strokeWidth={0.6 * s}
           animate={shouldReduceMotion ? undefined : {
-            r: [node.r * s, (node.r + 1) * s, node.r * s],
+            attrR: [node.r * s, (node.r + 1) * s, node.r * s],
             opacity: [1, 0.5, 1],
             filter: [
               'drop-shadow(0 0 0px #AFA9EC)',
@@ -129,7 +129,7 @@ function NeuralIcon({ size = 32 }) {
         cx={50 * s} cy={50 * s} r={10 * s}
         fill="url(#orbFill)"
         fillOpacity={0.35}
-        animate={shouldReduceMotion ? undefined : { r: [10 * s, 11.5 * s, 10 * s] }}
+        animate={shouldReduceMotion ? undefined : { attrR: [10 * s, 11.5 * s, 10 * s] }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       />
       <circle cx={50 * s} cy={50 * s} r={5.5 * s} fill="url(#orbCore)" fillOpacity={0.95} />
@@ -142,11 +142,11 @@ function NeuralIcon({ size = 32 }) {
           fill="#5DCAA5"
           fillOpacity={0.6}
           animate={shouldReduceMotion ? undefined : {
-            cx: [
+            attrCx: [
               50 * s + Math.cos(i * 2.094) * 20 * s,
               50 * s + Math.cos(i * 2.094 + 6.283) * 20 * s,
             ],
-            cy: [
+            attrCy: [
               50 * s + Math.sin(i * 2.094) * 20 * s,
               50 * s + Math.sin(i * 2.094 + 6.283) * 20 * s,
             ],

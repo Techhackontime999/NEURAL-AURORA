@@ -45,6 +45,7 @@ NEURAL AURORA is **source-available** software. The source code is publicly visi
 - **Auto-Traverse Tour** – Interactive site walkthrough
 - **3D Aurora Background** – React Three Fiber powered immersive UI
 - **Reviews, Blog, Case Studies & Services**
+- **Mithi 🦜** – Floating parrot companion with a grounded AI assistant and an admin-configured docs launcher
 
 ---
 
@@ -72,6 +73,10 @@ Open [http://localhost:5173](http://localhost:5173)
 
 See `.env.example` for full list. Key ones include `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_*`, `RAZORPAY_WEBHOOK_SECRET`.
 
+Mithi's AI runs server-side and needs its own key: `GEMINI_API_KEY` **or**
+`AI_API_KEY` (never a `VITE_` prefix). Without one, the widget says the AI is
+unconfigured and the docs button keeps working.
+
 ## 🧪 Scripts
 
 ```bash
@@ -93,6 +98,7 @@ Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md]
 ## 📚 Documentation
 
 - [Digital Store Setup](docs/DIGITAL-STORE.md)
+- [Mithi Companion](docs/mithi.md)
 - [Licensing FAQ](docs/LICENSING-FAQ.md)
 - [Production Release Checklist](docs/PRODUCTION-RELEASE-CHECKLIST.md)
 

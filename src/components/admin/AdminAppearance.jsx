@@ -318,29 +318,31 @@ export default function AdminAppearance() {
               style={{ left: cfg.enabled ? '18px' : '2px' }}
             />
           </span>
-          {cfg.enabled ? 'Custom theme on' : 'Using defaults'}
+          {cfg.enabled ? 'Custom theme enabled' : 'Using original theme'}
         </button>
+      </div>
+
+      <div className="mb-6 max-w-3xl space-y-6">
+        {/* Language */}
+        <Section
+          title="Language"
+          description="Set the default language for visitors. Visitors can still change it anytime from the language switcher."
+        >
+          <Field label="Default language">
+            <Select
+              id="default-language"
+              value={cfg.defaultLanguage}
+              onChange={(v) => patch({ defaultLanguage: v })}
+              options={LANG_OPTIONS.map((o) => ({ label: o.name, value: o.code }))}
+            />
+          </Field>
+        </Section>
       </div>
 
       <div
         className={`grid gap-6 transition-opacity lg:grid-cols-[1fr_340px] ${cfg.enabled ? '' : 'pointer-events-none opacity-50'}`}
       >
         <div className="space-y-6">
-          {/* Language */}
-          <Section
-            title="Language"
-            description="Set the default language for visitors. Visitors can still change it anytime from the language switcher."
-          >
-            <Field label="Default language">
-              <Select
-                id="default-language"
-                value={cfg.defaultLanguage}
-                onChange={(v) => patch({ defaultLanguage: v })}
-                options={LANG_OPTIONS.map((o) => ({ label: o.name, value: o.code }))}
-              />
-            </Field>
-          </Section>
-
           {/* Palette */}
           <Section
             title="Colors"
@@ -438,14 +440,14 @@ export default function AdminAppearance() {
             </Field>
 
             <Field
-              label="Default language"
-              hint="Used only if the visitor has not picked a language yet and custom preferences are enabled."
+              label="Default theme"
+              hint="“Follow system” respects the visitor's OS setting. A visitor's own toggle always wins."
             >
               <Select
-                id="default-language-2"
-                value={cfg.defaultLanguage}
-                onChange={(v) => patch({ defaultLanguage: v })}
-                options={LANG_OPTIONS.map((o) => ({ label: `${o.name} (${o.code})`, value: o.code }))}
+                id="default-theme"
+                value={cfg.defaultTheme}
+                onChange={(v) => patch({ defaultTheme: v })}
+                options={THEME_OPTIONS}
               />
             </Field>
           </Section>

@@ -323,19 +323,32 @@ export default function AdminAppearance() {
       </div>
 
       <div className="mb-6 max-w-3xl space-y-6">
-        {/* Language */}
+        {/* Language & Theme Defaults */}
         <Section
-          title="Language"
-          description="Set the default language for visitors. Visitors can still change it anytime from the language switcher."
+          title="Defaults"
+          description="Set defaults for visitors who haven't chosen preferences yet. Visitor choices always take priority."
         >
-          <Field label="Default language">
-            <Select
-              id="default-language"
-              value={cfg.defaultLanguage}
-              onChange={(v) => patch({ defaultLanguage: v })}
-              options={LANG_OPTIONS.map((o) => ({ label: o.name, value: o.code }))}
-            />
-          </Field>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Default language">
+              <Select
+                id="default-language"
+                value={cfg.defaultLanguage}
+                onChange={(v) => patch({ defaultLanguage: v })}
+                options={LANG_OPTIONS.map((o) => ({ label: o.name, value: o.code }))}
+              />
+            </Field>
+            <Field
+              label="Default theme"
+              hint="“Follow system” respects the visitor's OS setting. A visitor's own toggle always wins."
+            >
+              <Select
+                id="default-theme"
+                value={cfg.defaultTheme}
+                onChange={(v) => patch({ defaultTheme: v })}
+                options={THEME_OPTIONS}
+              />
+            </Field>
+          </div>
         </Section>
       </div>
 
@@ -424,10 +437,10 @@ export default function AdminAppearance() {
             </Field>
           </Section>
 
-          {/* Shape & default theme */}
+          {/* Shape */}
           <Section
-            title="Shape & default theme"
-            description="Corner roundness across cards and buttons, plus which theme and language visitors see first."
+            title="Shape"
+            description="Corner roundness across cards and buttons."
           >
             <Field label="Corner radius" hint="0× is square, 1× is the default, 2× is fully rounded.">
               <Slider
@@ -436,18 +449,6 @@ export default function AdminAppearance() {
                 min={MIN_RADIUS_SCALE}
                 max={MAX_RADIUS_SCALE}
                 format={(v) => `${v.toFixed(2)}×`}
-              />
-            </Field>
-
-            <Field
-              label="Default theme"
-              hint="“Follow system” respects the visitor's OS setting. A visitor's own toggle always wins."
-            >
-              <Select
-                id="default-theme"
-                value={cfg.defaultTheme}
-                onChange={(v) => patch({ defaultTheme: v })}
-                options={THEME_OPTIONS}
               />
             </Field>
           </Section>

@@ -99,9 +99,18 @@ function resolveTheme(preference) {
   }
 }
 
+function activeThemePreference() {
+  const stored = readStoredTheme()
+  if (stored) return stored
+  const cfg = current
+  if (cfg && cfg.defaultTheme) return cfg.defaultTheme
+  return DEFAULT_APPEARANCE.defaultTheme
+}
+
 function applyTheme(theme) {
   const root = document.documentElement
-  const isDark = theme === 'dark'
+  const resolved = resolveTheme(theme)
+  const isDark = resolved === 'dark'
   root.classList.toggle('dark', isDark)
   root.style.colorScheme = isDark ? 'dark' : 'light'
 }
@@ -163,7 +172,7 @@ export function applyAppearance(cfg = current) {
     for (const name of names) {
       root.style.removeProperty(name)
     }
-    applyTheme(resolveTheme(normalised.defaultTheme))
+    applyTheme(resolveTheme(activeThemePreference()))
     applyLanguage(normalised)
     return
   }

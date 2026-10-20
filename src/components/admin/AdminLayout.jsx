@@ -32,7 +32,7 @@ const navItems = [
   { path: '/admin/youtube-config', label: 'YouTube Config', icon: '⊡' },
   { path: '/admin/video-hero', label: 'Video Hero', icon: '▶' },
   { path: '/admin/store-hero', label: 'Store Hero Carousel', icon: '▦' },
-  { path: '/admin/appearance', label: 'Site Appearance', icon: '◑' },
+  { path: '/admin/appearance', label: 'Site Preferences', icon: '◑' },
   { path: '/admin/payment-settings', label: 'Payment Settings', icon: '₹' },
   { path: '/admin/data', label: 'Import / Export Data', icon: '⇅' },
 ]

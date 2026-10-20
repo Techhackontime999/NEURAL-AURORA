@@ -47,6 +47,33 @@ const FONT_VALUES = new Set(FONT_OPTIONS.map((option) => option.value))
 const THEME_VALUES = new Set(THEME_OPTIONS.map((option) => option.value))
 const LANG_VALUES = new Set(['en','es','hi','zh','ar','fr','de','pt','ru','ja','ko','it','tr','id','nl','vi','pl','th','he','uk','bn','ur','fa','sv'])
 
+export const LANG_OPTIONS = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'zh', name: '中文' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'pt', name: 'Português' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'ja', name: '日本語' },
+  { code: 'ko', name: '한국어' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'id', name: 'Bahasa Indonesia' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'pl', name: 'Polski' },
+  { code: 'th', name: 'ไทย' },
+  { code: 'he', name: 'עברית' },
+  { code: 'uk', name: 'Українська' },
+  { code: 'bn', name: 'বাংলা' },
+  { code: 'ur', name: 'اردو' },
+  { code: 'fa', name: 'فارسی' },
+  { code: 'sv', name: 'Svenska' },
+]
+
 export const MIN_FONT_SCALE = 0.85
 export const MAX_FONT_SCALE = 1.25
 export const MIN_RADIUS_SCALE = 0

@@ -6,6 +6,7 @@ import {
   DEFAULT_APPEARANCE,
   FONT_OPTIONS,
   THEME_OPTIONS,
+  LANG_OPTIONS,
   MAX_FONT_SCALE,
   MAX_RADIUS_SCALE,
   MIN_FONT_SCALE,
@@ -248,7 +249,7 @@ export default function AdminAppearance() {
       // public components reading the same resource.
       setAppearance(payload)
       invalidatePortfolioCache('siteAppearance')
-      setMessage({ type: 'success', text: 'Appearance saved. The live site updates immediately.' })
+      setMessage({ type: 'success', text: 'Preferences saved. The live site updates immediately.' })
     } catch (err) {
       setMessage({ type: 'error', text: `Failed to save: ${err.message || err}` })
     }
@@ -289,10 +290,10 @@ export default function AdminAppearance() {
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Site Appearance
+            Site Preferences
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Theme colors, typography and shape for every page. Changes below preview live —
+            Customize the look and language of the whole site. Changes below preview live —
             press Save to publish them.
           </p>
         </div>
@@ -325,6 +326,21 @@ export default function AdminAppearance() {
         className={`grid gap-6 transition-opacity lg:grid-cols-[1fr_340px] ${cfg.enabled ? '' : 'pointer-events-none opacity-50'}`}
       >
         <div className="space-y-6">
+          {/* Language */}
+          <Section
+            title="Language"
+            description="Set the default language for visitors. Visitors can still change it anytime from the language switcher."
+          >
+            <Field label="Default language">
+              <Select
+                id="default-language"
+                value={cfg.defaultLanguage}
+                onChange={(v) => patch({ defaultLanguage: v })}
+                options={LANG_OPTIONS.map((o) => ({ label: o.name, value: o.code }))}
+              />
+            </Field>
+          </Section>
+
           {/* Palette */}
           <Section
             title="Colors"
@@ -409,7 +425,7 @@ export default function AdminAppearance() {
           {/* Shape & default theme */}
           <Section
             title="Shape & default theme"
-            description="Corner roundness across cards and buttons, plus which theme visitors see first."
+            description="Corner roundness across cards and buttons, plus which theme and language visitors see first."
           >
             <Field label="Corner radius" hint="0× is square, 1× is the default, 2× is fully rounded.">
               <Slider
@@ -422,14 +438,14 @@ export default function AdminAppearance() {
             </Field>
 
             <Field
-              label="Default theme"
-              hint="“Follow system” respects the visitor's OS setting. A visitor's own toggle always wins."
+              label="Default language"
+              hint="Used only if the visitor has not picked a language yet and custom preferences are enabled."
             >
               <Select
-                id="default-theme"
-                value={cfg.defaultTheme}
-                onChange={(v) => patch({ defaultTheme: v })}
-                options={THEME_OPTIONS}
+                id="default-language-2"
+                value={cfg.defaultLanguage}
+                onChange={(v) => patch({ defaultLanguage: v })}
+                options={LANG_OPTIONS.map((o) => ({ label: `${o.name} (${o.code})`, value: o.code }))}
               />
             </Field>
           </Section>
@@ -485,7 +501,7 @@ export default function AdminAppearance() {
               Saving
             </span>
           ) : (
-            'Save Appearance'
+            'Save Preferences'
           )}
         </motion.button>
 

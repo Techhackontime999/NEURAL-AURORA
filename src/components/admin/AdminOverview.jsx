@@ -226,13 +226,41 @@ export default function AdminOverview() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Overview of your portfolio content
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Admin Dashboard
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Complete overview of your portfolio, store & engagement
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border px-3 py-2 text-xs transition-all hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-secondary)',
+              background: 'var(--hover-bg)',
+            }}
+          >
+            View Live Site →
+          </a>
+          <a
+            href="/admin/data"
+            className="rounded-lg border px-3 py-2 text-xs transition-all hover:scale-[1.02]"
+            style={{
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-secondary)',
+              background: 'var(--hover-bg)',
+            }}
+          >
+            Import/Export Data
+          </a>
+        </div>
       </div>
 
       {/* Key Analytics */}

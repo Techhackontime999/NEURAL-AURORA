@@ -35,7 +35,7 @@ export default function ReviewForm() {
   }
 
   return (
-    <section id="review" className="py-24">
+    <section id="review" className="relative z-10 py-24">
       <div className="mx-auto max-w-2xl px-4">
         <div className="glass-panel-strong rounded-2xl border border-black/10 dark:border-white/5 p-8 md:p-12">
           <AnimatePresence mode="wait">

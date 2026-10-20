@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAllReviews, approveReview, deleteReview } from '../../lib/supabase'
+import { invalidatePortfolioCache } from '../../lib/usePortfolioData'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
@@ -30,6 +31,7 @@ export default function AdminReviews() {
     try {
       await approveReview(id)
       toast.success('Review approved')
+      invalidatePortfolioCache('reviews')
       load()
     } catch (err) {
       toast.error('Failed to approve: ' + err.message)
@@ -48,6 +50,7 @@ export default function AdminReviews() {
     try {
       await deleteReview(id)
       toast.success('Review deleted')
+      invalidatePortfolioCache('reviews')
       load()
     } catch (err) {
       toast.error('Failed to delete: ' + err.message)
@@ -65,7 +68,10 @@ export default function AdminReviews() {
     if (!ok) return
 
     const { deleted, errors } = await handleBulkDelete(deleteReview)
-    if (deleted > 0) toast.success(`Deleted ${deleted} review(s)`)
+    if (deleted > 0) {
+      toast.success(`Deleted ${deleted} review(s)`)
+      invalidatePortfolioCache('reviews')
+    }
     if (errors?.length > 0) toast.error(`Failed to delete ${errors.length} review(s)`)
     clearSelection()
     load()

@@ -8,7 +8,7 @@ export default function ReviewsList() {
 
   if (isLoading && (!reviews || reviews.length === 0)) {
     return (
-      <section className="py-24">
+      <section className="relative z-10 py-24">
         <div className="mx-auto max-w-4xl px-4">
           <div className="h-8 w-48 mx-auto mb-12 bg-black/10 dark:bg-white/10 rounded-lg animate-pulse" />
           <div className="grid gap-6 md:grid-cols-2">
@@ -31,7 +31,7 @@ export default function ReviewsList() {
 
   if (!isLoading && (!reviews || reviews.length === 0)) {
     return (
-      <section className="py-24">
+      <section className="relative z-10 py-24">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <h2 className="mb-8 font-display text-3xl font-bold text-black/80 dark:text-white">
             {t('reviews.title')}
@@ -53,7 +53,7 @@ export default function ReviewsList() {
   }
 
   return (
-    <section className="py-24">
+    <section className="relative z-10 py-24">
       <div className="mx-auto max-w-4xl px-4">
         <h2 className="mb-4 text-center font-display text-3xl font-bold text-black/80 dark:text-white">
           {t('reviews.title')}

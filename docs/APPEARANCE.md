@@ -32,8 +32,6 @@ defaults, so an empty `{}` never breaks the theme.
   "defaultTheme": "dark",
   "accent": "#00f0ff",
   "accentDark": "#00f0ff",
-  "bgLight": "#faf8f5",
-  "bgDark": "#050508",
   "surfaceLight": "#ffffff",
   "surfaceDark": "#0a0a12",
   "fontBody": "Satoshi",
@@ -49,11 +47,16 @@ defaults, so an empty `{}` never breaks the theme.
 | `enabled` | `false` disables all overrides and restores the stylesheet defaults. |
 | `defaultTheme` | `"light"` \| `"dark"` \| `"system"`. A visitor's own toggle always wins. |
 | `accent`, `accentDark` | Accent color for light/dark mode. Hex only. |
-| `bgLight`, `bgDark` | Page background per theme. |
 | `surfaceLight`, `surfaceDark` | Card/panel background per theme. |
 | `fontBody`, `fontDisplay`, `fontMono` | Must be one of the loaded families (see below). |
 | `fontScale` | `0.85` – `1.25`, clamped. Scales the whole site. |
 | `radiusScale` | `0` – `2`, clamped. Corner roundness. |
+
+**The page background is not customizable.** The site always renders its
+built-in aurora backdrop (`#faf8f5` light / `#050508` dark) and only
+surfaces/cards, text, borders, accent and the effects tab are themed. The
+retired `bgLight` / `bgDark` keys are still accepted in the stored JSON for
+backward compatibility, but they are ignored and dropped on the next save.
 
 Only fonts already requested by `index.html` are selectable (Satoshi, Cabinet
 Grotesk, JetBrains Mono, system UI, Georgia). Choosing an unloaded family would
@@ -93,7 +96,7 @@ choice survives reload and overrides the admin default.
 | `src/components/admin/AdminAppearance.jsx` | Admin UI + live preview |
 | `src/lib/appearanceDefaults.js` | Defaults, validation, CSS var mapping |
 | `src/lib/useSiteAppearance.js` | Runtime: cache, apply, subscribe, theme |
-| `src/index.css` | Consumes `--app-*` / `--font-*` / `--bg-dark*` vars |
+| `src/index.css` | Consumes `--app-*` / `--font-*` / `--surface-dark` vars |
 | `index.html` | Pre-paint script (dependency-free, inline) |
 | `supabase/migrations/20261020000001_add_appearance_settings.sql` | Adds the column |
 | `scripts/test-appearance.mjs` | Validation tests (`node scripts/test-appearance.mjs`) |

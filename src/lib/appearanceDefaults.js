@@ -31,8 +31,6 @@ export const DEFAULT_APPEARANCE = {
   defaultLanguage: 'en',
   accent: '#3a3a5c',
   accentDark: '#52527a',
-  bgLight: '#faf8f5',
-  bgDark: '#050508',
   surfaceLight: '#ffffff',
   surfaceDark: '#0a0a12',
   textPrimaryLight: '#1d1d1f',
@@ -159,8 +157,6 @@ export function mergeSiteAppearance(raw) {
     defaultLanguage: LANG_VALUES.has(cfg.defaultLanguage) ? cfg.defaultLanguage : DEFAULT_APPEARANCE.defaultLanguage,
     accent: sanitiseColor(cfg.accent, DEFAULT_APPEARANCE.accent),
     accentDark: sanitiseColor(cfg.accentDark, DEFAULT_APPEARANCE.accentDark),
-    bgLight: sanitiseColor(cfg.bgLight, DEFAULT_APPEARANCE.bgLight),
-    bgDark: sanitiseColor(cfg.bgDark, DEFAULT_APPEARANCE.bgDark),
     surfaceLight: sanitiseColor(cfg.surfaceLight, DEFAULT_APPEARANCE.surfaceLight),
     surfaceDark: sanitiseColor(cfg.surfaceDark, DEFAULT_APPEARANCE.surfaceDark),
     textPrimaryLight: sanitiseRgbaOrHex(cfg.textPrimaryLight, DEFAULT_APPEARANCE.textPrimaryLight),
@@ -204,7 +200,10 @@ export function fontStack(value, fallbackValue) {
  * Turns a normalized config into the CSS custom properties applied to <html>.
  * Kept in one place so the admin preview and the live site always agree.
  *
- * The semantic variables (backgrounds, text, borders, glass, accent) are
+ * The page background (--bg-primary) is deliberately absent: the site keeps
+ * its built-in aurora backdrop, and only its surfaces/cards are themable.
+ *
+ * The semantic variables (surfaces, text, borders, glass, accent) are
  * resolved for the *active* theme rather than always emitting the light
  * palette. Inline style beats the `.dark` rules in index.css, so emitting the
  * light values unconditionally would pin dark-mode visitors to the light
@@ -224,7 +223,6 @@ export function appearanceToCssVars(cfg, theme = 'light') {
   const vars = {
     '--accent': dark ? cfg.accentDark : cfg.accent,
     '--accent-glow': dark ? cfg.accentDark : cfg.accent,
-    '--bg-primary': dark ? cfg.bgDark : cfg.bgLight,
     '--bg-secondary': dark ? cfg.surfaceDark : cfg.surfaceLight,
     '--card-bg': dark ? cfg.surfaceDark : cfg.surfaceLight,
     '--text-primary': dark
@@ -259,9 +257,21 @@ export function appearanceToCssVars(cfg, theme = 'light') {
 }
 
 /**
+ * Names an older release wrote for the page background. The page background is
+ * no longer admin-managed, so applying the theme strips these to let the
+ * built-in aurora backdrop show through.
+ */
+export const LEGACY_BACKGROUND_VARS = Object.freeze([
+  '--bg-primary',
+  '--bg-dark',
+  '--bg-dark-secondary',
+])
+
+/**
  * Every custom property the appearance feature may ever write. Used when the
  * admin switches the feature off so no stale inline override (including the
- * optional gradient) survives the fallback to the stylesheet defaults.
+ * optional gradient and the retired background vars) survives the fallback to
+ * the stylesheet defaults.
  */
 export function appearanceVarNames() {
   const names = new Set(Object.keys(appearanceToCssVars(DEFAULT_APPEARANCE)))
@@ -269,16 +279,19 @@ export function appearanceVarNames() {
     names.add(name)
   }
   names.add('--text-gradient')
+  for (const name of LEGACY_BACKGROUND_VARS) names.add(name)
   return names
 }
 
-/** Dark-mode overrides. The `.dark` rule in index.css reads these. */
+/**
+ * Dark-mode overrides. The `.dark` rule in index.css reads these. There is no
+ * dark page background here on purpose — only the surface colour is themable.
+ */
 export function appearanceToDarkCssVars(cfg) {
   const glassBg = `rgba(255,255,255,${cfg.glassOpacityDark ?? DEFAULT_APPEARANCE.glassOpacityDark})`
   return {
     '--accent-dark': cfg.accentDark,
-    '--bg-dark': cfg.bgDark,
-    '--bg-dark-secondary': cfg.surfaceDark,
+    '--surface-dark': cfg.surfaceDark,
     '--text-primary-dark': cfg.textPrimaryDark ?? DEFAULT_APPEARANCE.textPrimaryDark,
     '--text-secondary-dark': cfg.textSecondaryDark ?? DEFAULT_APPEARANCE.textSecondaryDark,
     '--text-tertiary-dark': cfg.textTertiaryDark ?? DEFAULT_APPEARANCE.textTertiaryDark,

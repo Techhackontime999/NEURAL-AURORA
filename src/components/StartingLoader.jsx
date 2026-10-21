@@ -2574,7 +2574,7 @@ export default function StartingLoader({ onComplete }) {
          to the original near-black gradient when appearance is disabled. */
       style={{
         background:
-          'radial-gradient(ellipse at center, var(--bg-dark-secondary, #0a0a12) 0%, var(--bg-dark, #050508) 100%)',
+          'radial-gradient(ellipse at center, var(--surface-dark, #0a0a12) 0%, #050508 100%)',
       }}
       animate={shouldReduceMotion ? { opacity: phase === 'transitioning' ? 0 : 1 } : (phase === 'transitioning' ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 })}
       transition={shouldReduceMotion ? { duration: 0 } : { duration: 1.2, ease: 'easeInOut' }}

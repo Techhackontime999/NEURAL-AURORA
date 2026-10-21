@@ -44,10 +44,11 @@
        * once React mounts. Kept inline and dependency-free on purpose.
        *
        * The semantic colors are resolved for the resolved theme here too:
-       * an inline --bg-primary outranks the .dark remap rules in index.css,
-       * so writing the light palette unconditionally would pin dark-mode
-       * visitors to the light theme until React boots (and, if React is slow
-       * or offline, for good).
+       * an inline surface/text value outranks the .dark remap rules in
+       * index.css, so writing the light palette unconditionally would pin
+       * dark-mode visitors to the light theme until React boots (and, if
+       * React is slow or offline, for good). The page background itself is
+       * never written — the built-in aurora backdrop is always used.
        */
       (function () {
         try {
@@ -91,7 +92,6 @@
             ? {
                 '--accent': cfg.accentDark,
                 '--accent-glow': cfg.accentDark,
-                '--bg-primary': cfg.bgDark,
                 '--bg-secondary': cfg.surfaceDark,
                 '--card-bg': cfg.surfaceDark,
                 '--text-primary': cfg.textPrimaryDark,
@@ -103,7 +103,6 @@
             : {
                 '--accent': cfg.accent,
                 '--accent-glow': cfg.accent,
-                '--bg-primary': cfg.bgLight,
                 '--bg-secondary': cfg.surfaceLight,
                 '--card-bg': cfg.surfaceLight,
                 '--text-primary': cfg.textPrimaryLight,
@@ -114,7 +113,8 @@
               }
 
           // Shared (theme-independent) values + the raw dark palette, which
-          // the .dark rules in index.css read directly.
+          // the .dark rules in index.css read directly. The page background
+          // is not written at all: the built-in aurora backdrop stays.
           vars['--font-body'] = fontStacks[cfg.fontBody] || fontStacks.Satoshi
           vars['--font-display'] = fontStacks[cfg.fontDisplay] || fontStacks['Cabinet Grotesk']
           vars['--font-mono'] = fontStacks[cfg.fontMono] || fontStacks['JetBrains Mono']
@@ -123,8 +123,7 @@
           vars['--app-radius-scale'] = String(radius)
           vars['--app-blur'] = blur + 'px'
           vars['--accent-dark'] = cfg.accentDark
-          vars['--bg-dark'] = cfg.bgDark
-          vars['--bg-dark-secondary'] = cfg.surfaceDark
+          vars['--surface-dark'] = cfg.surfaceDark
           vars['--text-primary-dark'] = cfg.textPrimaryDark
           vars['--text-secondary-dark'] = cfg.textSecondaryDark
           vars['--text-tertiary-dark'] = cfg.textTertiaryDark

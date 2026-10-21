@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { getAdminSettings, isSupabaseConfigured } from './supabase'
 import {
   DEFAULT_APPEARANCE,
+  LEGACY_BACKGROUND_VARS,
   appearanceToCssVars,
   appearanceToDarkCssVars,
   appearanceVarNames,
@@ -115,12 +116,15 @@ function applyTheme(theme) {
  * Writes the config to <html> as inline custom properties, resolved for the
  * theme that is actually active.
  *
- * Why the theme matters: an inline `--bg-primary` on <html> outranks the
- * `.dark { --bg-primary: var(--bg-dark, …) }` remap in index.css, so writing
- * the light palette unconditionally (the old behaviour) left dark-mode
- * visitors reading the admin's light colors. The dark values are still
- * mirrored through the `--*-dark` names for anything that reads them
- * directly.
+ * The page background is not part of the config any more: the site keeps its
+ * built-in aurora backdrop, so any --bg-primary/--bg-dark left behind by an
+ * older release is removed here instead of being overwritten.
+ *
+ * Why the theme matters: inline surface/text values outrank the `.dark` remap
+ * rules in index.css, so writing the light palette unconditionally (the old
+ * behaviour) left dark-mode visitors reading the admin's light colors. The
+ * dark values are still mirrored through the `--*-dark` names for anything
+ * that reads them directly.
  */
 /**
  * `animate` flips on the `appearance-ready` class that index.css uses to
@@ -130,6 +134,7 @@ function applyTheme(theme) {
  */
 function applyVars(cfg, theme, { animate = false } = {}) {
   const root = document.documentElement
+  for (const name of LEGACY_BACKGROUND_VARS) root.style.removeProperty(name)
   const vars = appearanceToCssVars(cfg, theme)
   const darkVars = appearanceToDarkCssVars(cfg)
   for (const [name, value] of Object.entries(vars)) {

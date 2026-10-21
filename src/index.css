@@ -94,7 +94,7 @@
   }
 
   /* Appearance: admin-managed values are applied as inline CSS variables on
-     <html> by src/lib/useSiteAppearance.js. The --bg-dark* / --accent-dark
+     <html> by src/lib/useSiteAppearance.js. The --surface-dark / --accent-dark
      vars are consumed by the .dark block below. */
   .font-display,
   .font-display * {
@@ -164,13 +164,14 @@
     --mithi-bubble-bg: rgba(12, 14, 22, 0.97);
   }
 
-  /* Admin-managed dark palette (from /admin/appearance). */
+  /* Admin-managed dark palette (from /admin/appearance). The page background
+     is intentionally NOT admin-managed: the site keeps its built-in aurora
+     backdrop. Only surfaces/cards, text, borders, glass and accent are themed. */
   .dark {
     --accent: var(--accent-dark, #52527a);
     --accent-glow: var(--accent-dark, #00f0ff);
-    --bg-primary: var(--bg-dark, #050508);
-    --bg-secondary: var(--bg-dark-secondary, #0a0a12);
-    --card-bg: var(--bg-dark-secondary, rgba(255,255,255,0.02));
+    --bg-secondary: var(--surface-dark, #0a0a12);
+    --card-bg: var(--surface-dark, rgba(255,255,255,0.02));
     --text-primary: var(--text-primary-dark, var(--text-primary));
     --text-secondary: var(--text-secondary-dark, var(--text-secondary));
     --text-tertiary: var(--text-tertiary-dark, var(--text-tertiary));

@@ -48,7 +48,6 @@ const PRESETS = [
     cfg: {
       accent: '#8b5cf6',
       accentDark: '#a78bfa',
-      bgDark: '#040410',
       surfaceDark: '#0b0b1a',
       gradientEnabled: true,
       gradientStart: '#8b5cf6',
@@ -275,7 +274,9 @@ function Toggle({ checked, onChange, label, description }) {
 
 function Preview({ cfg }) {
   const isDark = cfg._previewDark
-  const bg = isDark ? cfg.bgDark : cfg.bgLight
+  // Mirrors the built-in page background from index.css — the appearance
+  // settings intentionally do not override it.
+  const bg = isDark ? '#050508' : '#faf8f5'
   const surface = isDark ? cfg.surfaceDark : cfg.surfaceLight
   const accent = isDark ? cfg.accentDark : cfg.accent
   const text = isDark ? (cfg.textPrimaryDark ?? '#f1f1f5') : (cfg.textPrimaryLight ?? '#1d1d1f')
@@ -619,18 +620,7 @@ export default function AdminAppearance() {
                 </div>
               </Section>
 
-              <Section title="Backgrounds" description="Page backgrounds for light and dark modes.">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Background — light">
-                    <ColorInput id="bg-light" value={cfg.bgLight} onChange={(v) => patch({ bgLight: v })} />
-                  </Field>
-                  <Field label="Background — dark">
-                    <ColorInput id="bg-dark" value={cfg.bgDark} onChange={(v) => patch({ bgDark: v })} />
-                  </Field>
-                </div>
-              </Section>
-
-              <Section title="Surfaces & Cards" description="Panels, cards and elevated surfaces.">
+              <Section title="Surfaces & Cards" description="Panels, cards and elevated surfaces. The page background itself stays fixed to the site's built-in aurora backdrop.">
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field label="Surface — light">
                     <ColorInput id="surface-light" value={cfg.surfaceLight} onChange={(v) => patch({ surfaceLight: v })} />

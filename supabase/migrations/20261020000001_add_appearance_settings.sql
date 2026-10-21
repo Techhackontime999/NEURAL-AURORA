@@ -7,8 +7,8 @@
 -- {
 --   "accent": "#00f0ff",
 --   "accentDark": "#00f0ff",
---   "bgLight": "#faf8f5",
---   "bgDark": "#050508",
+--   "bgLight": "#faf8f5",              -- RETIRED: page background is fixed to
+--   "bgDark": "#050508",               -- the built-in aurora backdrop; ignored
 --   "surfaceLight": "#ffffff",
 --   "surfaceDark": "#0a0a12",
 --   "defaultTheme": "dark",            -- "light" | "dark" | "system"

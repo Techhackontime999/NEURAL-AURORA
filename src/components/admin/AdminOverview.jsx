@@ -5,15 +5,30 @@ import { generateTestData } from '../../lib/supabase'
 import { getOrderStats } from '../../lib/adminProducts'
 import { formatPrice } from '../../lib/products'
 
-const categoryConfig = [
-  { key: 'projects', label: 'Projects', color: '#3b82f6', table: 'projects', href: '/admin/projects' },
-  { key: 'skills', label: 'Skills', color: '#10b981', table: 'skills', href: '/admin/skills' },
-  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6', table: 'blog_posts', href: '/admin/blog' },
-  { key: 'education', label: 'Education', color: '#ec4899', table: 'education', href: '/admin/education' },
-  { key: 'experience', label: 'Experience', color: '#f97316', table: 'experience', href: '/admin/experience' },
-  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4', table: 'case_studies', href: '/admin/case-studies' },
-  { key: 'services', label: 'Services', color: '#14b8a6', table: 'services', href: '/admin/services' },
+/**
+ * Every portfolio section rendered as a count card, in navigation order.
+ * One entry per section — the grid is generated from this list so a section
+ * can never appear twice.
+ *
+ * `generator: true` marks the categories the generate_test_data() RPC actually
+ * implements (see supabase-schema.sql); those are also the options in the test
+ * data picker. Certificates/achievements/gallery have no test-data branch, so
+ * they are card-only.
+ */
+const contentSections = [
+  { key: 'projects', label: 'Projects', color: '#3b82f6', href: '/admin/projects', generator: true },
+  { key: 'skills', label: 'Skills', color: '#10b981', href: '/admin/skills', generator: true },
+  { key: 'blog', label: 'Blog Posts', color: '#8b5cf6', href: '/admin/blog', generator: true },
+  { key: 'education', label: 'Education', color: '#ec4899', href: '/admin/education', generator: true },
+  { key: 'experience', label: 'Experience', color: '#f97316', href: '/admin/experience', generator: true },
+  { key: 'case_studies', label: 'Case Studies', color: '#06b6d4', href: '/admin/case-studies', generator: true },
+  { key: 'services', label: 'Services', color: '#14b8a6', href: '/admin/services', generator: true },
+  { key: 'certificates', label: 'Certificates', color: '#eab308', href: '/admin/certificates' },
+  { key: 'achievements', label: 'Achievements', color: '#f43f5e', href: '/admin/achievements' },
+  { key: 'gallery', label: 'Gallery', color: '#a855f7', href: '/admin/gallery' },
 ]
+
+const generatorSections = contentSections.filter((section) => section.generator)
 
 const quickActionGroups = [
   {
@@ -89,10 +104,9 @@ export default function AdminOverview() {
     ads: null,
     activeAds: null,
     visitors: null,
-    blogPosts: null,
-    caseStudies: null,
-    projects: null,
-    services: null,
+    certificates: null,
+    achievements: null,
+    gallery: null,
     reviews: null,
     approvedReviews: null,
     pendingReviews: null,
@@ -131,6 +145,9 @@ export default function AdminOverview() {
         experienceRes,
         caseStudiesRes,
         servicesRes,
+        certificatesRes,
+        achievementsRes,
+        galleryRes,
         reviewsRes,
         approvedReviewsRes,
         productsRes,
@@ -154,6 +171,9 @@ export default function AdminOverview() {
         count('experience'),
         count('case_studies'),
         count('services'),
+        count('certificates'),
+        count('achievements'),
+        count('gallery'),
         count('reviews'),
         count('reviews', (q) => q.eq('approved', true)),
         count('products'),
@@ -200,6 +220,9 @@ export default function AdminOverview() {
         experience: value(experienceRes),
         case_studies: value(caseStudiesRes),
         services: value(servicesRes),
+        certificates: value(certificatesRes),
+        achievements: value(achievementsRes),
+        gallery: value(galleryRes),
       }
       setStats(counts)
 
@@ -224,10 +247,9 @@ export default function AdminOverview() {
         ads: value(adsRes),
         activeAds: value(activeAdsRes),
         visitors: visitorsRes?.data?.count ?? null,
-        blogPosts: value(blogRes),
-        caseStudies: value(caseStudiesRes),
-        projects: value(projectsRes),
-        services: value(servicesRes),
+        certificates: value(certificatesRes),
+        achievements: value(achievementsRes),
+        gallery: value(galleryRes),
         reviews,
         approvedReviews,
         pendingReviews:
@@ -274,6 +296,11 @@ export default function AdminOverview() {
 
   // Render a failed/unknown count as "—" rather than a fake zero.
   const show = (value) => (value == null ? '—' : value)
+
+  // Sections with a confirmed zero. `stats` is null until the counts land, and
+  // a failed count is null rather than 0, so an offline dashboard never claims
+  // a section is empty.
+  const emptySections = contentSections.filter(({ key }) => stats?.[key] === 0)
 
   const orderStatusNote = (() => {
     const failed = analytics.failedOrders || 0
@@ -463,16 +490,23 @@ export default function AdminOverview() {
 
       {/* Portfolio Content Stats */}
       <div className="mt-6">
-        <h3 className="mb-3 font-display text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-          Portfolio Content
-        </h3>
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 className="font-display text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+            Portfolio Content
+          </h3>
+          {!loadingAnalytics && stats && emptySections.length > 0 && (
+            <p className="text-xs" style={{ color: '#f59e0b' }}>
+              {emptySections.length} of {contentSections.length} sections still empty
+            </p>
+          )}
+        </div>
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
-          {categoryConfig.map(({ key, label, color, href }) => (
+          {contentSections.map(({ key, label, color, href }) => (
             <motion.a
               key={key}
               href={href}
@@ -492,36 +526,11 @@ export default function AdminOverview() {
               >
                 {stats?.[key] ?? '—'}
               </p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {stats?.[key] === 0 ? 'No content yet' : ''}
+              </p>
             </motion.a>
           ))}
-
-          {/* Pending Reviews */}
-          <motion.a
-            href="/admin/reviews"
-            variants={item}
-            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              borderColor: 'var(--border-color)',
-              background: 'var(--card-bg)',
-            }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-              Pending Reviews
-            </p>
-            <p
-              className="mt-2 font-display text-2xl font-bold tracking-tight"
-              style={{
-                color:
-                  analytics.pendingReviews == null
-                    ? 'var(--text-tertiary)'
-                    : analytics.pendingReviews > 0
-                      ? '#ef4444'
-                      : '#10b981',
-              }}
-            >
-              {loadingAnalytics ? '—' : show(analytics.pendingReviews)}
-            </p>
-          </motion.a>
 
           <motion.a
             href="/admin/ads"
@@ -546,57 +555,8 @@ export default function AdminOverview() {
             </p>
           </motion.a>
 
-          <motion.a
-            href="/admin/blog"
-            variants={item}
-            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              borderColor: 'var(--border-color)',
-              background: 'var(--card-bg)',
-            }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-              Blog Posts
-            </p>
-            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#8b5cf6' }}>
-              {loadingAnalytics ? '—' : show(analytics.blogPosts)}
-            </p>
-          </motion.a>
-
-          <motion.a
-            href="/admin/case-studies"
-            variants={item}
-            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              borderColor: 'var(--border-color)',
-              background: 'var(--card-bg)',
-            }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-              Case Studies
-            </p>
-            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#06b6d4' }}>
-              {loadingAnalytics ? '—' : show(analytics.caseStudies)}
-            </p>
-          </motion.a>
-
-          <motion.a
-            href="/admin/services"
-            variants={item}
-            className="rounded-xl border p-4 transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              borderColor: 'var(--border-color)',
-              background: 'var(--card-bg)',
-            }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-              Services
-            </p>
-            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#14b8a6' }}>
-              {loadingAnalytics ? '—' : show(analytics.services)}
-            </p>
-          </motion.a>
-
+          {/* One reviews card: total, approved and pending together. Pending
+              reviews are the only actionable figure, so they win the colour. */}
           <motion.a
             href="/admin/reviews"
             variants={item}
@@ -609,11 +569,26 @@ export default function AdminOverview() {
             <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
               Reviews
             </p>
-            <p className="mt-2 font-display text-2xl font-bold tracking-tight" style={{ color: '#f59e0b' }}>
+            <p
+              className="mt-2 font-display text-2xl font-bold tracking-tight"
+              style={{
+                color:
+                  analytics.pendingReviews == null
+                    ? '#f59e0b'
+                    : analytics.pendingReviews > 0
+                      ? '#ef4444'
+                      : '#10b981',
+              }}
+            >
               {loadingAnalytics ? '—' : show(analytics.reviews)}
             </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {show(analytics.approvedReviews)} approved
+            <p
+              className="mt-1 text-xs"
+              style={{
+                color: analytics.pendingReviews > 0 ? '#ef4444' : 'var(--text-tertiary)',
+              }}
+            >
+              {show(analytics.approvedReviews)} approved · {show(analytics.pendingReviews)} pending
             </p>
           </motion.a>
         </motion.div>
@@ -851,7 +826,7 @@ export default function AdminOverview() {
                 color: 'var(--text-primary)',
               }}
             >
-              {categoryConfig.map(({ key, label }) => (
+              {generatorSections.map(({ key, label }) => (
                 <option key={key} value={key}>{label}</option>
               ))}
             </select>

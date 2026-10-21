@@ -229,10 +229,19 @@ export async function refreshAppearance({ force = false } = {}) {
   inflight = (async () => {
     try {
       const settings = await getAdminSettings()
-      if (settings && 'appearance' in settings) {
-        setAppearance(settings.appearance || {})
+      const doc = settings?.appearance
+      // admin_settings.appearance is `JSONB NOT NULL DEFAULT '{}'` (see the
+      // migration), so an untouched/unsaved column comes back as an empty
+      // object. That means "nothing saved yet", NOT "reset to defaults":
+      // merging `{}` yields enabled:false, which stripped the cached palette
+      // a moment after first paint — the colour flash on refresh.
+      const hasSavedDoc =
+        doc && typeof doc === 'object' && !Array.isArray(doc) && Object.keys(doc).length > 0
+
+      if (hasSavedDoc) {
+        setAppearance(doc)
       } else {
-        // Column missing (migration not yet applied): keep current defaults.
+        // Keep whatever is already applied (localStorage cache or defaults).
         status = 'success'
         lastFetchedAt = Date.now()
       }

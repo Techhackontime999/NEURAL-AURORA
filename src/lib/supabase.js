@@ -411,11 +411,20 @@ export async function getAdminSettings() {
 }
 
 export async function updateAdminSettings(settings) {
-  const { error } = await supabase
+  // Ask for the updated row back: PostgREST reports success for an UPDATE that
+  // matched zero rows, which made "Preferences saved" a lie whenever the
+  // singleton row was missing and left the public site reading `{}` (defaults).
+  const { data, error } = await supabase
     .from('admin_settings')
     .update(settings)
     .eq('id', 1)
+    .select('id')
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error(
+      'No settings row was updated. The admin_settings row with id = 1 is missing — run the schema/migrations, then save again.'
+    )
+  }
 }
 
 

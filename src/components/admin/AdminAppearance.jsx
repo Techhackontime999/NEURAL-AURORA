@@ -17,7 +17,7 @@ import {
   MAX_GRADIENT_ANGLE,
   mergeSiteAppearance,
 } from '../../lib/appearanceDefaults'
-import { applyAppearance, setAppearance } from '../../lib/useSiteAppearance'
+import { applyAppearance, getAppearance, setAppearance } from '../../lib/useSiteAppearance'
 
 const inputStyle = {
   borderColor: 'var(--border-color)',
@@ -388,9 +388,15 @@ export default function AdminAppearance() {
     setLoading(true)
     try {
       const settings = await getAdminSettings()
-      setCfg(mergeSiteAppearance(settings?.appearance))
+      const doc = settings?.appearance
+      const hasSavedDoc =
+        doc && typeof doc === 'object' && !Array.isArray(doc) && Object.keys(doc).length > 0
+      // admin_settings.appearance defaults to '{}'. Treating that as "defaults"
+      // would preview (and then persist on unmount) the built-in palette over
+      // the one the site is actually showing. Start from whatever is live.
+      setCfg(mergeSiteAppearance(hasSavedDoc ? doc : getAppearance()))
     } catch {
-      /* fall back to defaults */
+      setCfg(mergeSiteAppearance(getAppearance()))
     }
     setLoading(false)
   }

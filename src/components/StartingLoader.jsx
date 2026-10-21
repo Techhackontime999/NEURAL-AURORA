@@ -2353,7 +2353,44 @@ export default function StartingLoader({ onComplete }) {
   doneRef.current = onComplete
   const engagedRef = useRef(false)
   const idleSkipTimerRef = useRef(null)
+  const exitTimerRef = useRef(null)
   const bootHandledRef = useRef(false)
+  const closingRef = useRef(false)
+
+  // Read once, during the first render, so an already-verified tab never paints
+  // the dark intro overlay at all (a useEffect check would let one frame show).
+  const skipIntroRef = useRef(null)
+  if (skipIntroRef.current === null) {
+    try {
+      skipIntroRef.current = Boolean(sessionStorage.getItem('neural-aurora-verified'))
+    } catch {
+      skipIntroRef.current = false
+    }
+  }
+
+  /**
+   * Leaves the intro. Fades first so the page background never "pops" from the
+   * intro's dark backdrop to the visitor's configured colour, and remembers
+   * the skip for this tab so a refresh does not replay the whole sequence.
+   */
+  function finish({ fade = true } = {}) {
+    if (closingRef.current) return
+    closingRef.current = true
+    clearTimeout(idleSkipTimerRef.current)
+    try {
+      sessionStorage.setItem('neural-aurora-verified', 'true')
+    } catch {
+      /* storage unavailable: the intro simply shows again next load */
+    }
+    if (!fade || shouldReduceMotion) {
+      doneRef.current()
+      return
+    }
+    setPhase('transitioning')
+    // The root fades over 1.2s; wait it out before unmounting so the
+    // crossfade actually finishes instead of popping to the page colour.
+    exitTimerRef.current = setTimeout(() => doneRef.current(), 1150)
+  }
 
   useEffect(() => {
     const onInteract = () => {
@@ -2371,16 +2408,18 @@ export default function StartingLoader({ onComplete }) {
       // they interact (or the loader unmounts) — see handleBootDone, which
       // deliberately does NOT clear it.
       idleSkipTimerRef.current = setTimeout(() => {
-        if (!engagedRef.current) doneRef.current()
+        if (!engagedRef.current) finish()
       }, 10000)
     }
     setDocsUrl(getDocsUrl())
     return () => {
       clearTimeout(idleSkipTimerRef.current)
+      clearTimeout(exitTimerRef.current)
       window.removeEventListener('pointerdown', onInteract)
       window.removeEventListener('touchstart', onInteract)
       window.removeEventListener('keydown', onInteract)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadQuestion() {
@@ -2509,9 +2548,7 @@ export default function StartingLoader({ onComplete }) {
   }
 
   function handleSkipVerification() {
-    clearTimeout(idleSkipTimerRef.current)
-    sessionStorage.setItem('neural-aurora-verified', 'true')
-    doneRef.current()
+    finish()
   }
 
   function handleImpressDone() {
@@ -2521,13 +2558,24 @@ export default function StartingLoader({ onComplete }) {
     setTimeout(() => doneRef.current(), 3500)
   }
 
+  // Verified earlier in this tab: render nothing. Returning null keeps the
+  // dark overlay out of the DOM entirely, so a refresh shows the page's own
+  // background from the very first paint instead of flashing the intro colour.
+  if (skipIntroRef.current) return null
+
   return (
     <MotionConfig reducedMotion="user">
     <motion.div
       data-testid="starting-loader"
       data-phase={phase}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at center, #0a0a12 0%, #050508 100%)' }}
+      /* Follows the admin's dark palette when one is configured, so the intro
+         backdrop and the page behind it are the same colour family. Falls back
+         to the original near-black gradient when appearance is disabled. */
+      style={{
+        background:
+          'radial-gradient(ellipse at center, var(--bg-dark-secondary, #0a0a12) 0%, var(--bg-dark, #050508) 100%)',
+      }}
       animate={shouldReduceMotion ? { opacity: phase === 'transitioning' ? 0 : 1 } : (phase === 'transitioning' ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 })}
       transition={shouldReduceMotion ? { duration: 0 } : { duration: 1.2, ease: 'easeInOut' }}
     >

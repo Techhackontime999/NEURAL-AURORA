@@ -122,7 +122,13 @@ function applyTheme(theme) {
  * mirrored through the `--*-dark` names for anything that reads them
  * directly.
  */
-function applyVars(cfg, theme) {
+/**
+ * `animate` flips on the `appearance-ready` class that index.css uses to
+ * enable the body background transition. It stays off during the initial
+ * application so the first paint never tweens in from the browser default
+ * (the flash seen on refresh); real theme switches pass `animate: true`.
+ */
+function applyVars(cfg, theme, { animate = false } = {}) {
   const root = document.documentElement
   const vars = appearanceToCssVars(cfg, theme)
   const darkVars = appearanceToDarkCssVars(cfg)
@@ -132,6 +138,7 @@ function applyVars(cfg, theme) {
   for (const [name, value] of Object.entries(darkVars)) {
     root.style.setProperty(name, value)
   }
+  root.classList.toggle('appearance-ready', animate)
 }
 
 function applyLanguage(cfg) {
@@ -160,8 +167,11 @@ function applyLanguage(cfg) {
 /**
  * Applies everything to the DOM. Safe to call repeatedly; it is idempotent.
  * Called on module load (pre-paint) and whenever the config changes.
+ *
+ * `animate` enables the first-paint-suppressing transition from index.css;
+ * pass `true` only for deliberate theme switches, never for initial load.
  */
-export function applyAppearance(cfg = current) {
+export function applyAppearance(cfg = current, { animate = false } = {}) {
   if (typeof document === 'undefined') return
   const normalised = mergeSiteAppearance(cfg)
   const theme = resolveTheme(activeThemePreference(normalised))
@@ -173,12 +183,13 @@ export function applyAppearance(cfg = current) {
     for (const name of appearanceVarNames()) {
       root.style.removeProperty(name)
     }
+    root.classList.toggle('appearance-ready', animate)
     applyTheme(theme)
     applyLanguage(normalised)
     return
   }
 
-  applyVars(normalised, theme)
+  applyVars(normalised, theme, { animate })
   applyTheme(theme)
   applyLanguage(normalised)
 }
@@ -186,7 +197,7 @@ export function applyAppearance(cfg = current) {
 /** Toggle used by the public theme switch: persists the visitor's choice. */
 export function setTheme(theme) {
   writeStoredTheme(theme)
-  applyAppearance(current)
+  applyAppearance(current, { animate: true })
   emit()
 }
 

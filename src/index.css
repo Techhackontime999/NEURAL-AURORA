@@ -66,6 +66,9 @@
 
   html {
     scroll-behavior: smooth;
+    /* Without this the first paint is the browser default (white) and the
+       page appears to flash before the stylesheet's background lands. */
+    background: var(--bg-primary);
   }
 
   /* Fix navbar overlap on anchor scroll */
@@ -77,6 +80,17 @@
     font-family: var(--font-body, 'Satoshi', system-ui, sans-serif);
     font-size: var(--app-font-size, 16px);
     overflow-x: hidden;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* `appearance-ready` is set on <html> (see applyVars in useSiteAppearance.js)
+     after the initial vars are applied. The transition is suppressed until then
+     so the first paint renders the configured background instead of tweening in
+     from the default; deliberate theme switches still animate. */
+  html:not(.appearance-ready) body {
+    transition: none;
   }
 
   /* Appearance: admin-managed values are applied as inline CSS variables on
@@ -162,12 +176,6 @@
     --text-tertiary: var(--text-tertiary-dark, var(--text-tertiary));
     --border-color: var(--border-color-dark, var(--border-color));
     --glass-bg: var(--glass-bg-dark, var(--glass-bg));
-  }
-
-  body {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    transition: background 0.3s ease, color 0.3s ease;
   }
 
   ::selection {

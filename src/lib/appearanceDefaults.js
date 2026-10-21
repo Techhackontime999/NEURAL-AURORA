@@ -203,20 +203,42 @@ export function fontStack(value, fallbackValue) {
 /**
  * Turns a normalized config into the CSS custom properties applied to <html>.
  * Kept in one place so the admin preview and the live site always agree.
+ *
+ * The semantic variables (backgrounds, text, borders, glass, accent) are
+ * resolved for the *active* theme rather than always emitting the light
+ * palette. Inline style beats the `.dark` rules in index.css, so emitting the
+ * light values unconditionally would pin dark-mode visitors to the light
+ * palette even though the `dark` class was present — which is exactly the
+ * bug this signature exists to prevent.
+ *
+ * @param {object} cfg - normalized config (mergeSiteAppearance output)
+ * @param {'light'|'dark'} [theme='light'] - theme the vars are being applied for
  */
-export function appearanceToCssVars(cfg) {
+export function appearanceToCssVars(cfg, theme = 'light') {
+  const dark = theme === 'dark'
   const scaled = Math.max(12, Math.round(16 * cfg.fontScale))
-  const glassBg = `rgba(255,255,255,${cfg.glassOpacityLight ?? DEFAULT_APPEARANCE.glassOpacityLight})`
+  const glassOpacity = dark
+    ? cfg.glassOpacityDark ?? DEFAULT_APPEARANCE.glassOpacityDark
+    : cfg.glassOpacityLight ?? DEFAULT_APPEARANCE.glassOpacityLight
+  const glassBg = `rgba(255,255,255,${glassOpacity})`
   const vars = {
-    '--accent': cfg.accent,
-    '--accent-glow': cfg.accent,
-    '--bg-primary': cfg.bgLight,
-    '--bg-secondary': cfg.surfaceLight,
-    '--card-bg': cfg.surfaceLight,
-    '--text-primary': cfg.textPrimaryLight ?? DEFAULT_APPEARANCE.textPrimaryLight,
-    '--text-secondary': cfg.textSecondaryLight ?? DEFAULT_APPEARANCE.textSecondaryLight,
-    '--text-tertiary': cfg.textTertiaryLight ?? DEFAULT_APPEARANCE.textTertiaryLight,
-    '--border-color': cfg.borderLight ?? DEFAULT_APPEARANCE.borderLight,
+    '--accent': dark ? cfg.accentDark : cfg.accent,
+    '--accent-glow': dark ? cfg.accentDark : cfg.accent,
+    '--bg-primary': dark ? cfg.bgDark : cfg.bgLight,
+    '--bg-secondary': dark ? cfg.surfaceDark : cfg.surfaceLight,
+    '--card-bg': dark ? cfg.surfaceDark : cfg.surfaceLight,
+    '--text-primary': dark
+      ? cfg.textPrimaryDark ?? DEFAULT_APPEARANCE.textPrimaryDark
+      : cfg.textPrimaryLight ?? DEFAULT_APPEARANCE.textPrimaryLight,
+    '--text-secondary': dark
+      ? cfg.textSecondaryDark ?? DEFAULT_APPEARANCE.textSecondaryDark
+      : cfg.textSecondaryLight ?? DEFAULT_APPEARANCE.textSecondaryLight,
+    '--text-tertiary': dark
+      ? cfg.textTertiaryDark ?? DEFAULT_APPEARANCE.textTertiaryDark
+      : cfg.textTertiaryLight ?? DEFAULT_APPEARANCE.textTertiaryLight,
+    '--border-color': dark
+      ? cfg.borderDark ?? DEFAULT_APPEARANCE.borderDark
+      : cfg.borderLight ?? DEFAULT_APPEARANCE.borderLight,
     '--glass-bg': glassBg,
     '--font-body': fontStack(cfg.fontBody, DEFAULT_APPEARANCE.fontBody),
     '--font-display': fontStack(cfg.fontDisplay, DEFAULT_APPEARANCE.fontDisplay),
@@ -234,6 +256,20 @@ export function appearanceToCssVars(cfg) {
     vars['--text-gradient'] = `linear-gradient(${angle}deg, ${start} 0%, ${middle} 50%, ${end} 100%)`
   }
   return vars
+}
+
+/**
+ * Every custom property the appearance feature may ever write. Used when the
+ * admin switches the feature off so no stale inline override (including the
+ * optional gradient) survives the fallback to the stylesheet defaults.
+ */
+export function appearanceVarNames() {
+  const names = new Set(Object.keys(appearanceToCssVars(DEFAULT_APPEARANCE)))
+  for (const name of Object.keys(appearanceToDarkCssVars(DEFAULT_APPEARANCE))) {
+    names.add(name)
+  }
+  names.add('--text-gradient')
+  return names
 }
 
 /** Dark-mode overrides. The `.dark` rule in index.css reads these. */

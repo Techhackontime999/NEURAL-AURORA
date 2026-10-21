@@ -3,7 +3,7 @@ import { useReducedMotion } from 'framer-motion'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, MeshDistortMaterial } from '@react-three/drei'
 import * as THREE from 'three'
-import ThreeErrorBoundary from '../lib/ThreeErrorBoundary'
+import RenderErrorBoundary from '../lib/RenderErrorBoundary'
 
 const noWebGl = sessionStorage.getItem('na_no_canvas') === '1'
 if (noWebGl) sessionStorage.setItem('na_no_canvas', '1')
@@ -241,7 +241,7 @@ function ThreeScene({ mouse, shouldReduceMotion }) {
   if (crashed) return null
 
   return (
-    <ThreeErrorBoundary fallback={null}>
+    <RenderErrorBoundary fallback={null}>
       <Canvas
         camera={{ position: [0, 0, 12], fov: 60 }}
         onError={() => setCrashed(true)}
@@ -255,7 +255,7 @@ function ThreeScene({ mouse, shouldReduceMotion }) {
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={0.5} />
       </Canvas>
-    </ThreeErrorBoundary>
+    </RenderErrorBoundary>
   )
 }
 

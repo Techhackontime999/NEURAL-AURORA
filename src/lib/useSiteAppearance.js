@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import { getAdminSettings } from './supabase'
+import { getAdminSettings, isSupabaseConfigured } from './supabase'
 import {
   DEFAULT_APPEARANCE,
   appearanceToCssVars,
   appearanceToDarkCssVars,
+  appearanceVarNames,
   mergeSiteAppearance,
 } from './appearanceDefaults'
 
@@ -27,10 +28,6 @@ import {
 
 const STORAGE_KEY = 'neural-aurora:appearance:v1'
 const THEME_KEY = 'neural-aurora:theme:v1'
-
-const supabaseConfigured =
-  import.meta.env.VITE_SUPABASE_URL &&
-  import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co'
 
 let current = DEFAULT_APPEARANCE
 let status = 'idle'
@@ -99,10 +96,9 @@ function resolveTheme(preference) {
   }
 }
 
-function activeThemePreference() {
+function activeThemePreference(cfg = current) {
   const stored = readStoredTheme()
   if (stored) return stored
-  const cfg = current
   if (cfg && cfg.defaultTheme) return cfg.defaultTheme
   return DEFAULT_APPEARANCE.defaultTheme
 }
@@ -115,9 +111,20 @@ function applyTheme(theme) {
   root.style.colorScheme = isDark ? 'dark' : 'light'
 }
 
-function applyVars(cfg) {
+/**
+ * Writes the config to <html> as inline custom properties, resolved for the
+ * theme that is actually active.
+ *
+ * Why the theme matters: an inline `--bg-primary` on <html> outranks the
+ * `.dark { --bg-primary: var(--bg-dark, …) }` remap in index.css, so writing
+ * the light palette unconditionally (the old behaviour) left dark-mode
+ * visitors reading the admin's light colors. The dark values are still
+ * mirrored through the `--*-dark` names for anything that reads them
+ * directly.
+ */
+function applyVars(cfg, theme) {
   const root = document.documentElement
-  const vars = appearanceToCssVars(cfg)
+  const vars = appearanceToCssVars(cfg, theme)
   const darkVars = appearanceToDarkCssVars(cfg)
   for (const [name, value] of Object.entries(vars)) {
     root.style.setProperty(name, value)
@@ -157,25 +164,22 @@ function applyLanguage(cfg) {
 export function applyAppearance(cfg = current) {
   if (typeof document === 'undefined') return
   const normalised = mergeSiteAppearance(cfg)
+  const theme = resolveTheme(activeThemePreference(normalised))
 
   if (!normalised.enabled) {
     // Admin disabled custom appearance: strip overrides and fall back to the
     // stylesheet defaults rather than leaving stale inline values behind.
     const root = document.documentElement
-    const names = new Set([
-      ...Object.keys(appearanceToCssVars(DEFAULT_APPEARANCE)),
-      ...Object.keys(appearanceToDarkCssVars(DEFAULT_APPEARANCE)),
-    ])
-    for (const name of names) {
+    for (const name of appearanceVarNames()) {
       root.style.removeProperty(name)
     }
-    applyTheme(resolveTheme(activeThemePreference()))
+    applyTheme(theme)
     applyLanguage(normalised)
     return
   }
 
-  applyVars(normalised)
-  applyTheme(resolveTheme(activeThemePreference()))
+  applyVars(normalised, theme)
+  applyTheme(theme)
   applyLanguage(normalised)
 }
 
@@ -205,7 +209,7 @@ export function getAppearance() {
  * callers. Returns the normalized config; never throws.
  */
 export async function refreshAppearance({ force = false } = {}) {
-  if (!supabaseConfigured) return current
+  if (!isSupabaseConfigured) return current
   if (inflight) return inflight
   if (!force && status === 'success' && Date.now() - lastFetchedAt < REFRESH_MS) {
     return current

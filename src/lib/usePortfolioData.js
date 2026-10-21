@@ -16,6 +16,7 @@ import {
   getAchievements,
   getGallery,
   getAdminSettings,
+  isSupabaseConfigured,
 } from './supabase'
 import {
   personalInfo as staticPersonalInfo,
@@ -33,9 +34,9 @@ import {
   galleryItems as staticGalleryItems,
 } from '../data/portfolio'
 
-const supabaseConfigured =
-  import.meta.env.VITE_SUPABASE_URL &&
-  import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co'
+// Placeholder credentials count as *not* configured (see supabase.js) —
+// otherwise a stock .env fires a doomed request for every resource.
+const supabaseConfigured = isSupabaseConfigured
 
 // ---------------------------------------------------------------------------
 // Shared module-level cache

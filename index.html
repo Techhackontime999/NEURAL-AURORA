@@ -42,6 +42,12 @@
        * first paint so there is no flash of the default theme. src/lib/
        * useSiteAppearance.js writes this cache and reconciles with Supabase
        * once React mounts. Kept inline and dependency-free on purpose.
+       *
+       * The semantic colors are resolved for the resolved theme here too:
+       * an inline --bg-primary outranks the .dark remap rules in index.css,
+       * so writing the light palette unconditionally would pin dark-mode
+       * visitors to the light theme until React boots (and, if React is slow
+       * or offline, for good).
        */
       (function () {
         try {
@@ -56,26 +62,18 @@
             'system-ui': 'system-ui, -apple-system, Segoe UI, sans-serif',
             Georgia: "Georgia, 'Times New Roman', serif",
           }
-          var scale = Number(cfg.fontScale)
-          if (!isFinite(scale) || scale < 0.85 || scale > 1.25) scale = 1
-          var vars = {
-            '--accent': cfg.accent,
-            '--accent-glow': cfg.accent,
-            '--bg-primary': cfg.bgLight,
-            '--bg-secondary': cfg.surfaceLight,
-            '--card-bg': cfg.surfaceLight,
-            '--accent-dark': cfg.accentDark,
-            '--bg-dark': cfg.bgDark,
-            '--bg-dark-secondary': cfg.surfaceDark,
-            '--font-body': fontStacks[cfg.fontBody] || fontStacks.Satoshi,
-            '--font-display': fontStacks[cfg.fontDisplay] || fontStacks['Cabinet Grotesk'],
-            '--font-mono': fontStacks[cfg.fontMono] || fontStacks['JetBrains Mono'],
-            '--app-font-scale': String(scale),
-            '--app-font-size': Math.max(12, Math.round(16 * scale)) + 'px',
+          var num = function (value, fallback) {
+            var n = Number(value)
+            return isFinite(n) ? n : fallback
           }
-          for (var name in vars) {
-            if (vars[name]) root.style.setProperty(name, vars[name])
-          }
+          var scale = num(cfg.fontScale, 1)
+          if (scale < 0.85 || scale > 1.25) scale = 1
+          var radius = num(cfg.radiusScale, 1)
+          if (radius < 0 || radius > 2) radius = 1
+          var blur = num(cfg.blurStrength, 20)
+          if (blur < 0 || blur > 60) blur = 20
+
+          // Resolve the theme first — every color below depends on it.
           var stored = localStorage.getItem('neural-aurora:theme:v1')
           var pref = stored === 'light' || stored === 'dark' ? stored : cfg.defaultTheme || 'dark'
           var isDark =
@@ -83,6 +81,64 @@
             (pref === 'system' &&
               window.matchMedia &&
               window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+          var glassOpacity = isDark
+            ? num(cfg.glassOpacityDark, 0.03)
+            : num(cfg.glassOpacityLight, 0.8)
+          var glass = 'rgba(255,255,255,' + glassOpacity + ')'
+
+          var vars = isDark
+            ? {
+                '--accent': cfg.accentDark,
+                '--accent-glow': cfg.accentDark,
+                '--bg-primary': cfg.bgDark,
+                '--bg-secondary': cfg.surfaceDark,
+                '--card-bg': cfg.surfaceDark,
+                '--text-primary': cfg.textPrimaryDark,
+                '--text-secondary': cfg.textSecondaryDark,
+                '--text-tertiary': cfg.textTertiaryDark,
+                '--border-color': cfg.borderDark,
+                '--glass-bg': glass,
+              }
+            : {
+                '--accent': cfg.accent,
+                '--accent-glow': cfg.accent,
+                '--bg-primary': cfg.bgLight,
+                '--bg-secondary': cfg.surfaceLight,
+                '--card-bg': cfg.surfaceLight,
+                '--text-primary': cfg.textPrimaryLight,
+                '--text-secondary': cfg.textSecondaryLight,
+                '--text-tertiary': cfg.textTertiaryLight,
+                '--border-color': cfg.borderLight,
+                '--glass-bg': glass,
+              }
+
+          // Shared (theme-independent) values + the raw dark palette, which
+          // the .dark rules in index.css read directly.
+          vars['--font-body'] = fontStacks[cfg.fontBody] || fontStacks.Satoshi
+          vars['--font-display'] = fontStacks[cfg.fontDisplay] || fontStacks['Cabinet Grotesk']
+          vars['--font-mono'] = fontStacks[cfg.fontMono] || fontStacks['JetBrains Mono']
+          vars['--app-font-scale'] = String(scale)
+          vars['--app-font-size'] = Math.max(12, Math.round(16 * scale)) + 'px'
+          vars['--app-radius-scale'] = String(radius)
+          vars['--app-blur'] = blur + 'px'
+          vars['--accent-dark'] = cfg.accentDark
+          vars['--bg-dark'] = cfg.bgDark
+          vars['--bg-dark-secondary'] = cfg.surfaceDark
+          vars['--text-primary-dark'] = cfg.textPrimaryDark
+          vars['--text-secondary-dark'] = cfg.textSecondaryDark
+          vars['--text-tertiary-dark'] = cfg.textTertiaryDark
+          vars['--border-color-dark'] = cfg.borderDark
+          vars['--glass-bg-dark'] = 'rgba(255,255,255,' + num(cfg.glassOpacityDark, 0.03) + ')'
+          if (cfg.gradientEnabled === true) {
+            var angle = num(cfg.gradientAngle, 135)
+            vars['--text-gradient'] =
+              'linear-gradient(' + angle + 'deg, ' + cfg.gradientStart + ' 0%, ' + cfg.gradientMiddle + ' 50%, ' + cfg.gradientEnd + ' 100%)'
+          }
+
+          for (var name in vars) {
+            if (vars[name]) root.style.setProperty(name, vars[name])
+          }
           root.classList.toggle('dark', !!isDark)
           root.style.colorScheme = isDark ? 'dark' : 'light'
         } catch (e) {

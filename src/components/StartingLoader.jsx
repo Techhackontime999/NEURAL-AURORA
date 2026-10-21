@@ -2353,6 +2353,7 @@ export default function StartingLoader({ onComplete }) {
   doneRef.current = onComplete
   const engagedRef = useRef(false)
   const idleSkipTimerRef = useRef(null)
+  const bootHandledRef = useRef(false)
 
   useEffect(() => {
     const onInteract = () => {
@@ -2365,6 +2366,10 @@ export default function StartingLoader({ onComplete }) {
       window.addEventListener('pointerdown', onInteract)
       window.addEventListener('touchstart', onInteract)
       window.addEventListener('keydown', onInteract)
+      // Idle failsafe: a visitor who never touches the page is let through
+      // instead of being parked on the intro forever. It stays armed until
+      // they interact (or the loader unmounts) — see handleBootDone, which
+      // deliberately does NOT clear it.
       idleSkipTimerRef.current = setTimeout(() => {
         if (!engagedRef.current) doneRef.current()
       }, 10000)
@@ -2380,24 +2385,43 @@ export default function StartingLoader({ onComplete }) {
 
   async function loadQuestion() {
     setLoadingQ(true)
-    const q = await generateQuestion()
-    setQuestion(q)
-    setLoadingQ(false)
-    return q
+    try {
+      const q = await generateQuestion()
+      setQuestion(q)
+      return q
+    } finally {
+      setLoadingQ(false)
+    }
+  }
+
+  /**
+   * Resolves with the promise's value, or with `undefined` after `ms` if the
+   * promise is still pending — the underlying promise keeps running, it just
+   * no longer blocks the boot sequence. Without this, one hung request (no
+   * internet, slow AI API) strands the visitor on the boot screen: there is
+   * no skip button until phase === 'selecting'.
+   */
+  function settleWithin(promise, ms) {
+    return Promise.race([
+      Promise.resolve(promise).catch(() => undefined),
+      new Promise((resolve) => setTimeout(() => resolve(undefined), ms)),
+    ])
   }
 
   async function handleBootDone() {
-    clearTimeout(idleSkipTimerRef.current)
-    await loadQuestion()
-    try {
-      const settings = await getAdminSettings()
-      if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
-      else if (import.meta.env.VITE_YOUTUBE_CHANNEL_ID) setYtChannelId(import.meta.env.VITE_YOUTUBE_CHANNEL_ID)
-      if (settings?.docs_url) {
-        setDocsUrl(settings.docs_url)
-        saveDocsUrl(settings.docs_url)
-      }
-    } catch {}
+    // TerminalBoot re-runs its effect whenever StartingLoader re-renders while
+    // the terminal is complete, so onDone can fire more than once. Guard it.
+    if (bootHandledRef.current) return
+    bootHandledRef.current = true
+
+    await settleWithin(loadQuestion(), 6000)
+    const settings = await settleWithin(getAdminSettings(), 4000)
+    if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
+    else if (import.meta.env.VITE_YOUTUBE_CHANNEL_ID) setYtChannelId(import.meta.env.VITE_YOUTUBE_CHANNEL_ID)
+    if (settings?.docs_url) {
+      setDocsUrl(settings.docs_url)
+      saveDocsUrl(settings.docs_url)
+    }
     setPhase('selecting')
   }
 
@@ -2500,6 +2524,8 @@ export default function StartingLoader({ onComplete }) {
   return (
     <MotionConfig reducedMotion="user">
     <motion.div
+      data-testid="starting-loader"
+      data-phase={phase}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'radial-gradient(ellipse at center, #0a0a12 0%, #050508 100%)' }}
       animate={shouldReduceMotion ? { opacity: phase === 'transitioning' ? 0 : 1 } : (phase === 'transitioning' ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 })}

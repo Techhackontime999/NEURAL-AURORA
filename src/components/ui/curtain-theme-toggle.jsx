@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Moon, Sun, Search, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { writeStoredTheme } from "../../lib/useSiteAppearance";
+import { setTheme as applySiteTheme } from "../../lib/useSiteAppearance";
 
 const TOKENS = {
   light: {
@@ -78,14 +78,11 @@ export function ThemeToggle({
       onThemeChange?.(next);
 
       if (typeof document !== "undefined") {
-        if (next === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-        // Remember the visitor's explicit choice so it survives reload and
-        // overrides the admin-configured default theme.
-        writeStoredTheme(next);
+        // Persist through setTheme: it records the visitor's explicit choice
+        // AND re-applies the admin-configured colors for the new theme. The
+        // old code only flipped the `dark` class, which left the inline
+        // appearance variables of the previous theme on <html>.
+        applySiteTheme(next);
       }
 
       setPhase("rising");

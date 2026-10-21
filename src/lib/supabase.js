@@ -9,9 +9,40 @@ import {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+/**
+ * The committed .env ships placeholder credentials (`your-project.supabase.co`,
+ * `placeholder-key`). Those are syntactically valid, so a naive truthy check
+ * treats them as real and every data hook fires a request that can never
+ * resolve — the same failure mode as being offline. Everything that decides
+ * "should I hit the network?" must go through this flag instead of
+ * re-declaring its own URL check.
+ */
+const PLACEHOLDER_HOST = /(^|\.)(placeholder|your-project)\.supabase\.co$/i
+
+function isRealSupabaseUrl(value) {
+  if (typeof value !== 'string') return false
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+    return !PLACEHOLDER_HOST.test(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+export const isSupabaseConfigured = Boolean(
+  isRealSupabaseUrl(supabaseUrl) &&
+    supabaseAnonKey &&
+    supabaseAnonKey !== 'placeholder-key'
+)
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
     'Supabase credentials missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
+  )
+} else if (!isSupabaseConfigured) {
+  console.warn(
+    'Supabase credentials are still placeholders — serving static fallback data, no network requests will be made.'
   )
 }
 
@@ -365,6 +396,12 @@ export async function deleteCaseStudy(id) {
 }
 
 export async function getAdminSettings() {
+  // Public-read settings are read by several always-mounted components
+  // (loader, widget, footer). With placeholder or missing credentials every
+  // one of those calls is a request that can never succeed — skip them
+  // outright and let callers treat `null` as "no settings", which is what a
+  // failed fetch produces for them anyway.
+  if (!isSupabaseConfigured) return null
   const { data, error } = await supabase
     .from('admin_settings')
     .select('*')

@@ -108,7 +108,7 @@ export default function AdminOrders() {
     toggleAll,
     clearSelection,
     allSelected,
-  } = useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })
+  } = useBulkSelect(filtered, { availableIds: filtered })
 
   // Selection follows what is on screen: changing the filters starts fresh so
   // a bulk delete can never include rows the admin can no longer see.

@@ -10,13 +10,15 @@ import {
   uploadProductFile,
   deleteProductFile,
 } from '../../lib/adminProducts'
-import { formatBytes } from '../../lib/products'
+import { formatBytes, formatPrice } from '../../lib/products'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
 import SearchBar from '../ui/SearchBar'
 import ImageUpload from '../ui/ImageUpload'
 import MultiImageUpload from '../ui/MultiImageUpload'
+import CategoryManager from './CategoryManager'
+import ProductPreviewDialog from './ProductPreviewDialog'
 
 const STATUS_META = {
   draft: { label: 'Draft', color: 'var(--text-tertiary)' },
@@ -70,6 +72,7 @@ export default function AdminProducts() {
   const [expandedId, setExpandedId] = useState(null)
   const [files, setFiles] = useState({})
   const [uploading, setUploading] = useState(false)
+  const [previewProduct, setPreviewProduct] = useState(null)
 
   useEffect(() => {
     load()
@@ -97,7 +100,7 @@ export default function AdminProducts() {
   }, [products, search, statusFilter])
 
   const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } =
-    useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })
+    useBulkSelect(filtered, { availableIds: filtered })
 
   // Selection follows what is on screen: changing the filters starts fresh so
   // a bulk delete can never include rows the admin can no longer see.
@@ -110,8 +113,8 @@ export default function AdminProducts() {
   const toForm = (p) => ({
     ...emptyForm,
     ...p,
-    price: p.price_paise != null ? String(p.price_paise / 100) : '',
-    compare_at: p.compare_at_paise != null ? String(p.compare_at_paise / 100) : '',
+    price: paiseToInput(p.price_paise),
+    compare_at: paiseToInput(p.compare_at_paise),
     gallery_urls: (Array.isArray(p.gallery_urls) ? p.gallery_urls : []).filter(Boolean),
     includesText: linesOf(p.includes).join('\n'),
     requirementsText: linesOf(p.requirements).join('\n'),
@@ -169,13 +172,13 @@ export default function AdminProducts() {
       return 'The slug may only contain lowercase letters, numbers and single hyphens (e.g. my-product)'
     }
     if (form.price !== '' && (!Number.isFinite(Number(form.price)) || Number(form.price) < 0)) {
-      return 'Price must be a positive number of rupees, or empty for free'
+      return 'Price must be a non-negative amount, or empty for free'
     }
     if (
       form.compare_at !== '' &&
       (!Number.isFinite(Number(form.compare_at)) || Number(form.compare_at) < 0)
     ) {
-      return 'Compare-at price must be a positive number of rupees, or empty'
+      return 'Compare-at price must be a non-negative amount, or empty'
     }
     // The database enforces compare_at >= price, so catch it here first.
     if (
@@ -325,8 +328,8 @@ export default function AdminProducts() {
     { key: 'gallery_urls', label: 'Gallery images (extra views)', type: 'images' },
     { key: 'category_slug', label: 'Category', type: 'select' },
     { key: 'format', label: 'Format (e.g. pdf, source-code, template)' },
-    { key: 'price', label: 'Price (rupees — 0 = free)', type: 'number' },
-    { key: 'compare_at', label: 'Compare-at (rupees)', type: 'number' },
+    { key: 'price', label: 'Price (0 = free)', type: 'number' },
+    { key: 'compare_at', label: 'Compare-at (optional)', type: 'number' },
     { key: 'currency', label: 'Currency', type: 'currency' },
     { key: 'version', label: 'Version' },
     { key: 'short_description', label: 'Short description', type: 'textarea' },
@@ -508,6 +511,8 @@ export default function AdminProducts() {
         </div>
       </div>
 
+      <CategoryManager categories={categories} products={products} onChanged={load} />
+
       {showNew && (
         <div
           className="mb-6 rounded-xl border p-4"
@@ -637,7 +642,9 @@ export default function AdminProducts() {
 
                   <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     /offerings/products/{product.slug} ·{' '}
-                    {product.price_paise === 0 ? 'Free' : `${product.price_paise / 100} ${product.currency}`}
+                    {product.price_paise === 0
+                      ? 'Free'
+                      : formatPrice(product.price_paise, product.currency || 'INR')}
                     {product.version ? ` · v${product.version}` : ''}
                   </p>
 
@@ -651,6 +658,14 @@ export default function AdminProducts() {
                       style={{ color: 'var(--text-secondary)' }}
                     >
                       Edit
+                    </button>
+
+                    <button
+                      onClick={() => setPreviewProduct(product)}
+                      className="text-xs"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      Preview
                     </button>
 
                     <button
@@ -750,6 +765,14 @@ export default function AdminProducts() {
           </p>
         )}
       </div>
+
+      {previewProduct && (
+        <ProductPreviewDialog
+          product={previewProduct}
+          categoryLabel={categories.find((c) => c.slug === previewProduct.category_slug)?.label}
+          onClose={() => setPreviewProduct(null)}
+        />
+      )}
     </div>
   )
 }
@@ -782,4 +805,12 @@ function textToFaqs(text) {
     const [question, ...rest] = line.split('|')
     return { question: question.trim(), answer: rest.join('|').trim() }
   })
+}
+
+/** Integer paise back into the decimal string expected by the price input. */
+function paiseToInput(paise) {
+  if (paise == null) return ''
+  const value = Number(paise)
+  if (!Number.isFinite(value)) return ''
+  return String(value / 100)
 }

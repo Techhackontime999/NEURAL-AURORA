@@ -366,12 +366,45 @@
 
 ---
 
+## Phase 2 — Batch 12: admin category CRUD, preview and price formatting (2026-11-22) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** continue the source-only store roadmap after Batch 11 was committed locally as `78a8867` and pushed to `origin/main` on explicit user approval. ST-U10 was the next self-contained item; ST-U04 still needs a public file-manifest endpoint and a `compatibility` migration, so it remains deferred.
+
+### Changes made
+
+1. **ST-U10 category CRUD.** `CategoryManager.jsx` adds create/edit/delete for the existing DB-backed `product_categories` table. Slugs are lowercase-validation only, immutable after creation (the product FK uses the slug), duplicate slugs are rejected, and deletion explains that products using the category become uncategorised. `adminProducts.js` now normalises category writes to the five real columns and coerces `display_order` to an integer; no new table, endpoint or migration was added.
+2. **ST-U10 product preview.** `ProductPreviewDialog.jsx` shows the customer-facing summary (cover, category, format, version, price via `formatPrice`, short description, tags and includes). Published products link to their public route with `noopener noreferrer`; drafts are explicitly marked private and have no public link. The full public `ProductDetail` page remains the single source of truth — this is a summary, not a duplicate page.
+3. **ST-U10 consistent money display.** `AdminProducts.jsx` imports the shared `formatPrice`; the list no longer prints `499 INR`, and form values round-trip through a small `paiseToInput` helper. Price labels are currency-neutral.
+4. **Latent admin crash fixed.** While mounting the admin page in a real browser, both `AdminProducts.jsx` and `AdminOrders.jsx` threw `ReferenceError: Cannot access 'clearSelection' before initialization`: the bulk-select hook was passed `onInvalidate: clearSelection` inside the destructuring that declares `clearSelection`. The self-referential option was removed from both; the hook's own stale-ID pruning and the existing filter-change effects remain. `scripts/test-api-guards.mjs` was updated to assert the corrected pattern rather than the broken one.
+5. **Tests.** New `scripts/test-admin-products.mjs` adds 24 source guards; `package.json` wires it into `npm test`.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 ranked routes; 153 i18n keys; 36 migration lints |
+| `npm test` | PASS | 23 pricing + 124 guards + 29 store UX + 17 product-query + 22 document-head + **24 admin-products** = **239 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | 2,948 modules; `AdminDashboard` chunk rebuilt after the TDZ fix |
+| `npm run preview` + local Edge 157 + CDP | PASS | **91/91** rendered-browser checks, including 7 new admin checks at 1440×900 |
+| `git diff --check` | Clean | No whitespace errors in the changed paths |
+
+**Rendered-UI method:** `vite preview` served the rebuilt `dist`; headless Edge was driven through CDP with mocked Supabase REST/auth. The harness seeded an admin profile (`.single()` object, not an array), navigated to `/admin/products`, confirmed the category manager shows `Templates /templates` with `3 product(s)`, confirmed the list shows `₹499` rather than `499 INR`, issued a POST to `product_categories` from the add-category form, opened a product preview dialog, confirmed the published link and `rel="noopener noreferrer"`, and closed it with Escape. The first run exposed the TDZ crash; the fixed rebuild passed. `admin-products-stu10.png` is under `C:\Users\ADMIN\AppData\Local\Temp\opencode\ui-check\`. No live admin mutation, RLS policy, payment or entitlement was exercised.
+
+**Performance impact:** small — two focused admin components and one shared formatter import. No dependency, request or public-bundle change. The admin chunk grew only by the category form and preview dialog.
+
+**Security implications:** no auth, RLS, entitlement, storage or payment change. Category writes still rely on the existing admin RLS policy; payloads are allowlisted to real columns; public previews are not created for drafts. The TDZ fix removes a client-side crash on admin pages, not a permission bypass. No new finding.
+
+**Database changes:** none applied. **Remaining limits:** live admin CRUD against the real Supabase project, filter-change bulk-selection behaviour, RLS denial for non-admins, and visual design review are still open. No commit, push or deployment was performed for Batch 12.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.
 - No destructive Git operations; no branch changes; no stashing; no resets.
 - `npm ci` created `node_modules/` (gitignored) and initially left `package-lock.json` unchanged; the later audited `npm audit fix` intentionally changed only `package-lock.json` (16 version/resolution lines).
 - With explicit approval, batches 1–3 plus the staging runbook were committed locally as `9387f8b`, and batch 4 as `097304b`. Both were later pushed to `origin/main` on user instruction ("update main").
+- Batch 11 was committed locally as `78a8867` and pushed to `origin/main` on user instruction ("yes commit and push then continue") before Batch 12 began. Batch 12 remains local and uncommitted.
 - **User-reported production state (2026-11-21):** the user manually applied
   `20261121000000_harden_privileged_functions_and_reviews.sql` first, then
   `20261121120000_restrict_admin_settings_exposure.sql`, to the production

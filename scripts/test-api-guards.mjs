@@ -810,18 +810,17 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
   const productsSrc = fs.readFileSync('src/components/admin/AdminProducts.jsx', 'utf8')
   check(
     'admin products: selection is scoped to visible rows and filters',
-    productsSrc.includes(
-      'useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })'
-    ) && productsSrc.includes('}, [search, statusFilter, clearSelection])')
+    productsSrc.includes('useBulkSelect(filtered, { availableIds: filtered })') &&
+      !productsSrc.includes('onInvalidate: clearSelection') &&
+      productsSrc.includes('}, [search, statusFilter, clearSelection])')
   )
 
   const ordersSrc = fs.readFileSync('src/components/admin/AdminOrders.jsx', 'utf8')
   check(
     'admin orders: bulk delete is limited to visible IDs',
     ordersSrc.includes('visibleIds.has(id)') &&
-      ordersSrc.includes(
-        'useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })'
-      )
+      ordersSrc.includes('useBulkSelect(filtered, { availableIds: filtered })') &&
+      !ordersSrc.includes('onInvalidate: clearSelection')
   )
 }
 

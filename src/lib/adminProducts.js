@@ -125,7 +125,7 @@ export async function getAllCategories() {
 export async function createCategory(payload) {
   const { data, error } = await supabase
     .from(CATEGORIES)
-    .insert(payload)
+    .insert(normaliseCategory(payload))
     .select()
     .single()
 
@@ -134,8 +134,25 @@ export async function createCategory(payload) {
 }
 
 export async function updateCategory(id, payload) {
-  const { error } = await supabase.from(CATEGORIES).update(payload).eq('id', id)
+  const { error } = await supabase
+    .from(CATEGORIES)
+    .update(normaliseCategory(payload))
+    .eq('id', id)
   if (error) throw error
+}
+
+/** Keep admin writes to the columns that exist on `product_categories`. */
+export function normaliseCategory(payload = {}) {
+  const allowed = ['slug', 'label', 'description', 'icon_name', 'display_order']
+  const out = {}
+  for (const key of allowed) {
+    if (payload[key] !== undefined) out[key] = payload[key]
+  }
+  if (out.display_order !== undefined) {
+    const order = Number(out.display_order)
+    out.display_order = Number.isFinite(order) ? Math.trunc(order) : 0
+  }
+  return out
 }
 
 export async function deleteCategory(id) {

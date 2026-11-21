@@ -7,6 +7,8 @@ import {
   getCategories,
   getPublishedFormats,
   PRODUCT_SORTS,
+  PRODUCT_PAGE_SIZE,
+  PRODUCT_MAX_RESULTS,
 } from '../../lib/products'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
@@ -20,9 +22,10 @@ const EMPTY_FILTERS = {
   sort: 'featured',
 }
 
-// Bounds the catalogue query so a misconfigured table cannot pull an unbounded
-// result set into the browser.
-const LIST_CAP = 200
+// Bounds the catalogue so a misconfigured table cannot pull an unbounded result
+// set into the browser. The page size is deliberately smaller than the cap.
+const LIST_CAP = PRODUCT_MAX_RESULTS
+const PAGE_SIZE = PRODUCT_PAGE_SIZE
 
 // Typing is debounced so a search does not fire a request per keystroke.
 const SEARCH_DEBOUNCE_MS = 300
@@ -48,10 +51,15 @@ export default function Products() {
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState(null)
+  const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState(null)
   const [reloadToken, setReloadToken] = useState(0)
 
   const firstLoad = useRef(true)
+  const productsRef = useRef([])
+  const requestIdRef = useRef(0)
 
   // --- reference data (does not depend on the active filters) ----------------
   useEffect(() => {
@@ -87,38 +95,71 @@ export default function Products() {
   }, [searchInput, filters.search])
 
   // --- catalogue -------------------------------------------------------------
-  useEffect(() => {
-    let cancelled = false
+  const updateProducts = (next) => {
+    productsRef.current = next
+    setProducts(next)
+  }
 
-    const load = async () => {
-      if (firstLoad.current) setLoading(true)
-      else setRefreshing(true)
-      setError(null)
+  const loadProducts = async (append = false) => {
+    const requestId = ++requestIdRef.current
+    const offset = append ? productsRef.current.length : 0
+    const remaining = LIST_CAP - offset
 
-      try {
-        const items = await getPublishedProducts({
-          ...filters,
-          featuredOnly: filters.featured,
-          limit: LIST_CAP,
-        })
-        if (cancelled) return
-        setProducts(items)
-      } catch (err) {
-        if (cancelled) return
-        console.error('Failed to load product catalogue:', err?.message || err)
-        setError(err)
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-          setRefreshing(false)
-          firstLoad.current = false
-        }
-      }
+    if (remaining <= 0) {
+      setHasMore(false)
+      return undefined
     }
 
-    load()
+    if (firstLoad.current) setLoading(true)
+    else if (append) setLoadingMore(true)
+    else setRefreshing(true)
+    setError(null)
+    if (append) setLoadMoreError(null)
+
+    // Fetch one extra row: if it exists, another page is available. This avoids
+    // a separate COUNT query while keeping the visible cap honest.
+    const requestLimit = Math.min(PAGE_SIZE + 1, remaining + 1)
+
+    try {
+      const items = await getPublishedProducts({
+        ...filters,
+        featuredOnly: filters.featured,
+        limit: requestLimit,
+        offset,
+      })
+      if (requestId !== requestIdRef.current) return undefined
+
+      const pageLimit = Math.min(PAGE_SIZE, remaining)
+      const page = items.slice(0, pageLimit)
+      const next = append ? [...productsRef.current, ...page] : page
+      updateProducts(next)
+      setHasMore(items.length > pageLimit && next.length < LIST_CAP)
+      return undefined
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return undefined
+      console.error('Failed to load product catalogue:', err?.message || err)
+      if (append) setLoadMoreError(err)
+      else {
+        setError(err)
+        updateProducts([])
+      }
+      setHasMore(false)
+      return undefined
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+        setRefreshing(false)
+        setLoadingMore(false)
+        firstLoad.current = false
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadProducts(false)
     return () => {
-      cancelled = true
+      // Invalidate any in-flight page when filters change or the view unmounts.
+      requestIdRef.current += 1
     }
   }, [filters, reloadToken])
 
@@ -135,6 +176,11 @@ export default function Products() {
     filters.format !== '' ||
     filters.freeOnly === true ||
     filters.featured === true
+
+  const handleLoadMore = () => {
+    if (loading || refreshing || loadingMore || !hasMore) return
+    loadProducts(true)
+  }
 
   return (
     <StoreShell
@@ -336,6 +382,34 @@ export default function Products() {
           {products.map((product, i) => (
             <ProductCard key={product.id} product={product} index={i} />
           ))}
+        </div>
+      )}
+
+      {!loading && !error && products.length > 0 && (
+        <div className="mt-8 flex flex-col items-center gap-3">
+          {!hasActiveFilters && (
+            <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+              {t('store.loadedCount', { count: products.length })}
+            </span>
+          )}
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="inline-flex items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-5 py-2.5 text-[11px] uppercase tracking-widest text-black/60 dark:text-white/60 transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+              {loadingMore ? t('store.loadingMore') : t('store.loadMore')}
+            </button>
+          )}
+
+          {loadMoreError && (
+            <p role="alert" className="text-[11px] text-amber-500">
+              {t('store.loadMoreFailed')}
+            </p>
+          )}
         </div>
       )}
     </StoreShell>

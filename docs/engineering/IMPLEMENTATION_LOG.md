@@ -242,6 +242,36 @@
 
 ---
 
+## Phase 3 — Batch 8: paginated catalogue and tag search (2026-11-21) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** close ST-U01 and ST-U02 from `DIGITAL_STORE_ROADMAP.md` without rewriting the payment engine, schema, RLS or navigation. One Supabase query remains the single source of truth for catalogue filtering.
+
+### Changes made
+
+1. **Pure search-expression builder.** New `src/lib/productQuery.js` strips PostgREST syntax from user text (braces, brackets, quotes, dots, commas, parentheses and backslashes), collapses whitespace, caps terms at 60 characters and tag tokens at five, and emits one bounded `or(...)` expression across `title`, `short_description`, `description` and `tags.cs.{"Tag"}` containment. Two-letter tokens stay uppercase so `UI`/`AI` survive; longer tags keep readable title case.
+2. **Offset pagination in the data layer.** `src/lib/products.js` now accepts `limit`/`offset`; the first page uses `.limit()` and later pages use an inclusive `.range()`. Existing callers and the published-status RLS contract are unchanged.
+3. **Honest load-more UI.** `Products.jsx` requests `PAGE_SIZE + 1` rows as a lookahead (no `COUNT` query), appends 24-row pages up to the existing 200-item cap, invalidates stale responses with a request id, shows `store.loadedCount`, disables/spins the button while loading, reports append failures without wiping the first page, and keeps the 200-item cap notice at the end. Search remains debounced and now reaches tags.
+4. **Guards and copy.** Added `scripts/test-product-query.mjs` (17 unit tests), expanded `scripts/test-store-ux.mjs` with cap/page-size, offset, load-more-gating and shared-expression guards, wired `test:product-query` into `npm test`, and added four store keys plus an updated search placeholder in `src/locales/en.json`.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 ranked routes; **145** i18n keys (up from 141); **36** migration structural lints |
+| `npm test` | PASS | `test:order-pricing` **23/23**; `test:api-guards` **124/124**; `test:store-ux` **18/18**; `test:product-query` **17/17** = **182 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | Vite build succeeds; only the existing i18next dynamic/static import warning; no new runtime dependency |
+| `npm run preview` + local Edge 157 + CDP | PASS | **62/62** rendered-browser checks at **1440×900** and **390×844** across catalogue, detail and library; new checks cover tag search, first page, load-more append, cap notice and mobile overflow |
+
+**Rendered-UI method:** `vite preview` served the rebuilt `dist`; headless Edge was driven through CDP with mocked Supabase REST/auth responses and a local fixture session. New fixtures included a 30-product paged dataset and a product tagged `Playbook`. The browser asserted the real compiled React DOM: the search placeholder now mentions tags, typing `playbook` adds `tags.cs.{"Playbook"}` to the request and returns one card, the first page renders 24 cards with a `Load more products` button, clicking it requests `offset=24` and appends to 30, the button disappears at the end, the uppercase `SHOWING 30 PRODUCT(S)` count updates, and repeated appends reach the 200-item cap notice. No horizontal overflow or console errors at either width. Screenshots (`products-tag-search-desktop.png`, `products-paged-desktop.png`, `products-paged-mobile.png`) and `report.json` are under `C:\Users\ADMIN\AppData\Local\Temp\opencode\ui-check\`.
+
+**Performance impact:** bounded. At most 200 rows enter the UI; a `limit + 1` lookahead avoids a separate `COUNT` request; search is debounced; the pure expression builder allocates only a few short strings. No material bundle-size change or new dependency.
+
+**Security implications:** defence in depth only. Raw PostgREST `or()` input is now stripped of syntax punctuation, length-limited and token-limited, so a search string cannot inject extra filters or array literals. Auth, RLS, payment amount, entitlement and signed-download logic were not touched. The Supabase DB password exposed in pushed commit `dfc452e` still requires rotation.
+
+**Database changes:** none applied; no migration, RLS or index change was requested. **Manual actions required:** verify the tag GIN index query plan with live data, keep the existing staged/payment acceptance gate open, and rotate the exposed password. No commit, push or deployment was performed. The temporary `scripts/probe-batch8.mjs` artifact was removed.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

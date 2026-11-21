@@ -169,6 +169,14 @@
 - **Evidence:** `supabase-schema.sql:1490-1512` defines service-role-only claim tokens; no API references them; `api/customer-signin-link.js:78-95` uses email-only lookup instead.
 - **Solution:** Use this table for the secure recovery flow that replaces SEC-001.
 
+### [STORE-003] Raw PostgREST search syntax bounded (Batch 8)
+
+- **Severity:** Low · **Status:** Mitigated in source; verified by 17 unit tests and mocked-browser request inspection.
+- **Evidence:** `src/lib/products.js` feeds user search into PostgREST `.or()`. Unsanitised braces, quotes, commas, parentheses or dots could change the filter expression; earlier search ignored the indexed `tags` array.
+- **Remediation:** `src/lib/productQuery.js` strips syntax punctuation, collapses whitespace, caps the term at 60 characters and tag tokens at five, and builds quoted `tags.cs.{...}` alternatives from sanitised tokens only. `Products.jsx` debounces input and appends pages without widening the query.
+- **Impact:** no auth, RLS, entitlement, price or fulfilment path changed; GIN-indexed tag filters remain server-side.
+- **Verification status:** unit guards pass; mocked-browser request inspection confirmed the tag filter. Live query-plan and production RLS verification remain outstanding.
+
 ### [BUILD-SEC-01] Dependency vulnerabilities
 
 - **Severity:** High (one) · **Status:** Verified by `npm audit`.

@@ -8,6 +8,11 @@
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabase'
+import { buildProductSearchExpression } from './productQuery'
+
+/** Client-side catalogue pagination. Bounded so a large table cannot flood the UI. */
+export const PRODUCT_PAGE_SIZE = 24
+export const PRODUCT_MAX_RESULTS = 200
 
 export const PRODUCT_SORTS = {
   featured: { label: 'Featured', columns: [['featured', false], ['published_at', false]] },
@@ -15,11 +20,6 @@ export const PRODUCT_SORTS = {
   'price-asc': { label: 'Price: Low to High', columns: [['price_paise', true]] },
   'price-desc': { label: 'Price: High to Low', columns: [['price_paise', false]] },
   title: { label: 'A–Z', columns: [['title', true]] },
-}
-
-// PostgREST filter values must not contain `,`, `.` or `()` unescaped.
-function escapeFilter(value) {
-  return String(value).replace(/[,.()]/g, ' ').trim()
 }
 
 /**
@@ -32,7 +32,8 @@ function escapeFilter(value) {
  * @param {string}  [options.sort]    Key of PRODUCT_SORTS.
  * @param {boolean} [options.freeOnly]
  * @param {boolean} [options.featuredOnly]
- * @param {number}  [options.limit]
+ * @param {number}  [options.limit]   Page size; request `limit + 1` to detect more.
+ * @param {number}  [options.offset]  0-based row offset for "load more".
  */
 export async function getPublishedProducts({
   search = '',
@@ -42,6 +43,7 @@ export async function getPublishedProducts({
   freeOnly = false,
   featuredOnly = false,
   limit,
+  offset = 0,
 } = {}) {
   let query = supabase.from('products').select('*').eq('status', 'published')
 
@@ -50,14 +52,8 @@ export async function getPublishedProducts({
   if (freeOnly) query = query.eq('price_paise', 0)
   if (featuredOnly) query = query.eq('featured', true)
 
-  const term = escapeFilter(search)
-  if (term) {
-    // `ilike` on an array column needs a different operator, so tags are
-    // matched separately and OR-ed in.
-    query = query.or(
-      `title.ilike.%${term}%,short_description.ilike.%${term}%,description.ilike.%${term}%`
-    )
-  }
+  const searchExpression = buildProductSearchExpression(search)
+  if (searchExpression) query = query.or(searchExpression)
 
   const sortSpec = PRODUCT_SORTS[sort] || PRODUCT_SORTS.featured
   for (const [column, ascending] of sortSpec.columns) {
@@ -67,7 +63,11 @@ export async function getPublishedProducts({
     })
   }
 
-  if (limit) query = query.limit(limit)
+  if (limit) {
+    // `range` is inclusive on both ends; `limit` is used for the first page so
+    // existing callers keep the original PostgREST request shape.
+    query = offset > 0 ? query.range(offset, offset + limit - 1) : query.limit(limit)
+  }
 
   const { data, error } = await query
   if (error) throw error

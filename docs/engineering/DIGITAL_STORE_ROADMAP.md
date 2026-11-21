@@ -24,8 +24,8 @@ Commerce engine assessment: **the payment/fulfilment core is sound and should no
 
 | ID | Gap | Severity | Evidence | Fix |
 |---|---|---|---|---|
-| ST-U01 | Catalogue hard-capped at 200 with no pagination or truncation signal | Medium | `Products.jsx:25,270-274`; `products.js:70` | **Partially fixed:** cap notice now rendered and browser-verified; pagination/"load more" still open |
-| ST-U02 | Search ignores tags despite GIN index | Medium | `products.js:53-60` vs `supabase-schema.sql:1145` | Add tag matching (`tags.cs.{term}`) with sanitisation |
+| ST-U01 | Catalogue hard-capped at 200 with no pagination or truncation signal | Medium | `Products.jsx:25,270-274`; `products.js:70` | **Fixed and browser-verified:** 24-row pages, offset `load more` up to 200, honest loaded count and cap notice; live-data query plan still open |
+| ST-U02 | Search ignores tags despite GIN index | Medium | `products.js:53-60` vs `supabase-schema.sql:1145` | **Fixed and browser-verified:** sanitised `tags.cs.{...}` alternatives added to the single `or()` search; 17 unit guards; live GIN query plan still open |
 | ST-U03 | `featuredOnly` unused; featured free products lose badge | Low | `Products.jsx:19,101,132-137,224-229`; `ProductCard.jsx:60-77` | **Fixed and browser-verified:** featured chip filters 3→2, result count follows filter, both badges render independently |
 | ST-U04 | No public file manifest or compatibility field | Medium | `ProductDetail.jsx:286-325` never calls `getProductFiles`; no `compatibility` column | Add public-safe file metadata endpoint + structured compatibility |
 | ST-U05 | No ratings/sales-count trust signals | Low | `ProductDetail.jsx:495-498` only secure note | Add verified-purchase reviews/count or stronger policy summary |
@@ -62,9 +62,11 @@ Batch 3 — dependency hygiene:
 
 **Phase 3 — design system + storefront (Taste):** tokens consumed, violet removed, editorial hierarchy, store cards/detail/catalogue refined, browser inspection at 1440/1024/768/390.
 
-Batch 7 (2026-11-21) completed the first storefront slice: ST-U03, the cap-notice half of ST-U01, the search/sort/no-results half of ST-U08 and the image-count i18n half of ST-U15. Local Edge/CDP verification passed 47/47 checks at 1440×900 and 390×844 against the compiled preview build with mocked Supabase fixtures. Full live-data store E2E and the remaining pagination/file-manifest/SEO work stay open.
+Batch 7 (2026-11-21) completed the first storefront slice: ST-U03, the cap-notice half of ST-U01, the search/sort/no-results half of ST-U08 and the image-count i18n half of ST-U15. Local Edge/CDP verification passed 47/47 checks at 1440×900 and 390×844 against the compiled preview build with mocked Supabase fixtures. Full live-data store E2E and the remaining file-manifest/SEO work stay open.
 
-**Phase 4 — commerce/customer experience:** ST-U01, U02, U04, U06, U08, U10, U11; then low-priority UX items.
+Batch 8 (2026-11-21) closed the remaining ST-U01 pagination half and ST-U02 tag search: 24-row offset pages up to the 200-item cap, a lookahead-based `Load more products` button with an honest visible count, and sanitised `tags.cs.{...}` alternatives in the single catalogue query. Local Edge/CDP verification passed **62/62** checks at 1440×900 and 390×844 with mocked Supabase/auth fixtures; `npm test` reached **182 tests, 0 failed**. Live Supabase GIN query-plan, RLS and payment/entitlement verification remain open.
+
+**Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8; remaining ST-U04, U06, U08, U10, U11; then low-priority UX items.
 
 **Phase 5+:** i18n parity, SEO/head, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
 
@@ -74,7 +76,7 @@ Batch 7 (2026-11-21) completed the first storefront slice: ST-U03, the cap-notic
 |---|---|---|
 | 1 | Admin creates product | Admin panel exists; **not browser-tested** |
 | 2 | Product published | Status workflow exists; **not tested** |
-| 3 | Customer discovers it | **Browser-tested with fixtures** (1440/390): cards, featured filter, result count, cap notice |
+| 3 | Customer discovers it | **Browser-tested with fixtures** (1440/390): cards, featured filter, tag search, 24-row pages + load more, result count, cap notice |
 | 4 | Complete product info viewed | **Browser-tested with fixtures**: image count, gallery, purchase panel; ST-U04 file manifest still open |
 | 5 | Order placed | API guards unit-tested; **no live call** |
 | 6 | Server authoritative amount | **Verified** (23 unit tests) |

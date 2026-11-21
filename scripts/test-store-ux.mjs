@@ -10,6 +10,7 @@ const card = read('src/components/offerings/ProductCard.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const detail = read('src/components/offerings/ProductDetail.jsx')
 const library = read('src/components/offerings/Library.jsx')
+const productsLib = read('src/lib/products.js')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -57,6 +58,10 @@ check(
     'imageCount',
     'featuredOnly',
     'resultCountCapped',
+    'loadedCount',
+    'loadMore',
+    'loadingMore',
+    'loadMoreFailed',
     'librarySearchPlaceholder',
     'libraryResultCount',
     'libraryNoResults',
@@ -79,6 +84,30 @@ check(
   'catalogue: cap is disclosed to the customer',
   products.includes("t('store.resultCountCapped'") &&
     products.includes('products.length === LIST_CAP')
+)
+check(
+  'catalogue: cap and page size come from the data layer',
+  productsLib.includes('export const PRODUCT_PAGE_SIZE = 24') &&
+    productsLib.includes('export const PRODUCT_MAX_RESULTS = 200') &&
+    products.includes('const LIST_CAP = PRODUCT_MAX_RESULTS') &&
+    products.includes('const PAGE_SIZE = PRODUCT_PAGE_SIZE')
+)
+check(
+  'catalogue: load-more pages are requested with an offset',
+  products.includes('offset,') &&
+    products.includes('limit: requestLimit') &&
+    productsLib.includes('query.range(offset, offset + limit - 1)')
+)
+check(
+  'catalogue: load-more is user-controlled and gated',
+  products.includes('onClick={handleLoadMore}') &&
+    products.includes('if (loading || refreshing || loadingMore || !hasMore) return') &&
+    products.includes("t('store.loadMore')")
+)
+check(
+  'catalogue: search uses the shared indexed-tag expression',
+  productsLib.includes("import { buildProductSearchExpression } from './productQuery'") &&
+    productsLib.includes('query.or(searchExpression)')
 )
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------

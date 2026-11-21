@@ -44,6 +44,15 @@ Selective precache is implemented and measured locally; full inventory and evide
 - **Limit:** mocked data and a local session were used. This is rendered-browser verification of the UI contracts, not a live Supabase/RLS, Razorpay, entitlement or download test.
 - **Security:** `scripts/migrate.cjs` and `scripts/seed.cjs` now require `DATABASE_URL`; `api/razorpay-webhook.js` disables Vercel body parsing and fails closed on a pre-parsed body. The old credential remains in pushed Git history (`dfc452e`) and **must be rotated**.
 
+## 1d. Batch 8 status (catalogue pagination + tag search)
+
+- `npm run check`: PASS — 5 routes, **145** i18n keys, 36 migration lints.
+- `npm test`: PASS — 23 pricing + 124 API/source guards + 18 store UX + 17 product-query = **182 tests, 0 failed**.
+- `npm run build`: PASS with the same pre-existing i18next warning; no new runtime dependency.
+- Browser: local Edge 157 + CDP against `vite preview`, **62/62** checks at 1440×900 and 390×844. New checks: the search placeholder mentions tags; `playbook` emits `tags.cs.{"Playbook"}` and returns one card; the first page is 24 cards with a load-more button; clicking appends to 30 via `offset=24`; the uppercase visible count updates; the button hides at the end; repeated appends reach the 200-item cap notice; no overflow or console errors.
+- **Limit:** mocked Supabase/auth fixtures and a local preview were used. This is rendered-browser verification of UI contracts, not a live Supabase/RLS/GIN-index, Razorpay, entitlement or download test.
+- **Security:** search expressions are sanitised and bounded in `src/lib/productQuery.js`; no auth, RLS or payment path changed. The exposed DB password (`dfc452e`) still must be rotated.
+
 ## 2. Release blockers (must clear before any production sign-off)
 
 1. **Rotate the exposed Supabase DB password (urgent).** It was committed in `dfc452e`, which is an ancestor of HEAD and was pushed via `origin/main`. Removing it from current source does not remove it from history. Set `DATABASE_URL` wherever `migrate.cjs`/`seed.cjs` are run, then rotate the credential.

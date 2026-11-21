@@ -11,7 +11,14 @@ import {
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 
-const EMPTY_FILTERS = { search: '', category: '', format: '', freeOnly: false, sort: 'featured' }
+const EMPTY_FILTERS = {
+  search: '',
+  category: '',
+  format: '',
+  freeOnly: false,
+  featured: false,
+  sort: 'featured',
+}
 
 // Bounds the catalogue query so a misconfigured table cannot pull an unbounded
 // result set into the browser.
@@ -89,7 +96,11 @@ export default function Products() {
       setError(null)
 
       try {
-        const items = await getPublishedProducts({ ...filters, limit: LIST_CAP })
+        const items = await getPublishedProducts({
+          ...filters,
+          featuredOnly: filters.featured,
+          limit: LIST_CAP,
+        })
         if (cancelled) return
         setProducts(items)
       } catch (err) {
@@ -122,7 +133,8 @@ export default function Products() {
     filters.search !== '' ||
     filters.category !== '' ||
     filters.format !== '' ||
-    filters.freeOnly === true
+    filters.freeOnly === true ||
+    filters.featured === true
 
   return (
     <StoreShell
@@ -209,24 +221,32 @@ export default function Products() {
           </div>
         )}
 
-        {formats.length > 1 && (
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <CategoryChip
-              active={filters.format === ''}
-              onClick={() => set({ format: '' })}
-              label={t('store.allFormats')}
-            />
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <CategoryChip
+            active={filters.featured === true}
+            onClick={() => set({ featured: !filters.featured })}
+            label={t('store.featuredOnly')}
+          />
 
-            {formats.map((fmt) => (
+          {formats.length > 1 && (
+            <>
               <CategoryChip
-                key={fmt}
-                active={filters.format === fmt}
-                onClick={() => set({ format: filters.format === fmt ? '' : fmt })}
-                label={fmt}
+                active={filters.format === ''}
+                onClick={() => set({ format: '' })}
+                label={t('store.allFormats')}
               />
-            ))}
-          </div>
-        )}
+
+              {formats.map((fmt) => (
+                <CategoryChip
+                  key={fmt}
+                  active={filters.format === fmt}
+                  onClick={() => set({ format: filters.format === fmt ? '' : fmt })}
+                  label={fmt}
+                />
+              ))}
+            </>
+          )}
+        </div>
 
         {hasActiveFilters && !loading && (
           <div className="mt-3 flex items-center justify-between gap-3">
@@ -245,6 +265,13 @@ export default function Products() {
           </div>
         )}
       </motion.section>
+
+      {/* The query is capped; never imply the user saw the whole catalogue. */}
+      {products.length === LIST_CAP && !loading && (
+        <p className="mb-4 text-[11px] text-black/45 dark:text-white/45">
+          {t('store.resultCountCapped', { count: LIST_CAP })}
+        </p>
+      )}
 
       {/* --- Catalogue ----------------------------------------------------- */}
       {loading ? (

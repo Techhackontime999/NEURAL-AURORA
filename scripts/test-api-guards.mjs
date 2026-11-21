@@ -274,6 +274,27 @@ setEnv({})
     )
   )
   check('webhook: bad signature -> 400', badSignature.statusCode === 400, `got ${badSignature.statusCode}`)
+
+  check(
+    'webhook: platform config disables body parsing',
+    webhook.config?.api?.bodyParser === false
+  )
+
+  const { res: preParsed } = await capture((r) =>
+    webhook(
+      {
+        method: 'POST',
+        headers: { 'x-razorpay-signature': 'deadbeef' },
+        body: { event: 'payment.captured' },
+      },
+      r
+    )
+  )
+  check(
+    'webhook: pre-parsed body fails closed -> 400',
+    preParsed.statusCode === 400,
+    `got ${preParsed.statusCode}`
+  )
 }
 {
   setEnv({ RAZORPAY_WEBHOOK_SECRET: SENTINEL_RAZORPAY })
@@ -939,6 +960,23 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
       app.includes('Clear cached page files') &&
       app.includes('<RenderErrorBoundary fallback={<RouteErrorFallback />}>')
   )
+}
+
+// --- Credential hygiene: local DB scripts must never embed a connection string
+{
+  for (const file of ['scripts/migrate.cjs', 'scripts/seed.cjs']) {
+    const source = fs.readFileSync(file, 'utf8')
+    check(
+      `${file}: no embedded Postgres connection string`,
+      !/postgresql:\/\//i.test(source)
+    )
+    check(
+      `${file}: DATABASE_URL is required before connecting`,
+      source.includes("const databaseUrl = process.env.DATABASE_URL") &&
+        source.includes('if (!databaseUrl)') &&
+        source.includes('connectionString: databaseUrl')
+    )
+  }
 }
 
 setEnv({})

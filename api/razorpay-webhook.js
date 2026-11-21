@@ -17,19 +17,23 @@ async function readRawBody(req) {
   if (Buffer.isBuffer(req.body)) {
     return req.body.toString('utf8')
   }
-  if (!req.body) {
-    return await new Promise((resolve, reject) => {
-      const chunks = []
-      req.on('data', chunk => chunks.push(Buffer.from(chunk)))
-      req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      req.on('error', reject)
-    })
+  if (req.body) {
+    // Razorpay signs the exact bytes it sent. A re-serialized object will not
+    // reproduce those bytes (key order/whitespace differ), so verification
+    // would fail for every genuine webhook. Fail closed instead of guessing.
+    // `module.exports.config` below tells the platform not to pre-parse.
+    console.error('[Razorpay Webhook] Body was pre-parsed by the runtime; refusing to re-serialize for HMAC')
+    throw new Error('pre-parsed webhook body')
   }
-  console.warn('[Razorpay Webhook] Body was pre-parsed by the runtime; verifying against re-serialized body')
-  return JSON.stringify(req.body)
+  return await new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', chunk => chunks.push(Buffer.from(chunk)))
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    req.on('error', reject)
+  })
 }
 
-module.exports = async function handler(req, res) {
+const handler = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -175,3 +179,8 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({ status: 'ok', received: true })
 }
+
+module.exports = handler
+// Razorpay signs the exact request bytes. Disabling body parsing prevents the
+// runtime from turning them into an object that can no longer be verified.
+module.exports.config = { api: { bodyParser: false } }

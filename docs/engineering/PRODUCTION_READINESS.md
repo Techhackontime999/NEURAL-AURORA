@@ -1,7 +1,7 @@
 # NEURAL AURORA — PRODUCTION READINESS
 
 - **Generated:** 2026-11-21 · **Scope:** repository + local verification only.
-- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. The user reports both migrations were applied directly to **production**, in order, on 2026-11-21; the agent has not verified live state, no staging pass occurred, and production verification gates remain outstanding. This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
+- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. Batch 7 removed a committed database credential from source, made webhook raw-body capture fail closed, and browser-verified the changed store UX with mocked fixtures. The user reports both migrations were applied directly to **production**, in order, on 2026-11-21; the agent has not verified live state, no staging pass occurred, and production verification gates remain outstanding. **The exposed DB password still requires rotation.** This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
 
 ## 1. Gate status
 
@@ -10,18 +10,18 @@
 | Git state / branch | PASS (info) | `main`, `fd8281f`, clean at start |
 | Dependencies install | PASS | `npm ci` added 494 packages; no tracked-file changes |
 | Route ranking check | PASS | `npm run check:routes` |
-| i18n checker | PASS **but insufficient** | 135 store keys checked after token-display copy removal; 4,324 translations still missing across 23 locales |
+| i18n checker | PASS **but insufficient** | 141 store keys checked after batch 7 UX copy; 4,324 translations still missing across 23 locales |
 | SQL structural lint | PASS **but insufficient** | 36 migrations parsed; **no SQL executed**; SCHEMA-001 invalid banner fixed in source |
-| Unit/guard tests | PASS | 23 pricing + 118 API/source guards = 141; covers SEC-001, both migrations, SEC-006, Razorpay retry, bulk-selection, code-splitting and PWA caching contracts |
+| Unit/guard tests | PASS | 23 pricing + 124 API/source guards + 14 store UX = **161**; covers SEC-001, both migrations, SEC-006, Razorpay retry/body safety, credential hygiene, bulk-selection, code-splitting, PWA caching and store UX contracts |
 | Production build | PASS with warnings | entry chunk 1.28 MB (378 kB gzip) via route/3D splitting; Spline/physics still ~2 MB but deferred; PWA precache reduced from 79 entries / 20,028.89 KiB to 9 entries / 1,529.70 KiB actual; chunk-size warning only |
 | Dependency audit | PASS for production / PARTIAL overall | `npm audit fix` cleared the high (`follow-redirects`) and 3 others; `npm audit --omit=dev` reports **0** vulnerabilities; 4 moderate dev-only advisories remain (`glob`/`minimatch` via `vite-plugin-pwa`/`workbox-build`) and need a breaking downgrade |
 | Application security | **PARTIAL — still a blocker** | SEC-001/002/003/004/005/006/007/008 and SCHEMA-001 fixed in source or authored as forward migrations; ST-U13/ST-U09 fixed in source; user reports both migrations applied to production, agent verification pending |
-| Browser/UI smoke test | PARTIAL | 14/14 headless-Edge PWA scenarios passed (SW install, offline shell/visited route, honest unvisited-route failure, update notice, deep-link refresh, chunk recovery). Full UI/Taste/store E2E still NOT TESTED |
-| Store E2E (13 steps) | NOT TESTED | See `DIGITAL_STORE_ROADMAP.md` §4 |
+| Browser/UI smoke test | PARTIAL | 14/14 headless-Edge PWA scenarios passed, plus 47/47 batch-7 store UI checks with mocked Supabase fixtures. Full live-data UI/Taste store E2E still NOT TESTED |
+| Store E2E (13 steps) | NOT TESTED against live services | Discovery/detail/library rendering and interactions were browser-tested with fixtures; no live DB, Razorpay or signed-URL step was executed. See `DIGITAL_STORE_ROADMAP.md` §4 |
 | Production migrations applied | NOT VERIFIED | No DB access; never claim applied |
 | Razorpay live/test payments | NOT TESTED | No credentials or approval |
 | SEO / metadata | FAIL | Static head for all routes; missing `og:image`; stale sitemap |
-| Accessibility / responsive | NOT TESTED | Taste gate not run |
+| Accessibility / responsive | PARTIAL | No horizontal overflow and no console errors at 1440/390 on the three changed store routes; full Taste/a11y gate not run |
 | Legal/trust consistency | REQUIRES REVIEW | Contradictions and missing disclosures (PLAT-09) |
 
 ## 1b. PWA caching status (batch 6)
@@ -35,12 +35,23 @@ Selective precache is implemented and measured locally; full inventory and evide
 - Browser evidence: 14/14 headless-Edge scenarios passed, including offline homepage, offline previously visited `/blog`, honest offline unvisited `/support`, update notice, online deep-link refresh, and failed-chunk recovery.
 - Still theoretical: two real deployments with an old tab open, time/entry-based eviction, install prompt and Lighthouse/Core Web Vitals.
 
+## 1c. Batch 7 status (credential, webhook, store UX)
+
+- `npm run check`: PASS — 5 routes, 141 i18n keys, 36 migration lints.
+- `npm test`: PASS — 23 pricing + 124 API/source guards + 14 store UX = **161 tests, 0 failed**.
+- `npm run build`: PASS with pre-existing warnings — 2,943 modules; entry 1,283.88 kB / 377.80 kB gzip; PWA 9 entries / 1,491.77 KiB build-reported.
+- Browser: local Edge 157 + CDP against `vite preview`, **47/47** checks passed at 1440×900 and 390×844 on catalogue, detail and library with mocked Supabase fixtures and a local fixture session. Covered featured chip 3→2, result count, cap notice at 200, translated image count, gallery thumbnails, purchase panel, library search/sort/no-results, responsive overflow and console errors. No rendered FAIL required a source fix.
+- **Limit:** mocked data and a local session were used. This is rendered-browser verification of the UI contracts, not a live Supabase/RLS, Razorpay, entitlement or download test.
+- **Security:** `scripts/migrate.cjs` and `scripts/seed.cjs` now require `DATABASE_URL`; `api/razorpay-webhook.js` disables Vercel body parsing and fails closed on a pre-parsed body. The old credential remains in pushed Git history (`dfc452e`) and **must be rotated**.
+
 ## 2. Release blockers (must clear before any production sign-off)
 
-1. **Post-apply verification (urgent).** User reports both migrations were applied directly to **production**, in order, on 2026-11-21; the planned staging pass was skipped. Run the read-only checks in `STAGING_MIGRATION_RUNBOOK.md` §2/§3 and §6 against production now, archive the output, and keep `supabase/rollback/*.down.sql` ready. Do not infer success from the user's report alone.
-2. **SEC-001 verification** — confirm the deployed route emails only, never returns a link, Supabase redirect allowlisting is correct, and buyers still receive mail under the project's mailer limits.
-3. **SEC-006** — **fixed in source; migration user-reported applied to production**: verify anon cannot SELECT `admin_settings`, the view excludes `admin_email`, and public branding/admin settings still render. No browser evidence yet.
-4. **ST-U13 / ST-U09** — **fixed in source** (Razorpay retry poisoning, stale admin bulk selection); browser verification still outstanding.
+1. **Rotate the exposed Supabase DB password (urgent).** It was committed in `dfc452e`, which is an ancestor of HEAD and was pushed via `origin/main`. Removing it from current source does not remove it from history. Set `DATABASE_URL` wherever `migrate.cjs`/`seed.cjs` are run, then rotate the credential.
+2. **Verify webhook raw-body + HMAC (urgent).** `api/razorpay-webhook.js` now declares `bodyParser: false` and fails closed on a pre-parsed body, but no live or signed test event was sent. Confirm the deployed platform honours the config and that a correctly signed test payload fulfils exactly once.
+3. **Post-apply verification (urgent).** User reports both migrations were applied directly to **production**, in order, on 2026-11-21; the planned staging pass was skipped. Run the read-only checks in `STAGING_MIGRATION_RUNBOOK.md` §2/§3 and §6 against production now, archive the output, and keep `supabase/rollback/*.down.sql` ready. Do not infer success from the user's report alone.
+4. **SEC-001 verification** — confirm the deployed route emails only, never returns a link, Supabase redirect allowlisting is correct, and buyers still receive mail under the project's mailer limits.
+5. **SEC-006** — **fixed in source; migration user-reported applied to production**: verify anon cannot SELECT `admin_settings`, the view excludes `admin_email`, and public branding/admin settings still render. No browser evidence yet.
+6. **ST-U13 / ST-U09** — **fixed in source** (Razorpay retry poisoning, stale admin bulk selection); retry/filter browser verification remains outstanding outside the batch-7 store UI scope.
 5. **PLAT-01** — 4,324 missing translations on a commercial surface (or an explicit, documented English-only store decision).
 6. **PLAT-08 / BUILD-SEC-01** — high and 3 other advisories patched in `package-lock.json`; production audit is clean. Four moderate **dev-only** advisories remain and require a deliberate `vite-plugin-pwa` downgrade decision.
 7. **PLAT-09** — legal/tax/privacy review of licensing, refunds, GST/invoicing, voice and AI data processing.

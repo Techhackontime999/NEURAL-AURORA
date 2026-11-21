@@ -13,8 +13,14 @@ function splitStatements(sql) {
     .filter(s => s.length > 0 && !s.startsWith('--'))
 }
 
+const databaseUrl = process.env.DATABASE_URL
+if (!databaseUrl) {
+  console.error('DATABASE_URL is required. Set it to your Supabase Postgres connection string; never commit it.')
+  process.exit(1)
+}
+
 const client = new Client({
-  connectionString: 'postgresql://postgres:Kumaramit%40%237654@db.vtbldaytmebyakoukswb.supabase.co:5432/postgres',
+  connectionString: databaseUrl,
   ssl: { rejectUnauthorized: false },
 })
 

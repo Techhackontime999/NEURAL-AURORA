@@ -239,7 +239,7 @@ export default function ProductDetail() {
                   />
                   {hasGallery && (
                     <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
-                      {galleryImages.length} views
+                      {t('store.imageCount', { count: galleryImages.length })}
                     </span>
                   )}
                 </button>

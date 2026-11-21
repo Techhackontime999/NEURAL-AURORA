@@ -1,6 +1,6 @@
 # NEURAL AURORA — DIGITAL STORE ROADMAP
 
-- **Generated:** 2026-11-21 · **Status:** source-verified; no production DB, Razorpay or browser E2E performed.
+- **Generated:** 2026-11-21 · **Status:** source-verified; batch-7 store UI browser-tested with mocked fixtures; no production DB, Razorpay or live payment E2E performed.
 
 ## 1. What exists today (preserve)
 
@@ -24,21 +24,21 @@ Commerce engine assessment: **the payment/fulfilment core is sound and should no
 
 | ID | Gap | Severity | Evidence | Fix |
 |---|---|---|---|---|
-| ST-U01 | Catalogue hard-capped at 200 with no pagination or truncation signal | Medium | `Products.jsx:16-18,92`; `products.js:70` | Add keyset/offset pagination + "load more" + count |
+| ST-U01 | Catalogue hard-capped at 200 with no pagination or truncation signal | Medium | `Products.jsx:25,270-274`; `products.js:70` | **Partially fixed:** cap notice now rendered and browser-verified; pagination/"load more" still open |
 | ST-U02 | Search ignores tags despite GIN index | Medium | `products.js:53-60` vs `supabase-schema.sql:1145` | Add tag matching (`tags.cs.{term}`) with sanitisation |
-| ST-U03 | `featuredOnly` unused; featured free products lose badge | Low | `products.js:12-18`; `Products.jsx:14`; `ProductCard.jsx:60-69` | Add featured filter/shelf; render both badges |
+| ST-U03 | `featuredOnly` unused; featured free products lose badge | Low | `Products.jsx:19,101,132-137,224-229`; `ProductCard.jsx:60-77` | **Fixed and browser-verified:** featured chip filters 3→2, result count follows filter, both badges render independently |
 | ST-U04 | No public file manifest or compatibility field | Medium | `ProductDetail.jsx:286-325` never calls `getProductFiles`; no `compatibility` column | Add public-safe file metadata endpoint + structured compatibility |
 | ST-U05 | No ratings/sales-count trust signals | Low | `ProductDetail.jsx:495-498` only secure note | Add verified-purchase reviews/count or stronger policy summary |
 | ST-U06 | Checkout is inline with weak validation; no quantity, terms checkbox or itemised summary | Medium | `ProductDetail.jsx:101-114,400-468` | Real form + native/server validation + quantity (repriced server-side) + terms + summary |
 | ST-U07 | Free-download `window.open` after await can be pop-up-blocked | Low | `ProductDetail.jsx:119-124` | Pre-open anchor or in-page download route with visible fallback |
-| ST-U08 | Library has no search/filter/sort/pagination/file details | Low | `Library.jsx:564-634`; `products.js:183-196` | Add client search/sort + per-entitlement file list |
+| ST-U08 | Library has no search/filter/sort/pagination/file details | Low | `Library.jsx:89-107,511-545,582-597` | **Partially fixed and browser-verified:** client search, newest/title sort, result count and no-results state; per-entitlement file list/pagination still open |
 | ST-U09 | Admin bulk selection survives filter changes → hidden products deletable | Medium | `AdminProducts.jsx:99-100,244-259` vs `AdminOrders.jsx:113-115` | **Fixed in source:** visible-scoped `useBulkSelect`, filter-change clearing, visible-only deletes; browser verification still outstanding |
 | ST-U10 | No admin category CRUD, product preview, or consistent price formatting | Medium | `adminProducts.js:125-144` unused; `AdminProducts.jsx:320,386-402,634` | Add category management, preview, reuse `formatPrice` |
 | ST-U11 | Revenue KPI is INR-only despite INR+USD support | Medium | `adminProducts.js:279-310`; `AdminOrders.jsx:325` | Render per-currency KPIs |
 | ST-U12 | Entitlements show numeric product id; no export/refund tooling | Low | `AdminOrders.jsx:583-586` | Join product titles; add filters/export; refund endpoint if in scope |
 | ST-U13 | Failed Razorpay script load poisons retries | Medium | `razorpay.js:1-30,81-85,113-115` | **Fixed in source:** shared load promise, failed-script cleanup, retry reset, SDK-global check; browser verification still outstanding |
 | ST-U14 | Poll timer scheduled inside state updater | Low | `PurchaseSuccess.jsx:71-79,89-92` | Use ref for attempts; schedule outside updater |
-| ST-U15 | Hardcoded "views" label; store text ignores theme tokens | Low/Med | `ProductCard.jsx:72-75`; `ProductDetail.jsx:240-244`; `Products.jsx:153` etc. | i18n key + semantic colour classes (see design audit) |
+| ST-U15 | Hardcoded "views" label; store text ignores theme tokens | Low/Med | `ProductCard.jsx:73-77`; `ProductDetail.jsx:240-244`; `src/locales/en.json:292` | **Fixed and browser-verified:** image count uses `store.imageCount`; semantic theme classes preserved; full design-token pass still open |
 | ST-U16 | Store has no per-route metadata/JSON-LD | High | `index.html:6-21`; no head manager | Route-level head manager + Product JSON-LD |
 
 Full i18n, PWA, SEO and design findings are in `PROJECT_AUDIT.md` and `DESIGN_SYSTEM_AUDIT.md`.
@@ -62,6 +62,8 @@ Batch 3 — dependency hygiene:
 
 **Phase 3 — design system + storefront (Taste):** tokens consumed, violet removed, editorial hierarchy, store cards/detail/catalogue refined, browser inspection at 1440/1024/768/390.
 
+Batch 7 (2026-11-21) completed the first storefront slice: ST-U03, the cap-notice half of ST-U01, the search/sort/no-results half of ST-U08 and the image-count i18n half of ST-U15. Local Edge/CDP verification passed 47/47 checks at 1440×900 and 390×844 against the compiled preview build with mocked Supabase fixtures. Full live-data store E2E and the remaining pagination/file-manifest/SEO work stay open.
+
 **Phase 4 — commerce/customer experience:** ST-U01, U02, U04, U06, U08, U10, U11; then low-priority UX items.
 
 **Phase 5+:** i18n parity, SEO/head, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
@@ -72,14 +74,14 @@ Batch 3 — dependency hygiene:
 |---|---|---|
 | 1 | Admin creates product | Admin panel exists; **not browser-tested** |
 | 2 | Product published | Status workflow exists; **not tested** |
-| 3 | Customer discovers it | Catalogue renders; **not browser-tested** |
-| 4 | Complete product info viewed | Gaps ST-U04; **not tested** |
+| 3 | Customer discovers it | **Browser-tested with fixtures** (1440/390): cards, featured filter, result count, cap notice |
+| 4 | Complete product info viewed | **Browser-tested with fixtures**: image count, gallery, purchase panel; ST-U04 file manifest still open |
 | 5 | Order placed | API guards unit-tested; **no live call** |
 | 6 | Server authoritative amount | **Verified** (23 unit tests) |
 | 7 | Razorpay test payment | **Not tested** — requires test keys + approval |
 | 8 | Server verifies payment | HMAC code verified; **no live webhook** |
 | 9 | Entitlement created exactly once | Idempotency design verified; **no live DB test** |
-| 10 | Library access | Code exists; **not browser-tested** |
+| 10 | Library access | **Browser-tested with a local fixture session**: search, sort, result count, no-results; live RLS/entitlements not tested |
 | 11 | Secure download | Code verified; **no live signed-URL test** |
 | 12 | Unauthorized download rejected | **Verified** by unit guard test (guest → 401) |
 | 13 | Failed/duplicate events correct | Design + unit guards verified; **no live replay test** |

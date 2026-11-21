@@ -9,7 +9,7 @@
 | Control | Evidence | Status |
 |---|---|---|
 | Server-authoritative integer-paise pricing; browser price ignored | `api/_lib/order-pricing.js:62-138`; 23 passing tests | Verified |
-| Razorpay webhook HMAC-SHA256 over **raw body**, `timingSafeEqual` | `api/razorpay-webhook.js:10-77` | Verified |
+| Razorpay webhook HMAC-SHA256 over **raw body**, `timingSafeEqual`; pre-parsed body now fails closed | `api/razorpay-webhook.js`; batch-7 guard tests | Verified in source; live event not tested |
 | Amount/currency mismatch never auto-fulfils; order left pending | `api/_lib/fulfilment.js:97-120` | Verified |
 | Idempotent entitlement grant (unique payment id, unique entitlement, guarded update) | `api/_lib/fulfilment.js:41-45,72-90,122-157` | Verified |
 | Centralized admin gate reads role from DB, not the browser | `api/_lib/adminAuth.js:26-48`; guard tests | Verified |
@@ -112,6 +112,25 @@
 - **Testing requirements:** Anonymous INSERT denied; non-admin SELECT returns zero rows; webhook insert still works.
 - **Verification status:** Source verified; production not checked.
 - **Remediation authored (2026-11-21):** consolidated schema and forward migration now drop both legacy policies before recreating admin-only policies; SQL lint recognizes qualified policy tables. **Production policy state still requires inspection.**
+
+### [SEC-011] Supabase database credential committed in utility scripts
+
+- **Severity:** **Critical**
+- **Status:** Verified in source and Git history; removed from current source, **rotation still required**.
+- **Evidence:** `scripts/migrate.cjs:17` and `scripts/seed.cjs:5` previously embedded a Postgres connection string containing the database password. The secret entered history at `dfc452e`, an ancestor of HEAD; HEAD is contained in `origin/main`. The value was never printed during analysis.
+- **Impact:** anyone with repository or history access could connect directly to the production database with the credential's privileges. Removing the lines does not invalidate the credential.
+- **Remediation applied (batch 7):** both scripts now require `DATABASE_URL`, fail closed with a clear error when absent, and pass it only as `connectionString`. Source-level guard tests assert no `postgresql://` literal remains in either file.
+- **Required manual action:** rotate the Supabase database password immediately and update deployment secrets by name (`DATABASE_URL`). Consider history rewriting only as a separate, approved decision; rotation is the control that actually invalidates the exposed credential.
+- **Verification status:** source fixed and tests pass; rotation and live DB connection not performed by the agent.
+
+### [SEC-012] Razorpay webhook could HMAC a re-serialized body
+
+- **Severity:** **High**
+- **Status:** Verified in source; fixed in current source, live delivery not verified.
+- **Evidence:** `api/razorpay-webhook.js` previously had no raw-body config and `readRawBody()` fell back to `JSON.stringify(req.body)` when the platform had already parsed JSON. HMAC over re-serialized bytes can silently mismatch the gateway signature.
+- **Impact:** correctly signed webhooks may be rejected (lost fulfilment) or body-shape differences may obscure signature failures; fail-open behaviour was unacceptable even though no direct forgery path was proven.
+- **Remediation applied (batch 7):** added `module.exports.config = { api: { bodyParser: false } }`; `readRawBody()` now throws on a pre-parsed body, so the handler fails closed with no fulfilment. Guard tests assert both the config and the fail-closed branch.
+- **Verification status:** local source/guard tests pass; no signed Razorpay test event was sent. Verify deployed config and HMAC in test mode before sign-off.
 
 ---
 

@@ -205,6 +205,43 @@
 
 ---
 
+## Phase 3 — Batch 7: store UX, credential hygiene and webhook body safety (2026-11-21) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** complete the first store-experience batch from `DIGITAL_STORE_ROADMAP.md` while closing two source-level security defects found during the platform audit. No payment engine, schema, RLS or navigation rewrite was attempted.
+
+### Changes made
+
+1. **Committed database credential removed (Critical).** `scripts/migrate.cjs` and `scripts/seed.cjs` no longer contain a Supabase Postgres connection string with an embedded password. Both now require `DATABASE_URL`, fail closed with a clear error when it is absent, and pass `connectionString: databaseUrl` to `pg.Client`. The secret value was never printed; only masked file/line references were recorded.
+2. **Razorpay raw-body handling hardened (High).** `api/razorpay-webhook.js` now declares `module.exports.config = { api: { bodyParser: false } }` and `readRawBody()` throws when Vercel has already parsed `req.body`, instead of silently falling back to `JSON.stringify(req.body)`. This restores HMAC verification over the exact raw bytes and prevents a body-shape mismatch from disabling signature checks.
+3. **Store UX gaps ST-U03/U08/U15 fixed.**
+   - `ProductCard.jsx` renders free and featured badges independently and uses the translated `store.imageCount` key.
+   - `ProductDetail.jsx` uses the same translated image-count key.
+   - `Products.jsx` adds a `Featured only` chip, sends `featuredOnly`, detects active filters including featured, and shows `store.resultCountCapped` when the 200-item cap is reached.
+   - `Library.jsx` adds client-side title search, newest/title sort, a visible result count and a no-results state over already-entitled rows. No library API, RLS or download authorisation changed.
+   - `src/locales/en.json` gains six store keys.
+4. **Regression guards.** `scripts/test-api-guards.mjs` adds webhook config/fail-closed assertions and credential-hygiene assertions for both scripts. New `scripts/test-store-ux.mjs` protects the badge, i18n, featured-filter, cap-notice and library UX contracts. `package.json` wires `test:store-ux` into `npm test`.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 routes ranked; **141** i18n keys (up from 135); **36** migration structural lints |
+| `npm test` | PASS | `test:order-pricing` **23/23**; `test:api-guards` **124/124**; `test:store-ux` **14/14** = **161 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | 2,943 modules transformed; entry **1,283.88 kB / 377.80 kB gzip**; PWA **9 entries, 1,491.77 KiB** build-reported; no new runtime dependency |
+| `npm run preview` + local Edge 157 + CDP | PASS | **47/47** rendered-UI checks across `/offerings/products`, `/offerings/products/:slug` and `/library` at **1440×900** and **390×844** |
+
+**Rendered-UI method:** `vite preview` served the current `dist`; headless Edge was driven through CDP with mocked Supabase REST/auth responses and a local fixture session. This exercised the real compiled React routes in a browser, including a real click of the featured chip and real keyboard-driven library search/sort. It did **not** contact Supabase, Razorpay, a database, or any live payment endpoint. Six screenshots and `report.json` were written under `C:\Users\ADMIN\AppData\Local\Temp\opencode\ui-check\`.
+
+**Browser results:** 3 catalogue cards and independent FREE/FEATURED badges at both widths; translated “2 views”; featured chip filters 3→2 and reports “2 product(s)”; 200-item fixture shows the cap notice; detail route renders the gallery count, two thumbnails and purchase panel; signed-in library renders search + newest/title sort + 2 items, filters to 1, shows the no-results state, and sorts A→Z. No horizontal overflow and no console errors at either width. The only console warnings were the expected local “Supabase credentials missing” fixture warnings. No rendered FAIL was found, so no source fix was needed after inspection.
+
+**Performance impact:** negligible at runtime. The new code is a bounded client-side `useMemo` over entitled library rows, one extra translated chip/notice, and source-only test guards. Build size did not materially change from batch 6.
+
+**Security implications:** no auth, RLS, payment-amount or fulfilment logic was changed. The webhook now fails closed if raw-body capture is misconfigured. Removing the credential from source does **not** remove it from Git history: the already-pushed commit `dfc452e` (ancestor of HEAD and contained in `origin/main`) still exposes it. **The Supabase database password must be rotated.** Live webhook HMAC, raw-body delivery and Razorpay test-mode fulfilment remain unverified.
+
+**Database changes:** none applied. **Manual actions required:** rotate the Supabase DB password; set `DATABASE_URL` in any environment that runs `migrate.cjs`/`seed.cjs`; verify webhook raw-body receipt and HMAC with a signed test event; run the staged DB/payment acceptance journey from `DIGITAL_STORE_ROADMAP.md` §4. No commit, push or deployment was performed.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

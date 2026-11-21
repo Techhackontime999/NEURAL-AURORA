@@ -58,20 +58,21 @@ export default function ProductCard({ product, index = 0 }) {
         )}
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
-          {isFree ? (
+          {isFree && (
             <span className="rounded-full bg-emerald-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
               {t('store.free')}
             </span>
-          ) : product.featured ? (
+          )}
+          {product.featured && (
             <span className="rounded-full bg-cyan-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
               {t('store.featured')}
             </span>
-          ) : null}
+          )}
         </div>
 
         {pictureCount > 1 && (
           <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
-            {pictureCount} views
+            {t('store.imageCount', { count: pictureCount })}
           </span>
         )}
       </div>

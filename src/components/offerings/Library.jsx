@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,7 @@ import {
   KeyRound,
   AlertTriangle,
   Loader2,
+  Search,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -60,6 +61,8 @@ export default function Library() {
   const { user, signOut } = useAuth()
 
   const [entries, setEntries] = useState([])
+  const [libraryQuery, setLibraryQuery] = useState('')
+  const [librarySort, setLibrarySort] = useState('newest')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [email, setEmail] = useState('')
@@ -82,6 +85,26 @@ export default function Library() {
   const [savingPassword, setSavingPassword] = useState(false)
   const [passwordError, setPasswordError] = useState(null)
   const [passwordSaved, setPasswordSaved] = useState(false)
+
+  // Search and sort run on entries the customer is already entitled to. No new
+  // endpoint, no change to the library query, RLS or download authorisation.
+  const visibleEntries = useMemo(() => {
+    const term = libraryQuery.trim().toLowerCase()
+    const rows = term
+      ? entries.filter((entry) =>
+          String(entry.product?.title || '').toLowerCase().includes(term)
+        )
+      : [...entries]
+
+    if (librarySort === 'title') {
+      rows.sort((a, b) =>
+        String(a.product?.title || '').localeCompare(String(b.product?.title || ''))
+      )
+    } else {
+      rows.sort((a, b) => new Date(b.granted_at) - new Date(a.granted_at))
+    }
+    return rows
+  }, [entries, libraryQuery, librarySort])
 
   const load = useCallback(async () => {
     if (!user) {
@@ -485,6 +508,42 @@ export default function Library() {
         </p>
       )}
 
+      {entries.length > 0 && (
+        <div className="glass-panel mb-6 flex flex-col gap-3 rounded-xl p-4 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/30 dark:text-white/30"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={libraryQuery}
+              onChange={(e) => setLibraryQuery(e.target.value)}
+              placeholder={t('store.librarySearchPlaceholder')}
+              aria-label={t('store.librarySearchPlaceholder')}
+              className="w-full rounded-lg border border-black/10 bg-black/5 py-2.5 pl-9 pr-3 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2">
+              <span className="sr-only">{t('store.sortLabel')}</span>
+              <select
+                value={librarySort}
+                onChange={(e) => setLibrarySort(e.target.value)}
+                aria-label={t('store.sortLabel')}
+                className="rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-xs text-black/70 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+              >
+                <option value="newest">{t('store.sort.newest')}</option>
+                <option value="title">{t('store.sort.title')}</option>
+              </select>
+            </label>
+            <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+              {t('store.libraryResultCount', { count: visibleEntries.length })}
+            </span>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="glass-panel rounded-xl p-10 text-center" aria-busy="true">
           <Loader2 className="mx-auto h-5 w-5 animate-spin text-black/30 dark:text-white/30" aria-hidden="true" />
@@ -520,9 +579,25 @@ export default function Library() {
             {t('store.browseStore')}
           </Link>
         </div>
+      ) : visibleEntries.length === 0 ? (
+        <div className="glass-panel rounded-xl p-10 text-center">
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
+            <LibraryIcon className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+            {t('store.libraryNoResults')}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setLibraryQuery('')}
+            className="mt-5 rounded-lg bg-black/90 px-4 py-2.5 text-[11px] uppercase tracking-widest text-white dark:bg-white/90 dark:text-black"
+          >
+            {t('store.clearFilters')}
+          </button>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {entries.map((entry, i) => (
+          {visibleEntries.map((entry, i) => (
             <motion.div
               key={entry.id}
               initial={{ opacity: 0, y: 16 }}

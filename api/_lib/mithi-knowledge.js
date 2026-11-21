@@ -69,8 +69,8 @@ async function loadPortfolioContext() {
     safeQuery(client, 'personal_info', () =>
       client.from('personal_info').select('name, handle, title, tagline, bio').eq('id', 1).maybeSingle()
     ),
-    safeQuery(client, 'admin_settings', () =>
-      client.from('admin_settings').select('site_name, site_tagline, docs_url').eq('id', 1).maybeSingle()
+    safeQuery(client, 'public_site_settings', () =>
+      client.from('public_site_settings').select('site_name, site_description, docs_url').eq('id', 1).maybeSingle()
     ),
     safeQuery(client, 'skills', () =>
       client.from('skills').select('name, level, category').order('display_order', { ascending: true }).limit(60)
@@ -132,7 +132,7 @@ async function loadPortfolioContext() {
       [
         'SITE',
         settings.site_name ? `Site name: ${clip(settings.site_name, 80)}` : '',
-        settings.site_tagline ? `Site tagline: ${clip(settings.site_tagline, 160)}` : '',
+        settings.site_description ? `Site tagline: ${clip(settings.site_description, 160)}` : '',
         settings.docs_url ? `Documentation URL: ${clip(settings.docs_url, 200)}` : '',
       ]
         .filter(Boolean)

@@ -1,8 +1,12 @@
-# Staging migration runbook — 20261121000000
+# Staging migration runbook — 2026-11-21
 
-**Scope:** staging only. This runbook documents how to apply and verify
-`supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql`.
-It has **not** been applied by the agent. Do not run any of this against
+**Scope:** staging only. This runbook documents how to apply and verify, in
+order:
+
+1. `supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql`
+2. `supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql`
+
+Neither has been applied by the agent. Do not run any of this against
 production until staging verification and explicit production approval are
 complete.
 
@@ -143,3 +147,47 @@ Expected: `0`.
 Production apply still requires explicit approval, a separate production backup,
 and a repeat of sections 2–3 against production. No live payment or production
 data changes are part of this migration.
+
+## 6. Second migration — SEC-006 settings exposure
+
+Apply only after section 2 passes:
+
+```powershell
+supabase db execute --project-ref <STAGING_PROJECT_REF> --file supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql
+```
+
+**Read-only verification:**
+
+```sql
+-- anon must no longer have table SELECT
+select has_table_privilege('anon', 'public.admin_settings', 'SELECT') as anon_table_select;
+-- expected: false
+
+-- public view must exist without the private column
+select column_name
+from information_schema.columns
+where table_schema = 'public' and table_name = 'public_site_settings'
+order by ordinal_position;
+-- expected: no admin_email row
+
+select * from public.public_site_settings;
+-- expected: one row of branding/display columns only
+
+select policyname, roles::text, qual::text
+from pg_policies
+where tablename = 'admin_settings' and cmd = 'SELECT';
+-- expected: Admins can read all settings, using is_admin()
+```
+
+**Functional smoke checks:**
+
+- Public site (brand, loader docs link, appearance, store hero, support page,
+  contributors) still renders with values from the view.
+- Admin settings screens still load and save using an admin session.
+- A signed-in non-admin cannot `select * from admin_settings` through PostgREST.
+
+**Rollback (staging only, reintroduces SEC-006):**
+
+```powershell
+supabase db execute --project-ref <STAGING_PROJECT_REF> --file supabase/rollback/20261121120000_restrict_admin_settings_exposure.down.sql
+```

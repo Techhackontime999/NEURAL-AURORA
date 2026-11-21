@@ -51,6 +51,11 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   maintenance_mode BOOLEAN DEFAULT FALSE,
   crm_url TEXT DEFAULT '',
   youtube_channel_id TEXT DEFAULT '',
+  video_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
+  store_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
+  appearance JSONB NOT NULL DEFAULT '{}'::jsonb,
+  payment_settings JSONB DEFAULT '{}'::jsonb,
+  docs_url TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)
@@ -58,22 +63,34 @@ CREATE TABLE IF NOT EXISTS admin_settings (
 
 ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
 
+-- SEC-006: table reads are admin-only; public columns come from the view.
 DROP POLICY IF EXISTS "Admin can read settings" ON admin_settings;
-CREATE POLICY "Anyone can read settings"
-  ON admin_settings FOR SELECT
-  USING (true);
+DROP POLICY IF EXISTS "Anyone can read settings" ON admin_settings;
+DROP POLICY IF EXISTS "Admins can read all settings" ON admin_settings;
+CREATE POLICY "Admins can read all settings"
+  ON admin_settings FOR SELECT TO authenticated
+  USING (is_admin());
 
 DROP POLICY IF EXISTS "Admin can update settings" ON admin_settings;
 CREATE POLICY "Admin can update settings"
   ON admin_settings FOR UPDATE
   USING (is_admin());
 
+CREATE OR REPLACE VIEW public_site_settings AS
+SELECT
+  id, site_name, site_description, theme, maintenance_mode,
+  crm_url, youtube_channel_id, docs_url, video_hero, store_hero,
+  appearance, payment_settings, created_at, updated_at
+FROM admin_settings
+WHERE id = 1;
+ALTER VIEW public_site_settings SET (security_barrier = true);
+
 INSERT INTO admin_settings (id, site_name, admin_email)
 VALUES (1, 'Neural Aurora', '')
 ON CONFLICT (id) DO NOTHING;
 
-GRANT SELECT ON TABLE admin_settings TO anon;
 GRANT SELECT, UPDATE ON TABLE admin_settings TO authenticated;
+GRANT SELECT ON TABLE public_site_settings TO anon, authenticated;
 
 -- ============================================================
 -- 3. UPDATE PROFILE CREATION TRIGGER (auth restriction)

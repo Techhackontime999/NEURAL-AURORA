@@ -123,12 +123,42 @@
 - Re-verified after the update: `npm run check` PASS, `npm test` PASS
   (23 + 102 = 125), `npm run build` PASS with the same baseline warnings.
 
-**Still open:** SEC-006 public `admin_settings`, the four dev-only advisories (breaking upgrade decision), localization/SEO/design gates, browser/E2E verification, and the unapplied migration.
+## PHASE 2 — Batch 4: SEC-006 public settings exposure
 
-**No migration will be applied to any environment, and no commit/push/deploy will occur, without explicit approval.**
+- **Authored migration** `20261121120000_restrict_admin_settings_exposure.sql`
+  (with emergency rollback in `supabase/rollback/`): revokes anon SELECT on
+  `admin_settings`, makes table reads admin-only through `is_admin()`, and
+  creates `public.public_site_settings` — a `security_barrier` view with an
+  explicit allowlist of branding/display columns. `admin_email` is not in the
+  view. Fresh-install SQL (`supabase-schema.sql`, `scripts/complete-migration.sql`)
+  was updated with the same policies, view and missing settings columns.
+- **Client split:** added `getPublicSettings()` for anonymous surfaces and
+  switched all public readers (support, contributors, loader, portfolio hooks,
+  theme, brand, docs config, Mithi knowledge) to it or the view.
+  `getAdminSettings()` now serves admin screens only and still reads the full
+  row with an admin token. A latent query for a non-existent `site_tagline`
+  column was replaced with `site_description`, which now reaches the public
+  brand and knowledge paths.
+- Seven new regression assertions cover the migration, the view allowlist,
+  client routing and fresh-install SQL.
+
+**Verification evidence (after batch 4 edits):**
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 36 migration structural lints, including both new forward migrations |
+| `npm test` | PASS | `test:order-pricing` 23/23; `test:api-guards` **109/109** = **132 tests** |
+| `npm run build` | PASS (same warnings as baseline) | `index` 3,495.09 kB; PWA precache 19,988.25 KiB |
+
+**Database changes:** none applied. **Security implications:** anonymous clients can no longer read the admin allowlist email from the base table; the allowlist view is the only public path. **Design improvements:** none claimed; no browser/visual gate was run. **Manual actions required:** staging apply and verification per `docs/engineering/STAGING_MIGRATION_RUNBOOK.md`.
+
+**Still open:** four dev-only advisories (breaking upgrade decision — user chose to leave them), localization/SEO/design gates, browser/E2E verification, and both unapplied migrations.
+
+**No migration will be applied to any environment, and no push/deploy will occur, without explicit approval.**
 
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.
 - No destructive Git operations; no branch changes; no stashing; no resets.
 - `npm ci` created `node_modules/` (gitignored) and initially left `package-lock.json` unchanged; the later audited `npm audit fix` intentionally changed only `package-lock.json` (16 version/resolution lines).
+- With explicit approval, batches 1–3 plus the staging runbook were committed locally as `9387f8b` (`main`). No push or deploy was made.

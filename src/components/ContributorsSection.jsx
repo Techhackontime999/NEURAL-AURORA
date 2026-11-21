@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Heart, Github, ExternalLink, Star, Users } from 'lucide-react'
-import { getAdminSettings } from '../lib/supabase'
+import { getPublicSettings } from '../lib/supabase'
 import { cn } from '../lib/utils'
 
 const containerVariants = {
@@ -21,7 +21,7 @@ export default function ContributorsSection({ className }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getAdminSettings()
+    getPublicSettings()
       .then(admin => {
         const list = admin?.payment_settings?.contributors || []
         const sorted = [...list].sort((a, b) => {

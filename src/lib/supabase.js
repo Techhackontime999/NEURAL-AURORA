@@ -395,12 +395,29 @@ export async function deleteCaseStudy(id) {
   if (error) throw error
 }
 
+/**
+ * Public branding/display settings from the explicit allowlist view.
+ * Use this from anonymous UI. It never returns admin_email or other private
+ * columns even if new columns are added to admin_settings later.
+ */
+export async function getPublicSettings() {
+  if (!isSupabaseConfigured) return null
+  const { data, error } = await supabase
+    .from('public_site_settings')
+    .select(
+      'id, site_name, site_description, theme, maintenance_mode, crm_url, youtube_channel_id, docs_url, video_hero, store_hero, appearance, payment_settings'
+    )
+    .eq('id', 1)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Full settings row. Only call this from admin screens: the table's SELECT
+ * policy allows admins only, and the row includes admin_email.
+ */
 export async function getAdminSettings() {
-  // Public-read settings are read by several always-mounted components
-  // (loader, widget, footer). With placeholder or missing credentials every
-  // one of those calls is a request that can never succeed — skip them
-  // outright and let callers treat `null` as "no settings", which is what a
-  // failed fetch produces for them anyway.
   if (!isSupabaseConfigured) return null
   const { data, error } = await supabase
     .from('admin_settings')

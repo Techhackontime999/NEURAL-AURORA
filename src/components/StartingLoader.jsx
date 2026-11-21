@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { useMood } from '../context/MoodContext'
-import { getActiveAdVideos, incrementAdViewCount, getAdminSettings, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
+import { getActiveAdVideos, incrementAdViewCount, getPublicSettings, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
 import YouTubeBrowse from './ui/YouTubeBrowse'
 import MoodSwing from './MoodSwing'
@@ -2454,7 +2454,7 @@ export default function StartingLoader({ onComplete }) {
     bootHandledRef.current = true
 
     await settleWithin(loadQuestion(), 6000)
-    const settings = await settleWithin(getAdminSettings(), 4000)
+    const settings = await settleWithin(getPublicSettings(), 4000)
     if (settings?.youtube_channel_id) setYtChannelId(settings.youtube_channel_id)
     else if (import.meta.env.VITE_YOUTUBE_CHANNEL_ID) setYtChannelId(import.meta.env.VITE_YOUTUBE_CHANNEL_ID)
     if (settings?.docs_url) {

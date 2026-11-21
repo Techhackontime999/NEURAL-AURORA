@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Heart, Coffee, Zap, Rocket, Crown, Sparkles, Star, Shield, CheckCircle, ArrowRight, ChevronDown, Send, Wallet, Smartphone, Gift } from 'lucide-react'
 import { openRazorpayCheckout } from '../lib/razorpay'
 import { useSocialLinks } from '../lib/usePortfolioData'
-import { getAdminSettings, submitContactMessage } from '../lib/supabase'
+import { getPublicSettings, submitContactMessage } from '../lib/supabase'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 import SupportNavbar from './SupportNavbar'
@@ -153,7 +153,7 @@ export default function Support() {
   const [contactError, setContactError] = useState('')
 
   useEffect(() => {
-    getAdminSettings().then(admin => {
+    getPublicSettings().then(admin => {
       if (admin?.payment_settings) {
         const merged = {
           ...defaultSettings,

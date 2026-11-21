@@ -83,17 +83,17 @@ Library.jsx ── auth gate → entitlements → POST /api/download {product_sl
   ── download_grants insert (hash only, rate-limited trigger)
 ```
 
-**Trust boundary:** the browser supplies slugs, quantities, email, phone and payment confirmation intent. It never supplies price, payment status, entitlement or file path. Those are derived or verified server-side. The former unauthenticated token-mint path (SEC-001) was replaced in source with an emailed OTP; the forward migration for the remaining database-side findings has been authored but not applied.
+**Trust boundary:** the browser supplies slugs, quantities, email, phone and payment confirmation intent. It never supplies price, payment status, entitlement or file path. Those are derived or verified server-side. The former unauthenticated token-mint path (SEC-001) was replaced in source with an emailed OTP; the forward migrations for the remaining database-side findings (including the SEC-006 settings split) have been authored but not applied.
 
 ## 4. Database objects
 
-30 public application tables: achievements, admin_settings, blog_posts, case_studies, certificates, contact_messages, dev_ads, download_grants, education, entitlements, experience, gallery, order_items, orders, payment_transactions, payments, personal_info, product_categories, product_files, products, profiles, projects, purchase_claims, reviews, service_page, services, skills, social_links, test_data_templates, visitor_stats.
+30 public application tables: achievements, admin_settings, blog_posts, case_studies, certificates, contact_messages, dev_ads, download_grants, education, entitlements, experience, gallery, order_items, orders, payment_transactions, payments, personal_info, product_categories, product_files, products, profiles, projects, purchase_claims, reviews, service_page, services, skills, social_links, test_data_templates, visitor_stats. Public view: `public_site_settings`, an explicit branding/display allowlist over `admin_settings` (SEC-006); anonymous clients never read the private table.
 
 Store constraints of note: `entitlements (product_id, order_item_id)` unique, free-grant uniqueness per product/email/user, `payment_transactions.payment_id` unique, `orders.payment_status` guarded update, download rate-limit trigger (≤30 grants/entitlement/hour, TTL ≤1h), `touch_updated_at()` on products/categories/files/orders.
 
 Storage: `portfolio-images` public (SELECT anon, admin writes); `digital-products` private (admin-only policies, no public SELECT).
 
-Functions/triggers: `handle_new_user`, `ensure_my_profile`, `generate_test_data` (SEC-002), `set_admin_email`, `is_admin`, `admin_delete_user`, `increment_ad_view_count`, `increment_visitor_count`, `admin_can_read_product_file`, `check_download_grant_rate_limit`, `purge_expired_download_records`, `touch_updated_at`, `parse_price_to_paise`, contact/review rate-limit triggers. **No `SET search_path` in any definer function** (SEC-008).
+Functions/triggers: `handle_new_user`, `ensure_my_profile`, `generate_test_data` (SEC-002), `set_admin_email`, `is_admin`, `admin_delete_user`, `increment_ad_view_count`, `increment_visitor_count`, `admin_can_read_product_file`, `check_download_grant_rate_limit`, `purge_expired_download_records`, `touch_updated_at`, `parse_price_to_paise`, contact/review rate-limit triggers, `current_user_has_verified_email`, `force_unapproved_review`. Authored forward migrations add `SET search_path = public, pg_temp` to known definer functions (SEC-008) — **not applied**.
 
 Schema drift: `supabase-schema.sql:1047-1051` contains invalid bare banner text; columns `payment_settings`, `docs_url`, `store_hero`, contact-payment context, `site_tagline` and rate-limit functions are inconsistent between migrations, consolidated schema and code. Treat `supabase/migrations/` as canonical. **Production migration state is unverified.**
 

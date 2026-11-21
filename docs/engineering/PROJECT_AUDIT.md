@@ -170,7 +170,8 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 6. New API-guard assertions cover the route and migration source; `check`, `test` and `build` pass locally.
 7. ST-U13 Razorpay retry poisoning and ST-U09 stale admin bulk selection fixed in source (batch 2).
 8. High dependency advisory cleared with a non-breaking `npm audit fix`; production audit clean (batch 3).
+9. SEC-006 settings exposure fixed in source with a public allowlist view and admin-only table reads (batch 4).
 
-**Remaining in P2:** apply/verify the migration on staging, browser-verify ST-U13/ST-U09, decide on the four dev-only advisories, and resolve SEC-006.
+**Remaining in P2:** apply/verify both migrations on staging, browser-verify ST-U13/ST-U09 and the settings split; the four dev-only advisories are deliberately left (user decision).
 
-No database migration will be applied to any environment without explicit approval. No push, commit or deploy without explicit approval.
+No database migration will be applied to any environment without explicit approval. Batches 1–3 plus the staging runbook were committed locally with approval (`9387f8b`); no push or deploy was made.

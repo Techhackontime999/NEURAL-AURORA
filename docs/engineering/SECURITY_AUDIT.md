@@ -92,8 +92,15 @@
 - **Evidence:** `supabase-schema.sql:256-260` `USING (true)` + `GRANT SELECT ... TO anon`; table holds `admin_email`, `crm_url`, `youtube_channel_id`, `video_hero`, `appearance`, `payment_settings`, `docs_url`, `store_hero` (`:234-254` plus migrations). `handle_new_user()` grants admin when email matches `admin_email` (`:28-39`).
 - **Impact:** Anonymous clients can read the admin allowlist email and future sensitive columns; with open signup this may allow pre-registration as admin.
 - **Recommended solution:** Split public branding settings from private/admin settings; expose a column-allowlisted view; move `admin_email` to a service-role-only table; do not bootstrap admin from a public value.
-- **Testing requirements:** Anonymous `select=*` must not include `admin_email`; public branding still renders.
+- **Testing requirements:** Anonymous `select=*` on the base table must be denied; the public view must not include `admin_email`; public branding still renders.
 - **Verification status:** Source verified.
+- **Remediation authored (2026-11-21):** forward migration
+  `20261121120000_restrict_admin_settings_exposure.sql` revokes anon SELECT on
+  `admin_settings`, makes table reads admin-only, and creates
+  `public.public_site_settings` with an explicit column allowlist. Public client
+  reads now use `getPublicSettings()` / the view; `getAdminSettings()` is reserved
+  for admin screens. Consolidated schema and manual install script updated.
+  **Migration not applied.**
 
 ### [SEC-007] Consolidated schema does not drop legacy permissive payment policies
 

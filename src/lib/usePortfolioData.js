@@ -15,7 +15,7 @@ import {
   getCertificates,
   getAchievements,
   getGallery,
-  getAdminSettings,
+  getPublicSettings,
   isSupabaseConfigured,
 } from './supabase'
 import {
@@ -333,7 +333,7 @@ export function useGallery() {
  */
 export function useVideoHeroSettings() {
   return usePortfolioResource('videoHeroSettings', async () => {
-    const settings = await getAdminSettings()
+    const settings = await getPublicSettings()
     return settings?.video_hero || {}
   }, {})
 }
@@ -350,7 +350,7 @@ export function useVideoHeroSettings() {
  */
 export function useStoreHeroSettings() {
   return usePortfolioResource('storeHeroSettings', async () => {
-    const settings = await getAdminSettings()
+    const settings = await getPublicSettings()
     return settings?.store_hero || {}
   }, {})
 }
@@ -366,7 +366,7 @@ export function useStoreHeroSettings() {
  */
 export function useSiteAppearanceSettings() {
   return usePortfolioResource('siteAppearance', async () => {
-    const settings = await getAdminSettings()
+    const settings = await getPublicSettings()
     return settings?.appearance || {}
   }, {})
 }

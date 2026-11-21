@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { getAdminSettings, isSupabaseConfigured } from './supabase'
+import { getPublicSettings, isSupabaseConfigured } from './supabase'
 import {
   DEFAULT_APPEARANCE,
   LEGACY_BACKGROUND_VARS,
@@ -233,7 +233,7 @@ export async function refreshAppearance({ force = false } = {}) {
 
   inflight = (async () => {
     try {
-      const settings = await getAdminSettings()
+      const settings = await getPublicSettings()
       const doc = settings?.appearance
       // admin_settings.appearance is `JSONB NOT NULL DEFAULT '{}'` (see the
       // migration), so an untouched/unsaved column comes back as an empty

@@ -44,9 +44,9 @@ function withTimeout(promise, ms) {
 }
 
 /**
- * Resolve the site brand from admin settings. Only the two branding columns are
- * selected — never the whole settings row — and a failure always settles on the
- * neutral default rather than blocking the UI.
+ * Resolve the site brand from the public settings allowlist view. Only the two
+ * branding columns are selected, and a failure always settles on the neutral
+ * default rather than blocking the UI.
  */
 export async function resolveSiteBrand({ force = false } = {}) {
   const now = Date.now()
@@ -56,13 +56,13 @@ export async function resolveSiteBrand({ force = false } = {}) {
   inFlight = (async () => {
     try {
       const { data, error } = await withTimeout(
-        supabase.from('admin_settings').select('site_name, site_tagline').eq('id', 1).maybeSingle(),
+        supabase.from('public_site_settings').select('site_name, site_description').eq('id', 1).maybeSingle(),
         FETCH_TIMEOUT_MS
       )
       if (error) throw error
 
       const name = typeof data?.site_name === 'string' ? data.site_name.trim() : ''
-      const tagline = typeof data?.site_tagline === 'string' ? data.site_tagline.trim() : ''
+      const tagline = typeof data?.site_description === 'string' ? data.site_description.trim() : ''
 
       const brand = name
         ? { name, tagline, source: 'admin' }

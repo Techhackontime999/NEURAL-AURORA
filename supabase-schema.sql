@@ -244,20 +244,38 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   -- JSONB so new fields can ship without another migration; '{}' means
   -- "use the built-in defaults".
   video_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
+  -- Admin-managed store hero carousel (src/lib/storeHeroDefaults.js).
+  store_hero JSONB NOT NULL DEFAULT '{}'::jsonb,
   -- Admin-managed site appearance (colors, fonts, default theme) from
   -- /admin/appearance. '{}' means "use the built-in defaults"
   -- (src/lib/appearanceDefaults.js).
   appearance JSONB NOT NULL DEFAULT '{}'::jsonb,
+  -- Public support/donation configuration. This is exposed through the
+  -- public_site_settings view; never store secrets in this document.
+  payment_settings JSONB DEFAULT '{}'::jsonb,
+  docs_url TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)
 );
 
 ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read settings" ON admin_settings FOR SELECT USING (true);
+-- SEC-006: the table is admin-only. Public branding columns are exposed
+-- through the explicit allowlist view created below.
+CREATE POLICY "Admins can read all settings" ON admin_settings FOR SELECT TO authenticated USING (is_admin());
 CREATE POLICY "Admin can update settings" ON admin_settings FOR UPDATE USING (is_admin());
-GRANT SELECT ON TABLE admin_settings TO anon;
 GRANT SELECT, UPDATE ON TABLE admin_settings TO authenticated;
+
+-- Public allowlist. Never add admin_email to this view.
+CREATE OR REPLACE VIEW public_site_settings AS
+SELECT
+  id, site_name, site_description, theme, maintenance_mode,
+  crm_url, youtube_channel_id, docs_url, video_hero, store_hero,
+  appearance, payment_settings, created_at, updated_at
+FROM admin_settings
+WHERE id = 1;
+ALTER VIEW public_site_settings SET (security_barrier = true);
+GRANT SELECT ON TABLE public_site_settings TO anon, authenticated;
 
 INSERT INTO admin_settings (id, site_name, admin_email)
 VALUES (1, 'Neural Aurora', '') ON CONFLICT (id) DO NOTHING;
@@ -642,10 +660,11 @@ DROP POLICY IF EXISTS "Admin can delete contact_messages" ON contact_messages;
 CREATE POLICY "Admin can delete contact_messages"
   ON contact_messages FOR DELETE USING (is_admin());
 
--- ADMIN SETTINGS: anyone can read, admin can update
+-- ADMIN SETTINGS: admins read the table; anon reads the public allowlist view
 DROP POLICY IF EXISTS "Anyone can read settings" ON admin_settings;
-CREATE POLICY "Anyone can read settings"
-  ON admin_settings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admins can read all settings" ON admin_settings;
+CREATE POLICY "Admins can read all settings"
+  ON admin_settings FOR SELECT TO authenticated USING (is_admin());
 
 DROP POLICY IF EXISTS "Admin can update settings" ON admin_settings;
 CREATE POLICY "Admin can update settings"
@@ -722,9 +741,9 @@ GRANT SELECT ON TABLE case_studies TO anon;
 GRANT INSERT ON TABLE contact_messages TO anon;
 GRANT INSERT ON TABLE contact_messages TO authenticated;
 
--- Admin settings: anyone can read
-GRANT SELECT ON TABLE admin_settings TO anon;
+-- Admin settings: admins read the table; anyone reads the public allowlist view
 GRANT SELECT, UPDATE ON TABLE admin_settings TO authenticated;
+GRANT SELECT ON TABLE public_site_settings TO anon, authenticated;
 
 -- Test data templates: anyone can read
 GRANT SELECT ON TABLE test_data_templates TO anon;

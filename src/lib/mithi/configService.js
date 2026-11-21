@@ -70,9 +70,9 @@ function withTimeout(promise, ms) {
 /**
  * Resolve the documentation destination from the existing admin setting.
  *
- * Only `docs_url` is selected — never the rest of the admin settings row — and
- * the bare anon client is used because this table is intentionally public-read.
- * A cached value keeps the link usable if the network is unavailable.
+ * Only `docs_url` is selected from the public allowlist view — never the private
+ * settings row. The bare anon client can read the view. A cached value keeps the
+ * link usable if the network is unavailable.
  */
 export async function resolveDocsDestination({ force = false } = {}) {
   const cached = getDocsUrl()
@@ -98,7 +98,7 @@ export async function resolveDocsDestination({ force = false } = {}) {
   inFlight = (async () => {
     try {
       const { data, error } = await withTimeout(
-        supabase.from('admin_settings').select('docs_url').eq('id', 1).maybeSingle(),
+        supabase.from('public_site_settings').select('docs_url').eq('id', 1).maybeSingle(),
         FETCH_TIMEOUT_MS
       )
 

@@ -804,6 +804,70 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
   )
 }
 
+// --- 17. SEC-006 public settings allowlist ----------------------------------
+{
+  const migration = fs.readFileSync(
+    'supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql',
+    'utf8'
+  )
+  check(
+    'SEC-006 migration: anon loses base table SELECT',
+    migration.includes('REVOKE SELECT ON TABLE public.admin_settings FROM anon;')
+  )
+  check(
+    'SEC-006 migration: base table reads are admin-only',
+    migration.includes('CREATE POLICY "Admins can read all settings"') &&
+      migration.includes('USING (public.is_admin())')
+  )
+  const viewStart = migration.indexOf('CREATE VIEW public.public_site_settings')
+  const viewEnd = migration.indexOf('ALTER VIEW public.public_site_settings')
+  const viewSelect = migration.slice(viewStart, viewEnd)
+  check(
+    'SEC-006 migration: public view allowlist excludes admin_email',
+    viewSelect.includes('site_name') &&
+      viewSelect.includes('appearance') &&
+      !viewSelect.includes('admin_email')
+  )
+  check(
+    'SEC-006 migration: public view is readable by anon',
+    migration.includes('GRANT SELECT ON TABLE public.public_site_settings TO anon, authenticated;')
+  )
+
+  const client = fs.readFileSync('src/lib/supabase.js', 'utf8')
+  check(
+    'SEC-006 client: public reads use the allowlist view',
+    client.includes('export async function getPublicSettings') &&
+      client.includes(".from('public_site_settings')")
+  )
+
+  const publicReaders = [
+    'src/components/ContributorsSection.jsx',
+    'src/components/Support.jsx',
+    'src/components/StartingLoader.jsx',
+    'src/lib/usePortfolioData.js',
+    'src/lib/useSiteAppearance.js',
+    'src/lib/site-brand.js',
+    'src/lib/mithi/configService.js',
+    'api/_lib/mithi-knowledge.js',
+  ]
+  const leaked = publicReaders.filter((file) =>
+    fs.readFileSync(file, 'utf8').includes('getAdminSettings')
+  )
+  check(
+    'SEC-006 client: public surfaces never request full settings',
+    leaked.length === 0,
+    leaked.join(', ')
+  )
+
+  const schema = fs.readFileSync('supabase-schema.sql', 'utf8')
+  const manual = fs.readFileSync('scripts/complete-migration.sql', 'utf8')
+  check(
+    'SEC-006 schema: fresh installs create the allowlist view',
+    schema.includes('CREATE OR REPLACE VIEW public_site_settings') &&
+      manual.includes('CREATE OR REPLACE VIEW public_site_settings')
+  )
+}
+
 setEnv({})
 
 console.log(`\n${passed} passed, ${failed} failed`)

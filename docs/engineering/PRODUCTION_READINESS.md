@@ -53,6 +53,15 @@ Selective precache is implemented and measured locally; full inventory and evide
 - **Limit:** mocked Supabase/auth fixtures and a local preview were used. This is rendered-browser verification of UI contracts, not a live Supabase/RLS/GIN-index, Razorpay, entitlement or download test.
 - **Security:** search expressions are sanitised and bounded in `src/lib/productQuery.js`; no auth, RLS or payment path changed. The exposed DB password (`dfc452e`) still must be rotated.
 
+## 1e. Batch 9 status (paid checkout validation)
+
+- `npm run check`: PASS — 5 routes, **152** i18n keys, 36 migration lints.
+- `npm test`: PASS — 23 pricing + 124 API/source guards + 24 store UX + 17 product-query = **188 tests, 0 failed**.
+- `npm run build`: PASS with the same pre-existing warning; no new runtime dependency.
+- Browser: local Edge 157 + CDP against `vite preview`, **72/72** checks at 1440×900 and 390×844. New checks confirm free products skip paid controls; the paid form is native with quantity 1–10 and a required terms checkbox; the ₹499 summary becomes ₹998 at quantity 2 and the button label follows; the form is valid only after email, phone and terms are supplied.
+- **Limit:** mocked data/session and no Razorpay call. This is UI-contract verification, not a live order, HMAC, entitlement or download test.
+- **Security:** the browser sends only slug + bounded quantity; server-side repricing and the `MAX_QUANTITY = 10` cap remain authoritative. No auth, RLS or payment path changed.
+
 ## 2. Release blockers (must clear before any production sign-off)
 
 1. **Rotate the exposed Supabase DB password (urgent).** It was committed in `dfc452e`, which is an ancestor of HEAD and was pushed via `origin/main`. Removing it from current source does not remove it from history. Set `DATABASE_URL` wherever `migrate.cjs`/`seed.cjs` are run, then rotate the credential.

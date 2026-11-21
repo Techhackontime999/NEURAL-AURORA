@@ -203,3 +203,5 @@
 ## 4. Change-safety notes
 
 Before any P2 fix: explain reason/effects/dependencies, prepare migration + rollback, identify env var names only (never values), obtain approval. Never disable RLS, expose private files, switch Razorpay to live mode, apply production migrations, or deploy without approval.
+
+**Batch 9 (ST-U06):** the paid checkout form gained native/client validation, a bounded quantity and a display-only itemised total. No new security finding: prices still come from the database and `api/create-order` still enforces the authoritative 1–10 quantity cap; no auth, RLS, entitlement or fulfilment logic changed.

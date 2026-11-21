@@ -272,6 +272,37 @@
 
 ---
 
+## Phase 3 — Batch 9: validated paid checkout (2026-11-21) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** close ST-U06 without changing payment authority or schema. ST-U04 was deliberately deferred: a public file manifest would need a new server endpoint and a `compatibility` column migration, which requires explicit approval.
+
+### Changes made
+
+1. **Real native form.** `ProductDetail.jsx` now wraps the purchase panel in a `<form onSubmit>` with a submit button. Email, paid-order phone, quantity and terms are `required`; quantity is additionally bounded by `min="1"` / `max={PRODUCT_MAX_QUANTITY}`.
+2. **Bounded quantity.** `PRODUCT_MAX_QUANTITY = 10` mirrors `api/_lib/order-pricing.js:MAX_QUANTITY`, which remains the authority. `handlePurchase` rejects non-integer or out-of-range values with a translated message and passes the accepted quantity to `startProductCheckout`.
+3. **Terms gate.** Paid orders require a checkbox acceptance before checkout starts. Free products keep their existing magic-link/download path and do not render quantity, terms or the itemised summary.
+4. **Honest itemised summary.** The panel shows unit price × quantity and a total. Both are display-only from `product.price_paise` fetched from the database; the source comment states that `/api/create-order` resolves the canonical amount server-side.
+5. **Guards and copy.** Six new `scripts/test-store-ux.mjs` checks cover the form, cap parity, terms gate, quantity hand-off, display-only total and free-product exemptions. `src/locales/en.json` gains seven checkout keys.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 ranked routes; **152** i18n keys (up from 145); 36 migration lints |
+| `npm test` | PASS | `test:order-pricing` **23/23**; `test:api-guards` **124/124**; `test:store-ux` **24/24**; `test:product-query` **17/17** = **188 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | Vite build succeeds; only the existing i18next warning; `ProductDetail` chunk 16.25 kB / 4.53 kB gzip; no new runtime dependency |
+| `npm run preview` + local Edge 157 + CDP | PASS | **72/72** rendered-browser checks at **1440×900** and **390×844**; new checks cover paid checkout form, bounds, terms, summary and quantity-driven total |
+
+**Rendered-UI method:** `vite preview` served the rebuilt `dist`; headless Edge was driven through CDP with mocked Supabase REST/auth responses and a local fixture session. The harness confirmed the free product shows no paid-only controls, the paid product renders a native form with quantity 1–10 and a required terms checkbox, the summary starts at ₹499, changing quantity to 2 updates both the total and `Buy for ₹998` label, and the form becomes valid only after email, phone and terms are supplied. `checkout-paid-desktop.png` and `report.json` are under `C:\Users\ADMIN\AppData\Local\Temp\opencode\ui-check\`. No Razorpay call, order creation or payment was made.
+
+**Performance impact:** negligible client-side state and validation; no extra request and no new dependency. The total calculation is integer paise arithmetic over an already-loaded product.
+
+**Security implications:** no auth, RLS, entitlement, download or payment-authority change. The browser still never sends a price; it sends a slug and a bounded quantity, and the server reprices and re-validates the cap. The exposed DB password in pushed commit `dfc452e` still requires rotation.
+
+**Database changes:** none applied. **Manual actions required:** execute the real Razorpay test-mode checkout journey, keep the read-only production verification plan open, and rotate the exposed password. No commit, push or deployment was performed as part of this batch documentation step.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

@@ -11,6 +11,7 @@ const products = read('src/components/offerings/Products.jsx')
 const detail = read('src/components/offerings/ProductDetail.jsx')
 const library = read('src/components/offerings/Library.jsx')
 const productsLib = read('src/lib/products.js')
+const pricing = read('api/_lib/order-pricing.js')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -108,6 +109,48 @@ check(
   'catalogue: search uses the shared indexed-tag expression',
   productsLib.includes("import { buildProductSearchExpression } from './productQuery'") &&
     productsLib.includes('query.or(searchExpression)')
+)
+
+// --- ST-U06: paid checkout is a validated native form ----------------------
+check(
+  'checkout: purchase panel is a native form',
+  detail.includes('<form') &&
+    detail.includes('onSubmit={(event) =>') &&
+    detail.includes('type="submit"') &&
+    detail.includes('required')
+)
+check(
+  'checkout: quantity mirrors the server cap',
+  detail.includes('const PRODUCT_MAX_QUANTITY = 10') &&
+    pricing.includes('const MAX_QUANTITY = 10') &&
+    detail.includes('max={PRODUCT_MAX_QUANTITY}') &&
+    detail.includes('t(\'store.quantityInvalid\', { max: PRODUCT_MAX_QUANTITY })')
+)
+check(
+  'checkout: terms checkbox gates paid orders',
+  detail.includes('type="checkbox"') &&
+    detail.includes('checked={termsAccepted}') &&
+    detail.includes('t(\'store.termsRequired\')')
+)
+check(
+  'checkout: quantity reaches the checkout client',
+  detail.includes('quantity: isFree ? 1 : requestedQuantity') &&
+    read('src/lib/checkout.js').includes('quantity = 1') &&
+    read('src/lib/checkout.js').includes('items: [{ slug: product.slug, quantity }]')
+)
+check(
+  'checkout: itemised total is display-only',
+  detail.includes('const displayTotalPaise') &&
+    detail.includes('t(\'store.summaryTitle\')') &&
+    detail.includes('t(\'store.total\')') &&
+    detail.includes('formatPrice(displayTotalPaise, product.currency)') &&
+    /server-side/.test(detail)
+)
+check(
+  'checkout: free products skip quantity and terms',
+  detail.includes('{!isFree && (') &&
+    detail.includes('quantity: isFree ? 1 : requestedQuantity') &&
+    en.store.freeDownload.length > 0
 )
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------

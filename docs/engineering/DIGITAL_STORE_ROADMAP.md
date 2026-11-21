@@ -29,7 +29,7 @@ Commerce engine assessment: **the payment/fulfilment core is sound and should no
 | ST-U03 | `featuredOnly` unused; featured free products lose badge | Low | `Products.jsx:19,101,132-137,224-229`; `ProductCard.jsx:60-77` | **Fixed and browser-verified:** featured chip filters 3→2, result count follows filter, both badges render independently |
 | ST-U04 | No public file manifest or compatibility field | Medium | `ProductDetail.jsx:286-325` never calls `getProductFiles`; no `compatibility` column | Add public-safe file metadata endpoint + structured compatibility |
 | ST-U05 | No ratings/sales-count trust signals | Low | `ProductDetail.jsx:495-498` only secure note | Add verified-purchase reviews/count or stronger policy summary |
-| ST-U06 | Checkout is inline with weak validation; no quantity, terms checkbox or itemised summary | Medium | `ProductDetail.jsx:101-114,400-468` | Real form + native/server validation + quantity (repriced server-side) + terms + summary |
+| ST-U06 | Checkout is inline with weak validation; no quantity, terms checkbox or itemised summary | Medium | `ProductDetail.jsx:101-114,400-468` | **Fixed and browser-verified:** native required form, quantity 1–10 matching the server cap, terms gate and display-only itemised total; live Razorpay checkout still open |
 | ST-U07 | Free-download `window.open` after await can be pop-up-blocked | Low | `ProductDetail.jsx:119-124` | Pre-open anchor or in-page download route with visible fallback |
 | ST-U08 | Library has no search/filter/sort/pagination/file details | Low | `Library.jsx:89-107,511-545,582-597` | **Partially fixed and browser-verified:** client search, newest/title sort, result count and no-results state; per-entitlement file list/pagination still open |
 | ST-U09 | Admin bulk selection survives filter changes → hidden products deletable | Medium | `AdminProducts.jsx:99-100,244-259` vs `AdminOrders.jsx:113-115` | **Fixed in source:** visible-scoped `useBulkSelect`, filter-change clearing, visible-only deletes; browser verification still outstanding |
@@ -66,7 +66,9 @@ Batch 7 (2026-11-21) completed the first storefront slice: ST-U03, the cap-notic
 
 Batch 8 (2026-11-21) closed the remaining ST-U01 pagination half and ST-U02 tag search: 24-row offset pages up to the 200-item cap, a lookahead-based `Load more products` button with an honest visible count, and sanitised `tags.cs.{...}` alternatives in the single catalogue query. Local Edge/CDP verification passed **62/62** checks at 1440×900 and 390×844 with mocked Supabase/auth fixtures; `npm test` reached **182 tests, 0 failed**. Live Supabase GIN query-plan, RLS and payment/entitlement verification remain open.
 
-**Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8; remaining ST-U04, U06, U08, U10, U11; then low-priority UX items.
+Batch 9 (2026-11-21) closed ST-U06: the paid purchase panel is now a native validated form with quantity 1–10, a terms gate and a display-only itemised total. The server still reprices every order and enforces the same cap. Local Edge/CDP verification passed **72/72** checks with mocked fixtures; `npm test` reached **188 tests, 0 failed**. No live Razorpay order was created. ST-U04 was deferred because it needs a new public file-manifest endpoint and a `compatibility` column migration.
+
+**Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8 and ST-U06 in batch 9; remaining ST-U04, U08, U10, U11; then low-priority UX items.
 
 **Phase 5+:** i18n parity, SEO/head, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
 
@@ -79,7 +81,7 @@ Batch 8 (2026-11-21) closed the remaining ST-U01 pagination half and ST-U02 tag 
 | 3 | Customer discovers it | **Browser-tested with fixtures** (1440/390): cards, featured filter, tag search, 24-row pages + load more, result count, cap notice |
 | 4 | Complete product info viewed | **Browser-tested with fixtures**: image count, gallery, purchase panel; ST-U04 file manifest still open |
 | 5 | Order placed | API guards unit-tested; **no live call** |
-| 6 | Server authoritative amount | **Verified** (23 unit tests) |
+| 6 | Server authoritative amount | **Verified** (23 unit tests); batch 9 client form sends slug + bounded quantity only, display total is not authoritative |
 | 7 | Razorpay test payment | **Not tested** — requires test keys + approval |
 | 8 | Server verifies payment | HMAC code verified; **no live webhook** |
 | 9 | Entitlement created exactly once | Idempotency design verified; **no live DB test** |

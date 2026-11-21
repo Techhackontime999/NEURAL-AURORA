@@ -25,6 +25,10 @@ import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 import ImageLightbox from '../ui/ImageLightbox'
 
+// Mirrors api/_lib/order-pricing.js:MAX_QUANTITY. The server remains the
+// authority; this only powers the native input and the visible validation.
+const PRODUCT_MAX_QUANTITY = 10
+
 export default function ProductDetail() {
   const { t } = useTranslation()
   const { slug } = useParams()
@@ -42,6 +46,8 @@ export default function ProductDetail() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [quantity, setQuantity] = useState('1')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
   const [actionNotice, setActionNotice] = useState(null)
@@ -55,6 +61,8 @@ export default function ProductDetail() {
       setActionError(null)
       setActionNotice(null)
       setGalleryIndex(null)
+      setQuantity('1')
+      setTermsAccepted(false)
       try {
         const item = await getProductBySlug(slug)
         if (cancelled) return
@@ -93,6 +101,16 @@ export default function ProductDetail() {
   }, [slug])
 
   const isFree = product ? product.price_paise === 0 : false
+  const requestedQuantity = Math.trunc(Number(quantity))
+  const hasValidQuantity =
+    Number.isInteger(requestedQuantity) &&
+    requestedQuantity >= 1 &&
+    requestedQuantity <= PRODUCT_MAX_QUANTITY
+  const displayQuantity = hasValidQuantity ? requestedQuantity : 1
+  // Display only: /api/create-order resolves the canonical amount server-side.
+  const displayTotalPaise = product
+    ? product.price_paise * (isFree ? 1 : displayQuantity)
+    : 0
 
   const handlePurchase = async () => {
     setActionError(null)
@@ -113,6 +131,16 @@ export default function ProductDetail() {
       return
     }
 
+    if (!isFree && !hasValidQuantity) {
+      setActionError(t('store.quantityInvalid', { max: PRODUCT_MAX_QUANTITY }))
+      return
+    }
+
+    if (!isFree && !termsAccepted) {
+      setActionError(t('store.termsRequired'))
+      return
+    }
+
     setBusy(true)
     try {
       if (isFree) {
@@ -128,6 +156,7 @@ export default function ProductDetail() {
           email: buyerEmail,
           name: (name || '').trim(),
           phone: buyerPhone,
+          quantity: isFree ? 1 : requestedQuantity,
         })
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
@@ -397,7 +426,13 @@ export default function ProductDetail() {
             )}
           </div>
 
-          <div className="mt-5 space-y-2.5">
+          <form
+            className="mt-5 space-y-2.5"
+            onSubmit={(event) => {
+              event.preventDefault()
+              handlePurchase()
+            }}
+          >
             <label className="block">
               <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
                 {t('store.emailLabel')}
@@ -408,6 +443,7 @@ export default function ProductDetail() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={user?.email || t('store.emailPlaceholder')}
                 autoComplete="email"
+                required
                 className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
               />
             </label>
@@ -440,6 +476,7 @@ export default function ProductDetail() {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder={t('store.phonePlaceholder')}
                   autoComplete="tel"
+                  required
                   aria-describedby="store-phone-note"
                   className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                 />
@@ -452,9 +489,61 @@ export default function ProductDetail() {
               </label>
             )}
 
+            {!isFree && (
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  {t('store.quantityLabel')}
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  max={PRODUCT_MAX_QUANTITY}
+                  step="1"
+                  required
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                />
+                <span className="mt-1 block text-[10px] leading-relaxed text-black/35 dark:text-white/35">
+                  {t('store.quantityNote', { max: PRODUCT_MAX_QUANTITY })}
+                </span>
+              </label>
+            )}
+
+            {!isFree && (
+              <label className="flex items-start gap-2 text-[10px] leading-relaxed text-black/45 dark:text-white/45">
+                <input
+                  type="checkbox"
+                  required
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-cyan-500"
+                />
+                <span>{t('store.termsAccept')}</span>
+              </label>
+            )}
+
+            {!isFree && (
+              <div className="rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-3 text-[11px] text-black/55 dark:text-white/55">
+                  <span className="truncate">{t('store.summaryTitle')}</span>
+                  <span className="shrink-0">
+                    {formatPrice(product.price_paise, product.currency)} × {displayQuantity}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 dark:border-white/5 pt-2">
+                  <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                    {t('store.total')}
+                  </span>
+                  <span className="text-sm font-semibold text-black/80 dark:text-white/85">
+                    {formatPrice(displayTotalPaise, product.currency)}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <button
-              type="button"
-              onClick={handlePurchase}
+              type="submit"
               disabled={busy}
               className="w-full rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest py-3 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -463,7 +552,7 @@ export default function ProductDetail() {
                 : isFree
                   ? t('store.freeDownload')
                   : t('store.buyNow', {
-                      price: formatPrice(product.price_paise, product.currency),
+                      price: formatPrice(displayTotalPaise, product.currency),
                     })}
             </button>
 
@@ -496,7 +585,7 @@ export default function ProductDetail() {
               <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {isFree ? t('store.freeNote') : t('store.secureNote')}
             </p>
-          </div>
+          </form>
         </motion.aside>
       </div>
 

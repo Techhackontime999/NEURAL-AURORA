@@ -1,7 +1,7 @@
 # NEURAL AURORA — PRODUCTION READINESS
 
 - **Generated:** 2026-11-21 · **Scope:** repository + local verification only.
-- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. The migrations have still not been applied or tested on staging, and production verification gates are outstanding. This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
+- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. The user reports both migrations were applied directly to **production**, in order, on 2026-11-21; the agent has not verified live state, no staging pass occurred, and production verification gates remain outstanding. This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
 
 ## 1. Gate status
 
@@ -11,12 +11,12 @@
 | Dependencies install | PASS | `npm ci` added 494 packages; no tracked-file changes |
 | Route ranking check | PASS | `npm run check:routes` |
 | i18n checker | PASS **but insufficient** | 135 store keys checked after token-display copy removal; 4,324 translations still missing across 23 locales |
-| SQL structural lint | PASS **but insufficient** | 35 migrations parsed; **no SQL executed**; SCHEMA-001 invalid banner fixed in source |
-| Unit/guard tests | PASS | 23 pricing + 109 API/source guards = 132; covers SEC-001, both migrations, SEC-006, Razorpay retry and bulk-selection contracts |
-| Production build | PASS with warnings | 3.50 MB main chunk; ~20 MB PWA precache; chunk-size warning |
+| SQL structural lint | PASS **but insufficient** | 36 migrations parsed; **no SQL executed**; SCHEMA-001 invalid banner fixed in source |
+| Unit/guard tests | PASS | 23 pricing + 118 API/source guards = 141; covers SEC-001, both migrations, SEC-006, Razorpay retry, bulk-selection, code-splitting and PWA caching contracts |
+| Production build | PASS with warnings | entry chunk 1.28 MB (378 kB gzip) via route/3D splitting; Spline/physics still ~2 MB but deferred; PWA precache reduced from 79 entries / 20,028.89 KiB to 9 entries / 1,529.70 KiB actual; chunk-size warning only |
 | Dependency audit | PASS for production / PARTIAL overall | `npm audit fix` cleared the high (`follow-redirects`) and 3 others; `npm audit --omit=dev` reports **0** vulnerabilities; 4 moderate dev-only advisories remain (`glob`/`minimatch` via `vite-plugin-pwa`/`workbox-build`) and need a breaking downgrade |
-| Application security | **PARTIAL — still a blocker** | SEC-001/002/003/004/005/006/007/008 and SCHEMA-001 fixed in source or authored as forward migrations; ST-U13/ST-U09 fixed in source; migrations unapplied/unverified |
-| Browser/UI smoke test | NOT TESTED | No browser automation run |
+| Application security | **PARTIAL — still a blocker** | SEC-001/002/003/004/005/006/007/008 and SCHEMA-001 fixed in source or authored as forward migrations; ST-U13/ST-U09 fixed in source; user reports both migrations applied to production, agent verification pending |
+| Browser/UI smoke test | PARTIAL | 14/14 headless-Edge PWA scenarios passed (SW install, offline shell/visited route, honest unvisited-route failure, update notice, deep-link refresh, chunk recovery). Full UI/Taste/store E2E still NOT TESTED |
 | Store E2E (13 steps) | NOT TESTED | See `DIGITAL_STORE_ROADMAP.md` §4 |
 | Production migrations applied | NOT VERIFIED | No DB access; never claim applied |
 | Razorpay live/test payments | NOT TESTED | No credentials or approval |
@@ -24,11 +24,22 @@
 | Accessibility / responsive | NOT TESTED | Taste gate not run |
 | Legal/trust consistency | REQUIRES REVIEW | Contradictions and missing disclosures (PLAT-09) |
 
+## 1b. PWA caching status (batch 6)
+
+Selective precache is implemented and measured locally; full inventory and evidence are in `PWA_CACHING_REPORT.md`.
+
+- Precache: **9 shell entries**, 1,491.45 KiB build-reported / **1,529.70 KiB actual**, down from 79 / 20,028.89 KiB actual (**−92.36%**). No precache limit was raised.
+- Runtime caches: hashed `/assets/*.js|css` → `CacheFirst`, 64 entries / 30 days; public images, hero video and résumé → `CacheFirst`, 12 entries / 30 days. Fonts/Fontshare/Spline policies unchanged. CRM blanket caching removed.
+- No Supabase, auth, order, payment, entitlement, private download or admin API response is cached.
+- Offline guarantee changed explicitly: the shell is offline-ready after install; large images, video, 3D vendors and **unvisited** route chunks are not. Visiting a page once online caches its chunks/media for later offline use.
+- Browser evidence: 14/14 headless-Edge scenarios passed, including offline homepage, offline previously visited `/blog`, honest offline unvisited `/support`, update notice, online deep-link refresh, and failed-chunk recovery.
+- Still theoretical: two real deployments with an old tab open, time/entry-based eviction, install prompt and Lighthouse/Core Web Vitals.
+
 ## 2. Release blockers (must clear before any production sign-off)
 
-1. **Apply and verify both forward migrations on staging, in order:** `20261121000000_harden_privileged_functions_and_reviews.sql` then `20261121120000_restrict_admin_settings_exposure.sql`. Rollback scripts are in `supabase/rollback/`. Review function grants/policies, the public view, and client reads after apply. See `STAGING_MIGRATION_RUNBOOK.md`.
+1. **Post-apply verification (urgent).** User reports both migrations were applied directly to **production**, in order, on 2026-11-21; the planned staging pass was skipped. Run the read-only checks in `STAGING_MIGRATION_RUNBOOK.md` §2/§3 and §6 against production now, archive the output, and keep `supabase/rollback/*.down.sql` ready. Do not infer success from the user's report alone.
 2. **SEC-001 verification** — confirm the deployed route emails only, never returns a link, Supabase redirect allowlisting is correct, and buyers still receive mail under the project's mailer limits.
-3. **SEC-006** — **fixed in source / authored migration**: anon loses base-table SELECT and public branding is served by an allowlisted view. Browser check of public branding and admin settings still required after staging apply.
+3. **SEC-006** — **fixed in source; migration user-reported applied to production**: verify anon cannot SELECT `admin_settings`, the view excludes `admin_email`, and public branding/admin settings still render. No browser evidence yet.
 4. **ST-U13 / ST-U09** — **fixed in source** (Razorpay retry poisoning, stale admin bulk selection); browser verification still outstanding.
 5. **PLAT-01** — 4,324 missing translations on a commercial surface (or an explicit, documented English-only store decision).
 6. **PLAT-08 / BUILD-SEC-01** — high and 3 other advisories patched in `package-lock.json`; production audit is clean. Four moderate **dev-only** advisories remain and require a deliberate `vite-plugin-pwa` downgrade decision.
@@ -62,7 +73,7 @@ Run the Taste scripts listed in `DESIGN_SYSTEM_AUDIT.md` §5 at 1440/1024/768/39
 
 ## 7. Batch 1 migration — effects, dependencies and rollback
 
-**Forward migration:** `supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql` (authored, not applied).
+**Forward migration:** `supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql` (authored; **user reports applied to production 2026-11-21, agent-unverified**).
 
 - **Effects:** redefines `is_admin`, `generate_test_data`, entitlement/product owner policies and review insert policy; creates `current_user_has_verified_email` and a review trigger; drops `get_admin_settings`; sets safe `search_path` on definer functions; drops two legacy payments policies.
 - **Dependencies:** assumes the digital-store tables from `20261018*` exist. The review trigger and policy target `reviews`; policy checks use `auth.users.email_confirmed_at`. Staging must verify that admin test-data generation, review submission/moderation, and library access still work after apply.
@@ -71,7 +82,7 @@ Run the Taste scripts listed in `DESIGN_SYSTEM_AUDIT.md` §5 at 1440/1024/768/39
 
 ## 7b. Batch 4 migration — effects, dependencies and rollback
 
-**Forward migration:** `supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql` (authored, not applied). Apply **after** the batch-1 migration.
+**Forward migration:** `supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql` (authored; **user reports applied to production 2026-11-21 after batch 1, agent-unverified**).
 
 - **Effects:** anon loses SELECT on `admin_settings`; table SELECT becomes admin-only; creates `public.public_site_settings`, a `security_barrier` view with an explicit allowlist of branding/display columns (no `admin_email`); grants anon/authenticated SELECT on the view only.
 - **Dependencies:** requires `public.is_admin()` from batch 1 and the settings columns added by the existing `202606*`–`202610*` migrations. Public client reads were switched to `getPublicSettings()` / the view; admin screens keep `getAdminSettings()`.

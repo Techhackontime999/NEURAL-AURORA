@@ -152,13 +152,68 @@
 
 **Database changes:** none applied. **Security implications:** anonymous clients can no longer read the admin allowlist email from the base table; the allowlist view is the only public path. **Design improvements:** none claimed; no browser/visual gate was run. **Manual actions required:** staging apply and verification per `docs/engineering/STAGING_MIGRATION_RUNBOOK.md`.
 
-**Still open:** four dev-only advisories (breaking upgrade decision — user chose to leave them), localization/SEO/design gates, browser/E2E verification, and both unapplied migrations.
+**Still open:** four dev-only advisories (breaking upgrade decision — user chose to leave them), localization/SEO/design gates, browser/E2E verification, and verification of the user-reported production migration apply.
+
+## PHASE 3 — Batch 5: route-level code splitting and deferred 3D
+
+**Reason:** PLAT-04 and DS-05 were the highest-priority verified issues that can be fixed locally without production access. The entry bundle was 3.49 MB because every route and the WebGL aurora were statically imported.
+
+**What changed:**
+- `src/App.jsx` now keeps only the shell, navigation, overlays and first-screen chrome in the entry chunk. Store, admin, blog, auth, support and secondary pages are `React.lazy` imports behind one `Suspense` boundary with an accessible `RouteFallback`.
+- `AuroraBackground` (R3F/Three/drei) is lazy-loaded behind a **local** `Suspense fallback={null}`, so a slow WebGL chunk never replaces the whole page.
+- Removed the app-shell prefetch of `@splinetool/react-spline`; `SplineScene` already lazy-loads on mount, so the 2 MB runtime is no longer requested on every route.
+- Added three source assertions in `scripts/test-api-guards.mjs` to prevent regression of the splitting, prefetch removal and local WebGL boundary.
+
+**Verification evidence (after batch 5):**
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | routes; 135 store i18n keys; 36 migration lints |
+| `npm test` | PASS | 23 pricing + **112** guards = **135 tests** |
+| `npm run build` | PASS (warnings) | entry chunk **1,281.88 kB (377.20 kB gzip)**, down from 3,495.09 kB (857.59 kB gzip); `AuroraBackground` chunk 828.23 kB; `AdminDashboard` 305.70 kB; Spline/physics chunks remain ~2.06/1.99 MB but are no longer in the entry chunk; PWA precache 19,990.64 KiB |
+
+**Database changes:** none. **Security implications:** none; route guards and API behaviour unchanged. **Design improvements:** none claimed — this is a performance/engineering change, not a Taste visual pass. **Manual actions required:** browser smoke of deep links, admin routes and the Razorpay checkout retry after deployment; Lighthouse/Core Web Vitals still not measured.
 
 **No migration will be applied to any environment, and no push/deploy will occur, without explicit approval.**
+
+## PHASE 3 — Batch 6: selective PWA precache and offline reliability
+
+**Reason:** Batch 5 split the routes but Workbox still precached every emitted asset. The local build installed 79 entries / 20,028.89 KiB actual (19,990.64 KiB build-reported) into Cache Storage before the app could start, even though most were lazy route chunks, 3D vendors and large portfolio images.
+
+**Inventory first:** every precached URL in `dist/sw.js` was measured with `statSync` and classified by type, shell necessity and loading mode. Full before/after inventories are in `docs/engineering/PWA_CACHING_REPORT.md`. Only 61 of 79 entries were JS; the largest contributors were six project images plus `profile.jpg`, `react-spline` and `physics` (77.3% of the precache in eight entries). Three icon entries were duplicated.
+
+**What changed (smallest safe configuration change):**
+- `workbox.globPatterns` now allows only `index.html`, `registerSW.js`, `assets/index-*.{js,css}` and `images/neural_aurora_logo.svg`. `includeAssets` still supplies the three PWA icons; the plugin still supplies `manifest.webmanifest`. Three duplicate icon entries and the search-console HTML are gone.
+- Two bounded same-origin `CacheFirst` routes were added: `/assets/*.js|css` → `neural-aurora-lazy-assets` (64 entries / 30 days), and public `/images/*`, `/hero_*.mp4`, `/resume.pdf` → `neural-aurora-media` (12 entries / 30 days). Hashed filenames make CacheFirst safe; expiry and entry caps keep storage bounded.
+- The `crm-neural-aurora.vercel.app` NetworkFirst rule was **removed** — nothing fetches it, and blanket caching of a CRM host could retain admin/private GET responses. No Supabase, `/api/*`, auth, order, payment, entitlement or private-download response is cached.
+- `registerType: 'autoUpdate'`, `skipWaiting()`, `clientsClaim()`, `cleanupOutdatedCaches()` and `NavigationRoute → index.html` are unchanged. `maximumFileSizeToCacheInBytes` was **not** increased.
+- Fixed a pre-existing dead notification: `src/lib/swUpdates.js` now emits the `sw-update` event that `PwaStatus.jsx` already listens for; `src/main.jsx` calls the watcher. One deduplicated event is emitted on controller change (ignoring first activation), on an already-waiting worker, or on `updatefound` for an installed worker.
+- Failed/expired chunks now degrade honestly: `RouteErrorFallback` says "This page isn't available offline yet" when offline, and "Could not load this page" with Reload / Clear cached page files / Go home when online. `clearRuntimeCaches()` deletes only the two optional runtime caches, never the Workbox precache, fonts or Spline cache.
+
+**Verification evidence (after batch 6):**
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | routes; 135 store i18n keys; 36 migration lints |
+| `npm test` | PASS | 23 pricing + **118** guards = **141 tests** (6 new PWA assertions) |
+| `npm run build` | PASS (warnings) | entry 1,283.58 kB / 377.71 kB gzip; PWA **9 entries, 1,491.45 KiB build-reported / 1,529.70 KiB actual**; −92.36% actual precache; only the pre-existing i18next and >500 kB chunk warnings |
+| Browser (Edge 157 + CDP, preview build) | PASS | **14/14** scenarios, including offline home, offline visited route, honest offline unvisited route, update banner, deep-link refresh and missing-chunk recovery |
+
+**Changed guarantee:** after a successful install, the shell is offline-ready but large images, video, 3D vendors and unvisited route chunks are **not** available offline until seen once online. Previously visited routes and public media are cached within the bounded runtime caches; this was browser-tested for `/blog`. An unvisited page is never claimed to be offline-capable.
+
+**Database changes:** none. **Security implications:** removed a blanket CRM response cache; no private response is cached. **Design improvements:** none claimed — this is an engineering change. **Manual actions required:** two-deployment old-tab test, Lighthouse/Core Web Vitals, Taste/visual gate. No commit, push or deployment performed.
+
+---
 
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.
 - No destructive Git operations; no branch changes; no stashing; no resets.
 - `npm ci` created `node_modules/` (gitignored) and initially left `package-lock.json` unchanged; the later audited `npm audit fix` intentionally changed only `package-lock.json` (16 version/resolution lines).
-- With explicit approval, batches 1–3 plus the staging runbook were committed locally as `9387f8b` (`main`). No push or deploy was made.
+- With explicit approval, batches 1–3 plus the staging runbook were committed locally as `9387f8b`, and batch 4 as `097304b`. Both were later pushed to `origin/main` on user instruction ("update main").
+- **User-reported production state (2026-11-21):** the user manually applied
+  `20261121000000_harden_privileged_functions_and_reviews.sql` first, then
+  `20261121120000_restrict_admin_settings_exposure.sql`, to the production
+  Supabase project. The agent has not executed or verified these migrations and
+  no staging pass occurred. Post-apply verification and rollback readiness are
+  now urgent; see `docs/engineering/STAGING_MIGRATION_RUNBOOK.md` §2/§3/§6.

@@ -29,7 +29,7 @@ Supabase (production state UNVERIFIED from repo)
  ├── Postgres: 30 public app tables, all RLS-enabled in consolidated schema
  ├── Auth: email/password + magic links; first-user admin via handle_new_user()
  ├── Storage: portfolio-images (public), digital-products (private)
- └── 35 ordered migrations (newest authored, not applied) + hand-maintained supabase-schema.sql
+ └── 36 ordered migrations (two newest user-reported applied to production on 2026-11-21; verification pending) + hand-maintained supabase-schema.sql
 ```
 
 ## 2. Route table (verified)
@@ -83,7 +83,7 @@ Library.jsx ── auth gate → entitlements → POST /api/download {product_sl
   ── download_grants insert (hash only, rate-limited trigger)
 ```
 
-**Trust boundary:** the browser supplies slugs, quantities, email, phone and payment confirmation intent. It never supplies price, payment status, entitlement or file path. Those are derived or verified server-side. The former unauthenticated token-mint path (SEC-001) was replaced in source with an emailed OTP; the forward migrations for the remaining database-side findings (including the SEC-006 settings split) have been authored but not applied.
+**Trust boundary:** the browser supplies slugs, quantities, email, phone and payment confirmation intent. It never supplies price, payment status, entitlement or file path. Those are derived or verified server-side. The former unauthenticated token-mint path (SEC-001) was replaced in source with an emailed OTP; the forward migrations for the remaining database-side findings (including the SEC-006 settings split) have been authored and, per user report, applied directly to production in order on 2026-11-21; agent has not verified the live state.
 
 ## 4. Database objects
 
@@ -93,7 +93,7 @@ Store constraints of note: `entitlements (product_id, order_item_id)` unique, fr
 
 Storage: `portfolio-images` public (SELECT anon, admin writes); `digital-products` private (admin-only policies, no public SELECT).
 
-Functions/triggers: `handle_new_user`, `ensure_my_profile`, `generate_test_data` (SEC-002), `set_admin_email`, `is_admin`, `admin_delete_user`, `increment_ad_view_count`, `increment_visitor_count`, `admin_can_read_product_file`, `check_download_grant_rate_limit`, `purge_expired_download_records`, `touch_updated_at`, `parse_price_to_paise`, contact/review rate-limit triggers, `current_user_has_verified_email`, `force_unapproved_review`. Authored forward migrations add `SET search_path = public, pg_temp` to known definer functions (SEC-008) — **not applied**.
+Functions/triggers: `handle_new_user`, `ensure_my_profile`, `generate_test_data` (SEC-002), `set_admin_email`, `is_admin`, `admin_delete_user`, `increment_ad_view_count`, `increment_visitor_count`, `admin_can_read_product_file`, `check_download_grant_rate_limit`, `purge_expired_download_records`, `touch_updated_at`, `parse_price_to_paise`, contact/review rate-limit triggers, `current_user_has_verified_email`, `force_unapproved_review`. Authored forward migrations add `SET search_path = public, pg_temp` to known definer functions (SEC-008) — **user-reported applied to production; live `proconfig` not verified by agent**.
 
 Schema drift: `supabase-schema.sql:1047-1051` contains invalid bare banner text; columns `payment_settings`, `docs_url`, `store_hero`, contact-payment context, `site_tagline` and rate-limit functions are inconsistent between migrations, consolidated schema and code. Treat `supabase/migrations/` as canonical. **Production migration state is unverified.**
 
@@ -101,7 +101,7 @@ Schema drift: `supabase-schema.sql:1047-1051` contains invalid bare banner text;
 
 - `vercel.json:3-8` rewrites everything except `/api` to `/index.html` (correct).
 - `public/_redirects:1` has an unguarded catch-all that would break APIs on non-Vercel hosts.
-- `vite.config.js`: PWA `generateSW`, `autoUpdate`, ~20 MB precache, runtime caches for Google Fonts (unused), Fontshare, Spline, CRM.
+- `vite.config.js`: PWA `generateSW`, `autoUpdate`, a 9-entry / 1,529.70 KiB actual offline-shell precache, and bounded runtime caches for lazy assets, public media, Fonts, Fontshare and Spline. The blanket CRM cache was removed.
 - No `.github/` CI workflow. `npm ci` + check/test/build must be run manually or added to CI.
 
 ## 6. Change guidance

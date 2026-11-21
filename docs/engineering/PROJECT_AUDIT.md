@@ -3,8 +3,8 @@
 - **Generated:** 2026-11-21
 - **Repository:** `Techhackontime999/NEURAL-AURORA`
 - **Branch / HEAD:** `main` / `fd8281f17120ff1dfeaf087130410baad2dfb1d8`
-- **Working tree:** clean at audit start; `npm ci` installed dependencies without modifying tracked files
-- **Method:** direct source inspection, project scripts, package audit, live REA MCP verification, Taste skill guidance. No production access. No browser runtime test yet.
+- **Working tree:** clean at audit start; `npm ci` installed dependencies without modifying tracked files. Current tree contains uncommitted batch 5–6 work, preserved by the agent.
+- **Method:** direct source inspection, project scripts, package audit, live REA MCP verification, Taste skill guidance, and (batch 6) headless-Edge/PWA browser tests. No production access. Original Phase 0/1 items remain marked untested where no evidence exists.
 - **Status labels:** `Verified` = confirmed in repository source or local execution; `Suspected` = plausible but unconfirmed; `Not tested` = no evidence gathered; `Requires production access` = live Supabase/Razorpay/Vercel needed.
 
 > This report supersedes the stale root `AUDIT_REPORT.md` (dated 2026-10-18, branch `feat/digital-store`, 8 migrations, 23 tests). That file is historical and must not be used as a readiness verdict.
@@ -20,7 +20,7 @@
 5. **REA MCP status.** **Connected and live** — 263+ tools discovered (browser, JS bundle, native, network capture families). Real calls returned valid REA `target_unavailable` errors only because no target is open. No target investigation performed yet; REA is available for live app/browser investigation when useful.
 6. **Taste skill status.** Installed at `C:\Users\ADMIN\.agents\skills\design-taste-frontend`; `SKILL.md` (tasteskill 2.5) read in full. Key rules applied in `DESIGN_SYSTEM_AUDIT.md`: one system, one section per screen, equal edges, real assets, real icons, subtle purposeful motion, no violet, no generic template look.
 7. **Actual tools available.** Terminal (PowerShell), file read/write/edit, ripgrep, git, Node 26.13.1 / npm 11.20.0, OpenCode v2.0.32, REA MCP (connected), Taste skill, subagents, browser-capable REA tools (not yet exercised). No Playwright/Puppeteer installed locally; no CI workflow (`.github/` absent).
-8. **Test and build status.** `npm run check` **PASS** (routes, English i18n keys, 34 migration structural lints). `npm test` **PASS** (23 pricing + 68 API-guard tests = 91). `npm run build` **PASS** with warnings (3.49 MB main chunk, 2.06 MB Spline, 1.99 MB physics, ~20 MB PWA precache, i18next dynamic/static import warning). `npm audit`: 8 vulnerabilities (1 high, 6 moderate, 1 low). Note: these checks are structural/unit only — no DB execution, no E2E, no browser.
+8. **Test and build status.** `npm run check` **PASS** (routes, 135 i18n keys, 36 migration structural lints). `npm test` **PASS** (23 pricing + 118 API/source guards = 141). `npm run build` **PASS** with pre-existing warnings; entry 1,283.58 kB (377.71 kB gzip), Spline/physics remain ~2 MB but are deferred, and the PWA precache is **9 entries / 1,529.70 KiB actual**, down from 79 / 20,028.89 KiB. `npm audit`: production dependencies clean; 4 moderate dev-only advisories remain. Batch 6 also passed **14/14** headless-Edge PWA browser scenarios, but no DB execution, store E2E, Lighthouse or full visual/UI regression has been performed.
 9. **Critical technical risks.** (a) Unauthenticated magic-link minting endpoint returns sign-in tokens to any caller who knows an order email — **Critical**. (b) Public `SECURITY DEFINER` test-data RPC can bypass RLS — **Critical if default grants exist in production**. (c) Entitlements matched on unverified email claim. (d) `supabase-schema.sql` has an invalid bare-text banner, so the documented "paste schema" setup fails. (e) Unverified production migration status. (f) 4,324 missing translations in the store/newer features.
 10. **Digital Store status.** Commerce engine itself is **well implemented and unit-tested**: integer paise pricing, client price ignored, HMAC webhook on raw body, amount/currency mismatch fails closed, idempotent fulfilment, private bucket, server-authorized downloads, centralized admin auth. Gaps are in discovery (no pagination, tags not searched), product-detail completeness (no file manifest/compatibility), checkout UX, library UX, admin taxonomy/preview, i18n, SEO and legal disclosures.
 11. **Visual design and UX assessment.** Strong raw ingredients but inconsistent execution: three competing design languages (neon aurora / editorial tokens / admin glass), violet in customer-facing identity (Taste forbids), admin appearance controls that write unused CSS variables, hardcoded cyan/text colours in store that ignore admin tokens, global hidden native cursor, infinite decorative animations, and no per-route head management. Needs consolidation, not a redesign from scratch.
@@ -40,7 +40,7 @@
 | Payment | Razorpay order create + webhook HMAC + reconciliation | `api/create-order.js`, `api/razorpay-webhook.js`, `api/admin-reconcile-order.js` |
 | Fulfilment | Single audited grant path, unique constraints + guarded update | `api/_lib/fulfilment.js:56-161` |
 | Delivery | Private `digital-products` bucket, 10-minute signed URLs, grant ledger | `api/download.js:5-6,183-231` |
-| DB | 34 ordered migrations + hand-maintained `supabase-schema.sql` | `supabase/migrations/`, `supabase-schema.sql` |
+| DB | 36 ordered migrations + hand-maintained `supabase-schema.sql` | `supabase/migrations/`, `supabase-schema.sql` |
 | Deployment | Vercel rewrites preserve `/api/*`; PWA generateSW | `vercel.json:3-8`, `vite.config.js` |
 
 Full route table and component inventory are in `docs/engineering/ARCHITECTURE.md`.
@@ -91,8 +91,8 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 ### [PLAT-04] No route-level code splitting; multi-megabyte initial JS
 
 - **Severity:** High
-- **Status:** Verified (build output)
-- **Evidence:** `src/App.jsx:10-45` static-imports all pages; only lazy import is `MithiWidget.jsx:21`. Fresh build: `index-BLBx8kjy.js` 3,494.54 kB (857.30 kB gzip), `react-spline` 2,057.53 kB, `physics` 1,987.56 kB. `build` warns chunks >500 kB.
+- **Status:** Verified in original audit; remediated in batches 5–6 (see below)
+- **Evidence (original audit):** `src/App.jsx:10-45` static-imported all pages; only lazy import was `MithiWidget.jsx:21`. Fresh build: `index-BLBx8kjy.js` 3,494.54 kB (857.30 kB gzip), `react-spline` 2,057.53 kB, `physics` 1,987.56 kB. `build` warns chunks >500 kB.
 - **Root cause:** No `React.lazy`/`manualChunks`.
 - **Impact:** Slow TTI/LCP on mobile; large parse/execute cost; poor caching.
 - **Recommended solution:** Lazy-load routes (admin as its own chunk), `manualChunks` for three/framer/lucide, remove eager Spline prefetch (`src/App.jsx:243-248`), measure with Lighthouse.
@@ -103,13 +103,19 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 ### [PLAT-05] PWA update lifecycle inconsistent; `_redirects` would break APIs off Vercel
 
 - **Severity:** Medium
-- **Status:** Verified (config)
-- **Evidence:** `vite.config.js:17` `registerType: 'autoUpdate'` with dead `sw-update` listener at `src/components/ui/PwaStatus.jsx:25-40`; no producer dispatches it. `public/_redirects:1` catch-all has no `/api` exclusion, unlike `vercel.json:5`. Screenshot in manifest is a 512px icon (`vite.config.js:46-54`).
+- **Status:** Verified in original audit; partially remediated in batch 6 (see below)
+- **Evidence (original audit):** `vite.config.js:17` `registerType: 'autoUpdate'` with dead `sw-update` listener at `src/components/ui/PwaStatus.jsx:25-40`; no producer dispatched it. `public/_redirects:1` catch-all has no `/api` exclusion, unlike `vercel.json:5`. Screenshot in manifest is a 512px icon (`vite.config.js:46-54`).
 - **Root cause:** UI left over from a `prompt` strategy; generic SPA fallback copied.
-- **Impact:** Update banner never appears; on non-Vercel hosts all `/api/*` calls would return `index.html`, breaking checkout/webhooks; install prompts show an icon as a screenshot.
+- **Impact:** Update banner never appeared; on non-Vercel hosts all `/api/*` calls would return `index.html`, breaking checkout/webhooks; install prompts show an icon as a screenshot.
 - **Recommended solution:** Choose one update strategy and wire it; add `/api` carve-out or delete `_redirects`; add real screenshots and maskable icon.
 - **Testing requirements:** Two-version deploy test; POST to `/api/create-order` on a non-Vercel preview.
-- **Verification status:** Config verified; runtime not tested.
+- **Verification status:** Original config verified; batch 6 browser-tested the update event and banner in one local build. Two-deploy and non-Vercel API behaviour remain untested.
+
+#### [PLAT-05] Remediation status (batch 6, 2026-11-21)
+
+- **Resolved:** `src/lib/swUpdates.js` now dispatches the existing `sw-update` event and is called from `src/main.jsx`. `PwaStatus.jsx` needed no lifecycle change. The "New version available" banner was observed in the browser after a simulated SW update.
+- **Resolved:** Workbox now precaches only the 9-file offline shell; lazy assets and public media use bounded same-origin runtime caches. The `crm-neural-aurora.vercel.app` NetworkFirst rule was removed to avoid retaining admin/CRM responses. SPA `NavigationRoute → index.html`, `autoUpdate`, `skipWaiting()`, `clientsClaim()` and `cleanupOutdatedCaches()` are unchanged.
+- **Still open:** the `/api` carve-out (or removal) in `public/_redirects`, real screenshots and a maskable icon, and a genuine two-deployment old-tab test. Full inventory, measured sizes and 14/14 browser evidence are in `PWA_CACHING_REPORT.md`.
 
 ### [PLAT-06] Ad/visitor counters are unauthenticated and unthrottled
 
@@ -124,7 +130,7 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 
 - **Severity:** High (decision risk)
 - **Status:** Verified
-- **Evidence:** Root `AUDIT_REPORT.md:3,7,14,19-30,55,102-111` — old branch, 8 migrations, 23 tests, 99 keys, conclusion "secure, complete". Current: `main`, 34 migrations, 91 tests, 459 keys, and this audit's findings.
+- **Evidence:** Root `AUDIT_REPORT.md:3,7,14,19-30,55,102-111` — old branch, 8 migrations, 23 tests, 99 keys, conclusion "secure, complete". Current: `main`, 36 migrations, 141 tests, 459 keys, and this audit's findings.
 - **Recommended solution:** Mark it historical or replace with a link to `docs/engineering/PRODUCTION_READINESS.md`.
 - **Verification status:** Verified.
 
@@ -137,6 +143,12 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 - **Recommended solution:** Upgrade patched versions, import `matchRoutes` from `react-router-dom`, add `engines.node` and CI running check/test/build/audit.
 - **Verification status:** `npm audit` output captured locally.
 - **Remediation status (2026-11-21):** Non-breaking `npm audit fix` cleared the high advisory and three others; production dependency audit is now clean (`npm audit --omit=dev`: 0). Four moderate dev-only advisories remain pending a deliberate `vite-plugin-pwa` decision.
+
+### [PLAT-04] Remediation status (batches 5–6, 2026-11-21)
+
+- Route-level `React.lazy` splitting and deferred WebGL reduced the entry chunk from 3,495.09 kB (857.59 kB gzip) to 1,281.88 kB (377.20 kB gzip). The app-shell Spline prefetch was removed; `SplineScene` still loads on mount.
+- Batch 6 left the split intact; the entry is now 1,283.58 kB (377.71 kB gzip), the small growth coming from offline-recovery and update-notification code. Workbox precaching was separately reduced from 79 entries / 20,028.89 KiB actual to 9 shell entries / 1,529.70 KiB actual.
+- **Verification status:** source + build verified locally; batch 6 browser-tested an online deep-link refresh (`/more/certificates`) and failed-lazy-chunk recovery. Lighthouse/Core Web Vitals and the full visual/route regression are still not performed.
 
 ### [PLAT-09] Legal/trust disclosures require professional review
 
@@ -154,12 +166,12 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 |---|---|---|---|
 | P0 | Environment & discovery | Repo/Git/skills/MCP/scripts verified | **Complete** |
 | P1 | Complete audit | 7 engineering reports written with evidence | **Complete (this report set)** |
-| P2 | Critical engineering fixes | SEC-001/002/003/005/007, SCHEMA-001 fixed or explicitly waived; tests added | Batch 1 source complete; forward migration authored, not applied or staging-verified |
-| P3 | Design system + storefront (Taste) | Tokens consumed; violet removed from identity; store audit fixes applied; browser inspection at 1440/768/390 | Not started |
+| P2 | Critical engineering fixes | SEC-001/002/003/005/006/007, SCHEMA-001 fixed or explicitly waived; tests added | Batch 1–4 source complete; user reports both migrations applied directly to production on 2026-11-21; agent verification pending |
+| P3 | Design system + storefront (Taste) | Tokens consumed; violet removed from identity; store audit fixes applied; browser inspection at 1440/768/390 | **Started** — batch 5 code splitting/3D deferral complete; visual/token work and browser gate not done |
 | P4 | Commerce & customer experience | Pagination, tags, file manifest, checkout form, library search, admin taxonomy; acceptance journey steps 1–13 tested | Not started |
-| P5 | Platform polish | i18n parity, head management, sitemap, PWA lifecycle, bundle splitting, accessibility | Not started |
+| P5 | Platform polish | i18n parity, head management, sitemap, PWA lifecycle, bundle splitting, accessibility | **Started** — batch 5 bundle splitting and batch 6 PWA caching/update lifecycle complete; i18n parity, head management, sitemap and accessibility remain |
 | P6 | Advanced business | Analytics, bundles/coupons, reviews, Mithi shopping assistant — prioritized, not automatic | Not started |
-| P7 | Final QA | Regression, build, browser, security verification, production-readiness review | Not started |
+| P7 | Final QA | Regression, build, browser, security verification, production-readiness review | **Started** — check/test/build and 14 PWA browser scenarios pass; full UI/store E2E, security verification and visual gates remain |
 
 **Phase 2 batch 1 — completed in source (2026-11-21):**
 1. `api/customer-signin-link.js` now emails a paid-order OTP; no token is returned (SEC-001).
@@ -174,4 +186,4 @@ Every finding below follows: Finding / Severity / Status / Evidence / Root cause
 
 **Remaining in P2:** apply/verify both migrations on staging, browser-verify ST-U13/ST-U09 and the settings split; the four dev-only advisories are deliberately left (user decision).
 
-No database migration will be applied to any environment without explicit approval. Batches 1–3 plus the staging runbook were committed locally with approval (`9387f8b`); no push or deploy was made.
+Batches 1–4 were committed locally with approval (`9387f8b`, `097304b`) and pushed to `origin/main`. The user reports both authored migrations were applied directly to production on 2026-11-21; the agent has not verified live state, and no browser/E2E verification has occurred.

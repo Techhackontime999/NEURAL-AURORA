@@ -47,7 +47,7 @@
 - **Dependencies:** Admin test-data generation flow must be preserved (move it to an authenticated API route or grant only to a server role).
 - **Testing requirements:** Anonymous and non-admin RPC calls must fail; admin flow still works; inspect `pg_proc.proacl`.
 - **Verification status:** Source verified; production grants not checked.
-- **Remediation authored (2026-11-21):** forward migration adds an in-function `is_admin()` check, bounded count, hardened `search_path`, and `REVOKE`/`GRANT`; consolidated and manual install scripts updated. **Migration not applied; live grants not checked.**
+- **Remediation authored (2026-11-21):** forward migration adds an in-function `is_admin()` check, bounded count, hardened `search_path`, and `REVOKE`/`GRANT`; consolidated and manual install scripts updated. **User reports migration applied to production 2026-11-21; live grants not verified by agent.**
 
 ### [SEC-003] Entitlements trusted on an unverified email claim
 
@@ -60,7 +60,7 @@
 - **Dependencies:** Production Auth settings; guest-recovery design.
 - **Testing requirements:** Verified email allowed; unverified denied; no-email denied; direct PostgREST RLS test.
 - **Verification status:** Source verified; live Auth config not checked.
-- **Remediation authored (2026-11-21):** `/api/download` requires `email_confirmed_at`; forward migration and consolidated schema use a definer helper that reads `auth.users.email_confirmed_at` for email-based RLS matching. **Migration not applied; live Auth config not checked.**
+- **Remediation authored (2026-11-21):** `/api/download` requires `email_confirmed_at`; forward migration and consolidated schema use a definer helper that reads `auth.users.email_confirmed_at` for email-based RLS matching. **User reports migration applied to production 2026-11-21; live Auth config and RLS not verified by agent.**
 
 ### [SEC-004] `get_admin_settings()` manual script may expose the full settings row
 
@@ -83,7 +83,7 @@
 - **Dependencies:** Existing review rate-limit migration should be present in production.
 - **Testing requirements:** Insert with `approved:true` rejected/coerced; public SELECT excludes unapproved; admin approval still works.
 - **Verification status:** Source verified.
-- **Remediation authored (2026-11-21):** insert policy requires `approved = FALSE` and a `BEFORE INSERT` trigger forces it; admin UPDATE remains the only approval path. **Migration not applied.**
+- **Remediation authored (2026-11-21):** insert policy requires `approved = FALSE` and a `BEFORE INSERT` trigger forces it; admin UPDATE remains the only approval path. **User reports migration applied to production 2026-11-21; live state not verified by agent.**
 
 ### [SEC-006] Public `admin_settings` SELECT exposes `admin_email` and all settings
 
@@ -100,7 +100,7 @@
   `public.public_site_settings` with an explicit column allowlist. Public client
   reads now use `getPublicSettings()` / the view; `getAdminSettings()` is reserved
   for admin screens. Consolidated schema and manual install script updated.
-  **Migration not applied.**
+  **User reports migration applied to production 2026-11-21; live state not verified by agent.**
 
 ### [SEC-007] Consolidated schema does not drop legacy permissive payment policies
 
@@ -123,7 +123,7 @@
 - **Evidence:** No `SET search_path` in any audited SQL. Affects `is_admin()` (`supabase-schema.sql:393-403`), `handle_new_user()` (`:23-47`), `generate_test_data()` (`:289-335`), `admin_delete_user()` (`:704-712`), `admin_can_read_product_file()` (`:1589-1600`). `config.toml:14-15` includes `public, extensions` in request search path.
 - **Solution:** Add `SET search_path = public, pg_temp` to every definer function; fully qualify relations/functions.
 - **Verification status:** Source verified; exploitability requires production privilege conditions.
-- **Remediation authored (2026-11-21):** forward migration sets `search_path = public, pg_temp` on every known definer function, guarded by `to_regprocedure` for partial installs. **Migration not applied.**
+- **Remediation authored (2026-11-21):** forward migration sets `search_path = public, pg_temp` on every known definer function, guarded by `to_regprocedure` for partial installs. **User reports migration applied to production 2026-11-21; live state not verified by agent.**
 
 ### [SEC-009] Public counter RPCs have no abuse controls
 

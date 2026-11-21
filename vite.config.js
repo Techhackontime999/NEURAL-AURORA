@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { createRequire } from 'node:module'
 import Razorpay from 'razorpay'
+import { LAZY_ASSETS_CACHE, MEDIA_CACHE } from './src/lib/pwaCaches.js'
 
 const requireCjs = createRequire(path.join(process.cwd(), 'vite.config.js'))
 
@@ -72,9 +73,49 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}'],
+          // Only the offline application shell is precached. Route chunks,
+          // large imagery, hero video and 3D vendors are fetched on demand and
+          // cached at runtime, so installing the SW never downloads ~20 MiB.
+          globPatterns: [
+            'index.html',
+            'registerSW.js',
+            'assets/index-*.js',
+            'assets/index-*.css',
+            'images/neural_aurora_logo.svg',
+          ],
+          // Unchanged limit: a guard, not a target. Nothing above this size can
+          // enter the precache; lazy assets are bounded by runtimeCaching.
           maximumFileSizeToCacheInBytes: 4000000,
           runtimeCaching: [
+            {
+              // Hashed, content-addressed chunks are immutable. CacheFirst
+              // gives previously visited routes an offline experience and lets
+              // old tabs finish loading chunks that a new deploy removed.
+              urlPattern: ({ url }) =>
+                url.origin === self.location.origin &&
+                /\/assets\/[^/]+\.(?:js|css)$/i.test(url.pathname),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: LAZY_ASSETS_CACHE,
+                expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              // Public, same-origin page content only. API/auth/store/download
+              // routes never match these paths, so private data is not cached.
+              urlPattern: ({ url }) =>
+                url.origin === self.location.origin &&
+                /(?:\/images\/[^/]+\.(?:png|jpe?g|webp|svg)|\/hero_(?:dark|light)\.mp4|\/resume\.pdf)$/i.test(
+                  url.pathname
+                ),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: MEDIA_CACHE,
+                expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
             {
               urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
               handler: 'CacheFirst',
@@ -103,15 +144,9 @@ export default defineConfig(({ mode }) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
-            {
-              urlPattern: /^https:\/\/crm-neural-aurora\.vercel\.app\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'crm-assets',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 7 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
+            // The previous crm-neural-aurora NetworkFirst rule was removed: it
+            // could cache admin/CRM GET responses and nothing in the app needs
+            // it. Never cache Supabase/API/auth/order/entitlement responses.
           ],
         },
       }),

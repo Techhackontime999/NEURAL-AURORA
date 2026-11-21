@@ -62,6 +62,7 @@ Every finding: Finding / Severity / Status / Evidence / Root cause / Impact / Re
 - **Impact:** Multi-megabyte download and sustained GPU/CPU cost before the user sees product content.
 - **Recommendation:** Lazy-load both scenes; defer Spline until hero in view; `frameloop="demand"` or capped DPR; mobile particle budgets; skip under reduced-motion/low-data. Keep the neural identity in a cheaper static treatment when scenes are declined.
 - **Testing:** Lighthouse mobile; WebGL context-loss path; reduced-motion.
+- **Remediation status (batch 5):** `AuroraBackground` is now lazy-loaded behind a local `Suspense fallback={null}` and the app-shell Spline prefetch was removed. Entry JS fell from 3.49 MB to 1.28 MB. R3F particle budgets, `frameloop="demand"` and reduced-motion gating inside the scene are **not yet changed**; browser/Lighthouse verification is still outstanding.
 
 ### [DS-06] Custom cursor hides the native cursor unconditionally
 

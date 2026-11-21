@@ -868,6 +868,79 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
   )
 }
 
+{
+  // PLAT-04 / DS-05: keep the entry chunk small and the 3D scenes deferred.
+  const app = fs.readFileSync('src/App.jsx', 'utf8')
+  check(
+    'perf: route components are code-split',
+    app.includes("lazy(() => import('./components/offerings/Products'))") &&
+      app.includes("lazy(() => import('./components/admin/AdminDashboard'))")
+  )
+  check(
+    'perf: no eager Spline prefetch in the app shell',
+    !app.includes("import('@splinetool/react-spline')")
+  )
+  check(
+    'perf: WebGL background has a local Suspense boundary',
+    app.includes('<Suspense fallback={null}>') &&
+      app.includes('<AuroraBackground mouse={mouse} />')
+  )
+}
+
+{
+  // Batch 6: selective PWA precache with bounded runtime fallbacks.
+  const config = fs.readFileSync('vite.config.js', 'utf8')
+  check(
+    'pwa: precache is limited to the offline shell',
+    config.includes("'index.html',") &&
+      config.includes("'registerSW.js',") &&
+      config.includes("'assets/index-*.js',") &&
+      config.includes("'assets/index-*.css',") &&
+      !config.includes("'**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}'")
+  )
+  check(
+    'pwa: lazy assets and media use bounded runtime caches',
+    config.includes('cacheName: LAZY_ASSETS_CACHE') &&
+      config.includes('cacheName: MEDIA_CACHE') &&
+      config.includes('expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 30 }') &&
+      config.includes('expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 30 }')
+  )
+  check(
+    'pwa: no blanket CRM/private-response caching',
+    !config.includes("urlPattern: /^https:\\/\\/crm-neural-aurora") &&
+      !config.includes("cacheName: 'crm-assets'") &&
+      !config.includes('cacheName: supabase')
+  )
+
+  const caches = fs.readFileSync('src/lib/pwaCaches.js', 'utf8')
+  check(
+    'pwa: recovery action clears only optional runtime caches',
+    caches.includes("export const LAZY_ASSETS_CACHE = 'neural-aurora-lazy-assets'") &&
+      caches.includes("export const MEDIA_CACHE = 'neural-aurora-media'") &&
+      caches.includes('export async function clearRuntimeCaches()')
+  )
+
+  const main = fs.readFileSync('src/main.jsx', 'utf8')
+  const watcher = fs.readFileSync('src/lib/swUpdates.js', 'utf8')
+  check(
+    'pwa: update notification is wired to the existing event',
+    main.includes("import { watchServiceWorkerUpdates } from './lib/swUpdates'") &&
+      main.includes('watchServiceWorkerUpdates()') &&
+      watcher.includes("window.dispatchEvent(new Event('sw-update'))") &&
+      watcher.includes("navigator.serviceWorker.addEventListener('controllerchange'") &&
+      watcher.includes('if (hadController) notify()')
+  )
+
+  const app = fs.readFileSync('src/App.jsx', 'utf8')
+  check(
+    'pwa: failed lazy chunks get an honest offline-aware fallback',
+    app.includes('function RouteErrorFallback()') &&
+      app.includes("This page isn't available offline yet") &&
+      app.includes('Clear cached page files') &&
+      app.includes('<RenderErrorBoundary fallback={<RouteErrorFallback />}>')
+  )
+}
+
 setEnv({})
 
 console.log(`\n${passed} passed, ${failed} failed`)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
@@ -8,7 +8,6 @@ import { MoodProvider } from './context/MoodContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
-import AuroraBackground from './components/AuroraBackground'
 import Hero from './components/Hero'
 import VideoHero from './components/VideoHero'
 import About from './components/About'
@@ -18,31 +17,99 @@ import Resume from './components/Resume'
 import Contact from './components/Contact'
 import ReviewsList from './components/ReviewsList'
 import ReviewForm from './components/ReviewForm'
-import More from './components/More'
-import Certificates from './components/more/Certificates'
-import Achievements from './components/more/Achievements'
-import Gallery from './components/more/Gallery'
-import Service from './components/Service'
-import ServiceDetail from './components/ServiceDetail'
-import Products from './components/offerings/Products'
-import ProductDetail from './components/offerings/ProductDetail'
-import Library from './components/offerings/Library'
-import PurchaseSuccess from './components/offerings/PurchaseSuccess'
-import Blog from './components/Blog'
-import BlogPost from './components/BlogPost'
-import CaseStudyDetail from './components/CaseStudyDetail'
-import Support from './components/Support'
 import { Footer } from './components/ui/footer-section'
-import Login from './components/admin/Login'
-import Register from './components/admin/Register'
-import ForgotPassword from './components/admin/ForgotPassword'
-import AdminDashboard from './components/admin/AdminDashboard'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import PwaStatus from './components/ui/PwaStatus'
 import RenderErrorBoundary from './lib/RenderErrorBoundary'
 import { NeuralCursor } from './components/ui/neural-cursor'
 import MithiWidget from './components/mithi/MithiWidget'
 import { useMood } from './context/MoodContext'
+import { clearRuntimeCaches } from './lib/pwaCaches'
+
+// Route-level code splitting: only the app shell, navigation and overlays stay
+// in the entry chunk. Pages and the WebGL background load on demand.
+const AuroraBackground = lazy(() => import('./components/AuroraBackground'))
+const More = lazy(() => import('./components/More'))
+const Certificates = lazy(() => import('./components/more/Certificates'))
+const Achievements = lazy(() => import('./components/more/Achievements'))
+const Gallery = lazy(() => import('./components/more/Gallery'))
+const Service = lazy(() => import('./components/Service'))
+const ServiceDetail = lazy(() => import('./components/ServiceDetail'))
+const Products = lazy(() => import('./components/offerings/Products'))
+const ProductDetail = lazy(() => import('./components/offerings/ProductDetail'))
+const Library = lazy(() => import('./components/offerings/Library'))
+const PurchaseSuccess = lazy(() => import('./components/offerings/PurchaseSuccess'))
+const Blog = lazy(() => import('./components/Blog'))
+const BlogPost = lazy(() => import('./components/BlogPost'))
+const CaseStudyDetail = lazy(() => import('./components/CaseStudyDetail'))
+const Support = lazy(() => import('./components/Support'))
+const Login = lazy(() => import('./components/admin/Login'))
+const Register = lazy(() => import('./components/admin/Register'))
+const ForgotPassword = lazy(() => import('./components/admin/ForgotPassword'))
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'))
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[60dvh] flex items-center justify-center px-6" role="status" aria-live="polite">
+      <span className="text-sm text-[var(--text-secondary)]">Loading…</span>
+    </div>
+  )
+}
+
+// A lazy chunk can fail for two different reasons: the visitor is offline and
+// has never opened this route, or a cached chunk expired / changed after a
+// deploy. Never claim an unvisited page is available offline; offer the right
+// recovery action for each case instead.
+function RouteErrorFallback() {
+  const offline = typeof navigator !== 'undefined' && !navigator.onLine
+  const [clearing, setClearing] = useState(false)
+
+  async function handleClear() {
+    setClearing(true)
+    try {
+      await clearRuntimeCaches()
+    } catch {
+      // A failed cache clear must not block the reload attempt.
+    }
+    window.location.reload()
+  }
+
+  return (
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-4 px-6 text-center" role="alert">
+      <h1 className="font-display text-2xl font-bold text-[var(--text-primary)]">
+        {offline ? "This page isn't available offline yet" : 'Could not load this page'}
+      </h1>
+      <p className="text-sm text-[var(--text-secondary)] max-w-[46ch]">
+        {offline
+          ? 'Open it once while online and it can work offline later. The homepage and pages you have already visited remain available.'
+          : 'The page files may have expired or changed after an update. Reload, or clear the cached page files and try again.'}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        >
+          Reload
+        </button>
+        {!offline && (
+          <button
+            onClick={handleClear}
+            disabled={clearing}
+            className="px-5 py-2.5 rounded-xl border border-[var(--border-color)] text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--accent)] transition-colors disabled:opacity-50"
+          >
+            {clearing ? 'Clearing…' : 'Clear cached page files'}
+          </button>
+        )}
+        <button
+          onClick={() => { window.location.href = '/' }}
+          className="px-5 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          Go home
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function SectionSeparator() {
   return (
@@ -98,7 +165,10 @@ function HomePage() {
       onMouseMove={handleMouseMove}
       className="relative min-h-[100dvh] overflow-clip"
     >
-      <AuroraBackground mouse={mouse} />
+      {/* Local boundary so a slow WebGL chunk never swaps out the whole page. */}
+      <Suspense fallback={null}>
+        <AuroraBackground mouse={mouse} />
+      </Suspense>
       <Navbar />
       <Hero />
       <motion.div
@@ -241,13 +311,6 @@ function AppContent() {
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
   useEffect(() => {
-    // Prefetch the Spline runtime so the hero scene mounts without a visible
-    // hitch. Offline this import rejects — swallow it, SplineScene handles
-    // its own failure.
-    import('@splinetool/react-spline').catch(() => {})
-  }, [])
-
-  useEffect(() => {
     // If user navigates away from home, skip the full verification loader.
     if (location.pathname !== '/') {
       setLoaderDone(true)
@@ -268,28 +331,11 @@ function AppContent() {
           <motion.div
             animate={{ opacity: 1 }}
           >
-            {/* Last line of defence: a stray render error (typically a 3D
-                scene failing to download while offline) must degrade to a
-                readable screen, never to a blank page. */}
-            <RenderErrorBoundary
-              fallback={
-                <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-4 px-6 text-center">
-                  <h1 className="font-display text-2xl font-bold text-[var(--text-primary)]">
-                    Something went wrong
-                  </h1>
-                  <p className="text-sm text-[var(--text-secondary)] max-w-[42ch]">
-                    The page hit an unexpected error. Reload to try again — your
-                    saved data is untouched.
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
-                  >
-                    Reload
-                  </button>
-                </div>
-              }
-            >
+            {/* Last line of defence: a stray render error or a failed lazy
+                chunk (3D scene offline, expired route chunk) must degrade to a
+                readable, honest screen, never to a blank page. */}
+            <RenderErrorBoundary fallback={<RouteErrorFallback />}>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/more" element={<More />} />
@@ -331,6 +377,7 @@ function AppContent() {
               {/* Unknown URLs fall back to the home page */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
             </RenderErrorBoundary>
           </motion.div>
         )}

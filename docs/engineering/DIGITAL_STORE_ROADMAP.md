@@ -47,7 +47,7 @@ Full i18n, PWA, SEO and design findings are in `PROJECT_AUDIT.md` and `DESIGN_SY
 
 **Phase 2 — critical engineering (before UX):**
 
-Batch 1 — source complete, migration authored but not applied:
+Batch 1 — source complete; migration user-reported applied directly to production on 2026-11-21 (verification pending):
 1. SEC-001 customer-signin-link now emails a Supabase OTP to a paid address; no token is returned.
 2. SEC-002/004 forward migration hardens `generate_test_data` and drops `get_admin_settings`.
 3. SCHEMA-001 invalid banner fixed; SEC-007 legacy payment policy drops added.

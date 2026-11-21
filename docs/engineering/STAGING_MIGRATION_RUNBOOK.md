@@ -6,9 +6,11 @@ order:
 1. `supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql`
 2. `supabase/migrations/20261121120000_restrict_admin_settings_exposure.sql`
 
-Neither has been applied by the agent. Do not run any of this against
-production until staging verification and explicit production approval are
-complete.
+Neither has been applied by the agent. **Update (2026-11-21):** the user reports
+both were applied directly to **production**, in order, without a staging pass.
+The verification queries in this runbook are now urgent post-deploy checks and
+must be run against production; archive the output. The planned staging-first
+gate was bypassed. Rollback files are listed in §4 and §6.
 
 ## 0. Before you start
 

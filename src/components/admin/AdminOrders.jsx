@@ -100,13 +100,15 @@ export default function AdminOrders() {
     })
   }, [orders, search, statusFilter])
 
+  const visibleIds = useMemo(() => new Set(filtered.map((o) => o.id)), [filtered])
+
   const {
     selectedIds,
     toggleSelect,
     toggleAll,
     clearSelection,
     allSelected,
-  } = useBulkSelect(filtered)
+  } = useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })
 
   // Selection follows what is on screen: changing the filters starts fresh so
   // a bulk delete can never include rows the admin can no longer see.
@@ -192,10 +194,11 @@ export default function AdminOrders() {
    * their line items and download entitlements.
    */
   async function handleDeleteSelected() {
-    const ids = [...selectedIds]
+    // Never send IDs that have scrolled out of the current filter.
+    const ids = Array.from(selectedIds).filter((id) => visibleIds.has(id))
     if (ids.length === 0) return
 
-    const selected = orders.filter((o) => selectedIds.has(o.id))
+    const selected = filtered.filter((o) => ids.includes(o.id))
     const paidCount = selected.filter((o) => o.payment_status === 'paid').length
 
     const ok = await confirm({

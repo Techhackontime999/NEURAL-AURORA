@@ -287,10 +287,21 @@ GRANT SELECT, INSERT, DELETE ON TABLE test_data_templates TO authenticated;
 -- TEST DATA GENERATION FUNCTION
 -- ============================================================
 CREATE OR REPLACE FUNCTION generate_test_data(p_category TEXT, p_count INT DEFAULT 3)
-RETURNS TEXT AS $$
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 DECLARE
   i INT; inserted INT := 0; random_suffix TEXT;
 BEGIN
+  IF p_count IS NULL OR p_count < 1 OR p_count > 25 THEN
+    RAISE EXCEPTION 'p_count must be between 1 and 25';
+  END IF;
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can generate test data';
+  END IF;
+
   FOR i IN 1..p_count LOOP
     random_suffix := substr(md5(random()::text), 1, 8);
     CASE p_category
@@ -311,7 +322,7 @@ BEGIN
         VALUES ('test-'||random_suffix, 'Test Post', 'test-'||random_suffix, 'Excerpt', 'Content', NOW()::date, '3 min', ARRAY['Test']);
       WHEN 'reviews' THEN
         INSERT INTO reviews (name, email, rating, message, approved)
-        VALUES ('Test User', 'test@test.com', 5, 'Great!', random()>0.5);
+        VALUES ('Test User', 'test@test.com', 5, 'Great!', FALSE);
       WHEN 'case_studies' THEN
         INSERT INTO case_studies (cs_id, title, slug, description, outcome, content, tech, display_order)
         VALUES ('test-'||random_suffix, 'Test CS', 'test-'||random_suffix, 'Desc', 'Done', 'Content', ARRAY['React'], (SELECT COALESCE(MAX(display_order),0)+1 FROM case_studies));
@@ -332,7 +343,10 @@ BEGIN
   END LOOP;
   RETURN 'Inserted '||inserted||' '||p_category;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+REVOKE EXECUTE ON FUNCTION generate_test_data(TEXT, INT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION generate_test_data(TEXT, INT) TO authenticated, service_role;
 
 -- ============================================================
 -- ADMIN HELPER FUNCTIONS
@@ -391,7 +405,12 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- Helper: check if user is admin
 CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   RETURN (
     SELECT COALESCE(
@@ -400,7 +419,27 @@ BEGIN
     )
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Email-based entitlement matching is only safe for a confirmed session email.
+CREATE OR REPLACE FUNCTION current_user_has_verified_email(p_email TEXT)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM auth.users u
+    WHERE u.id = auth.uid()
+      AND u.email_confirmed_at IS NOT NULL
+      AND coalesce(p_email, '') <> ''
+      AND lower(coalesce(u.email, '')) = lower(p_email)
+  );
+$$;
+
+REVOKE EXECUTE ON FUNCTION current_user_has_verified_email(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION current_user_has_verified_email(TEXT) TO authenticated, service_role;
 
 -- PROFILES: users can read their own, admins can read all
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
@@ -625,11 +664,28 @@ DROP POLICY IF EXISTS "Admin can delete test_data_templates" ON test_data_templa
 CREATE POLICY "Admin can delete test_data_templates"
   ON test_data_templates FOR DELETE USING (is_admin());
 
--- REVIEWS: anyone can insert, admin can read/update/delete all
+-- REVIEWS: anyone may submit, but nobody outside admin moderation can approve.
+CREATE OR REPLACE FUNCTION force_unapproved_review()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  NEW.approved := FALSE;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS reviews_force_unapproved ON reviews;
+CREATE TRIGGER reviews_force_unapproved
+  BEFORE INSERT ON reviews
+  FOR EACH ROW EXECUTE FUNCTION force_unapproved_review();
+
 DROP POLICY IF EXISTS "Anyone can insert reviews" ON reviews;
 CREATE POLICY "Anyone can insert reviews"
   ON reviews FOR INSERT
-  WITH CHECK (TRUE);
+  TO anon, authenticated
+  WITH CHECK (approved = FALSE);
 
 DROP POLICY IF EXISTS "Anyone can read approved reviews" ON reviews;
 CREATE POLICY "Anyone can read approved reviews"
@@ -841,6 +897,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_razorpay_order_id ON payments (ra
 
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
+-- Legacy policies from 20260601150000 must not survive a consolidated install.
+-- PostgreSQL OR-combines policies, so leaving either open policy defeats RLS.
+DROP POLICY IF EXISTS "Anyone can insert payments" ON payments;
+DROP POLICY IF EXISTS "Authenticated users can view payments" ON payments;
+DROP POLICY IF EXISTS "Admins can view payments" ON payments;
+DROP POLICY IF EXISTS "Admins can insert payments" ON payments;
+DROP POLICY IF EXISTS "Admins can update payments" ON payments;
+DROP POLICY IF EXISTS "Admins can delete payments" ON payments;
+
 CREATE POLICY "Admins can view payments"
   ON payments FOR SELECT
   TO authenticated
@@ -1044,11 +1109,11 @@ GRANT SELECT ON TABLE gallery TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE gallery TO authenticated;
 
 
-===========================================================================
-DIGITAL PRODUCTS STORE
-Catalogue, orders, entitlements and private storage.
-Appended from supabase/migrations/2026101800000{0,1,2,3}_*.sql
-===========================================================================
+-- ===========================================================================
+-- DIGITAL PRODUCTS STORE
+-- Catalogue, orders, entitlements and private storage.
+-- Appended from supabase/migrations/2026101800000{0,1,2,3}_*.sql
+-- ===========================================================================
 
 -- >>> supabase/migrations/20261018000000_create_digital_products.sql
 
@@ -1750,27 +1815,13 @@ CREATE TRIGGER trg_orders_updated_at
 -- >>> supabase/migrations/20261018000007_harden_email_claim_policies.sql
 
 -- ============================================================
--- DIGITAL PRODUCTS — require a non-empty email claim
+-- DIGITAL PRODUCTS — require a confirmed session email for email fallback
 --
--- Two policies compare the session's email claim against
--- `customer_email`, written as
---
---   lower(coalesce(customer_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
---
--- That comparison is TRUE when BOTH sides are empty, so an
--- authenticated session carrying no email claim at all (for
--- example a Supabase anonymous sign-in, which is a project-level
--- setting rather than something this code controls) would match
--- any row whose `customer_email` is NULL or ''.
---
--- Every entitlement written by this codebase carries an email, so
--- this is not exploitable today. But it depends on that remaining
--- true forever, and the failure mode is silent: a future insert
--- path that omits the email would quietly hand one customer's
--- entitlement to every e-mail-less session.
---
--- Adding the explicit `<> ''` guard makes the requirement
--- structural instead of incidental.
+-- Matching `customer_email` to `auth.jwt() ->> 'email'` trusts any claim in
+-- the session, including an address registered without confirmation. The
+-- current_user_has_verified_email() helper reads auth.users instead and
+-- requires email_confirmed_at to be set. user_id ownership remains the primary
+-- path; the email match is only a fallback for guest purchases recovered later.
 -- ============================================================
 
 DROP POLICY IF EXISTS "Users can read own entitlements" ON entitlements;
@@ -1780,10 +1831,7 @@ CREATE POLICY "Users can read own entitlements"
     status = 'active'
     AND (
       user_id = auth.uid()
-      OR (
-        coalesce(auth.jwt() ->> 'email', '') <> ''
-        AND lower(customer_email) = lower(auth.jwt() ->> 'email')
-      )
+      OR current_user_has_verified_email(customer_email)
     )
   );
 
@@ -1798,10 +1846,7 @@ CREATE POLICY "Owners can read their purchased products"
         AND e.status = 'active'
         AND (
           e.user_id = auth.uid()
-          OR (
-            coalesce(auth.jwt() ->> 'email', '') <> ''
-            AND lower(e.customer_email) = lower(auth.jwt() ->> 'email')
-          )
+          OR current_user_has_verified_email(e.customer_email)
         )
     )
   );

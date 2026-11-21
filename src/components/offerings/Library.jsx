@@ -74,7 +74,6 @@ export default function Library() {
   const [signInMode, setSignInMode] = useState('password')
   const [passwordValue, setPasswordValue] = useState('')
   const [signingIn, setSigningIn] = useState(false)
-  const [customerLink, setCustomerLink] = useState(null)
 
   // Set / change password, available as soon as the customer is signed in.
   const [showPasswordPanel, setShowPasswordPanel] = useState(false)
@@ -112,7 +111,6 @@ export default function Library() {
 
     setSending(true)
     setError(null)
-    setCustomerLink(null)
     try {
       const resp = await fetch('/api/customer-signin-link', {
         method: 'POST',
@@ -125,11 +123,6 @@ export default function Library() {
         setError({ message: msg })
         return
       }
-      setCustomerLink({
-        email: body.email,
-        link: body.link,
-        redirect_to: body.redirect_to,
-      })
       setMagicSent(true)
     } catch (err) {
       setError({ message: err?.message || t('store.signInFailed') })
@@ -235,38 +228,6 @@ export default function Library() {
               <p className="mt-2 text-xs text-black/50 dark:text-white/50">
                 {t('store.magicLinkSentBody')}
               </p>
-              {customerLink?.link && (
-                <div className="mt-4 text-left">
-                  <textarea
-                    readOnly
-                    rows={2}
-                    value={customerLink.link}
-                    onFocus={(e) => e.target.select()}
-                    className="w-full resize-none break-all rounded-lg border border-black/10 bg-black/5 px-3 py-2 text-[11px] text-black/70 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
-                  />
-                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(customerLink.link)
-                        } catch {}
-                      }}
-                      className="rounded-lg bg-black/90 px-3 py-1.5 text-[10px] uppercase tracking-widest text-white dark:bg-white/90 dark:text-black"
-                    >
-                      {t('store.copyLink')}
-                    </button>
-                    <a
-                      href={customerLink.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg border border-black/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-black/60 dark:border-white/10 dark:text-white/60"
-                    >
-                      {t('store.openLink')}
-                    </a>
-                  </div>
-                </div>
-              )}
               <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
                 {t('store.magicLinkSentSupport')}
               </p>
@@ -275,7 +236,6 @@ export default function Library() {
                 onClick={() => {
                   setMagicSent(false)
                   setError(null)
-                  setCustomerLink(null)
                   setEmail('')
                 }}
                 className="mt-4 text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"

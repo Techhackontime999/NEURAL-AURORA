@@ -97,7 +97,13 @@ export default function AdminProducts() {
   }, [products, search, statusFilter])
 
   const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } =
-    useBulkSelect(filtered)
+    useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })
+
+  // Selection follows what is on screen: changing the filters starts fresh so
+  // a bulk delete can never include rows the admin can no longer see.
+  useEffect(() => {
+    clearSelection()
+  }, [search, statusFilter, clearSelection])
 
   // --- conversions ---------------------------------------------------------
 

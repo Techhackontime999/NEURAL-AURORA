@@ -162,12 +162,23 @@ CREATE OR REPLACE FUNCTION generate_test_data(
   p_category TEXT,
   p_count INT DEFAULT 3
 )
-RETURNS TEXT AS $$
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 DECLARE
   i INT;
   inserted INT := 0;
   random_suffix TEXT;
 BEGIN
+  IF p_count IS NULL OR p_count < 1 OR p_count > 25 THEN
+    RAISE EXCEPTION 'p_count must be between 1 and 25';
+  END IF;
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only admins can generate test data';
+  END IF;
+
   FOR i IN 1..p_count LOOP
     random_suffix := substr(md5(random()::text), 1, 8);
 
@@ -239,7 +250,7 @@ BEGIN
           'testuser' || i || '@example.com',
           floor(random() * 3 + 3)::INT,
           'This is a sample review generated for testing purposes. Great work!',
-          random() > 0.5
+          FALSE
         );
         inserted := inserted + 1;
 
@@ -275,7 +286,10 @@ BEGIN
 
   RETURN 'Inserted ' || inserted || ' ' || p_category || ' successfully';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+REVOKE EXECUTE ON FUNCTION generate_test_data(TEXT, INT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION generate_test_data(TEXT, INT) TO authenticated, service_role;
 
 -- ============================================================
 -- 6. FUNCTION TO SET ADMIN EMAIL (for auth restriction)
@@ -338,14 +352,9 @@ GRANT INSERT ON TABLE contact_messages TO authenticated;
 GRANT SELECT, UPDATE, DELETE ON TABLE contact_messages TO authenticated;
 
 -- ============================================================
--- 8. FUNCTION TO GET ADMIN SETTINGS
+-- 8. REMOVE THE UNSAFE GET_ADMIN_SETTINGS RPC
 -- ============================================================
-CREATE OR REPLACE FUNCTION get_admin_settings()
-RETURNS JSONB AS $$
-DECLARE
-  result JSONB;
-BEGIN
-  SELECT to_jsonb(admin_settings.*) INTO result FROM admin_settings WHERE id = 1;
-  RETURN result;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- This helper returned every admin_settings column (including admin_email)
+-- with default PUBLIC EXECUTE. No application code calls it. A future public
+-- settings reader should be a view with an explicit column allowlist.
+DROP FUNCTION IF EXISTS get_admin_settings();

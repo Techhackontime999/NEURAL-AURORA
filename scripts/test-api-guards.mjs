@@ -28,6 +28,10 @@ const MANAGED = [
   'VITE_RAZORPAY_KEY_ID',
   'RAZORPAY_KEY_SECRET',
   'RAZORPAY_WEBHOOK_SECRET',
+  'SITE_URL',
+  'VITE_SITE_URL',
+  'VERCEL_ENV',
+  'VERCEL_URL',
 ]
 
 function setEnv(values) {
@@ -73,6 +77,7 @@ const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
 const adminAccessLink = require('../api/admin-access-link.js')
 const adminDeleteOrders = require('../api/admin-delete-orders.js')
+const customerSigninLink = require('../api/customer-signin-link.js')
 const adminAuth = require('../api/_lib/adminAuth.js')
 const webhook = require('../api/razorpay-webhook.js')
 const { envPresence } = require('../api/_lib/diag.js')
@@ -570,6 +575,233 @@ setEnv({})
   }
 
   withAiEnv({})
+}
+
+// --- 14. Customer sign-in links are delivered, never returned ---------------
+function fakeCustomerClient({ order = null, orderError = null, otpError = null } = {}) {
+  const calls = { tables: [], filters: [], otp: [] }
+  return {
+    calls,
+    from(table) {
+      calls.tables.push(table)
+      const chain = {
+        select: () => chain,
+        eq: (column, value) => {
+          calls.filters.push([column, value])
+          return chain
+        },
+        limit: () => chain,
+        maybeSingle: async () => ({ data: order, error: orderError }),
+      }
+      return chain
+    },
+    auth: {
+      signInWithOtp: async (payload) => {
+        calls.otp.push(payload)
+        return { error: otpError }
+      },
+    },
+  }
+}
+
+const customerRequest = (email, headers = {}) => ({
+  method: 'POST',
+  headers,
+  body: { email },
+})
+
+setEnv({})
+{
+  const { res, lines } = await capture((r) =>
+    customerSigninLink(customerRequest('buyer@example.com'), r)
+  )
+  check('customer-signin-link: unconfigured -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check('customer-signin-link: 503 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  const { res } = await capture((r) =>
+    customerSigninLink({ method: 'GET', headers: {} }, r)
+  )
+  check('customer-signin-link: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+}
+
+setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
+{
+  const client = fakeCustomerClient({ order: { id: 42 } })
+  const { res, lines } = await capture((r) =>
+    customerSigninLink.__test.handle(
+      customerRequest('BUYER@Example.COM', {
+        'x-forwarded-host': 'evil.example',
+        'x-forwarded-proto': 'http',
+        host: 'evil.example',
+      }),
+      r,
+      client,
+      'test-paid'
+    )
+  )
+  check('customer-signin-link: paid order -> generic 200', res.statusCode === 200, `got ${res.statusCode}`)
+  check('customer-signin-link: OTP is sent to the address on file', client.calls.otp.length === 1 && client.calls.otp[0].email === 'buyer@example.com', JSON.stringify(client.calls.otp))
+  check(
+    'customer-signin-link: redirect uses the server allowlist, not request headers',
+    client.calls.otp[0]?.options?.emailRedirectTo === 'https://neural-aurora.vercel.app/library',
+    client.calls.otp[0]?.options?.emailRedirectTo
+  )
+  check(
+    'customer-signin-link: account creation is limited to paid orders',
+    client.calls.otp[0]?.options?.shouldCreateUser === true
+  )
+  check(
+    'customer-signin-link: checks paid digital orders only',
+    client.calls.filters.some(([column, value]) => column === 'payment_status' && value === 'paid'),
+    JSON.stringify(client.calls.filters)
+  )
+  check(
+    'customer-signin-link: response contains no token, email or phone',
+    !/link|email|phone/i.test(jsonBody(res)),
+    jsonBody(res)
+  )
+  check('customer-signin-link: success logs no secret-looking values', noSecrets(lines))
+}
+{
+  const client = fakeCustomerClient({ order: null })
+  const { res } = await capture((r) =>
+    customerSigninLink.__test.handle(customerRequest('nobody@example.com'), r, client, 'test-none')
+  )
+  check('customer-signin-link: no purchase -> same generic 200', res.statusCode === 200, `got ${res.statusCode}`)
+  check('customer-signin-link: no purchase -> no OTP sent', client.calls.otp.length === 0)
+  check('customer-signin-link: no purchase has no distinguishing fields', !/error|link|email/i.test(jsonBody(res)), jsonBody(res))
+}
+{
+  const client = fakeCustomerClient({ order: { id: 42 }, otpError: { message: 'rate limit' } })
+  const { res } = await capture((r) =>
+    customerSigninLink.__test.handle(customerRequest('buyer@example.com'), r, client, 'test-mail-fail')
+  )
+  check('customer-signin-link: mail failure is not an enumeration oracle', res.statusCode === 200, `got ${res.statusCode}`)
+  check('customer-signin-link: mail failure returns no token', !/link|email/i.test(jsonBody(res)), jsonBody(res))
+}
+{
+  const client = fakeCustomerClient({ orderError: { message: 'db down' } })
+  const { res } = await capture((r) =>
+    customerSigninLink.__test.handle(customerRequest('buyer@example.com'), r, client, 'test-db-fail')
+  )
+  check('customer-signin-link: database failure -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check(
+    'customer-signin-link: database failure leaks no token',
+    res.body?.link === undefined && res.body?.email === undefined && res.body?.phone === undefined,
+    jsonBody(res)
+  )
+}
+{
+  const { res } = await capture((r) =>
+    customerSigninLink.__test.handle(customerRequest('not-an-email'), r, fakeCustomerClient(), 'test-bad-email')
+  )
+  check('customer-signin-link: invalid email -> 400', res.statusCode === 400, `got ${res.statusCode}`)
+}
+{
+  setEnv({ VERCEL_URL: 'preview-aurora.vercel.app' })
+  const client = fakeCustomerClient({ order: { id: 42 } })
+  await capture((r) =>
+    customerSigninLink.__test.handle(customerRequest('buyer@example.com'), r, client, 'test-preview')
+  )
+  check(
+    'customer-signin-link: preview redirects use VERCEL_URL',
+    client.calls.otp[0]?.options?.emailRedirectTo === 'https://preview-aurora.vercel.app/library',
+    client.calls.otp[0]?.options?.emailRedirectTo
+  )
+}
+
+// --- 15. Source guarantees for the authored forward migration ---------------
+{
+  const downloadSrc = fs.readFileSync('api/download.js', 'utf8')
+  check(
+    'download: email matching requires a confirmed email',
+    downloadSrc.includes('!user.email_confirmed_at'),
+    'download.js no longer checks email_confirmed_at'
+  )
+
+  const migration = fs.readFileSync(
+    'supabase/migrations/20261121000000_harden_privileged_functions_and_reviews.sql',
+    'utf8'
+  )
+  check(
+    'migration: test-data RPC checks is_admin inside the function',
+    migration.includes('IF NOT public.is_admin() THEN')
+  )
+  check(
+    'migration: reviews cannot be inserted as approved',
+    migration.includes('NEW.approved := FALSE') && migration.includes('WITH CHECK (approved = FALSE)')
+  )
+  check(
+    'migration: email fallback requires a verified address',
+    migration.includes('current_user_has_verified_email') && migration.includes('u.email_confirmed_at IS NOT NULL')
+  )
+  check(
+    'migration: unsafe settings RPC is dropped',
+    /DROP FUNCTION IF EXISTS public\.get_admin_settings\(\)/.test(migration)
+  )
+  check(
+    'migration: definer functions receive a safe search_path',
+    migration.includes('SET search_path = public, pg_temp')
+  )
+
+  const schema = fs.readFileSync('supabase-schema.sql', 'utf8')
+  check(
+    'schema: bare-text banner is gone',
+    !/^={10,}$/m.test(schema),
+    'supabase-schema.sql still contains an uncommented banner'
+  )
+  check(
+    'schema: consolidated install drops legacy payment policies',
+    schema.includes('DROP POLICY IF EXISTS "Anyone can insert payments" ON payments')
+  )
+}
+
+// --- 16. Client retry and bulk-selection source guarantees ------------------
+{
+  const razorpaySrc = fs.readFileSync('src/lib/razorpay.js', 'utf8')
+  check(
+    'razorpay loader: concurrent callers share one load promise',
+    razorpaySrc.includes('let loadPromise = null') &&
+      razorpaySrc.includes('if (loadPromise) return loadPromise')
+  )
+  check(
+    'razorpay loader: failed scripts are removed and retry state reset',
+    razorpaySrc.includes('removeCheckoutScript(script)') &&
+      razorpaySrc.includes('loadPromise = null')
+  )
+  check(
+    'razorpay loader: success requires the SDK global',
+    razorpaySrc.includes("typeof window.Razorpay !== 'function'")
+  )
+
+  const bulkSrc = fs.readFileSync('src/lib/useBulkSelect.js', 'utf8')
+  check(
+    'bulk select: stale IDs are pruned and reported to the caller',
+    bulkSrc.includes('hasStaleIds') && bulkSrc.includes('onInvalidate?.()')
+  )
+  check(
+    'bulk select: hidden IDs cannot be toggled or bulk deleted',
+    bulkSrc.includes('if (!availableRef.current.has(id)) return') &&
+      bulkSrc.includes('availableRef.current.has(id))')
+  )
+
+  const productsSrc = fs.readFileSync('src/components/admin/AdminProducts.jsx', 'utf8')
+  check(
+    'admin products: selection is scoped to visible rows and filters',
+    productsSrc.includes(
+      'useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })'
+    ) && productsSrc.includes('}, [search, statusFilter, clearSelection])')
+  )
+
+  const ordersSrc = fs.readFileSync('src/components/admin/AdminOrders.jsx', 'utf8')
+  check(
+    'admin orders: bulk delete is limited to visible IDs',
+    ordersSrc.includes('visibleIds.has(id)') &&
+      ordersSrc.includes(
+        'useBulkSelect(filtered, { availableIds: filtered, onInvalidate: clearSelection })'
+      )
+  )
 }
 
 setEnv({})

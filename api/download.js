@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Could not verify your session.' })
   }
 
-  if (!user.email) {
+  if (!user.email || !user.email_confirmed_at) {
     return res.status(403).json({ error: 'Your account needs a verified email address.' })
   }
 

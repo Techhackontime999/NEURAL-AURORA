@@ -65,7 +65,7 @@ for (const file of files) {
 
   for (const stmt of statements) {
     for (const m of stmt.matchAll(/CREATE POLICY[^;]*?\bON\s+([a-z_.]+)/gi)) {
-      const table = m[1].toLowerCase()
+      const table = m[1].toLowerCase().replace(/^public\./, '')
       if (table.startsWith('storage.')) continue
       if (!knownTables.has(table)) {
         problems.push(`policy references unknown table '${table}'`)

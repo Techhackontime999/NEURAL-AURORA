@@ -1,32 +1,83 @@
-function loadScript() {
+const RAZORPAY_SCRIPT_ID = 'razorpay-checkout-script'
+const RAZORPAY_SCRIPT_SRC = 'https://checkout.razorpay.com/v1/checkout.js'
+const SCRIPT_LOAD_TIMEOUT_MS = 15000
+
+// One in-flight load is shared by every checkout attempt. A failed attempt
+// clears this so the next call actually starts a new load.
+let loadPromise = null
+
+function removeCheckoutScript(script) {
+  const node = script || document.getElementById(RAZORPAY_SCRIPT_ID)
+  if (node && node.parentNode) node.parentNode.removeChild(node)
+}
+
+function injectCheckoutScript() {
   return new Promise((resolve) => {
-    if (document.getElementById('razorpay-checkout-script')) {
-      console.log('[Razorpay] Script already loaded')
-      resolve(true)
-      return
-    }
+    // A previous attempt can leave a dead <script> in the DOM. Treating that
+    // element as "already loaded" is what poisons retries, so discard it.
+    const stale = document.getElementById(RAZORPAY_SCRIPT_ID)
+    if (stale) removeCheckoutScript(stale)
+
     const script = document.createElement('script')
-    script.id = 'razorpay-checkout-script'
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    
-    // Safety timeout for slow/blocked script loading
+    script.id = RAZORPAY_SCRIPT_ID
+    script.src = RAZORPAY_SCRIPT_SRC
+    script.async = true
+
+    let settled = false
+    const finish = (loaded) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      if (!loaded) removeCheckoutScript(script)
+      resolve(loaded)
+    }
+
+    // Safety timeout for slow/blocked script loading.
     const timeout = setTimeout(() => {
       console.error('[Razorpay] Script loading timed out')
-      resolve(false)
-    }, 15000)
+      finish(false)
+    }, SCRIPT_LOAD_TIMEOUT_MS)
 
     script.onload = () => {
-      clearTimeout(timeout)
+      if (typeof window.Razorpay !== 'function') {
+        console.error('[Razorpay] Script loaded but the SDK is unavailable')
+        finish(false)
+        return
+      }
       console.log('[Razorpay] Script loaded successfully')
-      resolve(true)
+      finish(true)
     }
     script.onerror = () => {
-      clearTimeout(timeout)
       console.error('[Razorpay] Script failed to load')
-      resolve(false)
+      finish(false)
     }
     document.body.appendChild(script)
   })
+}
+
+/**
+ * Loads the Razorpay SDK once and shares that promise with concurrent callers.
+ * Failures remove their script element and reset the shared state; the SDK
+ * global must exist before a load is reported as successful.
+ */
+function loadScript() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(false)
+  }
+  if (typeof window.Razorpay === 'function') return Promise.resolve(true)
+  if (loadPromise) return loadPromise
+
+  loadPromise = injectCheckoutScript()
+    .then((loaded) => {
+      if (!loaded) loadPromise = null
+      return loaded
+    })
+    .catch((err) => {
+      console.error('[Razorpay] Script injection failed:', err)
+      loadPromise = null
+      return false
+    })
+  return loadPromise
 }
 
 function formatAmount(amount) {

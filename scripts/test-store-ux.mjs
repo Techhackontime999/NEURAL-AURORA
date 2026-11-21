@@ -12,6 +12,8 @@ const detail = read('src/components/offerings/ProductDetail.jsx')
 const library = read('src/components/offerings/Library.jsx')
 const productsLib = read('src/lib/products.js')
 const pricing = read('api/_lib/order-pricing.js')
+const purchaseSuccess = read('src/components/offerings/PurchaseSuccess.jsx')
+const razorpay = read('src/lib/razorpay.js')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -172,6 +174,41 @@ check(
   'library: no-results state can be cleared',
   library.includes("t('store.libraryNoResults')") &&
     library.includes("onClick={() => setLibraryQuery('')}")
+)
+
+// --- ST-U07/U13/U14: reliability guards ------------------------------------
+check(
+  'free download: placeholder tab opens before the async request',
+  detail.includes("window.open('about:blank', '_blank')") &&
+    detail.indexOf("window.open('about:blank', '_blank')") < detail.indexOf('await requestFreeDownload(') &&
+    detail.includes('freeDownloadTab.opener = null')
+)
+check(
+  'free download: placeholder tab is navigated, closed or reported',
+  detail.includes('freeDownloadTab.location.replace(result.url)') &&
+    detail.includes('freeDownloadTab?.close()') &&
+    detail.includes("t('store.popupBlocked')") &&
+    en.store.popupBlocked.length > 0
+)
+check(
+  'purchase success: poll count is a ref outside a state updater',
+  purchaseSuccess.includes('const polls = useRef(0)') &&
+    purchaseSuccess.includes('polls.current = 0') &&
+    purchaseSuccess.includes('polls.current += 1') &&
+    !purchaseSuccess.includes('setPolls(')
+)
+check(
+  'purchase success: next poll is scheduled after the request resolves',
+  purchaseSuccess.includes('timer = setTimeout(poll, POLL_INTERVAL_MS)') &&
+    purchaseSuccess.indexOf('polls.current += 1') <
+      purchaseSuccess.indexOf('timer = setTimeout(poll, POLL_INTERVAL_MS)')
+)
+check(
+  'razorpay retry: stale script is removed and failure resets shared load',
+  razorpay.includes('const stale = document.getElementById(RAZORPAY_SCRIPT_ID)') &&
+    razorpay.includes('removeCheckoutScript(stale)') &&
+    razorpay.includes('if (!loaded) loadPromise = null') &&
+    razorpay.includes('if (loadPromise) return loadPromise')
 )
 
 console.log(`\n${passed} passed, ${failed} failed`)

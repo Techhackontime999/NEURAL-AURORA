@@ -62,6 +62,15 @@ Selective precache is implemented and measured locally; full inventory and evide
 - **Limit:** mocked data/session and no Razorpay call. This is UI-contract verification, not a live order, HMAC, entitlement or download test.
 - **Security:** the browser sends only slug + bounded quantity; server-side repricing and the `MAX_QUANTITY = 10` cap remain authoritative. No auth, RLS or payment path changed.
 
+## 1f. Batch 10 status (download and polling reliability)
+
+- `npm run check`: PASS — 5 routes, **153** i18n keys, 36 migration lints.
+- `npm test`: PASS — 23 pricing + 124 guards + **29** store UX + 17 product-query = **193 tests, 0 failed**.
+- `npm run build`: PASS with the same pre-existing warnings; no new runtime dependency.
+- Browser: local Edge 157 + CDP against `vite preview`, **78/78** checks. New checks confirm the free-download placeholder opens before the signed request, the verified URL is navigated into that same tab, `/api/download` receives one POST, the success page moves pending→paid in three polls, and no timer fires after the terminal state.
+- **Limit:** mocked download/status responses and stubbed `window.open`. The Razorpay SDK retry path is covered only by a source guard; a live failed-script retry still needs gateway test-mode verification.
+- **Security:** the placeholder tab has no opener and is closed if no verified URL arrives. Entitlement, download and payment authority are unchanged.
+
 ## 2. Release blockers (must clear before any production sign-off)
 
 1. **Rotate the exposed Supabase DB password (urgent).** It was committed in `dfc452e`, which is an ancestor of HEAD and was pushed via `origin/main`. Removing it from current source does not remove it from history. Set `DATABASE_URL` wherever `migrate.cjs`/`seed.cjs` are run, then rotate the credential.

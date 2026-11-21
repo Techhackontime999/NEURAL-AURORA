@@ -347,6 +347,7 @@
     "freeNote": "Sign in with your email and password (or request a one-time sign-in link) to unlock this download and keep it in your library.",
     "magicLinkSent": "Check your email",
     "magicLinkSentBody": "If that address matches a paid purchase, a secure sign-in link is on its way. Open it on this device to enter your library.",
+    "popupBlocked": "Your browser blocked the download tab. Allow popups for this site and try again.",
     "relatedProducts": "You may also like",
     "libraryTitle": "Your Library",
     "librarySubtitle": "Every digital product you have purchased or downloaded, ready to re-download at any time.",

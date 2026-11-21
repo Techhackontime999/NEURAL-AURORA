@@ -141,14 +141,31 @@ export default function ProductDetail() {
       return
     }
 
+    // Pop-up blockers only allow a window opened inside the click/submit task.
+    // Open the placeholder before the await for signed-in free downloads, then
+    // navigate it once the signed URL is verified. Guests get a magic link and
+    // never see a blank tab.
+    let freeDownloadTab = null
+    if (isFree && user) {
+      freeDownloadTab = window.open('about:blank', '_blank')
+      if (freeDownloadTab) freeDownloadTab.opener = null
+    }
+
     setBusy(true)
     try {
       if (isFree) {
         const result = await requestFreeDownload({ product, email: buyerEmail, user })
         if (result?.code === 'downloadReady' && result.url) {
-          window.open(result.url, '_blank', 'noopener,noreferrer')
+          if (freeDownloadTab) {
+            freeDownloadTab.location.replace(result.url)
+          } else if (!window.open(result.url, '_blank', 'noopener,noreferrer')) {
+            setActionNotice(t('store.popupBlocked'))
+          }
         } else if (result?.code === 'magicLinkSent') {
+          freeDownloadTab?.close()
           setActionNotice(t('store.magicLinkSent'))
+        } else {
+          freeDownloadTab?.close()
         }
       } else {
         const { orderRef } = await startProductCheckout({
@@ -161,6 +178,7 @@ export default function ProductDetail() {
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
     } catch (err) {
+      freeDownloadTab?.close()
       // Failures here are always real: the product checkout path has no
       // client-side price fallback and refuses to open if order creation
       // could not be verified by the server.

@@ -205,3 +205,5 @@
 Before any P2 fix: explain reason/effects/dependencies, prepare migration + rollback, identify env var names only (never values), obtain approval. Never disable RLS, expose private files, switch Razorpay to live mode, apply production migrations, or deploy without approval.
 
 **Batch 9 (ST-U06):** the paid checkout form gained native/client validation, a bounded quantity and a display-only itemised total. No new security finding: prices still come from the database and `api/create-order` still enforces the authoritative 1–10 quantity cap; no auth, RLS, entitlement or fulfilment logic changed.
+
+**Batch 10 (ST-U07/U14):** free downloads now pre-open a blank tab inside the user gesture and clear its `opener` before navigating to the server-verified signed URL; the tab is closed if verification fails or yields only a magic link. Purchase polling uses a ref so no duplicate timers can be created. No new security finding: entitlement, storage and payment authority are unchanged.

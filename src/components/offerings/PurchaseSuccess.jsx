@@ -27,12 +27,13 @@ export default function PurchaseSuccess() {
 
   const [status, setStatus] = useState('loading')
   const [order, setOrder] = useState(null)
-  const [polls, setPolls] = useState(0)
   const [error, setError] = useState(null)
   const cancelled = useRef(false)
+  const polls = useRef(0)
 
   useEffect(() => {
     cancelled.current = false
+    polls.current = 0
 
     if (!ref) {
       setError(t('store.purchaseMissingRef'))
@@ -66,17 +67,16 @@ export default function PurchaseSuccess() {
           return
         }
 
-        // Still pending: the webhook may simply be in flight.
+        // Still pending: the webhook may simply be in flight. Keep the counter
+        // in a ref so the timeout is scheduled from the resolved request, not
+        // from inside a state updater (which can run twice in Strict Mode).
         setStatus('pending')
-        setPolls((n) => {
-          const next = n + 1
-          if (next < MAX_POLLS) {
-            timer = setTimeout(poll, POLL_INTERVAL_MS)
-          } else {
-            setStatus('slow')
-          }
-          return next
-        })
+        polls.current += 1
+        if (polls.current < MAX_POLLS) {
+          timer = setTimeout(poll, POLL_INTERVAL_MS)
+        } else {
+          setStatus('slow')
+        }
       } catch (err) {
         if (cancelled.current) return
         setError(err?.message || t('store.purchaseError'))

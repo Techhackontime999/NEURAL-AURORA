@@ -303,6 +303,36 @@
 
 ---
 
+## Phase 3 — Batch 10: download and polling reliability (2026-11-21) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** continue the remaining source-only slice without touching schema or payment authority. ST-U04 is still deferred because it needs a new public file-manifest endpoint and a `compatibility` column migration.
+
+### Changes made
+
+1. **ST-U07 free-download pop-up.** `ProductDetail.jsx` now opens an `about:blank` placeholder synchronously inside the submit task for signed-in buyers, clears its `opener`, and navigates it to the verified signed URL after `requestFreeDownload` resolves. Guests still receive only a magic link and never see a blank tab. Failures close the placeholder; a blocked fallback reports `store.popupBlocked` instead of failing silently.
+2. **ST-U14 poll count.** `PurchaseSuccess.jsx` keeps the attempt count in `useRef(0)` instead of `setPolls`. The next timeout is scheduled after the request resolves and the ref is incremented, so a Strict Mode state-updater replay cannot create duplicate timers.
+3. **ST-U13 guard.** `scripts/test-store-ux.mjs` now asserts the existing Razorpay retry contract: stale script removal, failed-script cleanup and shared-load reset. This is a source guard, not a live script-load simulation.
+4. **Copy and guards.** One English key (`store.popupBlocked`) and five new store-UX checks were added.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 ranked routes; **153** i18n keys (up from 152); 36 migration lints |
+| `npm test` | PASS | `test:order-pricing` **23/23**; `test:api-guards` **124/124**; `test:store-ux` **29/29**; `test:product-query` **17/17** = **193 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | Vite build succeeds; `ProductDetail` chunk 16.44 kB / 4.61 kB gzip; `PurchaseSuccess` 4.63 kB / 1.77 kB gzip |
+| `npm run preview` + local Edge 157 + CDP | PASS | **78/78** rendered-browser checks at 1440×900 and 390×844; new checks cover pop-up timing, signed-URL navigation, pending→paid polling and no timer after terminal state |
+
+**Rendered-UI method:** `vite preview` served the rebuilt `dist`; headless Edge was driven through CDP with mocked Supabase REST/auth plus mocked `/api/download` and `/api/order-status` responses. The harness stubbed `window.open` to record timing without opening a real tab. It confirmed the blank tab is created before the signed download request, the same tab is navigated to the fixture signed URL with `opener = null`, exactly one POST reaches `/api/download`, the success page shows `Confirming your payment` before `Payment confirmed`, exactly three status requests occur, and no fourth timer fires after the terminal state. `free-download-popup.png` and `purchase-success-paid.png` are under `C:\\Users\\ADMIN\\AppData\\Local\\Temp\\opencode\\ui-check\\`. No live Razorpay order or signed storage URL was used.
+
+**Performance impact:** negligible — one extra ref and one pre-opened blank tab only for signed-in free downloads. No request or dependency added.
+
+**Security implications:** no auth, RLS, entitlement, storage or payment-authority change. The pre-opened tab has no opener, so it cannot script back into the storefront; if no verified URL arrives it is closed. The signed URL still comes only from the server-side download endpoint. No new finding.
+
+**Database changes:** none applied. **Manual actions required:** live Razorpay test-mode validation (including the failed-script retry path), rotation of the exposed DB password, and the committed read-only production verification plan. No commit, push or deployment was performed as part of this batch documentation step.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

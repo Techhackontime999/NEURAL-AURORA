@@ -30,14 +30,14 @@ Commerce engine assessment: **the payment/fulfilment core is sound and should no
 | ST-U04 | No public file manifest or compatibility field | Medium | `ProductDetail.jsx:286-325` never calls `getProductFiles`; no `compatibility` column | Add public-safe file metadata endpoint + structured compatibility |
 | ST-U05 | No ratings/sales-count trust signals | Low | `ProductDetail.jsx:495-498` only secure note | Add verified-purchase reviews/count or stronger policy summary |
 | ST-U06 | Checkout is inline with weak validation; no quantity, terms checkbox or itemised summary | Medium | `ProductDetail.jsx:101-114,400-468` | **Fixed and browser-verified:** native required form, quantity 1–10 matching the server cap, terms gate and display-only itemised total; live Razorpay checkout still open |
-| ST-U07 | Free-download `window.open` after await can be pop-up-blocked | Low | `ProductDetail.jsx:119-124` | Pre-open anchor or in-page download route with visible fallback |
+| ST-U07 | Free-download `window.open` after await can be pop-up-blocked | Low | `ProductDetail.jsx:119-124` | **Fixed and browser-verified:** placeholder tab opens in the submit task, `opener` cleared, same tab navigated to the signed URL; blocked fallback is reported; guest magic-link path unchanged |
 | ST-U08 | Library has no search/filter/sort/pagination/file details | Low | `Library.jsx:89-107,511-545,582-597` | **Partially fixed and browser-verified:** client search, newest/title sort, result count and no-results state; per-entitlement file list/pagination still open |
 | ST-U09 | Admin bulk selection survives filter changes → hidden products deletable | Medium | `AdminProducts.jsx:99-100,244-259` vs `AdminOrders.jsx:113-115` | **Fixed in source:** visible-scoped `useBulkSelect`, filter-change clearing, visible-only deletes; browser verification still outstanding |
 | ST-U10 | No admin category CRUD, product preview, or consistent price formatting | Medium | `adminProducts.js:125-144` unused; `AdminProducts.jsx:320,386-402,634` | Add category management, preview, reuse `formatPrice` |
 | ST-U11 | Revenue KPI is INR-only despite INR+USD support | Medium | `adminProducts.js:279-310`; `AdminOrders.jsx:325` | Render per-currency KPIs |
 | ST-U12 | Entitlements show numeric product id; no export/refund tooling | Low | `AdminOrders.jsx:583-586` | Join product titles; add filters/export; refund endpoint if in scope |
-| ST-U13 | Failed Razorpay script load poisons retries | Medium | `razorpay.js:1-30,81-85,113-115` | **Fixed in source:** shared load promise, failed-script cleanup, retry reset, SDK-global check; browser verification still outstanding |
-| ST-U14 | Poll timer scheduled inside state updater | Low | `PurchaseSuccess.jsx:71-79,89-92` | Use ref for attempts; schedule outside updater |
+| ST-U13 | Failed Razorpay script load poisons retries | Medium | `razorpay.js:1-30,81-85,113-115` | **Fixed in source with guard:** shared load promise, failed-script cleanup, retry reset, SDK-global check; live script-retry simulation still outstanding |
+| ST-U14 | Poll timer scheduled inside state updater | Low | `PurchaseSuccess.jsx:71-79,89-92` | **Fixed and browser-verified:** ref counter, timeout scheduled after the resolved request, no duplicate terminal timers |
 | ST-U15 | Hardcoded "views" label; store text ignores theme tokens | Low/Med | `ProductCard.jsx:73-77`; `ProductDetail.jsx:240-244`; `src/locales/en.json:292` | **Fixed and browser-verified:** image count uses `store.imageCount`; semantic theme classes preserved; full design-token pass still open |
 | ST-U16 | Store has no per-route metadata/JSON-LD | High | `index.html:6-21`; no head manager | Route-level head manager + Product JSON-LD |
 
@@ -68,7 +68,9 @@ Batch 8 (2026-11-21) closed the remaining ST-U01 pagination half and ST-U02 tag 
 
 Batch 9 (2026-11-21) closed ST-U06: the paid purchase panel is now a native validated form with quantity 1–10, a terms gate and a display-only itemised total. The server still reprices every order and enforces the same cap. Local Edge/CDP verification passed **72/72** checks with mocked fixtures; `npm test` reached **188 tests, 0 failed**. No live Razorpay order was created. ST-U04 was deferred because it needs a new public file-manifest endpoint and a `compatibility` column migration.
 
-**Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8 and ST-U06 in batch 9; remaining ST-U04, U08, U10, U11; then low-priority UX items.
+Batch 10 (2026-11-21) closed ST-U07 and ST-U14, and added a source guard for ST-U13: free downloads pre-open a safe placeholder tab before the signed request, and the purchase success page schedules its next poll from a ref after each resolved request. Local Edge/CDP verification passed **78/78** checks with mocked download/status endpoints; `npm test` reached **193 tests, 0 failed**. Live Razorpay SDK retry, gateway webhook and storage downloads remain open.
+
+**Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8, ST-U06 in batch 9, ST-U07/U14 in batch 10; remaining ST-U04, U08, U10, U11; then low-priority UX items.
 
 **Phase 5+:** i18n parity, SEO/head, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
 

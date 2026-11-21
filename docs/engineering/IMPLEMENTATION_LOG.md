@@ -333,6 +333,39 @@
 
 ---
 
+## Phase 5 — Batch 11: route head metadata and Product JSON-LD (2026-11-22) — SOURCE COMPLETE, BROWSER VERIFIED WITH FIXTURES
+
+**Reason:** close ST-U16 without adding a head-management dependency or touching the database. The SPA shell previously served the same title, canonical and social card for every route.
+
+### Changes made
+
+1. **New dependency-free head manager.** `src/lib/documentHead.js` exposes `buildDocumentHead()` and `applyDocumentHead()`. It replaces only tags marked `data-na-head`, sets title, description, robots, canonical, Open Graph, Twitter cards and optional JSON-LD. `toPlainText()` strips DB markup from descriptions; `toAbsoluteUrl()` refuses non-HTTP data URLs for structured data.
+2. **Declarative component.** `src/components/ui/DocumentHead.jsx` calls the manager from an effect and defaults the canonical path to the current router location.
+3. **Route defaults.** `App.jsx` mounts `RouteHead` for all routes except product detail, with route-specific titles and `noindex, nofollow` for library, purchase status, auth and admin pages.
+4. **Product detail metadata.** `ProductDetail.jsx` emits a product-specific title/description/canonical/social card plus `schema.org/Product` JSON-LD with canonical URL, SKU, brand, priceCurrency, numeric price and availability. Loading and not-found states are `noindex`. No ratings are invented.
+5. **Managed shell.** `index.html` static head tags are marked `data-na-head="static"` so they are replaced rather than duplicated.
+6. **Tests.** New `scripts/test-document-head.mjs` adds 22 guards; `package.json` wires it into `npm test`.
+
+### Verification evidence (after all edits)
+
+| Command | Result | Detail |
+|---|---|---|
+| `npm run check` | PASS | 5 ranked routes; **153** i18n keys; 36 migration lints |
+| `npm test` | PASS | 23 pricing + 124 guards + 29 store UX + 17 product-query + **22 document-head** = **215 tests, 0 failed** |
+| `npm run build` | PASS (pre-existing warnings only) | 2,946 modules; entry 1,288.27 kB / 379.41 kB gzip; `ProductDetail` 17.24 kB / 4.92 kB gzip |
+| `npm run preview` + local Edge 157 + CDP | PASS | **84/84** rendered-browser checks; 6 new checks cover home/catalogue/product/library head state, canonical uniqueness, no stale JSON-LD and Product JSON-LD values |
+| `git diff --check` | Clean apart from the known LF→CRLF warning | No whitespace errors in the committed paths |
+
+**Rendered-UI method:** local Edge with CDP against the rebuilt preview. The harness checked that the homepage canonical is `https://neural-aurora.vercel.app/`, the catalogue title/canonical follow the route, product detail exposes `Portfolio Playbook`, canonical `/offerings/products/portfolio-playbook`, `og:type=product` and JSON-LD with `priceCurrency=INR`, `price=499` and `InStock`, and the library is `noindex, nofollow` with no leftover product JSON-LD. `document-head-product.png` is under `C:\\Users\\ADMIN\\AppData\\Local\\Temp\\opencode\\ui-check\\`.
+
+**Performance impact:** small — about +3.8 kB raw / +1.4 kB gzip in the entry chunk and +0.8 kB raw in the product chunk. No extra request and no new runtime dependency.
+
+**Security implications:** no auth, RLS, entitlement, storage or payment change. Only explicitly marked head tags are replaced; product descriptions are flattened to plain text; data URLs are not emitted as structured-data images; private pages are not indexable. No new finding.
+
+**Database changes:** none applied. **Remaining SEO limits:** blog/case-study routes still use generic head copy, crawlers without JavaScript still see the shell defaults, and live rich-result validation was not performed. No commit, push or deployment was performed as part of this batch documentation step.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

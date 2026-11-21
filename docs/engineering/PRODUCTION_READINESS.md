@@ -1,7 +1,7 @@
 # NEURAL AURORA — PRODUCTION READINESS
 
-- **Generated:** 2026-11-21 · **Scope:** repository + local verification only.
-- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. Batch 7 removed a committed database credential from source, made webhook raw-body capture fail closed, and browser-verified the changed store UX with mocked fixtures. The user reports both migrations were applied directly to **production**, in order, on 2026-11-21; the agent has not verified live state, no staging pass occurred, and production verification gates remain outstanding. **The exposed DB password still requires rotation.** This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
+- **Generated:** 2026-11-22 · **Scope:** repository + local verification only.
+- **Verdict:** **NOT READY to certify.** Batches 1–4 removed the Critical token-mint path in source, authored both database hardening migrations (including the SEC-006 settings split), and fixed the Razorpay retry and stale bulk-selection bugs. Batch 7 removed a committed database credential from source and made webhook raw-body capture fail closed. Batches 8–10 hardened catalogue search/pagination, paid checkout, free downloads and order polling. Batch 11 added route-level head metadata and Product JSON-LD with 84/84 mocked-fixture browser checks. The user reports both migrations were applied directly to **production**, in order, on 2026-11-21; the agent has not verified live state, no staging pass occurred, and production verification gates remain outstanding. **The exposed DB password still requires rotation.** This is not a statement that production is currently compromised — readiness cannot be confirmed from repository evidence alone.
 
 ## 1. Gate status
 
@@ -10,17 +10,17 @@
 | Git state / branch | PASS (info) | `main`, `fd8281f`, clean at start |
 | Dependencies install | PASS | `npm ci` added 494 packages; no tracked-file changes |
 | Route ranking check | PASS | `npm run check:routes` |
-| i18n checker | PASS **but insufficient** | 141 store keys checked after batch 7 UX copy; 4,324 translations still missing across 23 locales |
+| i18n checker | PASS **but insufficient** | 153 keys checked after batch 11; missing translations still need an English-only store decision or full parity |
 | SQL structural lint | PASS **but insufficient** | 36 migrations parsed; **no SQL executed**; SCHEMA-001 invalid banner fixed in source |
-| Unit/guard tests | PASS | 23 pricing + 124 API/source guards + 14 store UX = **161**; covers SEC-001, both migrations, SEC-006, Razorpay retry/body safety, credential hygiene, bulk-selection, code-splitting, PWA caching and store UX contracts |
-| Production build | PASS with warnings | entry chunk 1.28 MB (378 kB gzip) via route/3D splitting; Spline/physics still ~2 MB but deferred; PWA precache reduced from 79 entries / 20,028.89 KiB to 9 entries / 1,529.70 KiB actual; chunk-size warning only |
+| Unit/guard tests | PASS | 23 pricing + 124 API/source guards + 29 store UX + 17 product-query + 22 document-head = **215**; covers SEC-001, both migrations, SEC-006, Razorpay retry/body safety, credential hygiene, bulk-selection, code-splitting, PWA caching, search sanitisation, checkout, downloads, polling and head/JSON-LD contracts |
+| Production build | PASS with warnings | entry chunk 1,288.27 kB (379.41 kB gzip) via route/3D splitting; Spline/physics still ~2 MB but deferred; PWA precache remains 9 shell entries; chunk-size warning only |
 | Dependency audit | PASS for production / PARTIAL overall | `npm audit fix` cleared the high (`follow-redirects`) and 3 others; `npm audit --omit=dev` reports **0** vulnerabilities; 4 moderate dev-only advisories remain (`glob`/`minimatch` via `vite-plugin-pwa`/`workbox-build`) and need a breaking downgrade |
 | Application security | **PARTIAL — still a blocker** | SEC-001/002/003/004/005/006/007/008 and SCHEMA-001 fixed in source or authored as forward migrations; ST-U13/ST-U09 fixed in source; user reports both migrations applied to production, agent verification pending |
-| Browser/UI smoke test | PARTIAL | 14/14 headless-Edge PWA scenarios passed, plus 47/47 batch-7 store UI checks with mocked Supabase fixtures. Full live-data UI/Taste store E2E still NOT TESTED |
-| Store E2E (13 steps) | NOT TESTED against live services | Discovery/detail/library rendering and interactions were browser-tested with fixtures; no live DB, Razorpay or signed-URL step was executed. See `DIGITAL_STORE_ROADMAP.md` §4 |
+| Browser/UI smoke test | PARTIAL | 14/14 headless-Edge PWA scenarios passed, plus 84/84 current store/head CDP checks with mocked Supabase/auth/download/status fixtures and a local session. Full live-data UI/Taste store E2E still NOT TESTED |
+| Store E2E (13 steps) | NOT TESTED against live services | Discovery/detail/library rendering, interactions and head/JSON-LD contracts were browser-tested with fixtures; no live DB, Razorpay or signed-URL step was executed. See `DIGITAL_STORE_ROADMAP.md` §4 |
 | Production migrations applied | NOT VERIFIED | No DB access; never claim applied |
 | Razorpay live/test payments | NOT TESTED | No credentials or approval |
-| SEO / metadata | FAIL | Static head for all routes; missing `og:image`; stale sitemap |
+| SEO / metadata | PARTIAL — source fixed, live validation open | Route canonical/social tags, private-route `noindex` and Product JSON-LD are implemented and browser-verified with fixtures; no prerender/SSR for JS-less crawlers and no live rich-result/sitemap validation |
 | Accessibility / responsive | PARTIAL | No horizontal overflow and no console errors at 1440/390 on the three changed store routes; full Taste/a11y gate not run |
 | Legal/trust consistency | REQUIRES REVIEW | Contradictions and missing disclosures (PLAT-09) |
 
@@ -70,6 +70,15 @@ Selective precache is implemented and measured locally; full inventory and evide
 - Browser: local Edge 157 + CDP against `vite preview`, **78/78** checks. New checks confirm the free-download placeholder opens before the signed request, the verified URL is navigated into that same tab, `/api/download` receives one POST, the success page moves pending→paid in three polls, and no timer fires after the terminal state.
 - **Limit:** mocked download/status responses and stubbed `window.open`. The Razorpay SDK retry path is covered only by a source guard; a live failed-script retry still needs gateway test-mode verification.
 - **Security:** the placeholder tab has no opener and is closed if no verified URL arrives. Entitlement, download and payment authority are unchanged.
+
+## 1g. Batch 11 status (route head metadata + Product JSON-LD)
+
+- `npm run check`: PASS — 5 ranked routes, **153** i18n keys, 36 migration lints.
+- `npm test`: PASS — 23 pricing + 124 guards + 29 store UX + 17 product-query + **22 document-head** = **215 tests, 0 failed**.
+- `npm run build`: PASS with the same pre-existing warnings; no new runtime dependency. Entry 1,288.27 kB / 379.41 kB gzip; product chunk 17.24 kB / 4.92 kB gzip.
+- Browser: local Edge 157 + CDP against `vite preview`, **84/84** checks. New checks confirm managed home/catalogue canonicals, a product-specific title/canonical/social card, `Product` JSON-LD with INR price 499 and `InStock`, exactly one canonical tag, and `noindex, nofollow` with no stale JSON-LD on the library route.
+- **Limit:** mocked store/auth/download/status fixtures were used. This is not live search-console, rich-result, sitemap or JavaScript-disabled crawler validation.
+- **Security:** only explicitly marked head tags are replaced; descriptions are flattened to plain text; data URLs are not emitted as structured-data images; private/utility routes are `noindex`. No auth, RLS, entitlement, storage or payment path changed.
 
 ## 2. Release blockers (must clear before any production sign-off)
 

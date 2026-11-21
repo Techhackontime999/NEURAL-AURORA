@@ -1,6 +1,6 @@
 # NEURAL AURORA — SECURITY AUDIT
 
-- **Generated:** 2026-11-21 · **Scope:** repository source at `main` / `fd8281f` · **No production access.**
+- **Generated:** 2026-11-22 · **Scope:** repository source at `ede2435` plus uncommitted batch-11 source · **No production access.**
 - **Label key:** Verified = confirmed in source/local execution · Requires production access = live grants/settings unknown · Suspected = needs live confirmation.
 - **Secrets policy:** no secret values were read, copied or recorded. Only variable names and presence were inspected.
 
@@ -17,6 +17,7 @@
 | Download requires authenticated user + active entitlement + file ownership; 10-min signed URL; ledger records hash only | `api/download.js:48-231` | Verified in source |
 | Guest download returns 401; unconfigured APIs fail closed with JSON, no secret leakage | `scripts/test-api-guards.mjs` (68 passing) | Verified |
 | DOMPurify sanitization of admin-authored HTML | `src/lib/utils.js:21-32` (per source review) | Verified |
+| Route-scoped head metadata, private-route `noindex` and Product JSON-LD | `src/lib/documentHead.js`, `DocumentHead.jsx`, `App.jsx`, `ProductDetail.jsx`; 22 guards + 84/84 browser checks | Verified in source/fixtures; live crawler validation not performed |
 | Vercel rewrites preserve `/api/*` | `vercel.json:3-8` | Verified |
 
 ---
@@ -207,3 +208,5 @@ Before any P2 fix: explain reason/effects/dependencies, prepare migration + roll
 **Batch 9 (ST-U06):** the paid checkout form gained native/client validation, a bounded quantity and a display-only itemised total. No new security finding: prices still come from the database and `api/create-order` still enforces the authoritative 1–10 quantity cap; no auth, RLS, entitlement or fulfilment logic changed.
 
 **Batch 10 (ST-U07/U14):** free downloads now pre-open a blank tab inside the user gesture and clear its `opener` before navigating to the server-verified signed URL; the tab is closed if verification fails or yields only a magic link. Purchase polling uses a ref so no duplicate timers can be created. No new security finding: entitlement, storage and payment authority are unchanged.
+
+**Batch 11 (ST-U16):** a dependency-free head manager replaces only `data-na-head` tags, route defaults set canonical/social metadata, library/purchase/auth/admin routes are `noindex, nofollow`, and product detail emits `schema.org/Product` JSON-LD. Descriptions are flattened to plain text and non-HTTP data URLs are excluded from structured-data images. No new security finding: no auth, RLS, entitlement, storage or payment logic changed. Live search-console/rich-result validation remains outside repository scope.

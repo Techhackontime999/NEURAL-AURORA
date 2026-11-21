@@ -25,6 +25,8 @@ import { NeuralCursor } from './components/ui/neural-cursor'
 import MithiWidget from './components/mithi/MithiWidget'
 import { useMood } from './context/MoodContext'
 import { clearRuntimeCaches } from './lib/pwaCaches'
+import DocumentHead from './components/ui/DocumentHead'
+import { SITE_NAME } from './lib/documentHead'
 
 // Route-level code splitting: only the app shell, navigation and overlays stay
 // in the entry chunk. Pages and the WebGL background load on demand.
@@ -132,6 +134,75 @@ function LegacyServicesRedirect() {
 function CheckoutAlias() {
   const { orderId } = useParams()
   return <Navigate to={`/purchase/success?ref=${encodeURIComponent(orderId || '')}`} replace />
+}
+
+// Static route metadata. Product detail is handled by the product page itself
+// because its title, image, price and JSON-LD come from the loaded product.
+const ROUTE_HEADS = {
+  '/': {},
+  '/more': {
+    title: `More from ${SITE_NAME}`,
+    description: 'Certificates, achievements and a visual gallery from Amit Kumar (Techhackontime999).',
+  },
+  '/more/certificates': {
+    title: `Certificates — ${SITE_NAME}`,
+    description: 'Verified certifications and continuous learning milestones.',
+  },
+  '/more/achievements': {
+    title: `Achievements — ${SITE_NAME}`,
+    description: 'Selected builds, recognitions and project milestones.',
+  },
+  '/more/gallery': {
+    title: `Gallery — ${SITE_NAME}`,
+    description: 'A visual record of interfaces, experiments and digital work.',
+  },
+  '/offerings': {
+    title: `Offerings — ${SITE_NAME}`,
+    description: 'Digital products, custom web development and support offerings.',
+  },
+  '/offerings/products': {
+    title: `Digital Store — ${SITE_NAME}`,
+    description: 'Browse downloadable templates, guides and digital products.',
+  },
+  '/blog': {
+    title: `Journal — ${SITE_NAME}`,
+    description: 'Notes on development, design and building on the web.',
+  },
+  '/support': {
+    title: `Support — ${SITE_NAME}`,
+    description: 'Get help with an order, download or digital product.',
+  },
+}
+
+const PRIVATE_ROBOTS = 'noindex, nofollow'
+
+function headForPath(pathname) {
+  if (pathname.startsWith('/offerings/products/')) return null
+  if (pathname.startsWith('/blog/') || pathname.startsWith('/case-study/')) {
+    return {
+      title: `Reading — ${SITE_NAME}`,
+      description: 'An article or case study from NEURAL AURORA.',
+    }
+  }
+  if (
+    pathname === '/library' ||
+    pathname === '/purchase/success' ||
+    pathname.startsWith('/checkout/') ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/admin/')
+  ) {
+    return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
+  }
+  return ROUTE_HEADS[pathname] || {}
+}
+
+function RouteHead() {
+  const { pathname } = useLocation()
+  const head = headForPath(pathname)
+  if (!head && pathname.startsWith('/offerings/products/')) return null
+  return <DocumentHead {...(head || {})} path={pathname} />
 }
 
 function HomePage() {
@@ -334,6 +405,7 @@ function AppContent() {
             {/* Last line of defence: a stray render error or a failed lazy
                 chunk (3D scene offline, expired route chunk) must degrade to a
                 readable, honest screen, never to a blank page. */}
+            <RouteHead />
             <RenderErrorBoundary fallback={<RouteErrorFallback />}>
             <Suspense fallback={<RouteFallback />}>
             <Routes>

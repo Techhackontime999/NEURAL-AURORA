@@ -1,6 +1,6 @@
 # NEURAL AURORA — DIGITAL STORE ROADMAP
 
-- **Generated:** 2026-11-21 · **Status:** source-verified; batch-7 store UI browser-tested with mocked fixtures; no production DB, Razorpay or live payment E2E performed.
+- **Generated:** 2026-11-22 · **Status:** source-verified through batch 11; store UI and route-head contracts browser-tested with mocked fixtures; no production DB, Razorpay or live payment E2E performed.
 
 ## 1. What exists today (preserve)
 
@@ -39,7 +39,7 @@ Commerce engine assessment: **the payment/fulfilment core is sound and should no
 | ST-U13 | Failed Razorpay script load poisons retries | Medium | `razorpay.js:1-30,81-85,113-115` | **Fixed in source with guard:** shared load promise, failed-script cleanup, retry reset, SDK-global check; live script-retry simulation still outstanding |
 | ST-U14 | Poll timer scheduled inside state updater | Low | `PurchaseSuccess.jsx:71-79,89-92` | **Fixed and browser-verified:** ref counter, timeout scheduled after the resolved request, no duplicate terminal timers |
 | ST-U15 | Hardcoded "views" label; store text ignores theme tokens | Low/Med | `ProductCard.jsx:73-77`; `ProductDetail.jsx:240-244`; `src/locales/en.json:292` | **Fixed and browser-verified:** image count uses `store.imageCount`; semantic theme classes preserved; full design-token pass still open |
-| ST-U16 | Store has no per-route metadata/JSON-LD | High | `index.html:6-21`; no head manager | Route-level head manager + Product JSON-LD |
+| ST-U16 | Store has no per-route metadata/JSON-LD | High | `index.html:6-21`; no head manager | **Fixed and browser-verified:** route-level head manager, canonical/social tags, private-route `noindex` and Product JSON-LD; live rich-result validation still open |
 
 Full i18n, PWA, SEO and design findings are in `PROJECT_AUDIT.md` and `DESIGN_SYSTEM_AUDIT.md`.
 
@@ -70,9 +70,11 @@ Batch 9 (2026-11-21) closed ST-U06: the paid purchase panel is now a native vali
 
 Batch 10 (2026-11-21) closed ST-U07 and ST-U14, and added a source guard for ST-U13: free downloads pre-open a safe placeholder tab before the signed request, and the purchase success page schedules its next poll from a ref after each resolved request. Local Edge/CDP verification passed **78/78** checks with mocked download/status endpoints; `npm test` reached **193 tests, 0 failed**. Live Razorpay SDK retry, gateway webhook and storage downloads remain open.
 
+Batch 11 (2026-11-22) closed ST-U16: a dependency-free head manager replaces only marked shell tags, static routes get canonical/social metadata, private routes are `noindex`, and product detail emits `schema.org/Product` JSON-LD with canonical URL, numeric price, currency and availability. Local Edge/CDP verification passed **84/84** checks; `npm test` reached **215 tests, 0 failed**. Live rich-result validation and JavaScript-disabled crawler behaviour remain open.
+
 **Phase 4 — commerce/customer experience:** ST-U01/U02 closed in batch 8, ST-U06 in batch 9, ST-U07/U14 in batch 10; remaining ST-U04, U08, U10, U11; then low-priority UX items.
 
-**Phase 5+:** i18n parity, SEO/head, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
+**Phase 5+:** ST-U16 head/SEO closed in batch 11; i18n parity, PWA lifecycle, bundle splitting, then evaluate analytics/bundles/coupons/reviews/Mithi assistant.
 
 ## 4. Store acceptance journey — current testability
 

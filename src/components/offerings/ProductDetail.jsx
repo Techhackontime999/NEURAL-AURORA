@@ -24,6 +24,8 @@ import { normalisePhone } from '../../lib/phone'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 import ImageLightbox from '../ui/ImageLightbox'
+import DocumentHead from '../ui/DocumentHead'
+import { SITE_NAME, SITE_ORIGIN, toAbsoluteUrl, toPlainText } from '../../lib/documentHead'
 
 // Mirrors api/_lib/order-pricing.js:MAX_QUANTITY. The server remains the
 // authority; this only powers the native input and the visible validation.
@@ -192,6 +194,11 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <StoreShell>
+        <DocumentHead
+          title={`Product — ${SITE_NAME}`}
+          robots="noindex, nofollow"
+          path={`/offerings/products/${slug}`}
+        />
         <div className="grid lg:grid-cols-[1fr_360px] gap-8 animate-pulse" aria-busy="true">
           <div className="space-y-4">
             <div className="aspect-[16/10] rounded-xl bg-black/5 dark:bg-white/5" />
@@ -209,6 +216,11 @@ export default function ProductDetail() {
   if (notFound || !product) {
     return (
       <StoreShell>
+        <DocumentHead
+          title={`Product not found — ${SITE_NAME}`}
+          robots="noindex, nofollow"
+          path={`/offerings/products/${slug}`}
+        />
         <div className="glass-panel rounded-xl p-10 text-center">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
             <AlertTriangle className="w-5 h-5" aria-hidden="true" />
@@ -239,8 +251,38 @@ export default function ProductDetail() {
   )
   const hasGallery = galleryImages.length > 1
 
+  const productUrl = `${SITE_ORIGIN}/offerings/products/${product.slug}`
+  const productDescription = toPlainText(product.short_description || product.description)
+  const productImage = toAbsoluteUrl(product.cover_image_url)
+  const productPrice = (Number(product.price_paise) || 0) / 100
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: productDescription,
+    url: productUrl,
+    image: productImage || undefined,
+    sku: product.slug,
+    brand: { '@type': 'Brand', name: SITE_NAME },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: product.currency || 'INR',
+      price: productPrice,
+      availability: 'https://schema.org/InStock',
+    },
+  }
+
   return (
     <StoreShell>
+      <DocumentHead
+        title={`${product.title} — Digital Store | ${SITE_NAME}`}
+        description={productDescription}
+        path={`/offerings/products/${product.slug}`}
+        image={productImage}
+        type="product"
+        jsonLd={productJsonLd}
+      />
       <Link
         to="/offerings/products"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors mb-6"

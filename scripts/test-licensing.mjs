@@ -13,15 +13,14 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const crypto = require('node:crypto')
+const fs = require('node:fs')
 const {
   resolveLicenseOption,
   generateLicenseKey,
   generateLicenseRef,
   hashLicenseKey,
-  buildLicensePdf,
-  safeFilename,
-  PDF_COLORS,
 } = require('../api/_lib/license.js')
+const { buildLicensePdf, safeFilename, PDF_COLORS } = require('../api/_lib/license-pdf.js')
 const {
   normaliseDocumentSignature,
   isAllowedSignatureUrl,
@@ -44,6 +43,22 @@ function check(name, condition, detail) {
     failed++
     console.log(`FAIL  ${name}${detail ? ` — ${detail}` : ''}`)
   }
+}
+
+// Checkout must stay independent of the PDF runtime. A missing PDFKit install
+// used to fail every create-order request before the handler even started.
+{
+  const shared = fs.readFileSync('api/_lib/license.js', 'utf8')
+  const pricing = fs.readFileSync('api/_lib/order-pricing.js', 'utf8')
+  const createOrder = fs.readFileSync('api/create-order.js', 'utf8')
+  const documentEndpoint = fs.readFileSync('api/license-document.js', 'utf8')
+  const requiresPdf = (source) =>
+    /require\(\s*['"](?:pdfkit|\.\.?\/_lib\/license-pdf(?:\.js)?)['"]\s*\)/.test(source)
+  check(
+    'checkout never loads PDFKit',
+    !requiresPdf(shared) && !requiresPdf(pricing) && !requiresPdf(createOrder)
+  )
+  check('PDF builder is loaded only by the document endpoint', documentEndpoint.includes("require('./_lib/license-pdf')"))
 }
 
 const options = [

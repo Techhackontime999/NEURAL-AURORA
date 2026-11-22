@@ -9,7 +9,7 @@
 
 const { createClient } = require('@supabase/supabase-js')
 const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
-const { buildLicensePdf, safeFilename } = require('./_lib/license')
+const { buildLicensePdf, safeFilename } = require('./_lib/license-pdf')
 const { fetchSignatureImage } = require('./_lib/document-signature')
 
 module.exports = async function handler(req, res) {

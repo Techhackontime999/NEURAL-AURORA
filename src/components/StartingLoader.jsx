@@ -1419,17 +1419,16 @@ function InterviewMe({ onSuccess, name }) {
   }, [])
 
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : null
-  const voiceApiBase = (import.meta.env.VITE_VOICE_API_BASE || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
-  const voiceModel = import.meta.env.VITE_VOICE_MODEL || ''
-  const voiceApiKey = import.meta.env.VITE_VOICE_API_KEY || import.meta.env.VITE_AI_API_KEY
 
-  async function tts(text, model) {
+  // Speech is billed through the server-side gateway. No voice provider URL,
+  // key or model is ever read from the public browser bundle.
+  async function tts(text) {
     const voice = ttsVoices[voiceIndexRef.current % ttsVoices.length]
     voiceIndexRef.current++
-    const res = await fetch(`${voiceApiBase}/audio/speech`, {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${voiceApiKey}` },
-      body: JSON.stringify({ model, input: text, voice, response_format: 'mp3' }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature: 'voice', input: text, voice }),
     })
     if (!res.ok) return false
     const blob = await res.blob()
@@ -1444,13 +1443,7 @@ function InterviewMe({ onSuccess, name }) {
 
   async function speak(text) {
     if (!mountedRef.current) return
-    if (voiceModel && voiceApiKey) {
-      try {
-        const ok = await tts(text, voiceModel)
-        if (ok) return
-      } catch {}
-      try { if (await tts(text, 'openai/tts-1-hd')) return } catch {}
-    }
+    try { if (await tts(text)) return } catch {}
     if (!synth) return
     try { synth.cancel() } catch {}
     const u = new SpeechSynthesisUtterance(text)

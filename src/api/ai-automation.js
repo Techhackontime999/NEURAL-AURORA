@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { callAi } from '../lib/ai/provider'
+import { callAi, isAiConfigured } from '../lib/ai/provider'
 import { PORTFOLIO_TOOLS } from '../lib/ai/types'
 
 const SYSTEM_PROMPT = `You are Neural Aurora Portfolio Assistant, an AI assistant for the Neural Aurora portfolio admin panel. You have full control over the portfolio content through natural language.
@@ -54,7 +54,34 @@ const TOOL_TO_INTENT = {
 }
 
 function extractQuoted(text) {
-  return [...text.matchAll(/[""](.+?)[""]/g)].map((m) => m[1])
+  // Accept ASCII quotes as well as typographic ones: the chatbox quick
+  // actions and ordinary keyboard input both use plain " and '.
+  const quoted = []
+  for (const match of text.matchAll(/(["“”])(.+?)\1/g)) quoted.push(match[2])
+  for (const match of text.matchAll(/'([^']{1,120})'/g)) quoted.push(match[1])
+  return quoted
+}
+
+const DESTRUCTIVE_INTENTS = new Set([
+  'delete_skill', 'delete_project', 'delete_education', 'delete_experience',
+])
+
+/** Describe a destructive request before anything is executed. */
+export function getDestructiveAction(message) {
+  if (typeof message !== 'string') return null
+  const match = message.trim().match(/^(?:please\s+)?(?:delete|remove)\s+(skill|project|education|experience)\b\s*(.*)$/i)
+  if (!match) return null
+  const entity = match[1].toLowerCase()
+  const params = extractQuoted(match[2] || '')
+  const target = (params[0] || match[2] || '').trim().replace(/[.!?]+$/, '')
+  if (!target) return null
+  return {
+    entity,
+    target,
+    intent: `delete_${entity}`,
+    args: entity === 'experience' && params[1] ? { company: params[1] } : undefined,
+    consequence: `This permanently removes the ${entity} “${target}” from the portfolio. This cannot be undone from the assistant.`,
+  }
 }
 
 function extractFirstParam(args, ...keys) {
@@ -111,17 +138,18 @@ const intentPatterns = [
   { regex: /show\s+(my\s+)?reviews/i, intent: 'list_reviews' },
   { regex: /list\s+(my\s+)?(contact\s+)?messages/i, intent: 'list_contact_messages' },
   { regex: /show\s+(my\s+)?messages/i, intent: 'list_contact_messages' },
-  { regex: /dashboard/i, intent: 'get_dashboard_stats' },
-  { regex: /stats/i, intent: 'get_dashboard_stats' },
-  { regex: /summary/i, intent: 'get_dashboard_stats' },
+  { regex: /^(?:show|get|view|open)\s+(?:me\s+)?(?:the\s+)?(?:dashboard|stats|summary)\b/i, intent: 'get_dashboard_stats' },
+  { regex: /^dashboard\b/i, intent: 'get_dashboard_stats' },
+  { regex: /^stats\b/i, intent: 'get_dashboard_stats' },
+  { regex: /^summary\b/i, intent: 'get_dashboard_stats' },
   { regex: /list\s+(all\s+)?case\s+studies/i, intent: 'list_case_studies' },
   { regex: /show\s+(my\s+)?case\s+studies/i, intent: 'list_case_studies' },
   { regex: /create\s+(a\s+)?(new\s+)?case\s+study/i, intent: 'create_case_study' },
   { regex: /add\s+(a\s+)?(new\s+)?case\s+study/i, intent: 'create_case_study' },
   { regex: /write\s+(a\s+)?case\s+study/i, intent: 'create_case_study' },
-  { regex: /help/i, intent: 'help' },
-  { regex: /what\s+can\s+you\s+do/i, intent: 'help' },
-  { regex: /commands?/i, intent: 'help' },
+  { regex: /^help\b/i, intent: 'help' },
+  { regex: /^what\s+can\s+you\s+do\b/i, intent: 'help' },
+  { regex: /^commands?\b/i, intent: 'help' },
 ]
 
 function parseIntent(message) {
@@ -138,8 +166,9 @@ function parseIntent(message) {
 // ─── AI INTENT RESOLUTION ──────────────────────────────────
 
 async function resolveIntent(message, history = []) {
-  const apiKey = import.meta.env.VITE_AI_API_KEY
-  if (!apiKey) {
+  // With no server-side provider configured, use the deterministic regex
+  // parser instead of paying for a model call that cannot happen.
+  if (!(await isAiConfigured())) {
     return { parsed: parseIntent(message) }
   }
 
@@ -152,6 +181,7 @@ async function resolveIntent(message, history = []) {
         { role: 'user', content: message },
       ],
       PORTFOLIO_TOOLS,
+      { feature: 'portfolio', max_tokens: 1200 },
     )
 
     const choice = response.choices[0]
@@ -241,11 +271,14 @@ async function handleUpdateSkill(target, args) {
 }
 
 async function handleDeleteSkill(target) {
-  const { data: list } = await supabase.from('skills').select('*').ilike('name', `%${target}%`).limit(1)
+  const { data: list, error: findError } = await supabase
+    .from('skills').select('*').ilike('name', `%${target}%`).limit(1)
+  if (findError) return { error: findError.message }
   const existing = list?.[0]
-  if (!existing) return null
-  await supabase.from('skills').delete().eq('id', existing.id)
-  return existing
+  if (!existing) return { notFound: true }
+  const { error } = await supabase.from('skills').delete().eq('id', existing.id)
+  if (error) return { error: error.message }
+  return { row: existing }
 }
 
 async function handleListProjects() {
@@ -281,11 +314,14 @@ async function handleUpdateProject(target, args) {
 }
 
 async function handleDeleteProject(target) {
-  const { data: list } = await supabase.from('projects').select('*').ilike('title', `%${target}%`).limit(1)
+  const { data: list, error: findError } = await supabase
+    .from('projects').select('*').ilike('title', `%${target}%`).limit(1)
+  if (findError) return { error: findError.message }
   const existing = list?.[0]
-  if (!existing) return null
-  await supabase.from('projects').delete().eq('id', existing.id)
-  return existing
+  if (!existing) return { notFound: true }
+  const { error } = await supabase.from('projects').delete().eq('id', existing.id)
+  if (error) return { error: error.message }
+  return { row: existing }
 }
 
 async function handleListEducation() {
@@ -304,11 +340,14 @@ async function handleCreateEducation(args) {
 }
 
 async function handleDeleteEducation(target) {
-  const { data: list } = await supabase.from('education').select('*').ilike('degree', `%${target}%`).limit(1)
+  const { data: list, error: findError } = await supabase
+    .from('education').select('*').ilike('degree', `%${target}%`).limit(1)
+  if (findError) return { error: findError.message }
   const existing = list?.[0]
-  if (!existing) return null
-  await supabase.from('education').delete().eq('id', existing.id)
-  return existing
+  if (!existing) return { notFound: true }
+  const { error } = await supabase.from('education').delete().eq('id', existing.id)
+  if (error) return { error: error.message }
+  return { row: existing }
 }
 
 async function handleListExperience() {
@@ -327,16 +366,18 @@ async function handleCreateExperience(args) {
 }
 
 async function handleDeleteExperience(role, company) {
-  const { data: list } = await supabase
+  const { data: list, error: findError } = await supabase
     .from('experience')
     .select('*')
     .ilike('role', `%${role}%`)
     .ilike('company', `%${company}%`)
     .limit(1)
+  if (findError) return { error: findError.message }
   const existing = list?.[0]
-  if (!existing) return null
-  await supabase.from('experience').delete().eq('id', existing.id)
-  return existing
+  if (!existing) return { notFound: true }
+  const { error } = await supabase.from('experience').delete().eq('id', existing.id)
+  if (error) return { error: error.message }
+  return { row: existing }
 }
 
 async function handleListBlogPosts() {
@@ -346,9 +387,8 @@ async function handleListBlogPosts() {
 }
 
 async function handleCreateBlogPost(topic, title) {
-  const apiKey = import.meta.env.VITE_AI_API_KEY
-  if (!apiKey) {
-    return { error: 'AI API key required for research. Set VITE_AI_API_KEY in .env' }
+  if (!(await isAiConfigured())) {
+    return { error: 'AI is not configured for this deployment. Ask the site owner to add a server-side AI key.' }
   }
 
   const blogTitle = title || `The Rise of ${topic.charAt(0).toUpperCase() + topic.slice(1)}`
@@ -372,7 +412,7 @@ Return ONLY valid JSON with no markdown, no code fences:
         role: 'user',
         content: `Write a detailed blog post about: ${topic}. Title: ${blogTitle}. Include real-world examples, statistics, trends, and practical insights. Format the content as HTML.`,
       },
-    ])
+    ], null, { feature: 'generation', max_tokens: 2048 })
 
     const text = response.choices?.[0]?.message?.content || ''
     const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
@@ -466,9 +506,8 @@ async function handleListCaseStudies() {
 }
 
 async function handleCreateCaseStudy(topic, title) {
-  const apiKey = import.meta.env.VITE_AI_API_KEY
-  if (!apiKey) {
-    return { error: 'AI API key required for case study creation. Set VITE_AI_API_KEY in .env' }
+  if (!(await isAiConfigured())) {
+    return { error: 'AI is not configured for this deployment. Ask the site owner to add a server-side AI key.' }
   }
 
   const csTitle = title || `Case Study: ${topic.charAt(0).toUpperCase() + topic.slice(1)}`
@@ -492,7 +531,7 @@ Return ONLY valid JSON with no markdown, no code fences:
         role: 'user',
         content: `Write a detailed case study about: ${topic}. Title: ${csTitle}. Include the challenge, solution, and results. Format the content as HTML.`,
       },
-    ])
+    ], null, { feature: 'generation', max_tokens: 2048 })
 
     const text = response.choices?.[0]?.message?.content || ''
     const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
@@ -532,11 +571,56 @@ Return ONLY valid JSON with no markdown, no code fences:
   }
 }
 
+/** Turn a delete handler result into an honest user-facing outcome. */
+function deleteOutcome(result, entity, nameOf) {
+  if (result?.error) {
+    return {
+      reply: `Could not delete ${entity}: ${result.error}`,
+      action: { type: 'error', status: 'error', detail: result.error },
+    }
+  }
+  if (!result?.row) {
+    return {
+      reply: `${entity.charAt(0).toUpperCase() + entity.slice(1)} not found. Nothing was deleted.`,
+      action: { type: 'deleted', status: 'not_found', detail: entity },
+    }
+  }
+  const name = nameOf(result.row)
+  return {
+    reply: `Deleted ${entity} **${name}**.`,
+    action: { type: 'deleted', status: 'success', detail: name },
+  }
+}
+
 // ─── MAIN HANDLER ──────────────────────────────────────────
 
-export async function handleAiAutomation(message, history = []) {
-  const { parsed, replyOverride, args } = await resolveIntent(message, history)
+export async function handleAiAutomation(message, history = [], options = {}) {
+  // A confirmed deletion replays the exact intent and target the admin saw in
+  // the confirmation prompt; the model is not asked to reinterpret it.
+  const resolved = options.forceIntent
+    ? {
+        parsed: { intent: options.forceIntent, target: options.forceTarget, params: [] },
+        args: options.forceArgs,
+      }
+    : await resolveIntent(message, history)
+  const { parsed, replyOverride, args } = resolved
   let { intent, target } = parsed
+
+  // Defence in depth: a destructive intent never executes unless the caller
+  // supplies an explicit confirmation. The UI shows the actual target first.
+  if (DESTRUCTIVE_INTENTS.has(intent) && !options.confirmed) {
+    const entity = intent.replace('delete_', '')
+    return {
+      reply: `You asked to delete ${entity} “${target || 'the selected item'}”. Nothing was deleted yet — please confirm.`,
+      action: {
+        type: 'confirm_delete',
+        status: 'awaiting_confirmation',
+        detail: target,
+        intent,
+        entity,
+      },
+    }
+  }
 
   try {
     if (replyOverride) {
@@ -594,12 +678,7 @@ export async function handleAiAutomation(message, history = []) {
 
       case 'delete_skill': {
         if (!target) return { reply: 'Which skill to delete?' }
-        const result = await handleDeleteSkill(target)
-        if (!result) return { reply: `Skill "${target}" not found.` }
-        return {
-          reply: `Deleted skill **${result.name}**.`,
-          action: { type: 'deleted', status: 'success', detail: result.name },
-        }
+        return deleteOutcome(await handleDeleteSkill(target), 'skill', (row) => row.name || target)
       }
 
       case 'list_projects': {
@@ -634,12 +713,7 @@ export async function handleAiAutomation(message, history = []) {
 
       case 'delete_project': {
         if (!target) return { reply: 'Which project to delete?' }
-        const result = await handleDeleteProject(target)
-        if (!result) return { reply: `Project "${target}" not found.` }
-        return {
-          reply: `Deleted project **${result.title}**.`,
-          action: { type: 'deleted', status: 'success', detail: result.title },
-        }
+        return deleteOutcome(await handleDeleteProject(target), 'project', (row) => row.title || target)
       }
 
       case 'list_education': {
@@ -664,12 +738,7 @@ export async function handleAiAutomation(message, history = []) {
 
       case 'delete_education': {
         if (!target) return { reply: 'Which education entry to delete?' }
-        const result = await handleDeleteEducation(target)
-        if (!result) return { reply: `Education "${target}" not found.` }
-        return {
-          reply: `Deleted education **${result.degree}**.`,
-          action: { type: 'deleted', status: 'success' },
-        }
+        return deleteOutcome(await handleDeleteEducation(target), 'education entry', (row) => row.degree || target)
       }
 
       case 'list_experience': {
@@ -694,12 +763,11 @@ export async function handleAiAutomation(message, history = []) {
 
       case 'delete_experience': {
         if (!target) return { reply: 'Which experience entry to delete?' }
-        const result = await handleDeleteExperience(target, args?.company || '')
-        if (!result) return { reply: `Experience "${target}" not found.` }
-        return {
-          reply: `Deleted experience **${result.role}** at ${result.company}.`,
-          action: { type: 'deleted', status: 'success' },
-        }
+        return deleteOutcome(
+          await handleDeleteExperience(target, args?.company || ''),
+          'experience entry',
+          (row) => `${row.role || target}${row.company ? ` at ${row.company}` : ''}`
+        )
       }
 
       case 'list_blog_posts': {

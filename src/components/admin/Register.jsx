@@ -4,14 +4,12 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { BrandLogo } from '../ui/BrandLogo'
 
-const SUPERUSER_EMAIL = import.meta.env.VITE_SUPERUSER_EMAIL || ''
-const SUPERUSER_PASSWORD = import.meta.env.VITE_SUPERUSER_PASSWORD || ''
-const HAS_SUPERUSER = SUPERUSER_EMAIL && SUPERUSER_PASSWORD
-
 export default function Register() {
-  const [email, setEmail] = useState(SUPERUSER_EMAIL)
-  const [password, setPassword] = useState(SUPERUSER_PASSWORD)
-  const [confirmPassword, setConfirmPassword] = useState(SUPERUSER_PASSWORD)
+  // Credentials are always entered by the person registering. Nothing about
+  // an administrator account is prefilled from the public browser bundle.
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)

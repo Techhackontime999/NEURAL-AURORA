@@ -1,6 +1,4 @@
-const API_BASE = (import.meta.env.VITE_AI_API_BASE || 'https://api.openai.com/v1').replace(/\/+$/, '')
-const API_KEY = import.meta.env.VITE_AI_API_KEY
-const MODEL = import.meta.env.VITE_AI_MODEL || 'gpt-4o-mini'
+import { callAi, isAiConfigured } from './ai/provider'
 
 let cachedQuestions = []
 
@@ -28,42 +26,31 @@ function popCached() {
 }
 
 async function fetchFromAPI(prompt) {
-  const res = await fetch(`${API_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
+  let data
+  try {
+    data = await callAi(
+      [
         {
           role: 'system',
           content: 'You are a puzzle generator. Return ONLY valid JSON with no markdown, no code fences, no extra text.',
         },
         { role: 'user', content: prompt },
       ],
-      temperature: 1.0,
-      max_tokens: 200,
-    }),
-  })
-
-  if (!res.ok) {
-    let errorBody = ''
-    try { errorBody = await res.text() } catch {}
-
-    if (res.status === 429) {
-      let data
-      try { data = JSON.parse(errorBody) } catch { data = {} }
-      const msg = typeof data?.error === 'object' ? data.error.message : (data?.error?.message || 'API quota exceeded')
-      const retryAfter = msg ? parseRetryAfter(msg) : 5000
-      throw { retryable: true, retryAfter, message: msg }
+      null,
+      { feature: 'puzzle', max_tokens: 200, temperature: 1 }
+    )
+  } catch (error) {
+    const status = error?.status
+    if (status === 429 || status === 503 || status === 504) {
+      throw {
+        retryable: true,
+        retryAfter: error.retryAfter ? error.retryAfter * 1000 : 5000,
+        message: error.message,
+      }
     }
-
-    throw { retryable: false, message: `AI API error (${res.status}): ${errorBody.slice(0, 500)}` }
+    throw { retryable: false, message: error.message || 'AI request failed' }
   }
 
-  const data = await res.json()
   const text = data?.choices?.[0]?.message?.content || ''
   const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
   const parsed = JSON.parse(cleaned)
@@ -86,8 +73,8 @@ export async function generateQuestion() {
   const cached = popCached()
   if (cached) return cached
 
-  if (!API_KEY) {
-    console.warn('[AI] No API key found. Using fallback questions.')
+  if (!(await isAiConfigured())) {
+    console.info('[AI] No server-side AI provider configured. Using fallback questions.')
     return fallbackQuestion()
   }
 

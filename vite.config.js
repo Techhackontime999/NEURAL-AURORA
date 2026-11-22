@@ -264,6 +264,7 @@ export default defineConfig(({ mode }) => {
           // library reports a generic download error. The three routes above
           // predate this bridge and keep their existing behaviour.
           const bridgedRoutes = new Set([
+            'ai',
             'admin-access-link',
             'admin-delete-orders',
             'admin-license',

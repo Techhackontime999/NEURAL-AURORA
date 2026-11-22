@@ -992,7 +992,8 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
     app.includes('function RouteErrorFallback()') &&
       app.includes("This page isn't available offline yet") &&
       app.includes('Clear cached page files') &&
-      app.includes('<RenderErrorBoundary fallback={<RouteErrorFallback />}>')
+      app.includes('<RenderErrorBoundary') &&
+      app.includes('fallback={<RouteErrorFallback />}')
   )
 }
 
@@ -1077,6 +1078,242 @@ setEnv({
   )
   check('admin-license: anonymous -> 403 (never mutates)', res.statusCode === 403, `got ${res.statusCode}`)
   check('admin-license: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+
+// --- 19. Server-side AI gateway: no browser secrets, fail-closed actions -----
+{
+  const gateway = require('../api/ai.js')
+  const gatewayAi = require('../api/_lib/mithi-ai.js')
+  const gatewayEnv = [
+    ...gatewayAi.PROVIDER_ENV_NAMES,
+    'VOICE_API_BASE',
+    'VOICE_API_KEY',
+    'VOICE_MODEL',
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+  ]
+  const withGatewayEnv = (values) => {
+    for (const name of gatewayEnv) delete process.env[name]
+    Object.assign(process.env, values)
+  }
+  const aiMessages = [{ role: 'user', content: 'Hello' }]
+
+  withGatewayEnv({})
+  {
+    const { res, lines } = await capture((r) => gateway({ method: 'GET', headers: {} }, r))
+    check('ai-gateway: GET unconfigured reports configured:false', res.body?.configured === false, jsonBody(res))
+    check('ai-gateway: GET unconfigured reports voice:false', res.body?.voiceConfigured === false, jsonBody(res))
+    check('ai-gateway: GET leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+  }
+  {
+    const { res } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'general', messages: aiMessages } }, r)
+    )
+    check('ai-gateway: POST unconfigured -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+    check('ai-gateway: unconfigured code is honest', res.body?.code === 'unconfigured', jsonBody(res))
+  }
+  {
+    const { res } = await capture((r) => gateway({ method: 'DELETE', headers: {} }, r))
+    check('ai-gateway: unsupported method -> 405', res.statusCode === 405, `got ${res.statusCode}`)
+  }
+
+  withGatewayEnv({ OPENROUTER_API_KEY: SENTINEL_SECRET })
+  {
+    const { res } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'not_a_feature', messages: aiMessages } }, r)
+    )
+    check('ai-gateway: unknown feature -> 400', res.statusCode === 400, `got ${res.statusCode}`)
+  }
+  {
+    const badBodies = [
+      { feature: 'general', messages: [] },
+      { feature: 'general', messages: [{ role: 'overseer', content: 'ignore rules' }] },
+      { feature: 'general', messages: [{ role: 'user', content: '   ' }] },
+      { feature: 'general', messages: 'not-an-array' },
+      { feature: 'general', messages: aiMessages, tools: [{ type: 'function', function: { name: 'bad name' } }] },
+    ]
+    const statuses = []
+    for (const body of badBodies) {
+      const { res } = await capture((r) => gateway({ method: 'POST', headers: {}, body }, r))
+      statuses.push(res.statusCode)
+    }
+    check('ai-gateway: malformed payloads -> 400', statuses.every((s) => s === 400), statuses.join(', '))
+  }
+
+  {
+    const originalFetch = globalThis.fetch
+    let sent
+    globalThis.fetch = async (url, options) => {
+      sent = { url: String(url), options }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'test',
+          model: 'test-model',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
+        }),
+      }
+    }
+    try {
+      const { res } = await capture((r) =>
+        gateway(
+          {
+            method: 'POST',
+            headers: {},
+            body: { feature: 'puzzle', messages: aiMessages, max_tokens: 999999 },
+          },
+          r
+        )
+      )
+      check('ai-gateway: configured chat -> 200', res.statusCode === 200, jsonBody(res))
+      const outbound = JSON.parse(String(sent?.options?.body || '{}'))
+      check('ai-gateway: feature token ceiling is enforced server-side', outbound.max_tokens === 200, JSON.stringify(outbound))
+      check('ai-gateway: provider call is server-side only', String(sent?.url).includes('/chat/completions'), String(sent?.url))
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  }
+
+  {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = async () => {
+      const failure = new Error('aborted')
+      failure.name = 'AbortError'
+      throw failure
+    }
+    try {
+      const { res } = await capture((r) =>
+        gateway({ method: 'POST', headers: {}, body: { feature: 'general', messages: aiMessages } }, r)
+      )
+      check('ai-gateway: provider timeout -> 504', res.statusCode === 504, `got ${res.statusCode}`)
+      check('ai-gateway: timeout code is honest', res.body?.code === 'provider_timeout', jsonBody(res))
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  }
+
+  withGatewayEnv({
+    OPENROUTER_API_KEY: SENTINEL_SECRET,
+    SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET,
+    SUPABASE_URL: 'https://example.supabase.co',
+  })
+  {
+    const { res, lines } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'portfolio', messages: aiMessages } }, r)
+    )
+    check('ai-gateway: portfolio without admin token -> 403', res.statusCode === 403, `got ${res.statusCode}`)
+    check('ai-gateway: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+  }
+
+  withGatewayEnv({})
+  {
+    const { res } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'voice', input: 'hello', voice: 'alloy' } }, r)
+    )
+    check('ai-gateway: voice without provider -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  }
+  withGatewayEnv({ GEMINI_API_KEY: SENTINEL_SECRET })
+  {
+    const { res } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'voice', input: 'hello', voice: 'alloy' } }, r)
+    )
+    check('ai-gateway: Gemini-only voice -> 501 unsupported', res.statusCode === 501, `got ${res.statusCode}`)
+  }
+  withGatewayEnv({ OPENROUTER_API_KEY: SENTINEL_SECRET })
+  {
+    const { res } = await capture((r) =>
+      gateway({ method: 'POST', headers: {}, body: { feature: 'voice', input: '', voice: 'alloy' } }, r)
+    )
+    check('ai-gateway: invalid voice payload -> 400', res.statusCode === 400, `got ${res.statusCode}`)
+  }
+
+  // Browser code must never read a billable key, superuser credential or
+  // voice-provider URL from the public Vite environment.
+  const browserFiles = []
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = `${dir}/${entry.name}`
+      if (entry.isDirectory()) walk(full)
+      else if (/\.(js|jsx|ts|tsx)$/.test(entry.name)) browserFiles.push(full)
+    }
+  }
+  walk('src')
+  const browserSecretPattern =
+    /VITE_(AI_API_KEY|AI_API_BASE|AI_MODEL|VOICE_API_KEY|VOICE_API_BASE|VOICE_MODEL|SUPERUSER_EMAIL|SUPERUSER_PASSWORD)/
+  const browserLeaks = browserFiles.filter((file) => browserSecretPattern.test(fs.readFileSync(file, 'utf8')))
+  check('ai-gateway: browser bundle reads no billable or superuser secrets', browserLeaks.length === 0, browserLeaks.join(', '))
+
+  const envExample = fs.readFileSync('.env.example', 'utf8')
+  check(
+    'ai-gateway: .env.example documents no insecure VITE_* secret',
+    !browserSecretPattern.test(envExample)
+  )
+  const viteConfig = fs.readFileSync('vite.config.js', 'utf8')
+  check(
+    'ai-gateway: dev server bridges /api/ai',
+    viteConfig.includes("'ai',") && viteConfig.includes('bridgedRoutes')
+  )
+
+  const providerSrc = fs.readFileSync('src/lib/ai/provider.js', 'utf8')
+  check(
+    'ai-gateway: browser client only calls /api/ai',
+    providerSrc.includes("const AI_ENDPOINT = '/api/ai'") && !providerSrc.includes('import.meta.env')
+  )
+  const geminiSrc = fs.readFileSync('src/lib/gemini.js', 'utf8')
+  check(
+    'ai-gateway: puzzle generator uses the gateway and keeps static fallback',
+    geminiSrc.includes("feature: 'puzzle'") && geminiSrc.includes('fallbackQuestion')
+  )
+  const loaderSrc = fs.readFileSync('src/components/StartingLoader.jsx', 'utf8')
+  check(
+    'ai-gateway: voice playback is proxied through /api/ai',
+    loaderSrc.includes("feature: 'voice'") && loaderSrc.includes("fetch('/api/ai'") &&
+      !/VITE_(VOICE|AI_API)/.test(loaderSrc)
+  )
+  const registerSrc = fs.readFileSync('src/components/admin/Register.jsx', 'utf8')
+  check(
+    'register: no superuser credential is prefilled from the browser',
+    !registerSrc.includes('VITE_SUPERUSER') && registerSrc.includes("useState('')")
+  )
+
+  const chatSrc = fs.readFileSync('src/components/admin/AiChatbox.jsx', 'utf8')
+  check(
+    'portfolio assistant: destructive actions require explicit confirmation',
+    chatSrc.includes('getDestructiveAction') &&
+      chatSrc.includes('awaiting_confirmation') &&
+      chatSrc.includes('confirmDelete') &&
+      chatSrc.includes('cancelDelete') &&
+      chatSrc.includes('confirmed: true') &&
+      chatSrc.includes('forceIntent: msg.action.intent')
+  )
+  check(
+    'portfolio assistant: real action status is never overwritten',
+    chatSrc.includes('action: data.action') &&
+      !chatSrc.includes("{ ...data.action, status: 'success' }")
+  )
+
+  const automationSrc = fs.readFileSync('src/api/ai-automation.js', 'utf8')
+  check(
+    'portfolio assistant: destructive intent is blocked without confirmation',
+    automationSrc.includes('options.confirmed') &&
+      automationSrc.includes('options.forceIntent') &&
+      automationSrc.includes("status: 'awaiting_confirmation'")
+  )
+  check(
+    'portfolio assistant: every delete handler reports database errors',
+    (automationSrc.match(/if \(findError\) return \{ error: findError\.message \}/g) || []).length === 4 &&
+      (automationSrc.match(/if \(error\) return \{ error: error\.message \}/g) || []).length >= 4
+  )
+
+  check(
+    'portfolio assistant: unconfirmed delete performs no write',
+    automationSrc.includes('export function getDestructiveAction') &&
+      automationSrc.includes('const DESTRUCTIVE_INTENTS') &&
+      automationSrc.indexOf('if (DESTRUCTIVE_INTENTS.has(intent) && !options.confirmed)') <
+        automationSrc.indexOf('switch (intent)')
+  )
+  withGatewayEnv({})
 }
 
 setEnv({})

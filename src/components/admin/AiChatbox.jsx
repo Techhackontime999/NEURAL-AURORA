@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { handleAiAutomation } from '../../api/ai-automation'
+import { getDestructiveAction, handleAiAutomation } from '../../api/ai-automation'
 
 const QUICK_ACTIONS = [
   { label: 'Dashboard', prompt: 'Show dashboard stats', icon: '◈', category: 'Overview' },
@@ -60,42 +60,20 @@ export default function AiChatbox() {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [])
 
-  const handleSend = useCallback(async (text) => {
-    const trimmed = (text ?? input).trim()
-    if (!trimmed || sending) return
-
-    setSending(true)
-    const userMsg = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date(),
-    }
-    setMessages((prev) => [...prev, userMsg])
-    if (!text) {
-      setInput('')
-      if (inputRef.current) inputRef.current.style.height = 'auto'
-    }
-
-    const thinkingId = `thinking-${Date.now()}`
-    setMessages((prev) => [
-      ...prev,
-      { id: thinkingId, role: 'assistant', content: '', timestamp: new Date(), action: { type: 'processing', status: 'pending' } },
-    ])
-
+  const executeAutomation = useCallback(async (prompt, targetId, history, options = {}) => {
     try {
-      const history = messagesRef.current
-        .filter((m) => m.content)
-        .map((m) => ({ role: m.role, content: m.content }))
-      const data = await handleAiAutomation(trimmed, history)
+      const data = await handleAiAutomation(prompt, history, options)
 
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === thinkingId
+          m.id === targetId
             ? {
                 ...m,
                 content: data.reply,
-                action: data.action ? { ...data.action, status: 'success' } : undefined,
+                // Keep the real status: a failed write must never be shown as success.
+                action: data.action,
+                pendingPrompt: undefined,
+                pendingHistory: undefined,
               }
             : m,
         ),
@@ -103,11 +81,13 @@ export default function AiChatbox() {
     } catch (err) {
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === thinkingId
+          m.id === targetId
             ? {
                 ...m,
                 content: err instanceof Error ? err.message : 'Something went wrong',
                 action: { type: 'error', status: 'error', detail: 'Request failed' },
+                pendingPrompt: undefined,
+                pendingHistory: undefined,
               }
             : m,
         ),
@@ -115,7 +95,90 @@ export default function AiChatbox() {
     } finally {
       setSending(false)
     }
-  }, [input, sending])
+  }, [])
+
+  const handleSend = useCallback(async (text) => {
+    const trimmed = (text ?? input).trim()
+    if (!trimmed || sending) return
+
+    const userMsg = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: trimmed,
+      timestamp: new Date(),
+    }
+    const history = messagesRef.current
+      .filter((m) => m.content && m.action?.status !== 'awaiting_confirmation')
+      .map((m) => ({ role: m.role, content: m.content }))
+      .concat({ role: 'user', content: trimmed })
+
+    setMessages((prev) => [...prev, userMsg])
+    if (!text) {
+      setInput('')
+      if (inputRef.current) inputRef.current.style.height = 'auto'
+    }
+
+    const destructive = getDestructiveAction(trimmed)
+    if (destructive) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `confirm-${Date.now()}`,
+          role: 'assistant',
+          content: `You asked to delete the ${destructive.entity} **${destructive.target}**. Nothing has been deleted yet.`,
+          timestamp: new Date(),
+          action: { type: 'confirm_delete', status: 'awaiting_confirmation', ...destructive },
+          pendingPrompt: trimmed,
+          pendingHistory: history,
+        },
+      ])
+      return
+    }
+
+    setSending(true)
+    const thinkingId = `thinking-${Date.now()}`
+    setMessages((prev) => [
+      ...prev,
+      { id: thinkingId, role: 'assistant', content: '', timestamp: new Date(), action: { type: 'processing', status: 'pending' } },
+    ])
+
+    await executeAutomation(trimmed, thinkingId, history)
+  }, [executeAutomation, input, sending])
+
+  const confirmDelete = useCallback((msg) => {
+    if (sending || msg.action?.status !== 'awaiting_confirmation' || !msg.pendingPrompt) return
+    setSending(true)
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msg.id
+          ? { ...m, content: 'Confirmed. Executing the deletion...', action: { ...m.action, status: 'pending' } }
+          : m,
+      ),
+    )
+    void executeAutomation(msg.pendingPrompt, msg.id, msg.pendingHistory || [], {
+      confirmed: true,
+      forceIntent: msg.action.intent,
+      forceTarget: msg.action.target,
+      forceArgs: msg.action.args,
+    })
+  }, [executeAutomation, sending])
+
+  const cancelDelete = useCallback((msg) => {
+    if (sending || msg.action?.status !== 'awaiting_confirmation') return
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msg.id
+          ? {
+              ...m,
+              content: 'Cancelled. Nothing was deleted.',
+              action: { type: 'cancelled', status: 'cancelled', detail: msg.action.target },
+              pendingPrompt: undefined,
+              pendingHistory: undefined,
+            }
+          : m,
+      ),
+    )
+  }, [sending])
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -204,22 +267,51 @@ export default function AiChatbox() {
                     <div className="whitespace-pre-wrap break-words">{msg.content}</div>
                   )}
 
-                  {msg.action && msg.action.status !== 'pending' && (
-                    <div
-                      className={`mt-2 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
-                        msg.action.status === 'success'
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : 'bg-red-500/10 text-red-400'
-                      }`}
-                    >
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <span className="capitalize">{msg.action.type.replace(/_/g, ' ')}</span>
-                      {msg.action.detail && (
-                        <span className="text-slate-500">&mdash; {msg.action.detail}</span>
-                      )}
+                  {msg.action?.status === 'awaiting_confirmation' ? (
+                    <div className="mt-3 space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                      <p className="text-xs font-semibold text-amber-300">Confirm deletion</p>
+                      <p className="text-xs leading-relaxed text-slate-300">
+                        {msg.action.consequence || `This permanently removes the ${msg.action.entity} “${msg.action.target}”.`}
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(msg)}
+                          disabled={sending}
+                          className="rounded-lg bg-red-500/90 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-40"
+                        >
+                          Confirm delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => cancelDelete(msg)}
+                          disabled={sending}
+                          className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-40"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    msg.action && msg.action.status !== 'pending' && (
+                      <div
+                        className={`mt-2 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
+                          msg.action.status === 'success'
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : msg.action.status === 'cancelled'
+                              ? 'bg-slate-700/40 text-slate-300'
+                              : 'bg-red-500/10 text-red-400'
+                        }`}
+                      >
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <span className="capitalize">{msg.action.type.replace(/_/g, ' ')}</span>
+                        {msg.action.detail && (
+                          <span className="text-slate-500">&mdash; {msg.action.detail}</span>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
 

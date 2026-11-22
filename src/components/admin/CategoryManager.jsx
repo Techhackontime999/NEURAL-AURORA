@@ -4,7 +4,9 @@ import {
   updateCategory,
   deleteCategory,
 } from '../../lib/adminProducts'
+import { LUCIDE_ICON_OPTIONS } from '../../lib/iconCatalog'
 import { useToast } from '../../context/ToastContext'
+import IconPicker from '../ui/IconPicker'
 
 const emptyForm = {
   slug: '',
@@ -164,13 +166,14 @@ export default function CategoryManager({ categories, products, onChanged }) {
         </div>
         <div>
           <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Icon name
+            Icon
           </label>
-          <input
+          <IconPicker
+            compact
+            label="Category icon"
             value={form.icon_name}
-            onChange={(e) => setForm({ ...form, icon_name: e.target.value })}
-            className="w-full rounded border px-3 py-2 text-sm outline-none"
-            style={inputStyle}
+            options={LUCIDE_ICON_OPTIONS}
+            onChange={(value) => setForm({ ...form, icon_name: value || 'Package' })}
           />
         </div>
         <div>

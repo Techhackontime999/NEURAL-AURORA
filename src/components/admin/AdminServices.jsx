@@ -1,28 +1,16 @@
 import { useState, useEffect } from 'react'
-import * as LucideIcons from 'lucide-react'
 import {
   getServices, createService, updateService, deleteService,
   getServicePage, updateServicePage,
 } from '../../lib/supabase'
+import { LUCIDE_ICON_OPTIONS } from '../../lib/iconCatalog'
 import RichTextEditor from './RichTextEditor'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import { stripHtml } from '../../lib/utils'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import IconPicker, { IconGlyph } from '../ui/IconPicker'
 import SearchBar from '../ui/SearchBar'
-
-const ICON_OPTIONS = [
-  'Globe', 'Palette', 'Lightbulb', 'MessageCircle', 'Code', 'Cpu', 'Star',
-  'Users', 'Award', 'Clock', 'Braces', 'Layout', 'Server', 'Database',
-  'PenTool', 'GitFork', 'Terminal', 'Target', 'Zap', 'Sparkles',
-  'CheckCircle', 'Layers',
-]
-
-function IconPreview({ name, className = 'w-4 h-4' }) {
-  const Icon = LucideIcons[name]
-  if (!Icon) return <span className="text-xs text-red-400">?{name}</span>
-  return <Icon className={className} />
-}
 
 const sectionStyle = {
   borderColor: 'var(--border-color)',
@@ -86,20 +74,13 @@ function ArrayItemEditor({ items, onChange, fields, itemLabel }) {
                     className="mt-1"
                   />
                 ) : f.type === 'icon' ? (
-                  <div className="flex items-center gap-1">
-                    <IconPreview name={item[f.key]} />
-                    <select
-                      value={item[f.key] || ''}
-                      onChange={(e) => updateItem(i, f.key, e.target.value)}
-                      className="flex-1 rounded border px-2 py-1 text-xs outline-none"
-                      style={inputStyle}
-                    >
-                      <option value="">Select icon</option>
-                      {f.options.map((o) => (
-                        <option key={o} value={o}>{o}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <IconPicker
+                    compact
+                    label={f.label}
+                    value={item[f.key] || ''}
+                    options={f.options}
+                    onChange={(value) => updateItem(i, f.key, value)}
+                  />
                 ) : (
                   <input
                     type="text"
@@ -324,7 +305,7 @@ export default function AdminServices() {
     {
       key: 'stats', label: 'Stats',
       fields: [
-        { key: 'icon_name', label: 'Icon', type: 'icon', options: ICON_OPTIONS },
+        { key: 'icon_name', label: 'Icon', type: 'icon', options: LUCIDE_ICON_OPTIONS },
         { key: 'label', label: 'Label' },
         { key: 'value', label: 'Value' },
         { key: 'suffix', label: 'Suffix' },
@@ -334,7 +315,7 @@ export default function AdminServices() {
     {
       key: 'process_steps', label: 'Process Steps',
       fields: [
-        { key: 'icon_name', label: 'Icon', type: 'icon', options: ICON_OPTIONS },
+        { key: 'icon_name', label: 'Icon', type: 'icon', options: LUCIDE_ICON_OPTIONS },
         { key: 'title', label: 'Title' },
         { key: 'description', label: 'Description' },
       ],
@@ -347,7 +328,7 @@ export default function AdminServices() {
         { key: 'price', label: 'Price' },
         { key: 'currency', label: 'Currency' },
         { key: 'period', label: 'Period' },
-        { key: 'icon_name', label: 'Icon', type: 'icon', options: ICON_OPTIONS },
+        { key: 'icon_name', label: 'Icon', type: 'icon', options: LUCIDE_ICON_OPTIONS },
         { key: 'features', label: 'Features (comma-sep)', default: '' },
         { key: 'popular', label: 'Popular', type: 'boolean' },
       ],
@@ -365,7 +346,7 @@ export default function AdminServices() {
     {
       key: 'tech_stack', label: 'Tech Stack',
       fields: [
-        { key: 'icon_name', label: 'Icon', type: 'icon', options: ICON_OPTIONS },
+        { key: 'icon_name', label: 'Icon', type: 'icon', options: LUCIDE_ICON_OPTIONS },
         { key: 'label', label: 'Label' },
       ],
       itemLabel: 'Tech',
@@ -390,7 +371,7 @@ export default function AdminServices() {
       key: 'future_releases', label: 'Future Releases',
       fields: [
         { key: 'id', label: 'ID' },
-        { key: 'icon_name', label: 'Icon', type: 'icon', options: ICON_OPTIONS },
+        { key: 'icon_name', label: 'Icon', type: 'icon', options: LUCIDE_ICON_OPTIONS },
         { key: 'title', label: 'Title' },
         { key: 'tagline', label: 'Tagline' },
         { key: 'description', label: 'Description', type: 'textarea' },
@@ -467,19 +448,11 @@ export default function AdminServices() {
               ))}
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Icon</label>
-                <div className="flex items-center gap-2">
-                  <IconPreview name={newForm.icon_name} className="w-5 h-5" />
-                  <select
-                    value={newForm.icon_name}
-                    onChange={(e) => setNewForm({ ...newForm, icon_name: e.target.value })}
-                    className="rounded border px-3 py-2 text-sm outline-none"
-                    style={inputStyle}
-                  >
-                    {ICON_OPTIONS.map((o) => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
-                </div>
+                <IconPicker
+                  value={newForm.icon_name}
+                  options={LUCIDE_ICON_OPTIONS}
+                  onChange={(value) => setNewForm({ ...newForm, icon_name: value })}
+                />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Pricing Options</label>
@@ -535,12 +508,11 @@ export default function AdminServices() {
                   ))}
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Icon</label>
-                    <div className="flex items-center gap-2">
-                      <IconPreview name={editForm.icon_name} className="w-5 h-5" />
-                      <select value={editForm.icon_name} onChange={(e) => setEditForm({ ...editForm, icon_name: e.target.value })} className="rounded border px-3 py-2 text-sm outline-none" style={inputStyle}>
-                        {ICON_OPTIONS.map((o) => (<option key={o} value={o}>{o}</option>))}
-                      </select>
-                    </div>
+                    <IconPicker
+                      value={editForm.icon_name}
+                      options={LUCIDE_ICON_OPTIONS}
+                      onChange={(value) => setEditForm({ ...editForm, icon_name: value })}
+                    />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs" style={{ color: 'var(--text-tertiary)' }}>Pricing Options</label>
@@ -561,7 +533,7 @@ export default function AdminServices() {
                   <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} className="rounded shrink-0 mt-1" />
                   <div className="flex-1 flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
-                      <IconPreview name={item.icon_name} className="w-4 h-4 text-cyan-500" />
+                      <IconGlyph value={item.icon_name} className="w-4 h-4 text-cyan-500" />
                     </div>
                     <div>
                       <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>

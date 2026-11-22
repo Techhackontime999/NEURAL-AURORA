@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getSocialLinks, updateSocialLink, createSocialLink, deleteSocialLink } from '../../lib/supabase'
+import { SOCIAL_ICON_OPTIONS } from '../../lib/iconCatalog'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import IconPicker, { IconGlyph } from '../ui/IconPicker'
 import SearchBar from '../ui/SearchBar'
-
-const iconOptions = ['github', 'linkedin', 'code', 'terminal', 'x', 'youtube', 'instagram', 'facebook', 'link', 'globe', 'mail']
 
 export default function AdminSocialLinks() {
   const { toast, confirm } = useToast()
@@ -122,9 +122,12 @@ export default function AdminSocialLinks() {
           <div className="grid gap-3 sm:grid-cols-4">
             <input type="text" placeholder="Label" value={newForm.label} onChange={(e) => setNewForm({ ...newForm, label: e.target.value })} className="rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
             <input type="text" placeholder="URL" value={newForm.url} onChange={(e) => setNewForm({ ...newForm, url: e.target.value })} className="rounded border px-3 py-2 text-sm outline-none" style={inputStyle} />
-            <select value={newForm.icon} onChange={(e) => setNewForm({ ...newForm, icon: e.target.value })} className="rounded border px-3 py-2 text-sm outline-none" style={inputStyle}>
-              {iconOptions.map((i) => <option key={i} value={i}>{i}</option>)}
-            </select>
+            <IconPicker
+              label="Link icon"
+              value={newForm.icon}
+              options={SOCIAL_ICON_OPTIONS}
+              onChange={(value) => setNewForm({ ...newForm, icon: value })}
+            />
             <button onClick={handleCreate} className="rounded-lg px-3 py-2 text-sm text-white transition-all hover:opacity-90" style={{ background: '#10b981' }}>Create</button>
           </div>
         </div>
@@ -149,9 +152,13 @@ export default function AdminSocialLinks() {
                 <input type="checkbox" checked={selectedIds.has(link.id)} onChange={() => toggleSelect(link.id)} className="rounded shrink-0" />
                 <input type="text" value={editForm.label} onChange={(e) => setEditForm({ ...editForm, label: e.target.value })} className="flex-1 rounded border px-2 py-1 text-sm outline-none" style={inputStyle} />
                 <input type="text" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="flex-[2] rounded border px-2 py-1 text-sm outline-none" style={inputStyle} />
-                <select value={editForm.icon} onChange={(e) => setEditForm({ ...editForm, icon: e.target.value })} className="rounded border px-2 py-1 text-sm outline-none" style={inputStyle}>
-                  {iconOptions.map((i) => <option key={i} value={i}>{i}</option>)}
-                </select>
+                <IconPicker
+                  compact
+                  label="Link icon"
+                  value={editForm.icon}
+                  options={SOCIAL_ICON_OPTIONS}
+                  onChange={(value) => setEditForm({ ...editForm, icon: value })}
+                />
                 <button onClick={() => handleSave(link.id)} className="text-xs text-emerald-400 hover:text-emerald-300">Save</button>
                 <button onClick={() => setEditingId(null)} className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Cancel</button>
               </div>
@@ -159,7 +166,9 @@ export default function AdminSocialLinks() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <input type="checkbox" checked={selectedIds.has(link.id)} onChange={() => toggleSelect(link.id)} className="rounded shrink-0" />
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{link.icon}</span>
+                  <span className="flex w-5 justify-center" style={{ color: 'var(--text-tertiary)' }}>
+                    <IconGlyph value={link.icon} options={SOCIAL_ICON_OPTIONS} className="w-4 h-4" />
+                  </span>
                   <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{link.label}</span>
                   <span className="text-xs truncate max-w-[200px]" style={{ color: 'var(--text-tertiary)' }}>{link.url}</span>
                 </div>

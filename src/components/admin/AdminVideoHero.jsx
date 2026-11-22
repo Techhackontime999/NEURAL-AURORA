@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { getAdminSettings, updateAdminSettings } from '../../lib/supabase'
 import { invalidatePortfolioCache } from '../../lib/usePortfolioData'
+import { VIDEO_HERO_ICON_OPTIONS } from '../../lib/iconCatalog'
 import {
   DEFAULT_VIDEO_HERO,
   PRESET_LINK_KEYS,
-  VIDEO_HERO_ICONS,
   mergeVideoHeroConfig,
 } from '../../lib/videoHeroDefaults'
+import IconPicker from '../ui/IconPicker'
 import en from '../../locales/en.json'
 
 const COPY_PLACEHOLDERS = {
@@ -371,18 +372,16 @@ export default function AdminVideoHero() {
                     Visible
                   </label>
 
-                  <select
-                    value={link.icon}
-                    onChange={(e) => updateLink(index, { icon: e.target.value })}
-                    className="rounded-lg border px-2 py-1.5 text-xs outline-none"
-                    style={inputStyle}
-                  >
-                    {VIDEO_HERO_ICONS.map((icon) => (
-                      <option key={icon} value={icon}>
-                        {icon}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-36">
+                    <IconPicker
+                      compact
+                      label="Button icon"
+                      value={link.icon}
+                      options={VIDEO_HERO_ICON_OPTIONS}
+                      allowCustom={false}
+                      onChange={(value) => updateLink(index, { icon: value })}
+                    />
+                  </div>
 
                   {preset && (
                     <span

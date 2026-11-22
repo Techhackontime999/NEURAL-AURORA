@@ -20,6 +20,7 @@ import ReviewForm from './components/ReviewForm'
 import { Footer } from './components/ui/footer-section'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import PwaStatus from './components/ui/PwaStatus'
+import NotFound from './components/NotFound'
 import RenderErrorBoundary from './lib/RenderErrorBoundary'
 import { NeuralCursor } from './components/ui/neural-cursor'
 import MithiWidget from './components/mithi/MithiWidget'
@@ -175,9 +176,21 @@ const ROUTE_HEADS = {
 }
 
 const PRIVATE_ROBOTS = 'noindex, nofollow'
+const NOT_FOUND_HEAD = {
+  title: `Page not found — ${SITE_NAME}`,
+  description: 'The requested NEURAL AURORA page does not exist.',
+  robots: PRIVATE_ROBOTS,
+}
 
 function headForPath(pathname) {
   if (pathname.startsWith('/offerings/products/')) return null
+  if (pathname === '/offerings/products') return ROUTE_HEADS['/offerings/products']
+  if (pathname.startsWith('/offerings/')) {
+    return {
+      title: `Service — ${SITE_NAME}`,
+      description: 'A service offering from NEURAL AURORA.',
+    }
+  }
   if (pathname.startsWith('/blog/') || pathname.startsWith('/case-study/')) {
     return {
       title: `Reading — ${SITE_NAME}`,
@@ -195,7 +208,7 @@ function headForPath(pathname) {
   ) {
     return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
   }
-  return ROUTE_HEADS[pathname] || {}
+  return ROUTE_HEADS[pathname] || NOT_FOUND_HEAD
 }
 
 function RouteHead() {
@@ -406,7 +419,10 @@ function AppContent() {
                 chunk (3D scene offline, expired route chunk) must degrade to a
                 readable, honest screen, never to a blank page. */}
             <RouteHead />
-            <RenderErrorBoundary fallback={<RouteErrorFallback />}>
+            <RenderErrorBoundary
+              resetKey={`${location.pathname}${location.search}`}
+              fallback={<RouteErrorFallback />}
+            >
             <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -446,8 +462,8 @@ function AppContent() {
                   </AdminRoute>
                 }
               />
-              {/* Unknown URLs fall back to the home page */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Unknown URLs get an honest, noindex 404 instead of a silent redirect. */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
             </RenderErrorBoundary>

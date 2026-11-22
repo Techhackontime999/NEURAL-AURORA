@@ -24,6 +24,14 @@ export default class RenderErrorBoundary extends Component {
     console.error('[RenderErrorBoundary]', error, info?.componentStack)
   }
 
+  componentDidUpdate(prevProps) {
+    // A route change is a fresh render attempt. Without this, one bad lazy
+    // chunk would keep the fallback on screen even after the visitor navigates.
+    if (this.state.hasError && this.props.resetKey !== prevProps.resetKey) {
+      this.setState({ hasError: false })
+    }
+  }
+
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? null

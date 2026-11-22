@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getAdminSettings, updateAdminSettings } from '../../lib/supabase'
+import { LUCIDE_ICON_OPTIONS } from '../../lib/iconCatalog'
+import IconPicker from '../ui/IconPicker'
 
 const defaultSettings = {
   razorpay_key: '',
@@ -196,8 +198,13 @@ export default function AdminPaymentSettings() {
                   placeholder="₹99" className="rounded-lg border px-2 py-1.5 text-xs outline-none focus:border-cyan-500/50" style={inputStyle} />
                 <input type="text" value={p.desc} onChange={e => updatePreset(i, 'desc', e.target.value)}
                   placeholder="Description" className="rounded-lg border px-2 py-1.5 text-xs outline-none focus:border-cyan-500/50" style={inputStyle} />
-                <input type="text" value={p.icon} onChange={e => updatePreset(i, 'icon', e.target.value)}
-                  placeholder="Icon name" className="rounded-lg border px-2 py-1.5 text-xs outline-none focus:border-cyan-500/50" style={inputStyle} />
+                <IconPicker
+                  compact
+                  label="Preset icon"
+                  value={p.icon || ''}
+                  options={LUCIDE_ICON_OPTIONS}
+                  onChange={(value) => updatePreset(i, 'icon', value)}
+                />
               </div>
               <button onClick={() => removePreset(i)} className="shrink-0 rounded-lg px-2 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors">✕</button>
             </div>

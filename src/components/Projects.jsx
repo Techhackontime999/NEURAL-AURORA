@@ -130,9 +130,23 @@ function ProjectCard({ project, index, shouldReduceMotion }) {
       </ProjectImage>
 
       <div className="p-6 md:p-8 space-y-3">
-        <motion.h3 layout className="text-lg font-display font-bold text-black/80 dark:text-white/90 tracking-tight">
-          {project.title}
-        </motion.h3>
+        <div className="flex items-start justify-between gap-4">
+          <motion.h3 layout className="text-lg font-display font-bold text-black/80 dark:text-white/90 tracking-tight">
+            {project.title}
+          </motion.h3>
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'Hide' : 'Show'} details for ${project.title}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              setExpanded((current) => !current)
+            }}
+            className="shrink-0 min-h-11 rounded-full border border-black/10 px-3 text-[11px] font-medium text-black/50 transition-colors hover:text-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f0ff] dark:border-white/10 dark:text-white/50 dark:hover:text-white/90"
+          >
+            {expanded ? t('projects.hideDetails', 'Hide details') : t('projects.showDetails', 'Show details')}
+          </button>
+        </div>
 
         <motion.div
           layout

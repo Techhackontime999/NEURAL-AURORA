@@ -103,7 +103,9 @@
     "noData": "No projects found in the neural repository.",
     "source": "Source",
     "link": "Link",
-    "demo": "Demo"
+    "demo": "Demo",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
   },
   "resume": {
     "eyebrow": "Curriculum Vitae",
@@ -270,7 +272,7 @@
   "store": {
     "eyebrow": "Digital Store",
     "title": "Digital Products",
-    "subtitle": "Templates, source code, UI kits, ebooks and automation resources built by NEURAL AURORA — instant download, first-party, no marketplace in between.",
+    "subtitle": "Templates, source code, UI kits, ebooks and automation resources built by NEURAL AURORA - instant download, first-party, no marketplace in between. Built for web, mobile and desktop.",
     "filters": "Product filters",
     "searchPlaceholder": "Search products and tags...",
     "sortLabel": "Sort products",

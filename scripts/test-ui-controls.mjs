@@ -72,6 +72,8 @@ check('projects: toggle copy is translated', en.projects?.showDetails === 'Show 
 check('loader: verification cards use a vertical wrapped grid', loader.includes('grid-cols-2 md:grid-cols-3 lg:grid-cols-4') && loader.includes('overflow-y-auto overflow-x-hidden') && !loader.includes('md:flex overflow-auto'))
 check('loader: mouse wheel is not hijacked into horizontal scroll', !loader.includes('onWheel') && !loader.includes('scrollLeft') && !loader.includes("scrollSnapType: 'x mandatory'"))
 check('loader: cards no longer force a horizontal min width', !loader.includes("minWidth: 'clamp(120px, 30vw, 160px)'") && !loader.includes("scrollSnapAlign: 'start'"))
+check('loader: idle failsafe waits 30 seconds', loader.includes('const IDLE_SKIP_MS = 30_000') && loader.includes('}, IDLE_SKIP_MS)') && !loader.includes('}, 10000)'))
+check('loader: scrolling counts as interaction', loader.includes("addEventListener('wheel', onInteract") && loader.includes("addEventListener('scroll', onInteract") && loader.includes("removeEventListener('wheel', onInteract") && loader.includes("removeEventListener('scroll', onInteract"))
 
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed === 0 ? 0 : 1)

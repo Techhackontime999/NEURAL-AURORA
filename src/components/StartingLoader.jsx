@@ -21,6 +21,11 @@ const TERMINAL_LINES = [
   'Verification required to proceed.',
 ]
 
+// How long a visitor can stay on the boot/verification screens without any
+// input before the failsafe lets them through. Long enough to read and scroll
+// the verification options, short enough not to park an idle tab forever.
+const IDLE_SKIP_MS = 30_000
+
 function Particles() {
   const ref = useRef(null)
   const shouldReduceMotion = useReducedMotion()
@@ -2396,13 +2401,18 @@ export default function StartingLoader({ onComplete }) {
       window.addEventListener('pointerdown', onInteract)
       window.addEventListener('touchstart', onInteract)
       window.addEventListener('keydown', onInteract)
+      // Scrolling the verification cards is real engagement too. Without
+      // wheel/scroll listeners, a visitor reading the options with a mouse
+      // wheel was still treated as idle and got skipped after 10 seconds.
+      window.addEventListener('wheel', onInteract, { passive: true })
+      window.addEventListener('scroll', onInteract, { passive: true })
       // Idle failsafe: a visitor who never touches the page is let through
       // instead of being parked on the intro forever. It stays armed until
       // they interact (or the loader unmounts) — see handleBootDone, which
       // deliberately does NOT clear it.
       idleSkipTimerRef.current = setTimeout(() => {
         if (!engagedRef.current) finish()
-      }, 10000)
+      }, IDLE_SKIP_MS)
     }
     setDocsUrl(getDocsUrl())
     return () => {
@@ -2411,6 +2421,8 @@ export default function StartingLoader({ onComplete }) {
       window.removeEventListener('pointerdown', onInteract)
       window.removeEventListener('touchstart', onInteract)
       window.removeEventListener('keydown', onInteract)
+      window.removeEventListener('wheel', onInteract)
+      window.removeEventListener('scroll', onInteract)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

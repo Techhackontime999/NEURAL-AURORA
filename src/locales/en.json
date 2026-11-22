@@ -207,6 +207,16 @@
       "experienceDesc": "Road so far",
       "education": "Education",
       "educationDesc": "Learning path",
+      "gallery": "Gallery",
+      "galleryDesc": "See visual highlights",
+      "certificates": "Certificates",
+      "certificatesDesc": "Credentials and proofs",
+      "achievements": "Achievements",
+      "achievementsDesc": "Milestones and awards",
+      "reviews": "Reviews",
+      "reviewsDesc": "What people say",
+      "resume": "Resume",
+      "resumeDesc": "Download the PDF",
       "skipVibes": "Skip the Vibes",
       "directEntry": "Direct entry",
       "openDocs": "Open Documentation"
@@ -218,6 +228,29 @@
       "back": "Back to verification",
       "continue": "Continue to site",
       "openFull": "Open full section",
+      "loading": "Loading section...",
+      "empty": "Nothing has been published here yet.",
+      "error": "This section is unavailable right now.",
+      "viewCredential": "Verify credential",
+      "viewLink": "Open link",
+      "gallery": {
+        "empty": "No gallery images have been added yet.",
+        "image": "Gallery image"
+      },
+      "certificates": {
+        "empty": "No certificates have been added yet."
+      },
+      "achievements": {
+        "empty": "No achievements have been added yet."
+      },
+      "reviews": {
+        "empty": "No approved reviews are available yet."
+      },
+      "resume": {
+        "empty": "No resume has been published yet.",
+        "ready": "PDF resume available",
+        "download": "Download resume"
+      },
       "store": {
         "loading": "Loading published products...",
         "empty": "No products are published yet.",

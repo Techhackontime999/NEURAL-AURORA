@@ -69,13 +69,15 @@ check('projects: explicit keyboard toggle on each card', projects.includes('aria
 check('projects: toggle copy is translated', en.projects?.showDetails === 'Show details' && en.projects?.hideDetails === 'Hide details' && projects.includes("t('projects.showDetails'") && projects.includes("t('projects.hideDetails'"))
 
 // --- Verification content exploration --------------------------------------
-const exploreOptions = ['store', 'blog', 'case-studies', 'projects', 'services', 'skills', 'experience', 'education']
-check('loader: eight content options exist', exploreOptions.every((id) => loader.includes(`testId="verification-option-${id}"`)))
+const exploreOptions = ['store', 'blog', 'case-studies', 'projects', 'services', 'skills', 'experience', 'education', 'gallery', 'certificates', 'achievements', 'reviews', 'resume']
+check('loader: thirteen content options exist', exploreOptions.every((id) => loader.includes(`testId="verification-option-${id}"`)))
 check('loader: content options open the exploration gallery', loader.includes('function handleExploreOption(section)') && loader.includes("setPhase('explore')") && loader.includes('initialSection={exploreSection}'))
 check('loader: exploration gallery uses accessible tabs', loader.includes('role="tablist"') && loader.includes('role="tab"') && loader.includes('role="tabpanel"') && loader.includes('aria-selected={selected}') && loader.includes('aria-controls="explore-panel"'))
-check('loader: gallery reuses existing content cards', ['<BlogCards', '<CaseStudyCards', '<ProjectCards', '<ServicesCards', '<SkillsContent', '<ExperienceCards', '<EducationCards'].every((component) => loader.includes(component)))
+check('loader: gallery reuses existing content cards', ['<BlogCards', '<CaseStudyCards', '<ProjectCards', '<ServicesCards', '<SkillsContent', '<ExperienceCards', '<EducationCards', '<GalleryCards', '<CertificateCards', '<AchievementCards', '<ReviewCards', '<ResumeCard'].every((component) => loader.includes(component)))
+check('loader: new sections use shared portfolio hooks', ['useGallery()', 'useCertificates()', 'useAchievements()', 'useReviews()', 'usePersonalInfo()'].every((hook) => loader.includes(hook)))
 check('loader: store keeps an honest unconfigured state', loader.includes('getPublishedProducts({ limit: 8 })') && loader.includes("storeStatus === 'loading'") && loader.includes("storeStatus === 'error'") && !productsSourceHasSecret())
-check('loader: exploration copy is translated', ['digitalStore', 'storeDesc', 'blogDesc', 'caseStudies', 'projectsDesc', 'services', 'skillsDesc', 'experience', 'education'].every((key) => Boolean(en.loader?.cards?.[key])) && ['eyebrow', 'title', 'subtitle', 'back', 'continue', 'openFull', 'store'].every((key) => Boolean(en.loader?.explore?.[key])))
+check('loader: new sections keep honest unconfigured states', loader.includes('function ContentState(') && ['gallery.empty', 'certificates.empty', 'achievements.empty', 'reviews.empty', 'resume.empty'].every((key) => loader.includes(`loader.explore.${key}`)))
+check('loader: exploration copy is translated', ['digitalStore', 'storeDesc', 'blogDesc', 'caseStudies', 'projectsDesc', 'services', 'skillsDesc', 'experience', 'education', 'gallery', 'galleryDesc', 'certificates', 'certificatesDesc', 'achievements', 'achievementsDesc', 'reviews', 'reviewsDesc', 'resume', 'resumeDesc'].every((key) => Boolean(en.loader?.cards?.[key])) && ['eyebrow', 'title', 'subtitle', 'back', 'continue', 'openFull', 'loading', 'empty', 'error', 'viewCredential', 'viewLink', 'gallery', 'certificates', 'achievements', 'reviews', 'resume', 'store'].every((key) => Boolean(en.loader?.explore?.[key])))
 
 function productsSourceHasSecret() {
   // Keep the gallery coupled to the shared published-products API, never a

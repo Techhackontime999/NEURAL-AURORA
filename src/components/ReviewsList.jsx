@@ -53,7 +53,7 @@ export default function ReviewsList() {
   }
 
   return (
-    <section className="relative z-10 py-24">
+    <section id="reviews" className="relative z-10 py-24">
       <div className="mx-auto max-w-4xl px-4">
         <h2 className="mb-4 text-center font-display text-3xl font-bold text-black/80 dark:text-white">
           {t('reviews.title')}

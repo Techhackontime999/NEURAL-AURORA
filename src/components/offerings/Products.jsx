@@ -310,7 +310,7 @@ export default function Products() {
       <section
         id="catalogue"
         aria-labelledby="catalogue-heading"
-        className="flex h-[100svh] flex-col pt-10"
+        className="flex min-h-[100svh] flex-col pt-10"
       >
         <div className="wrap flex flex-1 flex-col">
         <h2
@@ -582,7 +582,7 @@ export default function Products() {
         </div>
       )}
 
-      <div className="mt-auto flex flex-col items-center gap-3 pt-6">
+      <div data-testid="store-catalogue-footer" className="mt-auto flex flex-col items-center gap-3 pt-6">
         <p className="text-xs text-[var(--text-secondary)]">
           {t('store.digitalProduct')}
         </p>

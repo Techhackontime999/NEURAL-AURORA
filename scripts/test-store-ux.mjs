@@ -181,6 +181,12 @@ check(
   products.includes("getPublishedProducts({ featuredOnly: true, sort: 'featured', limit: 4 })") &&
     products.includes('!hasActiveFilters && featuredProducts.length > 0')
 )
+check(
+  'catalogue: section grows with listed products',
+  products.includes('className="flex min-h-[100svh] flex-col pt-10"') &&
+    !products.includes('className="flex h-[100svh] flex-col pt-10"') &&
+    products.includes('data-testid="store-catalogue-footer"')
+)
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------
 check(

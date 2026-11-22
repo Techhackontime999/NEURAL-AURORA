@@ -13,6 +13,7 @@ import { personalInfo, socialLinks, skills, projects, education, experience, ser
 import { callAi } from '../lib/ai/provider'
 import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
 import { getPublishedProducts, formatPrice } from '../lib/products'
+import { usePersonalInfo, useReviews, useCertificates, useAchievements, useGallery } from '../lib/usePortfolioData'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -554,12 +555,170 @@ function StoreCards({ products, status }) {
   )
 }
 
+function ContentState({ status, emptyKey }) {
+  const { t } = useTranslation()
+  const key = status === 'loading'
+    ? 'loader.explore.loading'
+    : status === 'error'
+      ? 'loader.explore.error'
+      : emptyKey
+  return <p className="text-xs text-white/40 font-mono py-8 text-center">{t(key)}</p>
+}
+
+function GalleryCards({ items, isLoading, error }) {
+  const { t } = useTranslation()
+
+  if (isLoading && !items.length) return <ContentState status="loading" />
+  if (error && !items.length) return <ContentState status="error" />
+  if (!items.length) return <ContentState status="empty" emptyKey="loader.explore.gallery.empty" />
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      {items.map((item, index) => (
+        <div key={item.id || item.image_url || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+          <img
+            src={item.image_url}
+            alt={item.title || t('loader.explore.gallery.image')}
+            loading="lazy"
+            decoding="async"
+            className="w-full aspect-square object-cover bg-black/20"
+          />
+          {(item.title || item.category) && (
+            <div className="p-2">
+              {item.category && (
+                <p className="text-[9px] uppercase tracking-widest text-cyan-300/60">{item.category}</p>
+              )}
+              {item.title && (
+                <p className="text-[11px] text-white/70 line-clamp-2">{item.title}</p>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CertificateCards({ items, isLoading, error }) {
+  const { t } = useTranslation()
+
+  if (isLoading && !items.length) return <ContentState status="loading" />
+  if (error && !items.length) return <ContentState status="error" />
+  if (!items.length) return <ContentState status="empty" emptyKey="loader.explore.certificates.empty" />
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+      {items.map((item, index) => (
+        <div key={item.id || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+          <p className="text-white/85 text-sm font-medium leading-snug">{item.title}</p>
+          {item.issuer && <p className="text-white/40 text-[11px] mt-1">{item.issuer}</p>}
+          {(item.issue_date || item.description) && (
+            <p className="text-white/30 text-[10px] font-mono mt-1 line-clamp-2">
+              {item.issue_date || item.description}
+            </p>
+          )}
+          {item.credential_url && (
+            <a
+              href={item.credential_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-[10px] font-mono text-cyan-300/70 hover:text-cyan-200 focus:outline-none focus-visible:underline"
+            >{t('loader.explore.viewCredential')} ↗</a>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AchievementCards({ items, isLoading, error }) {
+  const { t } = useTranslation()
+
+  if (isLoading && !items.length) return <ContentState status="loading" />
+  if (error && !items.length) return <ContentState status="error" />
+  if (!items.length) return <ContentState status="empty" emptyKey="loader.explore.achievements.empty" />
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+      {items.map((item, index) => (
+        <div key={item.id || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+          {item.achieved_date && (
+            <p className="text-[10px] font-mono uppercase tracking-widest text-amber-300/60">{item.achieved_date}</p>
+          )}
+          <p className="text-white/85 text-sm font-medium leading-snug mt-1">{item.title}</p>
+          {item.organization && <p className="text-white/40 text-[11px] mt-1">{item.organization}</p>}
+          {item.description && <p className="text-white/30 text-[11px] mt-1 line-clamp-2">{item.description}</p>}
+          {item.link_url && (
+            <a
+              href={item.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-[10px] font-mono text-cyan-300/70 hover:text-cyan-200 focus:outline-none focus-visible:underline"
+            >{t('loader.explore.viewLink')} ↗</a>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ReviewCards({ items, isLoading, error }) {
+  const { t } = useTranslation()
+
+  if (isLoading && !items.length) return <ContentState status="loading" />
+  if (error && !items.length) return <ContentState status="error" />
+  if (!items.length) return <ContentState status="empty" emptyKey="loader.explore.reviews.empty" />
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+      {items.map((item, index) => {
+        const rating = Math.max(0, Math.min(5, Number(item.rating) || 5))
+        return (
+          <div key={item.id || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+            <p className="text-amber-300 text-xs tracking-widest" aria-label={`${rating} / 5`}>
+              {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+            </p>
+            <p className="text-white/65 text-[12px] mt-2 leading-snug line-clamp-3">{item.message}</p>
+            {item.name && <p className="text-white/30 text-[10px] font-mono mt-2">{item.name}</p>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function ResumeCard({ url }) {
+  const { t } = useTranslation()
+
+  if (!url) return <ContentState status="empty" emptyKey="loader.explore.resume.empty" />
+
+  return (
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-white/85 text-sm font-medium">{t('loader.cards.resume')}</p>
+        <p className="text-white/35 text-[11px] mt-1">{t('loader.explore.resume.ready')}</p>
+      </div>
+      <a
+        href={url}
+        download
+        className="shrink-0 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+      >{t('loader.explore.resume.download')} ↓</a>
+    </div>
+  )
+}
+
 function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [active, setActive] = useState(initialSection)
   const [products, setProducts] = useState([])
   const [storeStatus, setStoreStatus] = useState('idle')
+  const { data: galleryItems = [], isLoading: galleryLoading, error: galleryError } = useGallery()
+  const { data: certificates = [], isLoading: certificatesLoading, error: certificatesError } = useCertificates()
+  const { data: achievements = [], isLoading: achievementsLoading, error: achievementsError } = useAchievements()
+  const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useReviews()
+  const { data: personal = personalInfo } = usePersonalInfo()
+  const resumeUrl = personal?.resume
 
   useEffect(() => {
     let cancelled = false
@@ -587,6 +746,11 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
     { id: 'skills', icon: '🛠️', label: t('loader.cards.skills'), count: skills.length, href: '/#skills' },
     { id: 'experience', icon: '📈', label: t('loader.cards.experience'), count: experience.length, href: '/more' },
     { id: 'education', icon: '🎓', label: t('loader.cards.education'), count: education.length, href: '/more' },
+    { id: 'gallery', icon: '🖼️', label: t('loader.cards.gallery'), count: galleryLoading && !galleryItems.length ? '…' : galleryItems.length, href: '/more/gallery' },
+    { id: 'certificates', icon: '📜', label: t('loader.cards.certificates'), count: certificatesLoading && !certificates.length ? '…' : certificates.length, href: '/more/certificates' },
+    { id: 'achievements', icon: '🏆', label: t('loader.cards.achievements'), count: achievementsLoading && !achievements.length ? '…' : achievements.length, href: '/more/achievements' },
+    { id: 'reviews', icon: '⭐', label: t('loader.cards.reviews'), count: reviewsLoading && !reviews.length ? '…' : reviews.length, href: '/#reviews' },
+    { id: 'resume', icon: '📄', label: t('loader.cards.resume'), count: resumeUrl ? 1 : 0, href: '/#resume' },
   ]
 
   const activeIndex = Math.max(0, sections.findIndex((item) => item.id === active))
@@ -611,6 +775,11 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
       case 'skills': return <SkillsContent items={skills} />
       case 'experience': return <ExperienceCards items={experience} />
       case 'education': return <EducationCards items={education} />
+      case 'gallery': return <GalleryCards items={galleryItems} isLoading={galleryLoading} error={galleryError} />
+      case 'certificates': return <CertificateCards items={certificates} isLoading={certificatesLoading} error={certificatesError} />
+      case 'achievements': return <AchievementCards items={achievements} isLoading={achievementsLoading} error={achievementsError} />
+      case 'reviews': return <ReviewCards items={reviews} isLoading={reviewsLoading} error={reviewsError} />
+      case 'resume': return <ResumeCard url={resumeUrl} />
       default: return null
     }
   }
@@ -3219,6 +3388,46 @@ className="group w-full rounded-xl border p-3 sm:p-4"
                   description={t('loader.cards.educationDesc')}
                   accent="192,132,252"
                   onClick={() => handleExploreOption('education')}
+                />
+                <VerificationOption
+                  testId="verification-option-gallery"
+                  emoji="🖼️"
+                  title={t('loader.cards.gallery')}
+                  description={t('loader.cards.galleryDesc')}
+                  accent="45,212,191"
+                  onClick={() => handleExploreOption('gallery')}
+                />
+                <VerificationOption
+                  testId="verification-option-certificates"
+                  emoji="📜"
+                  title={t('loader.cards.certificates')}
+                  description={t('loader.cards.certificatesDesc')}
+                  accent="250,204,21"
+                  onClick={() => handleExploreOption('certificates')}
+                />
+                <VerificationOption
+                  testId="verification-option-achievements"
+                  emoji="🏆"
+                  title={t('loader.cards.achievements')}
+                  description={t('loader.cards.achievementsDesc')}
+                  accent="251,146,60"
+                  onClick={() => handleExploreOption('achievements')}
+                />
+                <VerificationOption
+                  testId="verification-option-reviews"
+                  emoji="⭐"
+                  title={t('loader.cards.reviews')}
+                  description={t('loader.cards.reviewsDesc')}
+                  accent="244,114,182"
+                  onClick={() => handleExploreOption('reviews')}
+                />
+                <VerificationOption
+                  testId="verification-option-resume"
+                  emoji="📄"
+                  title={t('loader.cards.resume')}
+                  description={t('loader.cards.resumeDesc')}
+                  accent="148,163,184"
+                  onClick={() => handleExploreOption('resume')}
                 />
 
                 <motion.button

@@ -1,6 +1,10 @@
 // ---------------------------------------------------------------------------
 // Optional online license verification.
 //
+// Shared implementation for /api/license-verify. The public endpoint is kept
+// by a rewrite to /api/license?action=verify, so Vercel builds one function
+// instead of two. This file lives in _lib and is not a route of its own.
+//
 // This endpoint answers ONE narrow question: does this key belong to this
 // product, and is it currently active? It never returns the customer's name,
 // email, order or the key itself. Keys are looked up by SHA-256 hash, and a
@@ -10,8 +14,8 @@
 
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
-const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
-const { hashLicenseKey } = require('./_lib/license')
+const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./diag')
+const { hashLicenseKey } = require('./license')
 
 const WINDOW_MS = 60_000
 const MAX_ATTEMPTS = 20
@@ -23,7 +27,7 @@ function callerHash(req) {
   return crypto.createHash('sha256').update(`${address}|${agent}`).digest('hex')
 }
 
-module.exports = async function handler(req, res) {
+module.exports = async function verifyLicense(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

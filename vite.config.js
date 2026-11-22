@@ -263,6 +263,12 @@ export default defineConfig(({ mode }) => {
           // /api/license-document falls through to Vite's SPA handler and the
           // library reports a generic download error. The three routes above
           // predate this bridge and keep their existing behaviour.
+          // The two licence URLs are aliases of one combined function so the
+          // deployed app stays inside Vercel's 12-function Hobby limit.
+          const licenseActionRoutes = {
+            'license-document': 'document',
+            'license-verify': 'verify',
+          }
           const bridgedRoutes = new Set([
             'ai',
             'admin-access-link',
@@ -271,6 +277,7 @@ export default defineConfig(({ mode }) => {
             'admin-reconcile-order',
             'customer-signin-link',
             'download',
+            'license',
             'license-document',
             'license-verify',
             'order-status',
@@ -292,6 +299,10 @@ export default defineConfig(({ mode }) => {
             req.query = Object.fromEntries(
               new URL(req.url || '/', 'http://localhost').searchParams.entries()
             )
+
+            const licenseAction = licenseActionRoutes[name]
+            if (licenseAction) req.query.action = licenseAction
+            const targetName = licenseAction ? 'license' : name
 
             if (req.method !== 'GET' && req.method !== 'HEAD') {
               let raw = ''
@@ -330,7 +341,7 @@ export default defineConfig(({ mode }) => {
             }
 
             try {
-              await requireCjs(`./api/${name}.js`)(req, res)
+              await requireCjs(`./api/${targetName}.js`)(req, res)
             } catch (err) {
               console.error(`[API] ${name} failed:`, err)
               if (res.headersSent) {

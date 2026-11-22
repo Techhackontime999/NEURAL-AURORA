@@ -51,14 +51,18 @@ function check(name, condition, detail) {
   const shared = fs.readFileSync('api/_lib/license.js', 'utf8')
   const pricing = fs.readFileSync('api/_lib/order-pricing.js', 'utf8')
   const createOrder = fs.readFileSync('api/create-order.js', 'utf8')
-  const documentEndpoint = fs.readFileSync('api/license-document.js', 'utf8')
+  const licenseRouter = fs.readFileSync('api/license.js', 'utf8')
+  const documentEndpoint = fs.readFileSync('api/_lib/license-document-handler.js', 'utf8')
   const requiresPdf = (source) =>
-    /require\(\s*['"](?:pdfkit|\.\.?\/_lib\/license-pdf(?:\.js)?)['"]\s*\)/.test(source)
+    /require\(\s*['"](?:pdfkit|\.\.?\/_lib\/license-pdf(?:\.js)?|\.\/license-pdf(?:\.js)?)['"]\s*\)/.test(source)
   check(
     'checkout never loads PDFKit',
-    !requiresPdf(shared) && !requiresPdf(pricing) && !requiresPdf(createOrder)
+    !requiresPdf(shared) &&
+      !requiresPdf(pricing) &&
+      !requiresPdf(createOrder) &&
+      !requiresPdf(licenseRouter)
   )
-  check('PDF builder is loaded only by the document endpoint', documentEndpoint.includes("require('./_lib/license-pdf')"))
+  check('PDF builder is loaded only by the document endpoint', documentEndpoint.includes("require('./license-pdf')"))
 }
 
 const options = [

@@ -1,6 +1,10 @@
 // ---------------------------------------------------------------------------
 // Downloadable license document.
 //
+// Shared implementation for /api/license-document. The public endpoint is kept
+// by a rewrite to /api/license?action=document, so Vercel builds one function
+// instead of two. This file lives in _lib and is not a route of its own.
+//
 // The document is generated from the stored license row, never from decorative
 // client data. Ownership is checked server-side with the same rules used by
 // the download endpoint: verified account id or verified session email.
@@ -8,11 +12,11 @@
 // ---------------------------------------------------------------------------
 
 const { createClient } = require('@supabase/supabase-js')
-const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
-const { buildLicensePdf, safeFilename } = require('./_lib/license-pdf')
-const { fetchSignatureImage } = require('./_lib/document-signature')
+const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./diag')
+const { buildLicensePdf, safeFilename } = require('./license-pdf')
+const { fetchSignatureImage } = require('./document-signature')
 
-module.exports = async function handler(req, res) {
+module.exports = async function licenseDocument(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

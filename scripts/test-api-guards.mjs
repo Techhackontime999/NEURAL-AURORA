@@ -86,8 +86,13 @@ const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
 const adminAccessLink = require('../api/admin-access-link.js')
 const adminDeleteOrders = require('../api/admin-delete-orders.js')
-const licenseDocument = require('../api/license-document.js')
-const licenseVerify = require('../api/license-verify.js')
+const licenseHandler = require('../api/license.js')
+// Both public licence URLs are rewrites to one combined function. These
+// wrappers reproduce the action the rewrite adds in production.
+const licenseVerify = (req, res) =>
+  licenseHandler({ ...req, query: { ...(req.query || {}), action: 'verify' } }, res)
+const licenseDocument = (req, res) =>
+  licenseHandler({ ...req, query: { ...(req.query || {}), action: 'document' } }, res)
 const adminLicense = require('../api/admin-license.js')
 const customerSigninLink = require('../api/customer-signin-link.js')
 const adminAuth = require('../api/_lib/adminAuth.js')
@@ -1314,6 +1319,29 @@ setEnv({
         automationSrc.indexOf('switch (intent)')
   )
   withGatewayEnv({})
+}
+
+// --- 23. Vercel Hobby function budget --------------------------------------
+// Hobby deployments allow at most 12 Serverless Functions. Shared _lib files
+// are not routes; only top-level api/*.js files count.
+{
+  const apiFunctions = fs.readdirSync('api').filter((name) => name.endsWith('.js'))
+  check(
+    `vercel hobby: at most 12 API functions (found ${apiFunctions.length})`,
+    apiFunctions.length <= 12,
+    apiFunctions.join(', ')
+  )
+
+  const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'))
+  const rewrites = vercel.rewrites || []
+  check(
+    'vercel hobby: /api/license-verify keeps its URL',
+    rewrites.some((rule) => rule.source === '/api/license-verify' && rule.destination === '/api/license?action=verify')
+  )
+  check(
+    'vercel hobby: /api/license-document keeps its URL',
+    rewrites.some((rule) => rule.source === '/api/license-document' && rule.destination === '/api/license?action=document')
+  )
 }
 
 setEnv({})

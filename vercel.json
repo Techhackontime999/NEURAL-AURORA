@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/license-verify",
+      "destination": "/api/license?action=verify"
+    },
+    {
+      "source": "/api/license-document",
+      "destination": "/api/license?action=document"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

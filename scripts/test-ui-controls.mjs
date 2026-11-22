@@ -69,7 +69,9 @@ check('projects: explicit keyboard toggle on each card', projects.includes('aria
 check('projects: toggle copy is translated', en.projects?.showDetails === 'Show details' && en.projects?.hideDetails === 'Hide details' && projects.includes("t('projects.showDetails'") && projects.includes("t('projects.hideDetails'"))
 
 // --- Verification screen scrolling ----------------------------------------
-check('loader: verification cards use a vertical wrapped grid', loader.includes('grid-cols-2 md:grid-cols-3 lg:grid-cols-4') && loader.includes('overflow-y-auto overflow-x-hidden') && !loader.includes('md:flex overflow-auto'))
+check('loader: verification cards reflow from one column to four', loader.includes("grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4") && !loader.includes('md:flex overflow-auto'))
+check('loader: responsive verification hooks are exposed', loader.includes('data-testid="verification-panel"') && loader.includes('data-testid="verification-grid"'))
+check('loader: verification panel scrolls on short screens', loader.includes('max-h-[calc(100dvh-1.5rem)]') && loader.includes('overflow-y-auto overscroll-contain') && !loader.includes('maxHeight: \'clamp('))
 check('loader: mouse wheel is not hijacked into horizontal scroll', !loader.includes('onWheel') && !loader.includes('scrollLeft') && !loader.includes("scrollSnapType: 'x mandatory'"))
 check('loader: cards no longer force a horizontal min width', !loader.includes("minWidth: 'clamp(120px, 30vw, 160px)'") && !loader.includes("scrollSnapAlign: 'start'"))
 check('loader: idle failsafe waits 30 seconds', loader.includes('const IDLE_SKIP_MS = 30_000') && loader.includes('}, IDLE_SKIP_MS)') && !loader.includes('}, 10000)'))

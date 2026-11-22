@@ -2602,12 +2602,13 @@ export default function StartingLoader({ onComplete }) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 w-full max-w-5xl mx-auto px-3 sm:px-6"
           >
-            <div className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-5 sm:gap-5 md:gap-6"
+            <div data-testid="verification-panel" className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-5 sm:gap-5 md:gap-6 max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
               style={{
                 background: 'rgba(10,10,18,0.6)',
                 backdropFilter: 'blur(32px)',
                 WebkitBackdropFilter: 'blur(32px)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px -15px rgba(0,0,0,0.4)',
+                touchAction: 'pan-y',
               }}
             >
               <motion.div
@@ -2659,15 +2660,10 @@ export default function StartingLoader({ onComplete }) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 80, damping: 18 }}
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 overflow-y-auto overflow-x-hidden w-full pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+                data-testid="verification-grid"
+                className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full"
                 style={{
                   gap: 'clamp(0.375rem, 1.5vw, 0.75rem)',
-                  maxHeight: 'clamp(280px, 55vh, 450px)',
-                  overscrollBehavior: 'contain',
-                  touchAction: 'pan-y',
-                  WebkitOverflowScrolling: 'touch',
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 94%, transparent 100%)',
-                  maskImage: 'linear-gradient(to bottom, black 94%, transparent 100%)',
                 }}
               >
                 <motion.button

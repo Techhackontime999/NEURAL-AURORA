@@ -9,7 +9,7 @@
 
 const { createClient } = require('@supabase/supabase-js')
 const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
-const { buildLicenseDocument } = require('./_lib/license')
+const { buildLicensePdf, safeFilename } = require('./_lib/license')
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -72,17 +72,19 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: 'License not found.' })
     }
 
-    const html = buildLicenseDocument({
+    const pdf = await buildLicensePdf({
       ...license,
       product_title: license.products?.title || license.products?.slug || '',
       issuer: 'NEURAL AURORA',
     })
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    res.setHeader('Content-Disposition', `attachment; filename="${license.license_ref}.html"`)
+    const filename = safeFilename(`license-${license.license_ref || license.id}`)
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`)
+    res.setHeader('Content-Length', String(pdf.length))
     res.setHeader('Cache-Control', 'no-store')
     res.setHeader('X-Content-Type-Options', 'nosniff')
-    return res.status(200).send(html)
+    return res.status(200).send(pdf)
   } catch (err) {
     logError('license-document', newRequestId(), { stage: 'exception', message: err?.message })
     return res.status(500).json({ error: 'Could not prepare your license document.' })

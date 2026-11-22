@@ -847,6 +847,9 @@ export default function Library() {
                       <Download className="h-3.5 w-3.5" />
                     )}
                     {t('store.downloadLicense')}
+                    <span className="rounded border border-white/20 px-1.5 py-0.5 text-[8px] tracking-normal dark:border-black/20">
+                      PDF
+                    </span>
                   </button>
                 </div>
               )

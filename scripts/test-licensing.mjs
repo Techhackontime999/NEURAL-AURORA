@@ -4,7 +4,7 @@
 // safety properties can be checked without a database, network or browser:
 //   - the browser may name a configured option, but may not invent one
 //   - keys are random, opaque and verifiable by hash
-//   - the license document never interpolates unescaped row data
+//   - the PDF license document renders stored row data as inert vector text
 //   - recommendations are deterministic, explainable and privacy-free
 //   - only http(s) image/PDF URLs reach a preview renderer
 //
@@ -18,8 +18,9 @@ const {
   generateLicenseKey,
   generateLicenseRef,
   hashLicenseKey,
-  buildLicenseDocument,
-  escapeHtml,
+  buildLicensePdf,
+  safeFilename,
+  PDF_COLORS,
 } = require('../api/_lib/license.js')
 const { priceProductOrder } = require('../api/_lib/order-pricing.js')
 
@@ -153,8 +154,15 @@ const options = [
 }
 
 // --- license document -------------------------------------------------------
+/** PDFKit writes glyph runs as hex strings; decode them for content checks. */
+function pdfText(pdf) {
+  return Array.from(pdf.toString('latin1').matchAll(/<([0-9A-Fa-f]+)>/g))
+    .map((match) => Buffer.from(match[1], 'hex').toString('latin1'))
+    .join('')
+}
+
 {
-  const html = buildLicenseDocument({
+  const pdf = await buildLicensePdf({
     product_title: 'Starter Kit',
     customer_email: 'buyer@example.com',
     license_ref: 'LIC-2026-ABCDEF',
@@ -165,26 +173,33 @@ const options = [
     seats: 5,
     terms: 'Use for one team.',
   })
-  check('document includes real record fields', html.includes('LIC-2026-ABCDEF') && html.includes('Team license'))
-  check('document is a printable HTML page', html.startsWith('<!doctype html>') && /@media print/.test(html))
+  const raw = pdf.toString('latin1')
+  const text = pdfText(pdf)
+  check('document is a valid PDF file', pdf.subarray(0, 5).toString() === '%PDF-' && raw.trimEnd().endsWith('%%EOF'))
+  check('document includes real record fields', text.includes('LIC-2026-ABCDEF') && text.includes('Team license'))
   check(
-    'document is not a payment receipt',
-    /not a payment receipt/i.test(html)
+    'document is a license certificate, not a receipt',
+    /not a payment receipt/i.test(text) && /LICENSE CERTIFICATE/i.test(text)
   )
+  check(
+    'document uses the professional palette',
+    PDF_COLORS.navy === '#0B1220' && PDF_COLORS.cyan === '#22D3EE' && PDF_COLORS.violet === '#7C3AED'
+  )
+  check('document filename is attachment-safe', safeFilename('LIC-2026/../abc?d') === 'LIC-2026-abc-d')
 }
 {
   const payload = '<img src=x onerror="window.__pwned=1">'
-  const html = buildLicenseDocument({
+  const pdf = await buildLicensePdf({
     product_title: payload,
     customer_name: payload,
     license_key: payload,
     terms: payload,
   })
+  const raw = pdf.toString('latin1')
   check(
-    'escapes HTML in every interpolated field',
-    !html.includes('<img') && !html.includes('onerror="') && html.includes('&lt;img')
+    'hostile row values cannot inject markup or scripts',
+    !raw.includes('<img') && !raw.includes('onerror=') && pdf.subarray(0, 5).toString() === '%PDF-'
   )
-  check('escapes ampersands and quotes', escapeHtml(`&"'<>`) === '&amp;&quot;&#39;&lt;&gt;')
 }
 
 // --- recommendations --------------------------------------------------------

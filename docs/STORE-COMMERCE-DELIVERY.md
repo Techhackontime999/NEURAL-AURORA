@@ -16,7 +16,7 @@ Status: implementation complete on `feat/premium-store-commerce`; awaiting live 
 - Product detail: one `h1`, a dedicated purchase panel with license options, a public file manifest from `public_product_file_manifest`, and deterministic recently viewed/related products.
 - Preview supports images/PDFs, fullscreen/thumbnails/keyboard navigation, validated `http(s)` media only, safe fallback for each `Product`.
 - Real not-found state is used for unknown product URLs; no invented catalogue is shown.
-- Library shows issued licenses with masked keys, reveal/copy, and server-generated license documents.
+- Library shows issued licenses with masked keys, reveal/copy, and server-generated print-ready PDF certificates (navy / cyan / violet, vector text, no client-rendered HTML).
 - Admin: `/admin/licences` manages product license options and issued licenses.
 - Storefront colors were normalized to design tokens; no raw hex values remain in the storefront components.
 

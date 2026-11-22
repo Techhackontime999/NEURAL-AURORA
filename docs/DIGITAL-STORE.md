@@ -315,7 +315,7 @@ for a missing id and someone else's licence.
 
 | Endpoint | Auth | Purpose |
 | --- | --- | --- |
-| `GET /api/license-document?id=<numeric-id>` | Bearer session token | Generate a printable HTML document from the stored licence row; ownership checked server-side, `Cache-Control: no-store` |
+| `GET /api/license-document?id=<numeric-id>` | Bearer session token | Generate a print-ready PDF certificate from the stored licence row; ownership checked server-side, `Cache-Control: no-store` |
 | `POST /api/license-verify` | None, rate-limited by hashed caller | Check whether a key is active for a product slug; looks up `key_hash`, returns only validity/status/type/expiry and never PII or the key |
 | `GET /api/admin-license?search=&status=` | Admin bearer token | List licences with product/order data and recent events |
 | `POST /api/admin-license` | Admin bearer token | `suspend`, `revoke`, `reinstate` or `reissue`; writes `license_events` with actor and reason |

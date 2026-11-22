@@ -60,8 +60,10 @@ export async function downloadLicenseDocument(licenseId) {
   const blob = await response.blob()
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
+  const disposition = response.headers.get('content-disposition') || ''
+  const suggested = disposition.match(/filename="([^"]+)"/)?.[1] || `license-${licenseId}.pdf`
   link.href = objectUrl
-  link.download = `license-${licenseId}.html`
+  link.download = suggested.replace(/[^a-zA-Z0-9_.-]+/g, '-')
   document.body.appendChild(link)
   link.click()
   link.remove()

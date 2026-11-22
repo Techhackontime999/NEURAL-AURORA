@@ -25,8 +25,9 @@ export default function ProductCard({ product, index = 0 }) {
   // anchors so middle-click, "open in new tab" and screen readers all work.
   const open = () => navigate(href)
 
+  // Grid cell: intentionally inset from the page edges, not a page block.
   return (
-    <article className="glass-panel group flex flex-col overflow-hidden rounded-xl focus-within:ring-1 focus-within:ring-cyan-500/50">
+    <article data-edge-free className="glass-panel group flex flex-col overflow-hidden rounded-xl focus-within:ring-1 focus-within:ring-cyan-500/50">
       {/* Decorative: the image duplicates the title button and CTA below, so it
           is hidden from assistive tech rather than announced twice. */}
       <div

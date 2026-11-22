@@ -219,7 +219,10 @@
   /* One content container for store pages: equal 16px gutters on a phone and
      a 1200px measure (120px margins at 1440) on larger screens. */
   .wrap {
-    width: min(calc(100% - 2rem), 1200px);
+    /* Use the viewport, not the parent element: store pages nest .wrap inside
+       .wrap, and a percentage width would create two different page edges. */
+    width: min(calc(100vw - 2rem), 1200px);
+    max-width: 100%;
     margin-inline: auto;
   }
 

@@ -264,13 +264,9 @@ export function BrandLogoFull({ className = '' }) {
       <span className="text-lg font-display font-light tracking-[0.2em] bg-gradient-to-r from-[#5DCAA5] to-[#1D9E75] bg-clip-text text-transparent -mt-1">
         AURORA
       </span>
-      <motion.p
-        className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]"
-        animate={shouldReduceMotion ? undefined : { opacity: [0.3, 0.6, 0.3] }}
-        transition={shouldReduceMotion ? { duration: 0 } : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      >
+      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-black/60 dark:text-white/65">
         Your Portfolio. Your Identity. Your Rules.
-      </motion.p>
+      </p>
     </motion.div>
   )
 }

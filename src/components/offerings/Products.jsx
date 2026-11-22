@@ -483,7 +483,7 @@ export default function Products() {
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-xl border border-black/10 bg-white/50 dark:border-white/10 dark:bg-white/5">
+            <div key={i} data-edge-free className="overflow-hidden rounded-xl border border-black/10 bg-white/50 dark:border-white/10 dark:bg-white/5">
               <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-black/5 dark:bg-white/5">
                 <div className="absolute inset-0 animate-pulse bg-black/5 dark:bg-white/5" />
                 <div className="absolute inset-x-4 top-4 flex items-center gap-2">

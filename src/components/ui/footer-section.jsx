@@ -72,7 +72,7 @@ export function Footer() {
 
         <div className="grid w-full gap-8 md:grid-cols-3">
           {footerSections.map((section) => (
-            <div key={section.label}>
+            <div key={section.label} data-edge-free>
               <h3 className="mb-5 text-xs font-medium uppercase tracking-[0.15em] text-black/70 dark:text-white/70">
                 {section.label}
               </h3>

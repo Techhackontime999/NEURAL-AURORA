@@ -156,9 +156,14 @@ Copy `.env.example` to `.env` and fill in your Supabase project URL and anon key
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_AI_API_BASE=https://openrouter.ai/api/v1
-VITE_AI_API_KEY=your_api_key_here
-VITE_AI_MODEL=openai/gpt-4o-mini
+```
+
+AI keys are server-only. Set one provider in your deployment environment (never
+with a `VITE_` prefix):
+
+```
+OPENROUTER_API_KEY=your_api_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
 For the digital store and donations, also configure Razorpay (see [docs/DIGITAL-STORE.md](docs/DIGITAL-STORE.md)):
@@ -354,18 +359,21 @@ Edit the CSS custom properties in `src/index.css` (the `:root` and `.dark` block
 
 ### AI Gateway Setup (Dynamic Puzzles)
 
-The puzzle generator uses any OpenAI-compatible API (OpenRouter, OpenAI, Groq, Together, etc). To enable it:
+All billable AI calls go through the serverless `/api/ai` gateway. The browser
+never reads a provider key. To enable the model features:
 
-1. Get an API key from your preferred provider (e.g. [OpenRouter](https://openrouter.ai))
-2. Create a `.env` file in the project root:
+1. Get an API key from a supported provider (OpenRouter, OpenAI-compatible, or Gemini)
+2. Set a **server-side** variable in your deployment environment (or `.env` for local Vercel dev):
    ```
-   VITE_AI_API_BASE=https://openrouter.ai/api/v1
-   VITE_AI_API_KEY=your_api_key_here
-   VITE_AI_MODEL=openai/gpt-4o-mini
+   OPENROUTER_API_KEY=your_api_key_here
+   OPENROUTER_MODEL=openai/gpt-4o-mini
    ```
+   Alternatives: `AI_API_KEY`/`OPENAI_API_KEY` with `AI_API_BASE`/`AI_MODEL`, or
+   `GEMINI_API_KEY` with `GEMINI_MODEL`.
 3. Restart the dev server
 
-If no key is provided, the app falls back to a built-in pool of 12 static questions.
+If no key is provided, puzzles fall back to a built-in pool of static questions
+and other AI features show an honest unconfigured state.
 
 ### YouTube Channel Stream Setup
 
@@ -402,9 +410,7 @@ Add entries to the `skills` array in `src/data/portfolio.js`. Skills are grouped
 4. Add environment variables in Vercel dashboard:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_AI_API_BASE` (optional)
-   - `VITE_AI_API_KEY` (optional)
-   - `VITE_AI_MODEL` (optional)
+   - `OPENROUTER_API_KEY` (server-side, optional; or `AI_API_KEY` / `GEMINI_API_KEY`)
 5. Deploy — your site is live with automatic CI/CD on every push
 
 ### Option 2: Netlify
@@ -433,9 +439,7 @@ All three platforms require these in your deployment dashboard:
 |---|---|---|
 | `VITE_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Your Supabase anon/public key |
-| `VITE_AI_API_BASE` | No | OpenAI-compatible API base URL (default: `https://api.openai.com/v1`) |
-| `VITE_AI_API_KEY` | No | API key for AI puzzle generation |
-| `VITE_AI_MODEL` | No | Model name (default: `gpt-4o-mini`) |
+| `OPENROUTER_API_KEY` | No | Server-side AI key (or `AI_API_KEY` / `GEMINI_API_KEY`); never use a `VITE_` prefix |
 | `VITE_YOUTUBE_API_KEY` | No | YouTube Data API v3 key for Channel Stream gateway |
 
 **Never commit your `.env` file.** The `.env.example` file serves as a template.
@@ -506,7 +510,7 @@ See [LICENSE](LICENSE) and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For c
 - Neural Spark custom cursor with speed-reactive effects
 - Support/donations and contributors section
 - Source-available legal suite (`LICENSE`, `COMMERCIAL-LICENSE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `TERMS_OF_USE.md`, `PRIVACY_POLICY.md`, `TRADEMARK.md`, `docs/`)
-- Check/test scripts: `npm run check` (routes, i18n, SQL lint) and `npm test` (pricing, API guards)
+- Check/test scripts: `npm run check` (routes, i18n, SQL lint) and `npm test` (pricing, API, store, UI and route guards)
 
 **Changed**
 - Services renamed to **Offerings** and moved to `/offerings` (legacy `/services` redirects preserved)

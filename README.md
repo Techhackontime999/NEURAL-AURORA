@@ -32,6 +32,12 @@ NEURAL AURORA is **source-available** software. The source code is publicly visi
 
 ---
 
+## 🧭 Product direction
+
+Neural Aurora is evolving from a single-owner portfolio into a **Personal Digital Platform** — one identity, one professional presence, one first-party store and one growth system, configured per person. The architecture, personas, journeys and phased roadmap are documented in [docs/PRODUCT-VISION-ARCHITECTURE.md](docs/PRODUCT-VISION-ARCHITECTURE.md). This is a plan only; existing features and routes are preserved.
+
+---
+
 ## ✨ Key Features
 
 - **AI-Powered Gateway** – Voice, MCQ, Neural Pattern Lock & YouTube Channel Stream verification
@@ -71,11 +77,12 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## ⚙️ Environment Variables
 
-See `.env.example` for full list. Key ones include `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_*`, `RAZORPAY_WEBHOOK_SECRET`.
+See `.env.example` for the authoritative list. Key ones include `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_*`, `RAZORPAY_WEBHOOK_SECRET`.
 
-Mithi's AI runs server-side and needs its own key: `GEMINI_API_KEY` **or**
-`AI_API_KEY` (never a `VITE_` prefix). Without one, the widget says the AI is
-unconfigured and the docs button keeps working.
+All AI features run server-side. Set one server-only provider key:
+`OPENROUTER_API_KEY` (recommended), `AI_API_KEY`/`OPENAI_API_KEY`, or
+`GEMINI_API_KEY` — never a `VITE_` prefix. Without one, AI features show an
+honest unconfigured state and the docs button keeps working.
 
 ## 🧪 Scripts
 
@@ -84,7 +91,7 @@ npm run dev      # Dev server
 npm run build    # Production build
 npm run preview  # Preview build
 npm run check    # Routes + i18n + SQL lint
-npm test         # Pricing + API guard tests
+npm test         # Pricing, API, store, UI and route guards
 ```
 
 ## 🤝 Contributing

@@ -38,8 +38,8 @@ Status: implementation complete on `feat/premium-store-commerce`; awaiting live 
 
 | Check | Result |
 |---|---|
-| `npm test --silent` | 294 passed, 0 failed |
-| `npm run check --silent` | routes, i18n (185 keys) and all migrations passed |
+| `npm test --silent` | 360 passed, 0 failed |
+| `npm run check --silent` | routes, i18n (186 keys) and all migrations passed |
 | `npm run build --silent` | succeeded; PWA output generated |
 | `git diff --check` | clean |
 
@@ -58,4 +58,4 @@ Live payment, webhook, download, RLS and licence verification were not runnable 
 
 ## Branch status
 
-Work is on `feat/premium-store-commerce` and is uncommitted. Pre-existing `README.md` and `docs/PRODUCT-VISION-ARCHITECTURE.md` changes were preserved and are intentionally excluded from this delivery.
+Work is on `main` with all implementation changes local and uncommitted. The pre-existing `docs/PRODUCT-VISION-ARCHITECTURE.md` proposal remains untracked and untouched; existing `README.md` work was preserved while its stale test/env notes were synchronized.

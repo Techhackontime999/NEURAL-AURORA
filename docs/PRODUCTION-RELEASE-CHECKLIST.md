@@ -5,7 +5,7 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 ## 1. Pre-Checks
 
 - [ ] Run full checks: `npm run check` (routes, i18n, SQL lint) – all green
-- [ ] Run tests: `npm test` (pricing + API guards) – 46+23 passed
+- [ ] Run tests: `npm test` (pricing, API, store, UI and route guards) – all green
 - [ ] Production build passes: `npm run build` – no errors/warnings blocking
 - [ ] Working tree clean: `git status --porcelain` empty
 - [ ] On `main` branch, up to date with remote
@@ -18,12 +18,13 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 - [ ] `RAZORPAY_KEY_ID` – production/test matches
 - [ ] `RAZORPAY_KEY_SECRET` – correct for mode
 - [ ] `RAZORPAY_WEBHOOK_SECRET` – dedicated long random string (matches dashboard)
+- [ ] AI provider: one of `OPENROUTER_API_KEY` (recommended), `AI_API_KEY`/`OPENAI_API_KEY`, or `GEMINI_API_KEY` – never a `VITE_` prefix
+- [ ] Voice (optional): `VOICE_API_BASE`, `VOICE_API_KEY`, `VOICE_MODEL` for `/api/ai` speech
 
 ### Client-side (Vite)
 - [ ] `VITE_SUPABASE_URL` – production Supabase project
 - [ ] `VITE_SUPABASE_ANON_KEY` – production anon key
 - [ ] `VITE_RAZORPAY_KEY_ID` – matches environment (live/test)
-- [ ] `VITE_AI_API_BASE`, `VITE_AI_API_KEY`, `VITE_AI_MODEL` (optional)
 - [ ] `VITE_JAMENDO_CLIENT_ID` (optional)
 - [ ] `VITE_YOUTUBE_API_KEY` (optional)
 

@@ -30,46 +30,67 @@ the bird simply stays still.
 
 ### Why it is server-side
 
-The older AI features in this repo call a provider **from the browser** using
-`VITE_AI_API_KEY`. That key is bundled into the client, so it is not a secret.
-Mithi does **not** do this. Her endpoint runs on the server and reads the key
-from `process.env` only. The browser never receives a key, and no `VITE_*`
-variable is consulted.
+All AI features in this repo call server endpoints. `VITE_AI_*` values are
+deliberately ignored because Vite inlines them into the public browser bundle.
+Provider keys are read from `process.env` only; no browser bundle or AI response
+contains key material. Mithi keeps her grounded `/api/mithi-chat` endpoint;
+puzzle, portfolio assistant, terminal, autocomplete and voice use the shared
+`/api/ai` gateway.
 
 ### Configure a provider
 
 Set **one** of the following in your deployment environment and redeploy.
 
-**Option A — Google Gemini** (simplest)
+**Option A — OpenRouter** (recommended)
+
+```bash
+OPENROUTER_API_KEY=your_key
+OPENROUTER_MODEL=openai/gpt-4o-mini   # optional
+```
+
+**Option B — Google Gemini**
 
 ```bash
 GEMINI_API_KEY=your_key
-GEMINI_MODEL=gemini-2.0-flash        # optional
+GEMINI_MODEL=gemini-2.0-flash         # optional
 ```
 
-**Option B — any OpenAI-compatible provider** (OpenRouter, OpenAI, …)
+**Option C — any OpenAI-compatible provider** (OpenAI, Groq, Together, …)
 
 ```bash
 AI_API_KEY=your_key
-AI_API_BASE=https://openrouter.ai/api/v1   # optional
-AI_MODEL=openai/gpt-4o-mini                # optional
+AI_API_BASE=https://api.openai.com/v1 # optional
+AI_MODEL=gpt-4o-mini                  # optional
 ```
 
-If neither is set, the widget shows an honest "AI is not configured for this
-deployment" card, and **the docs option still works**.
+Optional speech settings for `/api/ai?feature=voice`:
+`VOICE_API_BASE`, `VOICE_API_KEY` and `VOICE_MODEL`. With no voice provider the
+browser falls back to built-in SpeechSynthesis.
+
+If no provider is set, AI features show an honest "AI is not configured for this
+deployment" state and **the docs option still works**.
 
 ### Endpoints
 
 | Method | Result |
 | --- | --- |
-| `GET /api/mithi-chat` | `{ configured: boolean, provider: "gemini" \| "openai" \| null }` |
+| `GET /api/mithi-chat` | `{ configured: boolean, provider: "openrouter" \| "gemini" \| "openai" \| null }` |
 | `POST /api/mithi-chat` | `{ reply: string }` or `{ error, code }` |
+| `GET /api/ai` | `{ configured, provider, voiceConfigured, diagnostics }` |
+| `POST /api/ai` | OpenAI-shaped JSON, or audio for `feature: "voice"` |
 
-`POST` body: `{ "messages": [{ "role": "user" \| "assistant", "content": "…" }] }`
+`POST /api/mithi-chat` body:
+`{ "messages": [{ "role": "user" \| "assistant", "content": "…" }] }`
 
-Limits: 12 messages, 1200 characters each, 8000 characters total, last message
-must be from the user. Violations return `400` before any provider call. When no
-provider is configured the response is `503` with `code: "unconfigured"`.
+`POST /api/ai` body: `{ "feature": "general" \| "chat" \| "portfolio" \| "generation" \| "puzzle" \| "autocomplete" \| "voice", "messages": […] }`.
+`feature: "portfolio"` additionally requires a Supabase admin bearer token;
+the browser client sends the signed-in user's token automatically.
+
+Limits: Mithi accepts 12 messages, 1200 characters each, 8000 characters total,
+and the last message must be from the user. The gateway caps output tokens per
+feature, validates messages/tools, applies a timeout and keeps a small in-process
+rate budget. Violations return `400` before any provider call. When no provider
+is configured the response is `503` with `code: "unconfigured"`.
 
 ### Grounding
 

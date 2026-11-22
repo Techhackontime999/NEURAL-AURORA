@@ -147,7 +147,7 @@ error instead of issuing an order.
 
 ```bash
 npm run check              # route ranking + i18n keys + SQL structural lint
-npm run test               # pricing, API guards, store UX, product query, head, admin and licensing tests
+npm run test               # pricing, API, store, UI and route guards
 npm run test:licensing     # licence options/keys/verification + preview + recommendation guards
 npm run test:store-ux      # storefront URL filters, manifest, preview and licence UI guards
 npm run build              # production build

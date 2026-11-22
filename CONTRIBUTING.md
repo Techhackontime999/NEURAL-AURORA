@@ -64,7 +64,7 @@ docs(readme): update license section
 1. Keep your branch up to date with `main`
 2. Ensure `npm run build` passes without errors
 3. Ensure `npm run check` passes (routes + i18n + SQL lint)
-4. Ensure `npm test` passes (pricing + API guards)
+4. Ensure `npm test` passes (pricing, API, store, UI and route guards)
 5. Open a PR with a clear title, description, and screenshots if UI-related
 6. Link any related issue(s)
 7. Be responsive to review feedback

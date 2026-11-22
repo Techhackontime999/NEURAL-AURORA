@@ -106,7 +106,7 @@ function TerminalBoot({ onDone }) {
           <span className="ml-2 text-[9px] uppercase tracking-widest text-white/20 font-mono">Neural Aurora Terminal</span>
         </div>
         <div className="p-5 font-mono text-xs leading-relaxed space-y-1.5 min-h-[220px]">
-          <div className="text-neural-blue/40 text-[10px] mb-3">Neural Aurora OS v2.0</div>
+          <div className="text-neural-blue/40 text-[10px] mb-3">Neural Aurora OS</div>
           {lines.map((l, i) => (
             <div key={i} className="flex">
               <span className="text-neural-blue/30 mr-2 shrink-0">&gt;</span>

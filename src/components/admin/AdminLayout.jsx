@@ -19,6 +19,7 @@ const navItems = [
   { path: '/admin/gallery', label: 'Gallery', icon: '▦' },
   { path: '/admin/services', label: 'Services', icon: '⊞' },
   { path: '/admin/products', label: 'Products', icon: '◈' },
+  { path: '/admin/licences', label: 'Licences', icon: '⚿' },
   { path: '/admin/orders', label: 'Orders', icon: '₹' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FileText, Download } from 'lucide-react'
 import { formatPrice } from '../../lib/products'
@@ -21,7 +21,10 @@ export default function ProductCard({ product, index = 0 }) {
   const hasCover = Boolean(cover)
   const pictureCount = new Set([product.cover_image_url, ...galleryUrls].filter(Boolean)).size
 
-  const open = () => navigate(`/offerings/products/${product.slug}`)
+  const href = `/offerings/products/${product.slug}`
+  // The decorative image retains in-app navigation; the real title and CTA are
+  // anchors so middle-click, "open in new tab" and screen readers all work.
+  const open = () => navigate(href)
 
   return (
     <motion.article
@@ -53,7 +56,7 @@ export default function ProductCard({ product, index = 0 }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <FileText className="w-10 h-10 text-black/20 dark:text-white/20" aria-hidden="true" />
+            <FileText className="w-10 h-10 text-[var(--text-tertiary)]" aria-hidden="true" />
           </div>
         )}
 
@@ -79,19 +82,18 @@ export default function ProductCard({ product, index = 0 }) {
 
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3">
-          <button
-            type="button"
-            onClick={open}
+          <Link
+            to={href}
             className="text-left focus:outline-none focus-visible:underline"
           >
-            <h3 className="text-sm font-semibold text-black/80 dark:text-white/80 group-hover:text-cyan-500 transition-colors">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-cyan-500 transition-colors">
               {product.title}
             </h3>
-          </button>
+          </Link>
 
           <div className="shrink-0 text-right">
             {product.compare_at_paise > product.price_paise && !isFree && (
-              <span className="block text-[10px] text-black/35 dark:text-white/30 line-through">
+              <span className="block text-[10px] text-[var(--text-tertiary)] line-through">
                 {formatPrice(product.compare_at_paise, product.currency)}
               </span>
             )}
@@ -99,7 +101,7 @@ export default function ProductCard({ product, index = 0 }) {
               className={`text-sm font-semibold ${
                 isFree
                   ? 'text-emerald-500'
-                  : 'text-black/80 dark:text-white/80'
+                  : 'text-[var(--text-primary)]'
               }`}
             >
               {isFree
@@ -110,36 +112,35 @@ export default function ProductCard({ product, index = 0 }) {
         </div>
 
         {product.short_description && (
-          <p className="text-xs text-black/50 dark:text-white/50 mt-2 leading-relaxed line-clamp-2">
+          <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed line-clamp-2">
             {product.short_description}
           </p>
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {product.format && (
-            <span className="rounded-full border border-black/10 dark:border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+            <span className="rounded-full border border-black/10 dark:border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {product.format}
             </span>
           )}
           {product.version && (
-            <span className="text-[10px] uppercase tracking-widest text-black/35 dark:text-white/30">
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               v{product.version}
             </span>
           )}
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/5 pt-4 dark:border-white/5">
-          <button
-            type="button"
-            onClick={open}
-            className="flex-1 rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest py-2.5 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
+          <Link
+            to={href}
+            className="flex-1 rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest py-2.5 text-center hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
           >
             {isFree ? t('store.viewAndDownload') : t('store.viewDetails')}
-          </button>
+          </Link>
 
           {isFree && (
             <span
-              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40"
+              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]"
               aria-hidden="true"
             >
               <Download className="w-3 h-3" />

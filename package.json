@@ -12,13 +12,14 @@
     "check:routes": "node scripts/check-routes.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:sql": "node scripts/check-sql.mjs",
-    "test": "npm run test:order-pricing && npm run test:api-guards && npm run test:store-ux && npm run test:product-query && npm run test:document-head && npm run test:admin-products",
+    "test": "npm run test:order-pricing && npm run test:api-guards && npm run test:store-ux && npm run test:product-query && npm run test:document-head && npm run test:admin-products && npm run test:licensing",
     "test:order-pricing": "node scripts/test-order-pricing.mjs",
     "test:api-guards": "node scripts/test-api-guards.mjs",
     "test:store-ux": "node scripts/test-store-ux.mjs",
     "test:product-query": "node scripts/test-product-query.mjs",
     "test:document-head": "node scripts/test-document-head.mjs",
-    "test:admin-products": "node scripts/test-admin-products.mjs"
+    "test:admin-products": "node scripts/test-admin-products.mjs",
+    "test:licensing": "node scripts/test-licensing.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

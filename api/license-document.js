@@ -1,0 +1,90 @@
+// ---------------------------------------------------------------------------
+// Downloadable license document.
+//
+// The document is generated from the stored license row, never from decorative
+// client data. Ownership is checked server-side with the same rules used by
+// the download endpoint: verified account id or verified session email.
+// No one can fetch another customer's license by guessing an id.
+// ---------------------------------------------------------------------------
+
+const { createClient } = require('@supabase/supabase-js')
+const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
+const { buildLicenseDocument } = require('./_lib/license')
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceKey || supabaseUrl === 'https://placeholder.supabase.co') {
+    logError('license-document', newRequestId(), {
+      stage: 'env-check',
+      env: envPresence(SUPABASE_ENV_NAMES),
+    })
+    return res.status(503).json({ error: 'License documents are unavailable right now.' })
+  }
+
+  const header = req.headers?.authorization || req.headers?.Authorization || ''
+  if (!header.toLowerCase().startsWith('bearer ')) {
+    return res.status(401).json({ error: 'Please sign in to view this license.' })
+  }
+
+  let user
+  try {
+    const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+    const { data, error } = await supabase.auth.getUser(header.slice(7).trim())
+    if (error || !data?.user) {
+      return res.status(401).json({ error: 'Your session has expired. Please sign in again.' })
+    }
+    user = data.user
+
+    if (!user.email || !user.email_confirmed_at) {
+      return res.status(403).json({ error: 'Your account needs a verified email address.' })
+    }
+
+    const rawId = String(req.query?.id || '').trim()
+    if (!/^\d+$/.test(rawId)) {
+      return res.status(400).json({ error: 'A valid license reference is required.' })
+    }
+
+    const { data: license, error: licenseError } = await supabase
+      .from('licenses')
+      .select(
+        `id, license_ref, license_key, license_type, terms, seats, status,
+         expires_at, issued_at, created_at, customer_email, user_id,
+         products (title, slug)`
+      )
+      .eq('id', Number(rawId))
+      .maybeSingle()
+
+    if (licenseError) throw licenseError
+
+    const ownsLicense =
+      license &&
+      (license.user_id === user.id ||
+        (license.customer_email &&
+          String(license.customer_email).toLowerCase() === String(user.email).toLowerCase()))
+
+    // Same response for "missing" and "not yours": ids must not be enumerable.
+    if (!ownsLicense) {
+      return res.status(404).json({ error: 'License not found.' })
+    }
+
+    const html = buildLicenseDocument({
+      ...license,
+      product_title: license.products?.title || license.products?.slug || '',
+      issuer: 'NEURAL AURORA',
+    })
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.setHeader('Content-Disposition', `attachment; filename="${license.license_ref}.html"`)
+    res.setHeader('Cache-Control', 'no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    return res.status(200).send(html)
+  } catch (err) {
+    logError('license-document', newRequestId(), { stage: 'exception', message: err?.message })
+    return res.status(500).json({ error: 'Could not prepare your license document.' })
+  }
+}

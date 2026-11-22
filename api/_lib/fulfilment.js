@@ -16,7 +16,9 @@
 // entitlement, and this is it.
 // ---------------------------------------------------------------------------
 
+const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
+const { generateLicenseKey, generateLicenseRef, hashLicenseKey } = require('./license')
 
 /** Smallest database client for service-role work, or null if unconfigured. */
 function getServiceClient() {
@@ -29,6 +31,129 @@ function getServiceClient() {
 function isDuplicateError(error) {
   const msg = error?.message || ''
   return msg.includes('duplicate key') || msg.includes('unique constraint')
+}
+
+function isMissingObjectError(error, objectName) {
+  const msg = String(error?.message || '').toLowerCase()
+  return msg.includes(objectName.toLowerCase()) && /does not exist|schema cache|relation/.test(msg)
+}
+
+function isMissingColumnError(error, column) {
+  const msg = String(error?.message || '').toLowerCase()
+  return msg.includes(column.toLowerCase()) && /column|schema cache/.test(msg)
+}
+
+/**
+ * Read order items including optional license columns. Deployments that have
+ * not applied the licensing migration keep selling through the older shape.
+ */
+async function loadOrderItems(supabase, orderId) {
+  const withLicense = await supabase
+    .from('order_items')
+    .select('id, product_id, quantity, license_option_id, license_type_snapshot')
+    .eq('order_id', orderId)
+
+  if (!withLicense.error) return withLicense.data || []
+  if (
+    !isMissingColumnError(withLicense.error, 'license_option_id') &&
+    !isMissingColumnError(withLicense.error, 'license_type_snapshot')
+  ) {
+    throw new Error(`Order items lookup failed: ${withLicense.error.message}`)
+  }
+
+  const legacy = await supabase
+    .from('order_items')
+    .select('id, product_id, quantity')
+    .eq('order_id', orderId)
+  if (legacy.error) throw new Error(`Order items lookup failed: ${legacy.error.message}`)
+  return legacy.data || []
+}
+
+/**
+ * Issue licenses for paid items that carry a configured option.
+ *
+ * Idempotency is enforced by the UNIQUE constraint on
+ * `licenses.order_item_id`; a replayed webhook sees the duplicate and writes
+ * no second key or history row. A missing entitlement is never worked around:
+ * access must exist before a license can be issued.
+ */
+async function issueOrderLicenses(supabase, dbOrder) {
+  const items = await loadOrderItems(supabase, dbOrder.id)
+
+  for (const item of items) {
+    if (!item.license_option_id || !item.product_id) continue
+
+    const [{ data: option, error: optionError }, { data: entitlement, error: entitlementError }] =
+      await Promise.all([
+        supabase
+          .from('product_license_options')
+          .select('id, label, terms, summary')
+          .eq('id', item.license_option_id)
+          .maybeSingle(),
+        supabase
+          .from('entitlements')
+          .select('id')
+          .eq('order_item_id', item.id)
+          .eq('status', 'active')
+          .maybeSingle(),
+      ])
+
+    if (optionError || entitlementError) {
+      if (isMissingObjectError(optionError, 'product_license_options') || isMissingObjectError(entitlementError, 'entitlements')) {
+        console.warn('[Fulfilment] Licensing schema not available; license issuance skipped')
+        return 0
+      }
+      throw new Error(
+        `License preflight failed: ${optionError?.message || entitlementError?.message}`
+      )
+    }
+    if (!option || !entitlement) continue
+
+    const key = generateLicenseKey(crypto, 'na')
+    const { data: created, error: insertError } = await supabase
+      .from('licenses')
+      .insert({
+        license_ref: generateLicenseRef(crypto),
+        license_key: key,
+        key_hash: hashLicenseKey(crypto, key),
+        product_id: item.product_id,
+        order_id: dbOrder.id,
+        order_item_id: item.id,
+        entitlement_id: entitlement.id,
+        license_option_id: option.id,
+        user_id: dbOrder.user_id || null,
+        customer_email: dbOrder.email || null,
+        license_type: item.license_type_snapshot || option.label || 'Standard license',
+        terms: option.terms || option.summary || '',
+        seats: Math.max(1, Number(item.quantity) || 1),
+        status: 'active',
+        issued_at: new Date().toISOString(),
+      })
+      .select('id')
+      .maybeSingle()
+
+    if (insertError) {
+      if (isDuplicateError(insertError)) continue
+      if (isMissingObjectError(insertError, 'licenses')) {
+        console.warn('[Fulfilment] Licensing schema not available; license issuance skipped')
+        return 0
+      }
+      throw new Error(`License insert failed: ${insertError.message}`)
+    }
+
+    if (created?.id) {
+      const { error: eventError } = await supabase.from('license_events').insert({
+        license_id: created.id,
+        action: 'issued',
+        reason: 'Verified payment',
+      })
+      if (eventError && !isMissingObjectError(eventError, 'license_events')) {
+        throw new Error(`License event insert failed: ${eventError.message}`)
+      }
+    }
+  }
+
+  return 1
 }
 
 /**
@@ -90,6 +215,9 @@ async function fulfilDigitalOrder(supabase, { payment, order, event, signatureVe
   }
 
   if (dbOrder.payment_status === 'paid') {
+    // A replay is also the recovery path for an order that was marked paid
+    // before licensing was introduced. Issuance is idempotent, so this is safe.
+    await issueOrderLicenses(supabase, dbOrder)
     console.log('[Fulfilment] Digital order already fulfilled (idempotent):', dbOrder.order_ref)
     return { status: 'already_paid', order_ref: dbOrder.order_ref }
   }
@@ -156,6 +284,8 @@ async function fulfilDigitalOrder(supabase, { payment, order, event, signatureVe
     }
   }
 
+  await issueOrderLicenses(supabase, dbOrder)
+
   console.log('[Fulfilment] Digital order fulfilled:', dbOrder.order_ref)
   return { status: 'fulfilled', order_ref: dbOrder.order_ref }
 }
@@ -214,4 +344,5 @@ module.exports = {
   isDuplicateError,
   fulfilDigitalOrder,
   recordDigitalFailure,
+  issueOrderLicenses,
 }

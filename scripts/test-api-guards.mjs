@@ -43,11 +43,20 @@ function fakeRes() {
   return {
     statusCode: 0,
     body: undefined,
+    headers: {},
     status(code) {
       this.statusCode = code
       return this
     },
     json(payload) {
+      this.body = payload
+      return this
+    },
+    setHeader(name, value) {
+      this.headers[name] = value
+      return this
+    },
+    send(payload) {
       this.body = payload
       return this
     },
@@ -77,6 +86,9 @@ const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
 const adminAccessLink = require('../api/admin-access-link.js')
 const adminDeleteOrders = require('../api/admin-delete-orders.js')
+const licenseDocument = require('../api/license-document.js')
+const licenseVerify = require('../api/license-verify.js')
+const adminLicense = require('../api/admin-license.js')
 const customerSigninLink = require('../api/customer-signin-link.js')
 const adminAuth = require('../api/_lib/adminAuth.js')
 const webhook = require('../api/razorpay-webhook.js')
@@ -976,6 +988,72 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
         source.includes('connectionString: databaseUrl')
     )
   }
+}
+
+// --- 18. License endpoints fail closed and never leak keys or secrets --------
+setEnv({})
+{
+  const endpoints = [
+    ['license-document', licenseDocument, 'GET', {}],
+    ['license-verify', licenseVerify, 'POST', { body: { product_slug: 'kit', license_key: 'NA-KIT-AAAAA-BBBBB-CCCCC-DDDDD' } }],
+    ['admin-license', adminLicense, 'GET', {}],
+  ]
+  for (const [name, handler, method, request] of endpoints) {
+    const { res, lines } = await capture((r) =>
+      handler({ method, headers: {}, ...request }, r)
+    )
+    check(`${name}: unconfigured -> 503`, res.statusCode === 503, `got ${res.statusCode}`)
+    check(
+      `${name}: 503 is JSON with a message`,
+      typeof res.body?.error === 'string' && res.body.error.length > 0,
+      jsonBody(res)
+    )
+    check(`${name}: 503 leaks no secrets`, noSecrets(jsonBody(res)) && noSecrets(lines))
+  }
+
+  const { res: methodRes } = await capture((r) => licenseVerify({ method: 'GET', headers: {} }, r))
+  check('license-verify: GET -> 405', methodRes.statusCode === 405, `got ${methodRes.statusCode}`)
+  const { res: docMethodRes } = await capture((r) => licenseDocument({ method: 'POST', headers: {} }, r))
+  check('license-document: POST -> 405', docMethodRes.statusCode === 405, `got ${docMethodRes.statusCode}`)
+  const { res: adminMethodRes } = await capture((r) => adminLicense({ method: 'DELETE', headers: {} }, r))
+  check('admin-license: DELETE -> 405', adminMethodRes.statusCode === 405, `got ${adminMethodRes.statusCode}`)
+}
+
+setEnv({
+  SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET,
+  SUPABASE_URL: 'https://example.supabase.co',
+})
+{
+  // Verification validates shape before touching the database. A malformed key
+  // gets an honest invalid answer, never a stack trace or a key echo.
+  const { res, lines } = await capture((r) =>
+    licenseVerify(
+      {
+        method: 'POST',
+        headers: {},
+        body: { product_slug: '../secret', license_key: 'short' },
+      },
+      r
+    )
+  )
+  check('license-verify: malformed input -> 400 valid:false', res.statusCode === 400 && res.body?.valid === false, jsonBody(res))
+  check('license-verify: malformed input leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  // A request with no bearer token must be refused before any license lookup.
+  const { res, lines } = await capture((r) =>
+    licenseDocument({ method: 'GET', headers: {}, query: { id: '1' } }, r)
+  )
+  check('license-document: anonymous -> 401', res.statusCode === 401, `got ${res.statusCode}`)
+  check('license-document: 401 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  // Admin actions always go through the shared gate; no bearer token -> 403.
+  const { res, lines } = await capture((r) =>
+    adminLicense({ method: 'POST', headers: {}, body: { id: '1', action: 'revoke', reason: 'abuse' } }, r)
+  )
+  check('admin-license: anonymous -> 403 (never mutates)', res.statusCode === 403, `got ${res.statusCode}`)
+  check('admin-license: 403 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
 }
 
 setEnv({})

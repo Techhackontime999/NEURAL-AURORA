@@ -137,8 +137,11 @@ check(
 check(
   'checkout: quantity reaches the checkout client',
   detail.includes('quantity: isFree ? 1 : requestedQuantity') &&
+    detail.includes('licenseCode: selectedLicense') &&
     read('src/lib/checkout.js').includes('quantity = 1') &&
-    read('src/lib/checkout.js').includes('items: [{ slug: product.slug, quantity }]')
+    read('src/lib/checkout.js').includes(
+      "items: [{ slug: product.slug, quantity, license_code: licenseCode }]"
+    )
 )
 check(
   'checkout: itemised total is display-only',
@@ -153,6 +156,30 @@ check(
   detail.includes('{!isFree && (') &&
     detail.includes('quantity: isFree ? 1 : requestedQuantity') &&
     en.store.freeDownload.length > 0
+)
+
+// --- P1: filters are shareable and restorable ------------------------------
+check(
+  'catalogue: filters are initialised from the URL',
+  products.includes('useSearchParams') &&
+    products.includes('const initialFilters = filtersFromParams(searchParams)') &&
+    products.includes('useState(initialFilters)')
+)
+check(
+  'catalogue: filter changes are written back to the URL',
+  products.includes('paramsFromFilters(filters)') &&
+    products.includes('{ replace: true }') &&
+    products.includes('setFilters((current) => (sameFilters(current, fromUrl) ? current : fromUrl))')
+)
+check(
+  'catalogue: unknown URL values are discarded',
+  products.includes("Object.hasOwn(PRODUCT_SORTS, sort) ? sort : EMPTY_FILTERS.sort") &&
+    products.includes('.slice(0, 80)')
+)
+check(
+  'catalogue: featured shelf uses published data and hides under filters',
+  products.includes("getPublishedProducts({ featuredOnly: true, sort: 'featured', limit: 4 })") &&
+    products.includes('!hasActiveFilters && featuredProducts.length > 0')
 )
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------
@@ -174,6 +201,34 @@ check(
   'library: no-results state can be cleared',
   library.includes("t('store.libraryNoResults')") &&
     library.includes("onClick={() => setLibraryQuery('')}")
+)
+
+// --- Licensing and preview UX ----------------------------------------------
+check(
+  'library: licences are loaded without blocking downloads',
+  library.includes('Promise.allSettled([') &&
+    library.includes('getMyLicenses()') &&
+    library.includes('downloadLicenseDocument(license.id)')
+)
+check(
+  'library: keys stay masked until the owner reveals them',
+  library.includes('revealedLicenses.includes(license.id)') &&
+    library.includes('maskedKey(license.license_key)') &&
+    library.includes('navigator.clipboard.writeText(license.license_key)')
+)
+check(
+  'previews: keyboard navigation is scoped to the preview region',
+  read('src/components/offerings/ProductPreview.jsx').includes(
+    'regionRef.current?.contains(document.activeElement)'
+  ) &&
+    read('src/components/offerings/ProductPreview.jsx').includes("['input', 'textarea', 'select'].includes(tag)")
+)
+check(
+  'detail: purchase panel, licence selector and file manifest are present',
+  detail.includes('id="purchase-panel"') &&
+    detail.includes('type="radio"') &&
+    detail.includes("t('store.whatYouReceive')") &&
+    detail.includes("t('store.recentlyViewed')")
 )
 
 // --- ST-U07/U13/U14: reliability guards ------------------------------------

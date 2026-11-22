@@ -12,6 +12,7 @@ import AdminCertificates from './AdminCertificates'
 import AdminAchievements from './AdminAchievements'
 import AdminGallery from './AdminGallery'
 import AdminProducts from './AdminProducts'
+import AdminLicenses from './AdminLicenses'
 import AdminOrders from './AdminOrders'
 import AdminSocialLinks from './AdminSocialLinks'
 import AdminReviews from './AdminReviews'
@@ -45,6 +46,7 @@ export default function AdminDashboard() {
         <Route path="achievements" element={<AdminAchievements />} />
         <Route path="gallery" element={<AdminGallery />} />
         <Route path="products" element={<AdminProducts />} />
+        <Route path="licences" element={<AdminLicenses />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="services" element={<AdminServices />} />
         <Route path="social-links" element={<AdminSocialLinks />} />

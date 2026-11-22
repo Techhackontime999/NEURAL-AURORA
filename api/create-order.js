@@ -238,8 +238,30 @@ module.exports = async function handler(req, res) {
         return res.status(503).json({ error: 'Could not verify the products in this order' })
       }
 
+      // License options are resolved server-side too: a browser may name an
+      // option but can never invent one or redefine its terms.
+      const productIds = (products || []).map((product) => product.id)
+      const { data: licenseOptions, error: licenseOptionsError } = productIds.length
+        ? await supabase
+            .from('product_license_options')
+            .select('id, product_id, code, label, is_default')
+            .in('product_id', productIds)
+        : { data: [], error: null }
+
+      if (licenseOptionsError) {
+        logError('create-order', requestId, {
+          stage: 'license-options-lookup-failed',
+          db_error: licenseOptionsError.message,
+        })
+        return res.status(503).json({ error: 'Could not verify the license options for this order' })
+      }
+
       // Canonical total, computed server-side from database prices only.
-      const priced = priceProductOrder({ requestedItems: items, products })
+      const priced = priceProductOrder({
+        requestedItems: items,
+        products,
+        licenseOptions: licenseOptions || [],
+      })
       if (!priced.ok) {
         return res.status(priced.status || 400).json({ error: priced.error })
       }
@@ -311,7 +333,7 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'Could not create your order' })
       }
 
-      const orderItems = priced.lines.map((line) => ({
+      const baseOrderItems = priced.lines.map((line) => ({
         order_id: orderRow.id,
         product_id: line.product.id,
         quantity: line.quantity,
@@ -324,7 +346,24 @@ module.exports = async function handler(req, res) {
         product_version_snapshot: line.product.version || '',
       }))
 
-      const { error: itemsInsertError } = await supabase.from('order_items').insert(orderItems)
+      let orderItems = baseOrderItems.map((item, i) => ({
+        ...item,
+        license_option_id: priced.lines[i].licenseOption?.id || null,
+        license_type_snapshot: priced.lines[i].licenseTypeSnapshot || '',
+      }))
+
+      let { error: itemsInsertError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsInsertError && isMissingColumnError(itemsInsertError, 'license_option_id')) {
+        // A deployment that has not applied the licensing migration can still
+        // sell. The license is not issued in that case; the order remains fully
+        // valid and downloadable through the existing entitlement flow.
+        log('create-order', requestId, {
+          stage: 'license-columns-missing',
+          order_ref: orderRef,
+        })
+        orderItems = baseOrderItems
+        ;({ error: itemsInsertError } = await supabase.from('order_items').insert(orderItems))
+      }
       if (itemsInsertError) {
         logError('create-order', requestId, {
           stage: 'order-items-persist-failed',

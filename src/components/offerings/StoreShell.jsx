@@ -137,7 +137,7 @@ export default function StoreShell({ eyebrow, title, subtitle, children }) {
                   className={
                     hasImageBg
                       ? 'text-sm md:text-base text-white/85 drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)] mt-4 max-w-2xl mx-auto leading-relaxed'
-                      : 'text-sm md:text-base text-black/60 dark:text-white/60 mt-4 max-w-2xl mx-auto leading-relaxed'
+                      : 'text-sm md:text-base text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto leading-relaxed'
                   }
                 >
                   {subtitle}

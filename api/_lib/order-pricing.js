@@ -10,6 +10,8 @@
 // what those slugs cost.
 // ---------------------------------------------------------------------------
 
+const { resolveLicenseOption } = require('./license')
+
 const MAX_ITEMS = 20
 const MAX_QUANTITY = 10
 const MAX_TOTAL_PAISE = 50000000 // Razorpay ceiling: ₹5,00,000
@@ -18,7 +20,11 @@ const MAX_TOTAL_PAISE = 50000000 // Razorpay ceiling: ₹5,00,000
  * Normalise requested items into a slug -> quantity map.
  * Rejects anything that is not a usable slug/quantity pair.
  *
- * @returns {{ ok: true, wanted: Map<string, number> } | { ok: false, error: string }}
+ * Alongside quantities this collects the optional license code per slug. A
+ * duplicate slug with two different codes is rejected below rather than
+ * silently giving the buyer the wrong license.
+ *
+ * @returns {{ ok: true, wanted: Map<string, number>, licenseCodes: Map<string, string> } | { ok: false, error: string }}
  */
 function collectRequestedItems(requestedItems) {
   if (!Array.isArray(requestedItems) || requestedItems.length === 0) {
@@ -29,6 +35,7 @@ function collectRequestedItems(requestedItems) {
   }
 
   const wanted = new Map()
+  const licenseCodes = new Map()
   for (const entry of requestedItems) {
     const slug = String(entry?.slug || '').trim().toLowerCase()
     if (!slug) {
@@ -41,11 +48,17 @@ function collectRequestedItems(requestedItems) {
     }
     const quantity = Number.isFinite(rawQuantity) ? rawQuantity : 1
 
+    const requestedCode = String(entry?.license_code || '').trim().toLowerCase()
+    if (licenseCodes.has(slug) && licenseCodes.get(slug) !== requestedCode) {
+      return { ok: false, error: 'Conflicting license options for the same product' }
+    }
+    licenseCodes.set(slug, requestedCode)
+
     // Duplicate slugs are merged rather than double-charged or rejected.
     wanted.set(slug, (wanted.get(slug) || 0) + quantity)
   }
 
-  return { ok: true, wanted }
+  return { ok: true, wanted, licenseCodes }
 }
 
 /**
@@ -55,18 +68,42 @@ function collectRequestedItems(requestedItems) {
  * @param {Array}    input.requestedItems  Raw `items` from the request body.
  * @param {Array}    input.products        Rows from `products` (id, slug, title,
  *                                         price_paise, currency, status, version).
+ * @param {Array}   [input.licenseOptions] Configured options for those products.
  * @returns {{ ok: true, totalPaise, currency, itemCount, lines } |
  *           { ok: false, error, status }}
  *          `status` is the HTTP status the caller should return.
  */
-function priceProductOrder({ requestedItems, products }) {
+function priceProductOrder({ requestedItems, products, licenseOptions = [] }) {
   const collected = collectRequestedItems(requestedItems)
   if (!collected.ok) {
     return { ok: false, error: collected.error, status: 400 }
   }
-  const { wanted } = collected
+  const { wanted, licenseCodes } = collected
 
   const bySlug = new Map((products || []).map((p) => [String(p.slug).toLowerCase(), p]))
+  const optionsByProduct = new Map()
+  for (const option of licenseOptions || []) {
+    if (!option?.product_id) continue
+    const list = optionsByProduct.get(option.product_id) || []
+    list.push(option)
+    optionsByProduct.set(option.product_id, list)
+  }
+
+  // Resolve licenses after products are known: only options belonging to the
+  // purchased product may be selected, and the snapshot is stored on the item.
+  const selectedLicenses = new Map()
+  for (const [slug, product] of bySlug) {
+    if (!wanted.has(slug)) continue
+    const resolved = resolveLicenseOption({
+      requestedCode: licenseCodes.get(slug),
+      options: optionsByProduct.get(product.id) || [],
+      title: product.title,
+    })
+    if (!resolved.ok) {
+      return { ok: false, error: resolved.error, status: resolved.status }
+    }
+    selectedLicenses.set(slug, resolved.option)
+  }
 
   // Every requested product must exist, be published, and be paid.
   for (const slug of wanted.keys()) {
@@ -109,11 +146,14 @@ function priceProductOrder({ requestedItems, products }) {
     const lineTotal = product.price_paise * quantity
     totalPaise += lineTotal
 
+    const licenseOption = selectedLicenses.get(slug) || null
     lines.push({
       product,
       quantity,
       unitPricePaise: product.price_paise,
       totalPricePaise: lineTotal,
+      licenseOption,
+      licenseTypeSnapshot: licenseOption?.label || licenseOption?.code || '',
     })
   }
 

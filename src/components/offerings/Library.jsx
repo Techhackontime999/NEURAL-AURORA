@@ -12,11 +12,16 @@ import {
   AlertTriangle,
   Loader2,
   Search,
+  Copy,
+  Eye,
+  EyeOff,
+  Check,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { getDownloadUrl } from '../../lib/checkout'
 import { getMyLibrary } from '../../lib/products'
+import { downloadLicenseDocument, getMyLicenses } from '../../lib/licenses'
 import StoreShell from './StoreShell'
 
 /** Supabase's default minimum; the project may require a longer one. */
@@ -71,6 +76,14 @@ export default function Library() {
   const [downloadingSlug, setDownloadingSlug] = useState(null)
   const [downloadError, setDownloadError] = useState(null)
 
+  // Licences are scoped by RLS to the signed-in customer. Keys start hidden
+  // even in their owner's library so a shoulder-surfer cannot read them.
+  const [licenses, setLicenses] = useState([])
+  const [revealedLicenses, setRevealedLicenses] = useState([])
+  const [copiedLicenseId, setCopiedLicenseId] = useState(null)
+  const [documentBusyId, setDocumentBusyId] = useState(null)
+  const [licenseError, setLicenseError] = useState(null)
+
   // Sign-in method. Password is the default because it is the only method that
   // sends NOTHING: the email link is rate limited by Supabase's built-in mailer,
   // a password sign-in is not limited by mail at all.
@@ -109,12 +122,25 @@ export default function Library() {
   const load = useCallback(async () => {
     if (!user) {
       setEntries([])
+      setLicenses([])
+      setRevealedLicenses([])
       return
     }
     setLoading(true)
     setError(null)
+    setLicenseError(null)
     try {
-      setEntries(await getMyLibrary())
+      // A missing licensing migration must not hide already-owned downloads.
+      const [libraryResult, licensesResult] = await Promise.allSettled([
+        getMyLibrary(),
+        getMyLicenses(),
+      ])
+      if (libraryResult.status === 'fulfilled') {
+        setEntries(libraryResult.value)
+      } else {
+        throw libraryResult.reason
+      }
+      setLicenses(licensesResult.status === 'fulfilled' ? licensesResult.value : [])
     } catch (err) {
       console.error('Failed to load library:', err?.message || err)
       setError(err)
@@ -235,6 +261,40 @@ export default function Library() {
     }
   }
 
+  const toggleLicenseKey = (id) => {
+    setRevealedLicenses((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+    )
+  }
+
+  const copyLicenseKey = async (license) => {
+    try {
+      await navigator.clipboard.writeText(license.license_key)
+      setCopiedLicenseId(license.id)
+      window.setTimeout(() => setCopiedLicenseId(null), 2000)
+    } catch {
+      setLicenseError(t('store.copyKeyFailed'))
+    }
+  }
+
+  const handleLicenseDocument = async (license) => {
+    setDocumentBusyId(license.id)
+    setLicenseError(null)
+    try {
+      await downloadLicenseDocument(license.id)
+    } catch (err) {
+      setLicenseError(err?.message || t('store.licenseDocumentFailed'))
+    } finally {
+      setDocumentBusyId(null)
+    }
+  }
+
+  function maskedKey(key) {
+    const value = String(key || '')
+    if (value.length <= 8) return '••••••••'
+    return `${value.slice(0, 7)}${'•'.repeat(Math.min(12, value.length - 8))}${value.slice(-1)}`
+  }
+
   // --- Signed out -----------------------------------------------------------
   if (!user) {
     return (
@@ -245,10 +305,10 @@ export default function Library() {
               <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
                 <MailCheck className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 {t('store.magicLinkSent')}
               </h2>
-              <p className="mt-2 text-xs text-black/50 dark:text-white/50">
+              <p className="mt-2 text-xs text-[var(--text-secondary)]">
                 {t('store.magicLinkSentBody')}
               </p>
               <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
@@ -271,10 +331,10 @@ export default function Library() {
               <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
                 <LibraryIcon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 {t('store.signInTitle')}
               </h2>
-              <p className="mt-2 text-xs text-black/50 dark:text-white/50">
+              <p className="mt-2 text-xs text-[var(--text-secondary)]">
                 {signInMode === 'password'
                   ? t('store.signInPasswordBody')
                   : t('store.signInBody')}
@@ -312,7 +372,7 @@ export default function Library() {
                 className="mt-4 text-left"
               >
                 <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                     {t('store.signInEmailLabel')}
                   </span>
                   <input
@@ -328,7 +388,7 @@ export default function Library() {
 
                 {signInMode === 'password' && (
                   <label className="mt-2.5 block">
-                    <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                    <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                       {t('store.passwordLabel')}
                     </span>
                     <input
@@ -391,7 +451,7 @@ export default function Library() {
   return (
     <StoreShell eyebrow={t('store.eyebrow')} title={t('store.libraryTitle')} subtitle={t('store.librarySubtitle')}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-black/50 dark:text-white/50">
+        <p className="text-xs text-[var(--text-secondary)]">
           {t('store.signedInAs', { email: user.email })}
         </p>
         <button
@@ -414,17 +474,17 @@ export default function Library() {
           <form onSubmit={handleSetPassword}>
             <div className="flex items-center gap-2">
               <KeyRound className="h-3.5 w-3.5 text-cyan-500" aria-hidden="true" />
-              <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 {hasPassword ? t('store.changePasswordTitle') : t('store.setPasswordTitle')}
               </h2>
             </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-black/50 dark:text-white/50">
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-secondary)]">
               {t('store.setPasswordBody')}
             </p>
 
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.newPasswordLabel')}
                 </span>
                 <input
@@ -439,7 +499,7 @@ export default function Library() {
                 />
               </label>
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.confirmPasswordLabel')}
                 </span>
                 <input
@@ -484,7 +544,7 @@ export default function Library() {
           </form>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11px] leading-relaxed text-black/50 dark:text-white/50">
+            <p className="text-[11px] leading-relaxed text-[var(--text-secondary)]">
               {hasPassword ? t('store.passwordSetStatus') : t('store.setPasswordNudge')}
             </p>
             <button
@@ -512,7 +572,7 @@ export default function Library() {
         <div className="glass-panel mb-6 flex flex-col gap-3 rounded-xl p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/30 dark:text-white/30"
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
               aria-hidden="true"
             />
             <input
@@ -537,7 +597,7 @@ export default function Library() {
                 <option value="title">{t('store.sort.title')}</option>
               </select>
             </label>
-            <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {t('store.libraryResultCount', { count: visibleEntries.length })}
             </span>
           </div>
@@ -546,15 +606,15 @@ export default function Library() {
 
       {loading ? (
         <div className="glass-panel rounded-xl p-10 text-center" aria-busy="true">
-          <Loader2 className="mx-auto h-5 w-5 animate-spin text-black/30 dark:text-white/30" aria-hidden="true" />
-          <p className="mt-3 text-xs text-black/40 dark:text-white/40">{t('store.working')}</p>
+          <Loader2 className="mx-auto h-5 w-5 animate-spin text-[var(--text-tertiary)]" aria-hidden="true" />
+          <p className="mt-3 text-xs text-[var(--text-tertiary)]">{t('store.working')}</p>
         </div>
       ) : error ? (
         <div className="glass-panel rounded-xl p-10 text-center">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
             <AlertTriangle className="h-5 w-5" aria-hidden="true" />
           </div>
-          <p className="text-xs text-black/50 dark:text-white/50">{t('store.libraryError')}</p>
+          <p className="text-xs text-[var(--text-secondary)]">{t('store.libraryError')}</p>
           <button
             type="button"
             onClick={load}
@@ -568,10 +628,10 @@ export default function Library() {
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
             <LibraryIcon className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             {t('store.libraryEmpty')}
           </h2>
-          <p className="mt-1.5 text-xs text-black/50 dark:text-white/50">{t('store.libraryEmptyBody')}</p>
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)]">{t('store.libraryEmptyBody')}</p>
           <Link
             to="/offerings/products"
             className="mt-5 inline-block rounded-lg bg-black/90 px-4 py-2.5 text-[11px] uppercase tracking-widest text-white dark:bg-white/90 dark:text-black"
@@ -584,7 +644,7 @@ export default function Library() {
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
             <LibraryIcon className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             {t('store.libraryNoResults')}
           </h2>
           <button
@@ -615,17 +675,17 @@ export default function Library() {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <FileText className="h-9 w-9 text-black/20 dark:text-white/20" aria-hidden="true" />
+                    <FileText className="h-9 w-9 text-[var(--text-tertiary)]" aria-hidden="true" />
                   </div>
                 )}
               </div>
 
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="text-sm font-semibold text-black/80 dark:text-white/80">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                   {entry.product?.title || t('store.unavailable')}
                 </h3>
 
-                <p className="mt-1 text-[11px] text-black/45 dark:text-white/45">
+                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
                   {entry.source === 'free' ? t('store.free') : t('store.purchased')} ·{' '}
                   {t('store.purchasedOn', {
                     date: new Date(entry.granted_at).toLocaleDateString(),
@@ -634,7 +694,7 @@ export default function Library() {
                 </p>
 
                 {entry.product?.release_notes && (
-                  <p className="mt-2 line-clamp-3 text-[11px] leading-relaxed text-black/50 dark:text-white/50">
+                  <p className="mt-2 line-clamp-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
                     {entry.product.release_notes}
                   </p>
                 )}
@@ -667,6 +727,132 @@ export default function Library() {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {!loading && !error && licenses.length > 0 && (
+        <section className="mt-16">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+              {t('store.yourLicenses')}
+            </h2>
+            <p className="text-[10px] text-[var(--text-tertiary)]">
+              {t('store.licenseCount', { count: licenses.length })}
+            </p>
+          </div>
+          <p className="mb-4 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+            {t('store.licenseIntro')}
+          </p>
+
+          {licenseError && (
+            <p role="alert" className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500">
+              {licenseError}
+            </p>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {licenses.map((license) => {
+              const revealed = revealedLicenses.includes(license.id)
+              const statusTone =
+                license.status === 'active'
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : 'bg-amber-500/10 text-amber-500'
+              return (
+                <div key={license.id} className="glass-panel rounded-xl p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                        {license.product?.title || t('store.unavailable')}
+                      </h3>
+                      <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                        {license.license_ref} · {license.license_type || t('store.standardLicense')}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-widest ${statusTone}`}>
+                      {license.status}
+                    </span>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                        {t('store.licenseSeats')}
+                      </dt>
+                      <dd className="text-[var(--text-primary)]">{license.seats || 1}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                        {t('store.licenseIssued')}
+                      </dt>
+                      <dd className="text-[var(--text-primary)]">
+                        {license.issued_at
+                          ? new Date(license.issued_at).toLocaleDateString()
+                          : t('store.unavailable')}
+                      </dd>
+                    </div>
+                    <div className="col-span-2">
+                      <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                        {t('store.licenseKeyLabel')}
+                      </dt>
+                      <dd className="mt-1 flex flex-wrap items-center gap-2">
+                        <code className="min-w-0 flex-1 break-all rounded-lg bg-black/5 px-3 py-2 font-mono text-[11px] text-black/75 dark:bg-white/5 dark:text-white/75">
+                          {revealed ? license.license_key : maskedKey(license.license_key)}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => toggleLicenseKey(license.id)}
+                          aria-label={revealed ? t('store.hideKey') : t('store.showKey')}
+                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-black/10 px-2.5 text-[10px] uppercase tracking-widest text-black/50 transition-colors hover:text-black/80 dark:border-white/10 dark:text-white/50 dark:hover:text-white/80"
+                        >
+                          {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          {revealed ? t('store.hideKey') : t('store.showKey')}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!revealed}
+                          onClick={() => copyLicenseKey(license)}
+                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-black/10 px-2.5 text-[10px] uppercase tracking-widest text-black/50 transition-colors hover:text-black/80 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-white/50 dark:hover:text-white/80"
+                        >
+                          {copiedLicenseId === license.id ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                          {copiedLicenseId === license.id ? t('store.copied') : t('store.copyKey')}
+                        </button>
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {license.terms && (
+                    <p className="mt-3 border-t border-black/5 pt-3 text-[10px] leading-relaxed text-black/45 dark:border-white/5 dark:text-white/45">
+                      {license.terms}
+                    </p>
+                  )}
+
+                  {license.status !== 'active' && license.revocation_reason && (
+                    <p className="mt-2 text-[10px] leading-relaxed text-amber-500/80">
+                      {license.revocation_reason}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={documentBusyId === license.id}
+                    onClick={() => handleLicenseDocument(license)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black/90 px-4 py-2.5 text-[10px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                  >
+                    {documentBusyId === license.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    {t('store.downloadLicense')}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </section>
       )}
     </StoreShell>
   )

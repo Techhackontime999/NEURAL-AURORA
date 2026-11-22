@@ -37,9 +37,10 @@ async function postJson(url, body, headers = {}) {
  *                                    digits-only in international form so the
  *                                    admin can WhatsApp the sign-in link.
  * @param {number}  [options.quantity]
+ * @param {string}  [options.licenseCode]  Configured option chosen on the PDP.
  * @returns {Promise<{orderRef: string, response: object}>}
  */
-export async function startProductCheckout({ product, email, name = '', phone = '', quantity = 1 }) {
+export async function startProductCheckout({ product, email, name = '', phone = '', quantity = 1, licenseCode = '' }) {
   if (!product?.slug) throw new Error('Missing product.')
 
   // Normalising here as well as in the form means every caller sends the same
@@ -63,7 +64,7 @@ export async function startProductCheckout({ product, email, name = '', phone = 
     '/api/create-order',
     {
       order_type: 'product',
-      items: [{ slug: product.slug, quantity }],
+      items: [{ slug: product.slug, quantity, license_code: licenseCode }],
       email,
       name,
       phone: buyerPhone,

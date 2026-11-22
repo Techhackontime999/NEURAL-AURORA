@@ -25,6 +25,18 @@ const files = fs
   .filter((f) => f.endsWith('.sql'))
   .sort()
 
+// Two passes: a migration may create a table and define policies for it in the
+// same file, so every table must be known before ANY policy is validated.
+for (const file of files) {
+  const src = fs
+    .readFileSync(path.join(MIGRATION_DIR, file), 'utf8')
+    .replace(/--[^\n]*/g, '')
+    .replace(/\$\$[\s\S]*?\$\$/g, '$$ BODY $$')
+  for (const m of src.matchAll(/CREATE TABLE (?:IF NOT EXISTS\s+)?([a-z_]+)/gi)) {
+    knownTables.add(m[1].toLowerCase())
+  }
+}
+
 let failures = 0
 
 for (const file of files) {

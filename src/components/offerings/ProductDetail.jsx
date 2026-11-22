@@ -11,18 +11,27 @@ import {
   AlertTriangle,
   Tag,
   CalendarClock,
+  KeyRound,
+  Download,
+  Layers,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { sanitizeHtml } from '../../lib/utils'
 import {
   getProductBySlug,
   getRelatedProducts,
+  getProductsBySlugs,
+  getProductFileManifest,
   formatPrice,
+  formatBytes,
 } from '../../lib/products'
+import { getProductLicenseOptions } from '../../lib/licenses'
+import { getRecentlyViewed, rememberViewedProduct } from '../../lib/recommendations'
 import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
+import ProductPreview from './ProductPreview'
 import ImageLightbox from '../ui/ImageLightbox'
 import DocumentHead from '../ui/DocumentHead'
 import { SITE_NAME, SITE_ORIGIN, toAbsoluteUrl, toPlainText } from '../../lib/documentHead'
@@ -41,8 +50,11 @@ export default function ProductDetail() {
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [activeImage, setActiveImage] = useState(null)
   const [galleryIndex, setGalleryIndex] = useState(null)
+  const [licenseOptions, setLicenseOptions] = useState([])
+  const [selectedLicense, setSelectedLicense] = useState('')
+  const [fileManifest, setFileManifest] = useState([])
+  const [recentlyViewed, setRecentlyViewed] = useState([])
 
   // Purchase panel state.
   const [email, setEmail] = useState('')
@@ -65,6 +77,10 @@ export default function ProductDetail() {
       setGalleryIndex(null)
       setQuantity('1')
       setTermsAccepted(false)
+      setLicenseOptions([])
+      setSelectedLicense('')
+      setFileManifest([])
+      setRecentlyViewed([])
       try {
         const item = await getProductBySlug(slug)
         if (cancelled) return
@@ -76,16 +92,36 @@ export default function ProductDetail() {
         }
 
         setProduct(item)
-        const gallery = Array.isArray(item.gallery_urls) ? item.gallery_urls : []
-        setActiveImage(item.cover_image_url || gallery[0] || null)
+        rememberViewedProduct(slug)
 
-        getRelatedProducts(item, 3)
-          .then((items) => {
-            if (!cancelled) setRelated(items)
-          })
-          .catch(() => {
-            /* related products are non-critical */
-          })
+        // Supporting data is non-critical: a missing options or manifest table
+        // must never stop the product page from rendering.
+        Promise.allSettled([
+          getRelatedProducts(item, 3),
+          getProductLicenseOptions(item.id),
+          getProductFileManifest(item.id),
+        ]).then(([relatedResult, optionsResult, filesResult]) => {
+          if (cancelled) return
+          if (relatedResult.status === 'fulfilled') setRelated(relatedResult.value)
+          if (filesResult.status === 'fulfilled') setFileManifest(filesResult.value)
+          if (optionsResult.status === 'fulfilled') {
+            const options = optionsResult.value || []
+            setLicenseOptions(options)
+            const preferred = options.find((option) => option.is_default) || options[0]
+            setSelectedLicense(preferred?.code || '')
+          }
+        })
+
+        const recentSlugs = getRecentlyViewed().filter((value) => value !== slug).slice(0, 3)
+        if (recentSlugs.length) {
+          getProductsBySlugs(recentSlugs, 3)
+            .then((items) => {
+              if (!cancelled) setRecentlyViewed(items)
+            })
+            .catch(() => {
+              /* recently viewed is a nice-to-have */
+            })
+        }
       } catch (err) {
         if (!cancelled) {
           console.error('Failed to load product:', err?.message || err)
@@ -115,6 +151,7 @@ export default function ProductDetail() {
     : 0
 
   const handlePurchase = async () => {
+    if (busy) return
     setActionError(null)
     setActionNotice(null)
 
@@ -176,6 +213,7 @@ export default function ProductDetail() {
           name: (name || '').trim(),
           phone: buyerPhone,
           quantity: isFree ? 1 : requestedQuantity,
+          licenseCode: selectedLicense,
         })
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
@@ -225,10 +263,10 @@ export default function ProductDetail() {
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
             <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           </div>
-          <h1 className="text-sm font-semibold text-black/80 dark:text-white/80">
+          <h1 className="text-sm font-semibold text-[var(--text-primary)]">
             {t('store.productNotFound')}
           </h1>
-          <p className="mt-1.5 text-xs text-black/50 dark:text-white/50">
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)]">
             {t('store.productNotFoundBody')}
           </p>
           <Link
@@ -249,7 +287,7 @@ export default function ProductDetail() {
   const galleryImages = Array.from(
     new Set([product.cover_image_url, ...extraImages].filter(Boolean))
   )
-  const hasGallery = galleryImages.length > 1
+  const selectedLicenseOption = licenseOptions.find((option) => option.code === selectedLicense)
 
   const productUrl = `${SITE_ORIGIN}/offerings/products/${product.slug}`
   const productDescription = toPlainText(product.short_description || product.description)
@@ -283,91 +321,92 @@ export default function ProductDetail() {
         type="product"
         jsonLd={productJsonLd}
       />
-      <Link
-        to="/offerings/products"
-        className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 transition-colors mb-6"
+      <motion.header
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-8"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        {t('store.backToStore')}
-      </Link>
+        <Link
+          to="/offerings/products"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest text-[var(--text-tertiary)] hover:text-black/80 dark:hover:text-white/80 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {t('store.backToStore')}
+        </Link>
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+        <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest text-[var(--text-secondary)]">
+              {product.category_slug && (
+                <span>{product.category_slug.replace(/-/g, ' ')}</span>
+              )}
+              {product.category_slug && product.format && <span aria-hidden="true">/</span>}
+              {product.format && <span>{product.format}</span>}
+            </div>
+            <h1 className="mt-3 text-3xl font-display font-bold tracking-tight text-[var(--text-primary)] md:text-5xl">
+              {product.title}
+            </h1>
+            {product.short_description && (
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)] md:text-base">
+                {product.short_description}
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {product.version && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-[11px] text-black/50 dark:border-white/10 dark:text-white/50">
+                  <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t('store.version', { version: product.version })}
+                </span>
+              )}
+              {galleryImages.length > 1 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-[11px] text-black/50 dark:border-white/10 dark:text-white/50">
+                  <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t('store.imageCount', { count: galleryImages.length })}
+                </span>
+              )}
+              {product.featured && (
+                <span className="rounded-full bg-cyan-500/10 px-3 py-1.5 text-[11px] font-medium text-cyan-500">
+                  {t('store.featured')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
+            <span className="text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
+              {isFree ? t('store.free') : formatPrice(product.price_paise, product.currency)}
+            </span>
+            <a
+              href="#purchase-panel"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-black/90 px-5 py-2.5 text-[11px] uppercase tracking-widest text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 dark:bg-white/90 dark:text-black lg:hidden"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {isFree ? t('store.freeDownload') : t('store.buyNow', { price: formatPrice(product.price_paise, product.currency) })}
+            </a>
+          </div>
+        </div>
+      </motion.header>
+
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10 items-start">
         {/* --- Left: media + long-form copy ---------------------------- */}
-        <div>
+        <div className="min-w-0">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-panel rounded-xl overflow-hidden"
           >
-            <div className="aspect-[16/10] bg-black/5 dark:bg-white/5">
-              {activeImage ? (
-                <button
-                  type="button"
-                  disabled={!hasGallery}
-                  onClick={
-                    hasGallery
-                      ? () =>
-                          setGalleryIndex(
-                            Math.max(0, galleryImages.indexOf(activeImage))
-                          )
-                      : undefined
-                  }
-                  aria-label={
-                    hasGallery ? `${product.title} — open image gallery` : undefined
-                  }
-                  className={`relative block h-full w-full ${
-                    hasGallery ? 'cursor-zoom-in' : 'cursor-default'
-                  }`}
-                >
-                  <img
-                    src={activeImage}
-                    alt={product.title}
-                    className="w-full h-full object-cover"
-                    decoding="async"
-                  />
-                  {hasGallery && (
-                    <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
-                      {t('store.imageCount', { count: galleryImages.length })}
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <FileText
-                    className="w-12 h-12 text-black/20 dark:text-white/20"
-                    aria-hidden="true"
-                  />
-                </div>
-              )}
-            </div>
-
-            {galleryImages.length > 1 && (
-              <div className="flex gap-2 p-3 overflow-x-auto">
-                {galleryImages.map((url, i) => (
-                  <button
-                    key={`${url}-${i}`}
-                    type="button"
-                    onClick={() => setActiveImage(url)}
-                    aria-label={t('store.previewImage', { index: i + 1 })}
-                    aria-current={activeImage === url}
-                    className={`h-14 w-20 shrink-0 overflow-hidden rounded-md border transition-colors ${
-                      activeImage === url
-                        ? 'border-cyan-500/60'
-                        : 'border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30'
-                    }`}
-                  >
-                    <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <ProductPreview
+              product={product}
+              images={galleryImages}
+              onOpen={(index) => index !== null && setGalleryIndex(index)}
+            />
           </motion.div>
 
           <div className="mt-8 space-y-8">
             <Section title={t('store.description')}>
               <div
-                className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed text-black/60 dark:text-white/60 [&_p]:my-2"
+                className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed text-[var(--text-secondary)] [&_p]:my-2"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description || '') }}
               />
             </Section>
@@ -378,7 +417,7 @@ export default function ProductDetail() {
                   {listOf(product.includes).map((entry, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-xs text-black/60 dark:text-white/60"
+                      className="flex items-start gap-2 text-xs text-[var(--text-secondary)]"
                     >
                       <Check className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" aria-hidden="true" />
                       <span>{entry}</span>
@@ -388,13 +427,43 @@ export default function ProductDetail() {
               </Section>
             )}
 
+            {fileManifest.length > 0 && (
+              <Section title={t('store.whatYouReceive')}>
+                <ul className="divide-y divide-black/5 rounded-lg border border-black/5 dark:divide-white/5 dark:border-white/5">
+                  {fileManifest.map((file) => (
+                    <li
+                      key={file.id}
+                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2.5"
+                    >
+                      <span className="flex min-w-0 items-center gap-2 text-xs text-[var(--text-primary)]">
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-cyan-500" aria-hidden="true" />
+                        <span className="truncate">{file.filename}</span>
+                        {file.is_preview && (
+                          <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-[9px] uppercase tracking-widest text-black/45 dark:bg-white/5 dark:text-white/45">
+                            {t('store.previewOnly')}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 text-[10px] text-[var(--text-tertiary)]">
+                        {file.version && <span>{file.version}</span>}
+                        {file.size_bytes != null && <span>{formatBytes(file.size_bytes)}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+                  {t('store.downloadNote')}
+                </p>
+              </Section>
+            )}
+
             {listOf(product.requirements).length > 0 && (
               <Section title={t('store.requirements')}>
                 <ul className="space-y-2">
                   {listOf(product.requirements).map((entry, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-xs text-black/60 dark:text-white/60"
+                      className="flex items-start gap-2 text-xs text-[var(--text-secondary)]"
                     >
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-black/30 dark:bg-white/30" aria-hidden="true" />
                       <span>{entry}</span>
@@ -430,46 +499,36 @@ export default function ProductDetail() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          id="purchase-panel"
           className="glass-panel rounded-xl p-5 lg:sticky lg:top-28"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              {product.category_slug && (
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
-                  {product.category_slug.replace(/-/g, ' ')}
-                </span>
-              )}
-              <h1 className="mt-1 text-lg font-display font-bold tracking-tight text-black/85 dark:text-white/90">
-                {product.title}
-              </h1>
-              {product.format && (
-                <p className="mt-1 text-[11px] text-black/45 dark:text-white/45">{product.format}</p>
-              )}
+              <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                {t('store.purchasePanelTitle')}
+              </span>
+              <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                {product.format || t('store.digitalProduct')}
+              </p>
             </div>
           </div>
 
           <div className="mt-4 flex items-baseline gap-2">
             <span
               className={`text-2xl font-semibold ${
-                isFree ? 'text-emerald-500' : 'text-black/85 dark:text-white/90'
+                isFree ? 'text-emerald-500' : 'text-[var(--text-primary)]'
               }`}
             >
               {isFree ? t('store.free') : formatPrice(product.price_paise, product.currency)}
             </span>
             {product.compare_at_paise > product.price_paise && !isFree && (
-              <span className="text-xs text-black/35 dark:text-white/30 line-through">
+              <span className="text-xs text-[var(--text-tertiary)] line-through">
                 {formatPrice(product.compare_at_paise, product.currency)}
               </span>
             )}
           </div>
 
-          {product.short_description && (
-            <p className="mt-3 text-xs text-black/55 dark:text-white/55 leading-relaxed">
-              {product.short_description}
-            </p>
-          )}
-
-          <div className="mt-4 space-y-2 text-[11px] text-black/45 dark:text-white/45">
+          <div className="mt-3 space-y-2 text-[11px] text-[var(--text-secondary)]">
             {product.version && (
               <span className="flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5" aria-hidden="true" />
@@ -493,8 +552,53 @@ export default function ProductDetail() {
               handlePurchase()
             }}
           >
+            {!isFree && licenseOptions.length > 0 && (
+              <fieldset className="rounded-lg border border-black/10 dark:border-white/10 px-3 py-3">
+                <legend className="px-1 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                  {t('store.chooseLicense')}
+                </legend>
+                <div className="space-y-2">
+                  {licenseOptions.map((option) => (
+                    <label
+                      key={option.id || option.code}
+                      className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1 py-0.5"
+                    >
+                      <input
+                        type="radio"
+                        name="license-option"
+                        value={option.code}
+                        checked={selectedLicense === option.code}
+                        onChange={() => setSelectedLicense(option.code)}
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-cyan-500"
+                      />
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-[var(--text-primary)]">
+                          {option.label || option.code}
+                          {option.is_default && (
+                            <span className="text-[9px] uppercase tracking-widest text-cyan-500">
+                              {t('store.defaultLicense')}
+                            </span>
+                          )}
+                        </span>
+                        {option.summary && (
+                          <span className="mt-0.5 block text-[10px] leading-relaxed text-[var(--text-secondary)]">
+                            {option.summary}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {selectedLicenseOption?.terms && (
+                  <p className="mt-2 border-t border-black/5 pt-2 text-[10px] leading-relaxed text-[var(--text-secondary)]">
+                    {selectedLicenseOption.terms}
+                  </p>
+                )}
+              </fieldset>
+            )}
+
             <label className="block">
-              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+              <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                 {t('store.emailLabel')}
               </span>
               <input
@@ -504,13 +608,13 @@ export default function ProductDetail() {
                 placeholder={user?.email || t('store.emailPlaceholder')}
                 autoComplete="email"
                 required
-                className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
               />
             </label>
 
             {!isFree && (
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.nameLabel')}
                 </span>
                 <input
@@ -519,14 +623,14 @@ export default function ProductDetail() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('store.namePlaceholder')}
                   autoComplete="name"
-                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                 />
               </label>
             )}
 
             {!isFree && (
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.phoneLabel')}
                 </span>
                 <input
@@ -538,11 +642,11 @@ export default function ProductDetail() {
                   autoComplete="tel"
                   required
                   aria-describedby="store-phone-note"
-                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                 />
                 <span
                   id="store-phone-note"
-                  className="mt-1 block text-[10px] leading-relaxed text-black/35 dark:text-white/35"
+                  className="mt-1 block text-[10px] leading-relaxed text-[var(--text-tertiary)]"
                 >
                   {t('store.phoneNote')}
                 </span>
@@ -551,7 +655,7 @@ export default function ProductDetail() {
 
             {!isFree && (
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.quantityLabel')}
                 </span>
                 <input
@@ -562,16 +666,16 @@ export default function ProductDetail() {
                   required
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-black/80 dark:text-white/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                  className="mt-1 w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                 />
-                <span className="mt-1 block text-[10px] leading-relaxed text-black/35 dark:text-white/35">
+                <span className="mt-1 block text-[10px] leading-relaxed text-[var(--text-tertiary)]">
                   {t('store.quantityNote', { max: PRODUCT_MAX_QUANTITY })}
                 </span>
               </label>
             )}
 
             {!isFree && (
-              <label className="flex items-start gap-2 text-[10px] leading-relaxed text-black/45 dark:text-white/45">
+              <label className="flex items-start gap-2 text-[10px] leading-relaxed text-[var(--text-secondary)]">
                 <input
                   type="checkbox"
                   required
@@ -585,14 +689,14 @@ export default function ProductDetail() {
 
             {!isFree && (
               <div className="rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5">
-                <div className="flex items-baseline justify-between gap-3 text-[11px] text-black/55 dark:text-white/55">
+                <div className="flex items-baseline justify-between gap-3 text-[11px] text-[var(--text-secondary)]">
                   <span className="truncate">{t('store.summaryTitle')}</span>
                   <span className="shrink-0">
                     {formatPrice(product.price_paise, product.currency)} × {displayQuantity}
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 dark:border-white/5 pt-2">
-                  <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                     {t('store.total')}
                   </span>
                   <span className="text-sm font-semibold text-black/80 dark:text-white/85">
@@ -649,9 +753,22 @@ export default function ProductDetail() {
         </motion.aside>
       </div>
 
+      {recentlyViewed.length > 0 && (
+        <section className="mt-16">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+            {t('store.recentlyViewed')}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recentlyViewed.map((item, i) => (
+              <ProductCard key={item.id} product={item} index={i} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {related.length > 0 && (
         <section className="mt-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-black/50 dark:text-white/50 mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
             {t('store.relatedProducts')}
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -681,7 +798,7 @@ export default function ProductDetail() {
 function Section({ title, children }) {
   return (
     <section>
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-black/50 dark:text-white/50 mb-3">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)] mb-3">
         {title}
       </h2>
       {children}
@@ -693,10 +810,10 @@ function Term({ label, value }) {
   if (!value) return null
   return (
     <div>
-      <dt className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+      <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
         {label}
       </dt>
-      <dd className="mt-0.5 text-xs text-black/60 dark:text-white/60 leading-relaxed">{value}</dd>
+      <dd className="mt-0.5 text-xs text-[var(--text-secondary)] leading-relaxed">{value}</dd>
     </div>
   )
 }
@@ -709,7 +826,7 @@ function FaqItem({ question, answer }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-xs text-black/70 dark:text-white/70"
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-xs text-[var(--text-primary)]"
       >
         <span>{question}</span>
         <ChevronDown
@@ -726,7 +843,7 @@ function FaqItem({ question, answer }) {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <p className="px-3 pb-3 text-[11px] leading-relaxed text-black/55 dark:text-white/55">
+            <p className="px-3 pb-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
               {answer}
             </p>
           </motion.div>

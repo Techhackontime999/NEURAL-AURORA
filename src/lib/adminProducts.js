@@ -160,6 +160,69 @@ export async function deleteCategory(id) {
   if (error) throw error
 }
 
+// --- product license options ------------------------------------------------
+
+/** Admin view of the options configured for a product, including drafts. */
+export async function getLicenseOptions(productId) {
+  const { data, error } = await supabase
+    .from('product_license_options')
+    .select('id, product_id, code, label, summary, terms, display_order, is_default')
+    .eq('product_id', productId)
+    .order('display_order', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function createLicenseOption(payload) {
+  const { data, error } = await supabase
+    .from('product_license_options')
+    .insert(normaliseLicenseOption(payload))
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateLicenseOption(id, payload) {
+  const { error } = await supabase
+    .from('product_license_options')
+    .update(normaliseLicenseOption(payload))
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function deleteLicenseOption(id) {
+  const { error } = await supabase.from('product_license_options').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Never let an admin form write a column that does not exist on the table. */
+export function normaliseLicenseOption(payload = {}) {
+  const allowed = [
+    'product_id',
+    'code',
+    'label',
+    'summary',
+    'terms',
+    'display_order',
+    'is_default',
+  ]
+  const out = {}
+  for (const key of allowed) {
+    if (payload[key] !== undefined) out[key] = payload[key]
+  }
+  if (out.code !== undefined) out.code = String(out.code).trim().toLowerCase()
+  if (out.display_order !== undefined) {
+    const order = Number(out.display_order)
+    out.display_order = Number.isFinite(order) ? Math.trunc(order) : 0
+  }
+  if (out.is_default !== undefined) out.is_default = Boolean(out.is_default)
+  return out
+}
+
 // --- product files (private bucket) ----------------------------------------
 
 export async function getProductFiles(productId) {

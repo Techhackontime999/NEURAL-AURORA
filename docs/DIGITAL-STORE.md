@@ -5,12 +5,13 @@ navigation, theme toggle and localisation all keep working unchanged.
 
 | Route | Purpose |
 | --- | --- |
-| `/offerings/products` | Storefront: search, category/format filters, sort, free-only |
-| `/offerings/products/:slug` | Product page: media, description, licence, FAQs, purchase panel |
-| `/library` | The signed-in customer's purchases and downloads |
+| `/offerings/products` | Storefront: search, category/format/featured/free filters, sort; filter state is URL-synced |
+| `/offerings/products/:slug` | Product page: validated preview, public file manifest, description, licence options, FAQs, purchase panel |
+| `/library` | The signed-in customer's purchases, masked licence keys, licence documents and downloads |
 | `/purchase/success?ref=NA-…` | Order status (polls the server; never trusts the redirect) |
 | `/checkout/:orderId` | Alias that redirects to the status screen above |
 | `/admin/products` | Admin: create/edit/publish/archive products, upload paid files |
+| `/admin/licences` | Admin: configure product licence options; suspend/revoke/reinstate/reissue licences |
 | `/admin/orders` | Admin: orders, revenue summary, entitlements and revocation |
 
 ---
@@ -28,7 +29,13 @@ before changing anything in `api/` or the migrations.
   degrades to static prices when the database is unreachable), the product
   branch refuses to create an order with a `503`. There is no client-side price
   fallback and `openCheckoutModal` in `src/lib/razorpay.js` throws if it is
-  handed no verified order id.
+  handed no verified order id. If `product_license_options` cannot be read,
+  checkout also returns `503` rather than guessing which licence to sell.
+- **The browser may name a licence option, but may not define one.** Only
+  configured `product_license_options` codes are accepted. An unknown or
+  malformed code is a `400`, never a silent downgrade to the default, and
+  option terms/prices are never taken from the request. Licence options carry
+  no price delta; the product price remains authoritative.
 - **Only published products are publicly visible or purchasable.** Enforced
   twice: RLS on `products`, and an explicit `status !== 'published'` check in
   the pricing module.
@@ -44,6 +51,21 @@ before changing anything in `api/` or the migrations.
   `/api/admin-reconcile-order` — and only when the paid amount matches the total
   the server priced. `/api/download` separately self-grants a free product to a
   verified account.
+- **A licence is not an entitlement and not a receipt.** The entitlement answers
+  "may this customer download?"; the licence answers "what may they do with it?".
+  Licences are issued only after verified payment and an active entitlement, one
+  per purchased order item, with `seats = quantity`. The selected option and its
+  type are snapshotted on the order item so later edits cannot change what was
+  bought.
+- **Licence keys are owner-only.** The raw key is stored so its owner can show
+  and copy it in `/library`; a SHA-256 `key_hash` supports indexed verification.
+  Keys are never logged or returned by verification. `/api/license-document`
+  rechecks ownership server-side and returns `404` for missing/foreign ids.
+- **Public file metadata is allowlisted.** The catalogue reads
+  `public_product_file_manifest`, a fixed view that exposes filename, MIME type,
+  size, version, order and preview flag for published products only — never
+  `storage_path`, bucket or credentials. Actual files still require
+  `/api/download` and an entitlement.
 - **Paid files live in the private `digital-products` bucket.** There is no
   `anon` or public read policy, and `product_files` has no public `SELECT`, so a
   storage path can never reach the catalogue. Delivery is a short-lived signed
@@ -75,11 +97,14 @@ Replayed or duplicated webhook deliveries cannot double-grant:
 | `payments.razorpay_payment_id` unique | legacy table, unchanged |
 | `payment_transactions.payment_id` unique | new |
 | `entitlements (product_id, order_item_id)` unique partial index | new |
+| `licenses.order_item_id` unique | licensing migration |
 | order update guarded by `.neq('payment_status', 'paid')` | `api/razorpay-webhook.js` |
 
 If fulfilment fails after a payment is recorded, the handler returns a non-2xx
 so Razorpay retries. On the retry the payment insert hits the duplicate branch
-and **falls through to fulfil again** — that retry is the recovery path.
+and **falls through to fulfil again** — that retry is the recovery path. The same
+replay also recovers a missing licence: `licenses.order_item_id` is unique, so a
+second key cannot be issued if the licence was already created.
 
 A payment whose amount or currency does not match what the server priced is
 **never** auto-fulfilled. The order is left `pending` and an explicit
@@ -122,7 +147,9 @@ error instead of issuing an order.
 
 ```bash
 npm run check              # route ranking + i18n keys + SQL structural lint
-npm run test               # server pricing tests + API endpoint guards
+npm run test               # pricing, API guards, store UX, product query, head, admin and licensing tests
+npm run test:licensing     # licence options/keys/verification + preview + recommendation guards
+npm run test:store-ux      # storefront URL filters, manifest, preview and licence UI guards
 npm run build              # production build
 ```
 
@@ -148,12 +175,21 @@ supabase/migrations/20261018000005_digital_products_owner_read.sql
 supabase/migrations/20261018000006_digital_products_updated_at.sql
 supabase/migrations/20261018000007_harden_email_claim_policies.sql
 supabase/migrations/20261018000008_add_customer_phone.sql
+supabase/migrations/20261122000000_create_product_licenses.sql
 ```
 
 `…00008` is additive (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) and safe to
 re-run. A checkout does **not** depend on it: the phone number is an optional
 contact detail, so orders still sell if it has not been applied yet — only the
 WhatsApp shortcut in the admin panel stays empty.
+
+`…20261122000000` is also additive: products without configured licence options
+keep selling and downloading exactly as before. It must be applied before
+licence options are used: `/api/create-order` deliberately returns `503` if
+`product_license_options` cannot be read, so a missing migration is visible as a
+store outage rather than an incorrectly licensed sale. If only the two
+`order_items` licence columns are missing, checkout still completes without
+issuing a licence, which keeps legacy deployments sellable.
 
 `supabase-schema.sql` is the canonical schema and already contains all of the
 above, so a fresh project can be created from it in one paste instead.
@@ -235,7 +271,82 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
 
 ---
 
-## 5. Testing the flow
+## 5. Product licences
+
+A licence is a separate first-party record, not a receipt and not a download
+grant. The entitlement still controls access to files; the licence records what
+the buyer is allowed to do with them.
+
+### Configuration
+
+Admin → **Licences** (`/admin/licences`) manages per-product options. Each option
+has a stable lowercase `code`, label, summary, terms, display order and an
+optional default flag; only one option per product can be default (partial unique
+index). Codes are identifiers, not prices or permissions defined by the browser.
+
+On the product page, configured options appear as a radio group in the purchase
+panel. The browser submits only `license_code` alongside the product slug and
+quantity. `/api/create-order` reads the options from the database, resolves the
+code, snapshots `license_option_id` and `license_type_snapshot` onto the order
+item, and keeps the price unchanged. There are **no licence price deltas**.
+
+Licence options do not modify existing products. A product with no options keeps
+the existing download-only behaviour and issues no licence. Option CRUD is gated
+by RLS (`is_admin()`); issued-licence status changes go through the audited admin
+endpoint below.
+
+### Issuance and ownership
+
+`api/_lib/fulfilment.js` issues a licence only after the payment is proven and
+the same order item has an active entitlement. One licence is created per paid
+item; `seats` equals the purchased quantity. A generated key is stored for owner
+display plus a SHA-256 hash for indexed verification; keys are never logged.
+
+Replayed webhooks cannot issue a second licence because `licenses.order_item_id`
+is unique. If the first fulfilment created the entitlement but failed before the
+licence, the retry fills the gap.
+
+Signed-in owners see their licences in `/library` with masked keys, reveal/copy
+controls, status/seats/expiry and a downloadable server-generated document. A
+non-owner cannot enumerate ids: `/api/license-document` returns the same `404`
+for a missing id and someone else's licence.
+
+### Endpoints
+
+| Endpoint | Auth | Purpose |
+| --- | --- | --- |
+| `GET /api/license-document?id=<numeric-id>` | Bearer session token | Generate a printable HTML document from the stored licence row; ownership checked server-side, `Cache-Control: no-store` |
+| `POST /api/license-verify` | None, rate-limited by hashed caller | Check whether a key is active for a product slug; looks up `key_hash`, returns only validity/status/type/expiry and never PII or the key |
+| `GET /api/admin-license?search=&status=` | Admin bearer token | List licences with product/order data and recent events |
+| `POST /api/admin-license` | Admin bearer token | `suspend`, `revoke`, `reinstate` or `reissue`; writes `license_events` with actor and reason |
+
+`revoke` and `suspend` require a reason. `reissue` rotates the key and hash and
+records an audit event. Administrative reads/writes are gated by the shared
+`api/_lib/adminAuth.js`; browser state cannot claim an admin role.
+
+`POST /api/license-verify` validates input shape before lookup and records only a
+hashed caller address, product slug and success boolean in
+`license_verification_attempts` (20 attempts per 60 seconds per hashed caller).
+It is a narrow status check, not a signed-token evaluator or a licensing secret
+exchange.
+
+### Storefront discovery and previews
+
+Catalogue filter state is stored in the URL (`q`, `category`, `format`, `free`,
+`featured`, `sort`), so browser back/forward and shared links restore the same
+view. Product detail has one `h1`, a dedicated `#purchase-panel`, deterministic
+related/recently viewed products and a public file manifest from
+`public_product_file_manifest`.
+
+Preview URLs are validated by `src/lib/previewMedia.js`: only `http(s)` image or
+PDF URLs are rendered. `ProductPreview.jsx` provides fullscreen, thumbnails,
+PDF fallback and keyboard navigation scoped to the preview region. Unknown
+product slugs use the real 404 route; no invented catalogue is displayed.
+No ratings, review counts, popularity or sales counts are fabricated.
+
+---
+
+## 6. Testing the flow
 
 **Free product**
 
@@ -261,6 +372,21 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
    number on the order, WhatsApp opens that buyer's chat with the link already
    typed; the panel says which number it will use.
 
+**Licensed product**
+
+1. Admin → **Licences** → choose the product → add at least one option with a
+   lowercase code (for example `personal`) and mark it default.
+2. Open the product page and confirm the option appears in the purchase panel.
+   Select a non-default option, set quantity to 2 and complete a test payment.
+3. `/library` shows one licence for that item with `seats = 2`, a masked key and
+   a document download. Reveal/copy the key, then POST it to
+   `/api/license-verify` with the product slug: expect `valid: true`.
+4. In `/admin/licences`, suspend the licence with a reason and confirm
+   verification reports `valid: false`; reinstate it and confirm it becomes
+   active again. Each action appears in the event list with its actor.
+5. Resend the captured webhook from Razorpay. No duplicate licence or key should
+   appear; the event history should remain unchanged.
+
 **What to check when it does not work**
 
 - The purchase button shows *Digital store is unavailable right now* →
@@ -281,6 +407,22 @@ left without access. `/api/admin-reconcile-order` is the recovery path:
   the variable and reports every related flag as `true`/`false` — values are
   never logged. A `400`/`404` here means the configuration is fine and the
   problem is elsewhere.
+- Checkout returns `Could not verify the license options for this order` →
+  `product_license_options` is missing or unreadable. Apply
+  `20261122000000_create_product_licenses.sql`. This is intentionally a `503`,
+  not a silent fallback, so the store cannot sell an undefined licence.
+- Checkout rejects `Invalid license option code` / `Unknown license option`
+  → the browser sent a malformed or unconfigured code. Confirm the option
+  exists for that product and its code uses lowercase letters, digits and
+  single hyphens. Do not add a price delta to work around it.
+- `Payment confirmed` but `/library` shows no licence → the product had no
+  configured option at purchase time, or the licensing migration was applied
+  only to the `order_items` columns. Check the order item's snapshot columns;
+  do not fabricate a licence from the client.
+- `/api/license-verify` returns `429` → the 20-attempt/60-second hashed-caller
+  limit was hit. Wait and retry; no key material is logged.
+- `/api/license-document` returns `404` → the id is missing or belongs to
+  another account. Both cases intentionally return the same response.
 - `Payment confirmed` never appears → the webhook is not reaching the
   deployment, or the secret does not match. Check the function logs.
 - **An order shows no phone number** → it was placed before migration `…00008`
@@ -462,15 +604,25 @@ password), and the admin "Sign-in link" covers even that without the mailer.
 
 ---
 
-## 6. Production checklist
+## 7. Production checklist
 
-- [ ] All nine migrations applied.
+- [ ] All ten digital-store migrations applied, including
+      `20261122000000_create_product_licenses.sql`.
 - [ ] `digital-products` bucket exists and is **private**.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
       `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo) —
       for the **Production** environment, and for Preview too if you test there.
       The store fails closed with a `503` without the service-role key.
 - [ ] Razorpay webhook created, secret matches, events subscribed.
+- [ ] Licence options configured in `/admin/licences` for products that need
+      them; each has a unique lowercase code and an explicit default where
+      appropriate. Checkout with an unknown code fails instead of defaulting.
+- [ ] A staged paid purchase confirmed: one licence issued per item, `seats`
+      matches quantity, owner sees it in `/library`, document download works,
+      and a replayed webhook issues no duplicate key.
+- [ ] Authorisation probes confirmed: non-owner gets `404` from
+      `/api/license-document`, non-admin gets `403` from `/api/admin-license`,
+      and blind/invalid keys return `valid: false` from `/api/license-verify`.
 - [ ] **Supabase → Authentication → URL Configuration** points at the deployed
       site: `Site URL` = the production origin, and `Redirect URLs` includes
       `https://<domain>/**` (plus `http://localhost:5173/**` for local work).
@@ -506,3 +658,9 @@ password), and the admin "Sign-in link" covers even that without the mailer.
 - The storefront fetches the published catalogue once (capped at 200 rows) and
   filters in the browser. That keeps search-as-you-type instant; switch to
   server-side paging if the catalogue grows beyond that.
+- Licence verification is a narrow status lookup, not a signed entitlement
+  token. It deliberately returns no customer or order data; a product that needs
+  offline cryptographic licensing needs a separate design.
+- Licence options have no price deltas in this release. Adding paid tiers would
+  require server-side price resolution and explicit tests; the browser must not
+  be allowed to attach prices to options.

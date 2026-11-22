@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2 } from 'lucide-react'
 import {
   getPublishedProducts,
@@ -30,6 +31,59 @@ const PAGE_SIZE = PRODUCT_PAGE_SIZE
 // Typing is debounced so a search does not fire a request per keystroke.
 const SEARCH_DEBOUNCE_MS = 300
 
+// Filters live in the URL so a filtered catalogue can be linked, bookmarked and
+// restored with the browser's back button. Unknown values are dropped rather
+// than passed into a query.
+const URL_KEYS = {
+  search: 'q',
+  category: 'category',
+  format: 'format',
+  freeOnly: 'free',
+  featured: 'featured',
+  sort: 'sort',
+}
+
+function safeToken(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 80)
+}
+
+function filtersFromParams(params) {
+  const sort = safeToken(params.get(URL_KEYS.sort))
+  return {
+    search: safeToken(params.get(URL_KEYS.search)),
+    category: safeToken(params.get(URL_KEYS.category)),
+    format: safeToken(params.get(URL_KEYS.format)),
+    freeOnly: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.freeOnly))),
+    featured: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.featured))),
+    sort: Object.hasOwn(PRODUCT_SORTS, sort) ? sort : EMPTY_FILTERS.sort,
+  }
+}
+
+function paramsFromFilters(filters) {
+  const params = new URLSearchParams()
+  if (filters.search) params.set(URL_KEYS.search, filters.search)
+  if (filters.category) params.set(URL_KEYS.category, filters.category)
+  if (filters.format) params.set(URL_KEYS.format, filters.format)
+  if (filters.freeOnly) params.set(URL_KEYS.freeOnly, '1')
+  if (filters.featured) params.set(URL_KEYS.featured, '1')
+  if (filters.sort !== EMPTY_FILTERS.sort) params.set(URL_KEYS.sort, filters.sort)
+  return params
+}
+
+function sameFilters(a, b) {
+  return (
+    a.search === b.search &&
+    a.category === b.category &&
+    a.format === b.format &&
+    a.freeOnly === b.freeOnly &&
+    a.featured === b.featured &&
+    a.sort === b.sort
+  )
+}
+
 /**
  * The digital-product storefront.
  *
@@ -40,14 +94,17 @@ const SEARCH_DEBOUNCE_MS = 300
  */
 export default function Products() {
   const { t } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialFilters = filtersFromParams(searchParams)
 
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [formats, setFormats] = useState([])
+  const [featuredProducts, setFeaturedProducts] = useState([])
 
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [filters, setFilters] = useState(initialFilters)
   // The raw input value, which lags behind `filters.search` by the debounce.
-  const [searchInput, setSearchInput] = useState('')
+  const [searchInput, setSearchInput] = useState(initialFilters.search)
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -83,6 +140,23 @@ export default function Products() {
     }
   }, [reloadToken])
 
+  // --- curated rail ----------------------------------------------------------
+  // A small, honest featured shelf. It uses the same published-product query as
+  // the catalogue and disappears as soon as the customer applies a filter.
+  useEffect(() => {
+    let cancelled = false
+    getPublishedProducts({ featuredOnly: true, sort: 'featured', limit: 4 })
+      .then((items) => {
+        if (!cancelled) setFeaturedProducts(items)
+      })
+      .catch(() => {
+        /* the rail is a nicety; the catalogue below still works */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadToken])
+
   // --- debounce the free-text search ----------------------------------------
   useEffect(() => {
     if (searchInput === filters.search) return undefined
@@ -93,6 +167,25 @@ export default function Products() {
 
     return () => clearTimeout(timer)
   }, [searchInput, filters.search])
+
+  // --- URL synchronisation ---------------------------------------------------
+  // Filters are written with `replace` so typing a search does not stuff the
+  // history stack; back/forward still restores any committed filter state.
+  useEffect(() => {
+    setSearchParams(
+      (current) => {
+        const next = paramsFromFilters(filters)
+        return next.toString() === current.toString() ? current : next
+      },
+      { replace: true }
+    )
+  }, [filters, setSearchParams])
+
+  useEffect(() => {
+    const fromUrl = filtersFromParams(searchParams)
+    setFilters((current) => (sameFilters(current, fromUrl) ? current : fromUrl))
+    setSearchInput(fromUrl.search)
+  }, [searchParams])
 
   // --- catalogue -------------------------------------------------------------
   const updateProducts = (next) => {
@@ -188,6 +281,30 @@ export default function Products() {
       title={t('store.title')}
       subtitle={t('store.subtitle')}
     >
+      {!hasActiveFilters && featuredProducts.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-8"
+          aria-label={t('store.featuredRail')}
+        >
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+              {t('store.featuredRail')}
+            </h2>
+            <span className="text-[10px] text-[var(--text-tertiary)]">
+              {t('store.featuredRailNote')}
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
       {/* --- Filter bar ---------------------------------------------------- */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -199,7 +316,7 @@ export default function Products() {
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 dark:text-white/30"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]"
               aria-hidden="true"
             />
             <input
@@ -208,7 +325,7 @@ export default function Products() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t('store.searchPlaceholder')}
               aria-label={t('store.searchPlaceholder')}
-              className="w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 pl-9 pr-3 py-2.5 text-sm text-black/80 dark:text-white/80 placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+              className="w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
             />
           </div>
 
@@ -219,7 +336,7 @@ export default function Products() {
                 value={filters.sort}
                 onChange={(e) => set({ sort: e.target.value })}
                 aria-label={t('store.sortLabel')}
-                className="rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-xs text-black/70 dark:text-white/70 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                className="rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
               >
                 {Object.keys(PRODUCT_SORTS).map((key) => (
                   <option key={key} value={key}>
@@ -229,7 +346,7 @@ export default function Products() {
               </select>
             </label>
 
-            <label className="flex items-center gap-2 text-xs text-black/60 dark:text-white/60 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={filters.freeOnly}
@@ -244,7 +361,7 @@ export default function Products() {
         {categories.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-4">
             <span
-              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 mr-1"
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)] mr-1"
               aria-hidden="true"
             >
               <SlidersHorizontal className="w-3 h-3" />
@@ -296,7 +413,7 @@ export default function Products() {
 
         {hasActiveFilters && !loading && (
           <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {refreshing && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
               {t('store.resultCount', { count: products.length })}
             </span>
@@ -314,7 +431,7 @@ export default function Products() {
 
       {/* The query is capped; never imply the user saw the whole catalogue. */}
       {products.length === LIST_CAP && !loading && (
-        <p className="mb-4 text-[11px] text-black/45 dark:text-white/45">
+        <p className="mb-4 text-[11px] text-[var(--text-secondary)]">
           {t('store.resultCountCapped', { count: LIST_CAP })}
         </p>
       )}
@@ -388,7 +505,7 @@ export default function Products() {
       {!loading && !error && products.length > 0 && (
         <div className="mt-8 flex flex-col items-center gap-3">
           {!hasActiveFilters && (
-            <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {t('store.loadedCount', { count: products.length })}
             </span>
           )}
@@ -398,7 +515,7 @@ export default function Products() {
               type="button"
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-5 py-2.5 text-[11px] uppercase tracking-widest text-black/60 dark:text-white/60 transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-5 py-2.5 text-[11px] uppercase tracking-widest text-[var(--text-secondary)] transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
               {loadingMore ? t('store.loadingMore') : t('store.loadMore')}
@@ -425,7 +542,7 @@ function CategoryChip({ active, onClick, label }) {
       className={`rounded-full border px-3 py-1.5 text-[11px] tracking-wide transition-colors ${
         active
           ? 'border-cyan-500/60 bg-cyan-500/10 text-cyan-500'
-          : 'border-black/10 dark:border-white/10 text-black/50 dark:text-white/50 hover:text-black/80 dark:hover:text-white/80'
+          : 'border-black/10 dark:border-white/10 text-[var(--text-secondary)] hover:text-black/80 dark:hover:text-white/80'
       }`}
     >
       {label}
@@ -441,13 +558,13 @@ function StatePanel({ icon, tone, title, message, action }) {
         className={`mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full ${
           warn
             ? 'bg-amber-500/10 text-amber-500'
-            : 'bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40'
+            : 'bg-black/5 dark:bg-white/5 text-[var(--text-tertiary)]'
         }`}
       >
         {icon}
       </div>
-      <h2 className="text-sm font-semibold text-black/80 dark:text-white/80">{title}</h2>
-      {message && <p className="mt-1.5 text-xs text-black/50 dark:text-white/50">{message}</p>}
+      <h2 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
+      {message && <p className="mt-1.5 text-xs text-[var(--text-secondary)]">{message}</p>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   )

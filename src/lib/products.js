@@ -9,6 +9,7 @@
 
 import { supabase } from './supabase'
 import { buildProductSearchExpression } from './productQuery'
+import { rankRelatedProducts } from './recommendations'
 
 /** Client-side catalogue pagination. Bounded so a large table cannot flood the UI. */
 export const PRODUCT_PAGE_SIZE = 24
@@ -115,20 +116,54 @@ export async function getProductBySlug(slug) {
   return data || null
 }
 
-/** Other published products in the same category. */
+/**
+ * Deterministic related products. One bounded query fetches the candidate
+ * pool; `rankRelatedProducts` applies explainable category/tag/format rules.
+ * This avoids N+1 requests and never exposes private customer data.
+ */
 export async function getRelatedProducts(product, limit = 4) {
-  if (!product?.category_slug) return []
+  if (!product?.id) return []
 
   const { data, error } = await supabase
     .from('products')
     .select('*')
     .eq('status', 'published')
-    .eq('category_slug', product.category_slug)
     .neq('id', product.id)
     .order('published_at', { ascending: false, nullsFirst: false })
-    .limit(limit)
+    .limit(100)
 
   if (error) throw error
+  return rankRelatedProducts(product, data || [], limit).map((entry) => entry.product)
+}
+
+/** Recently viewed products, resolved in one bounded query. */
+export async function getProductsBySlugs(slugs = [], limit = 4) {
+  const unique = [...new Set(slugs.filter(Boolean))].slice(0, limit)
+  if (!unique.length) return []
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'published')
+    .in('slug', unique)
+
+  if (error) throw error
+  const bySlug = new Map((data || []).map((item) => [item.slug, item]))
+  return unique.map((slug) => bySlug.get(slug)).filter(Boolean)
+}
+
+/** Public, non-sensitive file metadata for a published product. */
+export async function getProductFileManifest(productId) {
+  if (!productId) return []
+  const { data, error } = await supabase
+    .from('public_product_file_manifest')
+    .select('id, filename, mime_type, size_bytes, version, display_order, is_preview')
+    .eq('product_id', productId)
+    .order('display_order', { ascending: true })
+
+  // The view arrives with the licensing migration. Older deployments simply
+  // omit the "what you'll receive" section; the store itself keeps working.
+  if (error) return []
   return data || []
 }
 

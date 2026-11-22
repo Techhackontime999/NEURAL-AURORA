@@ -97,10 +97,10 @@ export default function PurchaseSuccess() {
     pending: { icon: Loader2, color: 'text-cyan-500', bg: 'bg-cyan-500/10', spin: true },
     slow: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
     failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
-    cancelled: { icon: XCircle, color: 'text-black/40 dark:text-white/40', bg: 'bg-black/5 dark:bg-white/5' },
+    cancelled: { icon: XCircle, color: 'text-[var(--text-tertiary)]', bg: 'bg-black/5 dark:bg-white/5' },
     refunded: { icon: AlertTriangle, color: 'text-purple-500', bg: 'bg-purple-500/10' },
     error: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    loading: { icon: Loader2, color: 'text-black/30 dark:text-white/30', bg: 'bg-black/5 dark:bg-white/5', spin: true },
+    loading: { icon: Loader2, color: 'text-[var(--text-tertiary)]', bg: 'bg-black/5 dark:bg-white/5', spin: true },
   }[status] || { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' }
 
   const Icon = tone.icon
@@ -118,15 +118,15 @@ export default function PurchaseSuccess() {
             <Icon className={`h-6 w-6 ${tone.spin ? 'animate-spin' : ''}`} aria-hidden="true" />
           </div>
 
-          <h1 className="text-base font-display font-bold tracking-tight text-black/85 dark:text-white/90">
+          <h1 className="text-base font-display font-bold tracking-tight text-[var(--text-primary)]">
             {t(`store.purchase.${status}.title`)}
           </h1>
-          <p className="mt-2 text-xs leading-relaxed text-black/50 dark:text-white/50">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
             {t(`store.purchase.${status}.body`)}
           </p>
 
           {ref && (
-            <p className="mt-4 text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+            <p className="mt-4 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {t('store.purchase.orderRef', { ref })}
             </p>
           )}
@@ -137,7 +137,7 @@ export default function PurchaseSuccess() {
                 {order.items.map((item) => (
                   <li
                     key={item.slug}
-                    className="flex items-center justify-between gap-3 text-xs text-black/60 dark:text-white/60"
+                    className="flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]"
                   >
                     <span className="truncate">
                       {item.title}

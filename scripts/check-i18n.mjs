@@ -7,6 +7,7 @@ const FILES = [
   'src/components/offerings/Products.jsx',
   'src/components/offerings/ProductCard.jsx',
   'src/components/offerings/ProductDetail.jsx',
+  'src/components/offerings/ProductPreview.jsx',
   'src/components/offerings/StoreShell.jsx',
   'src/components/offerings/Library.jsx',
   'src/components/offerings/PurchaseSuccess.jsx',

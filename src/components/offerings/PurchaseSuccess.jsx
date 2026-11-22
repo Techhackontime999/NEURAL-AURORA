@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Loader2, XCircle, AlertTriangle, Clock } from 'lucide-react'
+import { CheckCircle2, Loader2, XCircle, AlertTriangle, Clock, RefreshCw } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getOrderStatus } from '../../lib/checkout'
 import { formatPrice } from '../../lib/products'
+import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
 
 const POLL_INTERVAL_MS = 3000
@@ -28,6 +29,7 @@ export default function PurchaseSuccess() {
   const [status, setStatus] = useState('loading')
   const [order, setOrder] = useState(null)
   const [error, setError] = useState(null)
+  const [retryToken, setRetryToken] = useState(0)
   const cancelled = useRef(false)
   const polls = useRef(0)
 
@@ -79,7 +81,7 @@ export default function PurchaseSuccess() {
         }
       } catch (err) {
         if (cancelled.current) return
-        setError(err?.message || t('store.purchaseError'))
+        setError(friendlyStoreError(err, t, 'store.purchaseError'))
         setStatus('error')
       }
     }
@@ -90,7 +92,7 @@ export default function PurchaseSuccess() {
       cancelled.current = true
       if (timer) clearTimeout(timer)
     }
-  }, [ref, t])
+  }, [ref, t, retryToken])
 
   const tone = {
     paid: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -118,12 +120,14 @@ export default function PurchaseSuccess() {
             <Icon className={`h-6 w-6 ${tone.spin ? 'animate-spin' : ''}`} aria-hidden="true" />
           </div>
 
-          <h1 className="text-base font-display font-bold tracking-tight text-[var(--text-primary)]">
-            {t(`store.purchase.${status}.title`)}
-          </h1>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-            {t(`store.purchase.${status}.body`)}
-          </p>
+          <div aria-live="polite" aria-atomic="true">
+            <h1 className="text-base font-display font-bold tracking-tight text-[var(--text-primary)]">
+              {t(`store.purchase.${status}.title`)}
+            </h1>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
+              {t(`store.purchase.${status}.body`)}
+            </p>
+          </div>
 
           {ref && (
             <p className="mt-4 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
@@ -162,6 +166,16 @@ export default function PurchaseSuccess() {
           )}
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            {status === 'error' && (
+              <button
+                type="button"
+                onClick={() => setRetryToken((token) => token + 1)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 py-2.5 text-[11px] uppercase tracking-widest text-[var(--text-primary)] transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('store.statusRetry')}
+              </button>
+            )}
             {(status === 'paid' || status === 'slow' || status === 'pending') && (
               <Link
                 to="/library"

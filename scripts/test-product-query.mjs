@@ -2,6 +2,7 @@
 // Run: npm run test:product-query
 import {
   sanitiseSearchTerm,
+  normaliseFormatFilter,
   buildTagFilters,
   buildProductSearchExpression,
 } from '../src/lib/productQuery.js'
@@ -26,6 +27,10 @@ check(
 check('search term: whitespace-only input is empty', sanitiseSearchTerm('   ') === '')
 check('search term: null input is empty', sanitiseSearchTerm(null) === '')
 check('search term: length is bounded', sanitiseSearchTerm('x'.repeat(200)).length === 60)
+
+check('format filter: case is normalised for URLs', normaliseFormatFilter(' PDF ') === 'pdf')
+check('format filter: ilike wildcards are removed', normaliseFormatFilter('p%d_f\\x') === 'pdfx')
+check('format filter: length is bounded', normaliseFormatFilter('x'.repeat(200)).length === 80)
 
 check('empty search produces no expression', buildProductSearchExpression(' ') === null)
 

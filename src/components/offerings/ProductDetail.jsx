@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -14,6 +14,7 @@ import {
   KeyRound,
   Download,
   Layers,
+  RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { sanitizeHtml } from '../../lib/utils'
@@ -31,6 +32,7 @@ import { hasVisibleSignature, mergeDocumentSignature } from '../../lib/documentS
 import { getRecentlyViewed, rememberViewedProduct } from '../../lib/recommendations'
 import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
+import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 import ProductPreview from './ProductPreview'
@@ -44,6 +46,11 @@ const PRODUCT_MAX_QUANTITY = 10
 
 export default function ProductDetail() {
   const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
+  const enterProps = (y, transition = { duration: 0.5, ease: [0.16, 1, 0.3, 1] }) =>
+    shouldReduceMotion
+      ? { initial: false, animate: {}, transition: { duration: 0 } }
+      : { initial: { opacity: 0, y }, animate: { opacity: 1, y: 0 }, transition }
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -52,6 +59,8 @@ export default function ProductDetail() {
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [loadError, setLoadError] = useState(null)
+  const [reloadToken, setReloadToken] = useState(0)
   const [galleryIndex, setGalleryIndex] = useState(null)
   const [licenseOptions, setLicenseOptions] = useState([])
   const [selectedLicense, setSelectedLicense] = useState('')
@@ -75,6 +84,7 @@ export default function ProductDetail() {
     const load = async () => {
       setLoading(true)
       setNotFound(false)
+      setLoadError(null)
       setActionError(null)
       setActionNotice(null)
       setGalleryIndex(null)
@@ -133,7 +143,7 @@ export default function ProductDetail() {
       } catch (err) {
         if (!cancelled) {
           console.error('Failed to load product:', err?.message || err)
-          setNotFound(true)
+          setLoadError(friendlyStoreError(err, t, 'store.errorBody'))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -144,7 +154,7 @@ export default function ProductDetail() {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, t, reloadToken])
 
   const isFree = product ? product.price_paise === 0 : false
   const requestedQuantity = Math.trunc(Number(quantity))
@@ -213,6 +223,7 @@ export default function ProductDetail() {
           setActionNotice(t('store.magicLinkSent'))
         } else {
           freeDownloadTab?.close()
+          setActionNotice(t('store.downloadUnavailable'))
         }
       } else {
         const { orderRef } = await startProductCheckout({
@@ -230,7 +241,7 @@ export default function ProductDetail() {
       // Failures here are always real: the product checkout path has no
       // client-side price fallback and refuses to open if order creation
       // could not be verified by the server.
-      setActionError(err?.message || t('store.checkoutFailed'))
+      setActionError(friendlyStoreError(err, t, 'store.checkoutFailed'))
     } finally {
       setBusy(false)
     }
@@ -258,12 +269,14 @@ export default function ProductDetail() {
     )
   }
 
-  // --- Not found ----------------------------------------------------------
-  if (notFound || !product) {
+  // --- Not found / retryable load failure ---------------------------------
+  if (notFound || loadError || !product) {
+    const isLoadError = Boolean(loadError)
+    const title = isLoadError ? t('store.productLoadError') : t('store.productNotFound')
     return (
       <StoreShell>
         <DocumentHead
-          title={`Product not found — ${SITE_NAME}`}
+          title={`${title} — ${SITE_NAME}`}
           robots="noindex, nofollow"
           path={`/offerings/products/${slug}`}
         />
@@ -271,19 +284,28 @@ export default function ProductDetail() {
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
             <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           </div>
-          <h1 className="text-sm font-semibold text-[var(--text-primary)]">
-            {t('store.productNotFound')}
-          </h1>
-          <p className="mt-1.5 text-xs text-[var(--text-secondary)]">
-            {t('store.productNotFoundBody')}
+          <h1 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h1>
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)]" role={isLoadError ? 'alert' : undefined}>
+            {isLoadError ? loadError : t('store.productNotFoundBody')}
           </p>
-          <Link
-            to="/offerings/products"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            {t('store.backToStore')}
-          </Link>
+          {isLoadError ? (
+            <button
+              type="button"
+              onClick={() => setReloadToken((token) => token + 1)}
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black/90 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black dark:bg-white/90 dark:text-black dark:hover:bg-white"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              {t('store.retry')}
+            </button>
+          ) : (
+            <Link
+              to="/offerings/products"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {t('store.backToStore')}
+            </Link>
+          )}
         </div>
       </StoreShell>
     )
@@ -330,9 +352,7 @@ export default function ProductDetail() {
         jsonLd={productJsonLd}
       />
       <motion.header
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        {...enterProps(14, { duration: 0.45, ease: [0.16, 1, 0.3, 1] })}
         className="mb-8"
       >
         <Link
@@ -400,9 +420,7 @@ export default function ProductDetail() {
         {/* --- Left: media + long-form copy ---------------------------- */}
         <div className="min-w-0">
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            {...enterProps(16)}
           >
             <ProductPreview
               product={product}
@@ -530,9 +548,7 @@ export default function ProductDetail() {
 
         {/* --- Right: sticky purchase panel ---------------------------- */}
         <motion.aside
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          {...enterProps(16, { duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] })}
           id="purchase-panel"
           className="glass-panel rounded-xl p-5 lg:sticky lg:top-28"
         >
@@ -757,9 +773,9 @@ export default function ProductDetail() {
             <AnimatePresence>
               {actionError && (
                 <motion.p
-                  initial={{ opacity: 0, height: 0 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, height: 0 }}
                   role="alert"
                   className="rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500"
                 >
@@ -768,9 +784,9 @@ export default function ProductDetail() {
               )}
               {actionNotice && (
                 <motion.p
-                  initial={{ opacity: 0, height: 0 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, height: 0 }}
                   role="status"
                   className="rounded-lg bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-500"
                 >
@@ -854,6 +870,7 @@ function Term({ label, value }) {
 
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
   return (
     <div className="rounded-lg border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
       <button
@@ -871,10 +888,10 @@ function FaqItem({ question, answer }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={shouldReduceMotion ? false : { height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            exit={shouldReduceMotion ? undefined : { height: 0, opacity: 0 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
             <p className="px-3 pb-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">

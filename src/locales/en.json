@@ -353,6 +353,17 @@
       "contact": "Contact"
     }
   },
+  "media": {
+    "lightbox": {
+      "defaultTitle": "Image gallery",
+      "label": "{{title}} gallery",
+      "previous": "Previous image",
+      "next": "Next image",
+      "close": "Close gallery",
+      "view": "View {{index}} of {{total}}",
+      "thumb": "Show view {{index}}"
+    }
+  },
   "store": {
     "eyebrow": "Digital Store",
     "title": "Digital Products",
@@ -376,11 +387,15 @@
     "loadedCount": "Showing {{count}} product(s)",
     "clearFilters": "Clear filters",
     "retry": "Retry",
+    "statusRetry": "Check again",
+    "networkError": "The connection dropped. Check your connection and try again.",
+    "sessionExpired": "Your sign-in has expired. Please sign in again and retry.",
+    "downloadUnavailable": "The download link could not be prepared. Please try again.",
     "free": "Free",
     "featured": "Featured",
     "featuredRail": "Featured picks",
     "featuredRailNote": "Chosen by us, never paid placement",
-    "imageCount": "{{count}} views",
+    "imageCount": "{{count}} images",
     "digitalProduct": "Digital product",
     "openFullscreen": "Open fullscreen",
     "previewUnavailable": "Preview unavailable",
@@ -439,6 +454,8 @@
     "backToStore": "Back to products",
     "productNotFound": "Product not found",
     "productNotFoundBody": "This product does not exist or is no longer available.",
+    "productLoadError": "Could not load this product",
+    "pdfPreview": "PDF preview",
     "previewImage": "Preview image {{index}}",
     "description": "Description",
     "includes": "What's included",

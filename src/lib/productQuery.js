@@ -9,6 +9,7 @@
 
 const MAX_TERM_LENGTH = 60
 const MAX_TAG_TOKENS = 5
+const MAX_FORMAT_LENGTH = 80
 
 /**
  * PostgREST `or()` values are raw syntax, so no punctuation from user input may
@@ -21,6 +22,20 @@ export function sanitiseSearchTerm(value) {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TERM_LENGTH)
+    .trim()
+}
+
+/**
+ * Format labels are free text in the database, but the filter lives in the URL
+ * where it is lowercased. Strip `ilike` wildcards before comparing so a stored
+ * "PDF" and a shared `?format=pdf` resolve to the same option.
+ */
+export function normaliseFormatFilter(value) {
+  return String(value ?? '')
+    .replace(/[%_\\]/g, '')
+    .trim()
+    .toLowerCase()
+    .slice(0, MAX_FORMAT_LENGTH)
     .trim()
 }
 

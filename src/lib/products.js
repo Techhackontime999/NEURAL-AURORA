@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabase'
-import { buildProductSearchExpression } from './productQuery'
+import { buildProductSearchExpression, normaliseFormatFilter } from './productQuery'
 import { rankRelatedProducts } from './recommendations'
 
 /** Client-side catalogue pagination. Bounded so a large table cannot flood the UI. */
@@ -48,8 +48,9 @@ export async function getPublishedProducts({
 } = {}) {
   let query = supabase.from('products').select('*').eq('status', 'published')
 
+  const formatFilter = normaliseFormatFilter(format)
   if (category) query = query.eq('category_slug', category)
-  if (format) query = query.eq('format', format)
+  if (formatFilter) query = query.ilike('format', formatFilter)
   if (freeOnly) query = query.eq('price_paise', 0)
   if (featuredOnly) query = query.eq('featured', true)
 

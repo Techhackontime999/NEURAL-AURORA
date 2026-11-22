@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FileText, Download } from 'lucide-react'
@@ -11,6 +12,7 @@ import { formatPrice } from '../../lib/products'
 export default function ProductCard({ product, index = 0 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [imageFailed, setImageFailed] = useState(false)
 
   const isFree = product.price_paise === 0
   const galleryUrls = Array.isArray(product.gallery_urls)
@@ -35,12 +37,13 @@ export default function ProductCard({ product, index = 0 }) {
         aria-hidden="true"
         className="aspect-[16/10] bg-black/5 dark:bg-white/5 overflow-hidden relative cursor-pointer"
       >
-        {hasCover ? (
+        {hasCover && !imageFailed ? (
           <img
             src={cover}
             alt=""
             loading="lazy"
             decoding="async"
+            onError={() => setImageFailed(true)}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

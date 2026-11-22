@@ -13,6 +13,8 @@ const library = read('src/components/offerings/Library.jsx')
 const productsLib = read('src/lib/products.js')
 const pricing = read('api/_lib/order-pricing.js')
 const purchaseSuccess = read('src/components/offerings/PurchaseSuccess.jsx')
+const shell = read('src/components/offerings/StoreShell.jsx')
+const cardFallback = read('src/components/ui/ImageLightbox.jsx')
 const razorpay = read('src/lib/razorpay.js')
 const en = JSON.parse(read('src/locales/en.json'))
 
@@ -109,8 +111,9 @@ check(
 )
 check(
   'catalogue: search uses the shared indexed-tag expression',
-  productsLib.includes("import { buildProductSearchExpression } from './productQuery'") &&
-    productsLib.includes('query.or(searchExpression)')
+  productsLib.includes(
+    "import { buildProductSearchExpression, normaliseFormatFilter } from './productQuery'"
+  ) && productsLib.includes('query.or(searchExpression)')
 )
 
 // --- ST-U06: paid checkout is a validated native form ----------------------
@@ -276,6 +279,84 @@ check(
     razorpay.includes('removeCheckoutScript(stale)') &&
     razorpay.includes('if (!loaded) loadPromise = null') &&
     razorpay.includes('if (loadPromise) return loadPromise')
+)
+
+// --- Best-version pass: correctness, a11y and honest counts -----------------
+check(
+  'format filter: shared URLs and mixed-case DB values use one normalised value',
+  productsLib.includes("query.ilike('format', formatFilter)") &&
+    productsLib.includes('normaliseFormatFilter(format)') &&
+    products.includes('normaliseFormatFilter(params.get(URL_KEYS.format))') &&
+    products.includes('const formatOptions = useMemo(')
+)
+check(
+  'catalogue: loaded count is honest while more pages exist',
+  products.includes("t(hasMore ? 'store.loadedCount' : 'store.resultCount', { count: products.length })") &&
+    products.includes('products.length === LIST_CAP && !hasMore && !loading')
+)
+check(
+  'detail: load failures get their own state and retry',
+  detail.includes('const [loadError, setLoadError] = useState(null)') &&
+    detail.includes('setLoadError(friendlyStoreError(err, t, \'store.errorBody\'))') &&
+    detail.includes('setReloadToken((token) => token + 1)') &&
+    detail.includes("t('store.productLoadError')")
+)
+check(
+  'checkout: customer-facing errors and silent download failures are explained',
+  detail.includes("setActionNotice(t('store.downloadUnavailable'))") &&
+    detail.includes("friendlyStoreError(err, t, 'store.checkoutFailed')") &&
+    purchaseSuccess.includes("friendlyStoreError(err, t, 'store.purchaseError')")
+)
+check(
+  'purchase success: status changes are announced and errors can be retried',
+  purchaseSuccess.includes('aria-live="polite"') &&
+    purchaseSuccess.includes('setRetryToken((token) => token + 1)') &&
+    purchaseSuccess.includes("t('store.statusRetry')")
+)
+check(
+  'hero: one still image, no timed carousel or focusable hidden dots',
+  shell.includes('function HeroBackdrop(') &&
+    !shell.includes('setInterval') &&
+    !shell.includes('aria-label={`Show slide') &&
+    !shell.includes('AnimatePresence')
+)
+check(
+  'card: a dead cover falls back to the local icon',
+  card.includes('const [imageFailed, setImageFailed] = useState(false)') &&
+    card.includes('hasCover && !imageFailed') &&
+    card.includes('onError={() => setImageFailed(true)}')
+)
+check(
+  'lightbox: focus is trapped, restored and translated',
+  cardFallback.includes('dialogRef.current?.querySelectorAll(') &&
+    cardFallback.includes('previouslyFocused instanceof HTMLElement') &&
+    cardFallback.includes("t('media.lightbox.close')") &&
+    cardFallback.includes("t('media.lightbox.previous')")
+)
+check(
+  'store motion: reduced motion never leaves content hidden',
+  ['Products.jsx', 'ProductDetail.jsx', 'StoreShell.jsx'].every((file) => {
+    const source = read(`src/components/offerings/${file}`)
+    return (
+      source.includes('useReducedMotion()') &&
+      (source.includes('shouldReduceMotion ? false') || source.includes('initial: false'))
+    )
+  })
+)
+check(
+  'best-version i18n copy is present',
+  [
+    'statusRetry',
+    'networkError',
+    'sessionExpired',
+    'downloadUnavailable',
+    'productLoadError',
+    'pdfPreview',
+  ].every((key) => Boolean(en.store?.[key])) &&
+    en.store.imageCount === '{{count}} images' &&
+    ['previous', 'next', 'close', 'view', 'thumb'].every((key) =>
+      Boolean(en.media?.lightbox?.[key])
+    )
 )
 
 console.log(`\n${passed} passed, ${failed} failed`)

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2, FileText } from 'lucide-react'
@@ -12,6 +12,7 @@ import {
   PRODUCT_MAX_RESULTS,
 } from '../../lib/products'
 import { isSupabaseConfigured } from '../../lib/supabase'
+import { normaliseFormatFilter } from '../../lib/productQuery'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 
@@ -56,7 +57,7 @@ function filtersFromParams(params) {
   return {
     search: safeToken(params.get(URL_KEYS.search)),
     category: safeToken(params.get(URL_KEYS.category)),
-    format: safeToken(params.get(URL_KEYS.format)),
+    format: normaliseFormatFilter(params.get(URL_KEYS.format)),
     freeOnly: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.freeOnly))),
     featured: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.featured))),
     sort: Object.hasOwn(PRODUCT_SORTS, sort) ? sort : EMPTY_FILTERS.sort,
@@ -95,6 +96,7 @@ function sameFilters(a, b) {
  */
 export default function Products() {
   const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialFilters = filtersFromParams(searchParams)
 
@@ -118,6 +120,22 @@ export default function Products() {
   const firstLoad = useRef(true)
   const productsRef = useRef([])
   const requestIdRef = useRef(0)
+
+  // Database labels keep their original casing for display, while the URL and
+  // query use one normalised value. This keeps a stored "PDF" and a shared
+  // `?format=pdf` pointing at the same filter.
+  const formatOptions = useMemo(() => {
+    const byValue = new Map()
+    for (const label of formats) {
+      const value = normaliseFormatFilter(label)
+      if (value && !byValue.has(value)) byValue.set(value, label)
+    }
+    return [...byValue.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [formats])
+
+  const enter = shouldReduceMotion
+    ? { initial: false, animate: {}, transition: { duration: 0 } }
+    : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
 
   // --- reference data (does not depend on the active filters) ----------------
   useEffect(() => {
@@ -285,9 +303,7 @@ export default function Products() {
     >
       {!hasActiveFilters && featuredProducts.length > 0 && (
         <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          {...enter}
           className="mb-8"
           aria-label={t('store.featuredRail')}
         >
@@ -357,9 +373,7 @@ export default function Products() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          {...enter}
           className="glass-panel rounded-xl p-4 md:p-5"
         >
         <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -448,7 +462,7 @@ export default function Products() {
             label={t('store.featuredOnly')}
           />
 
-          {formats.length > 1 && (
+          {formatOptions.length > 1 && (
             <>
               <CategoryChip
                 active={filters.format === ''}
@@ -456,12 +470,12 @@ export default function Products() {
                 label={t('store.allFormats')}
               />
 
-              {formats.map((fmt) => (
+              {formatOptions.map(([value, label]) => (
                 <CategoryChip
-                  key={fmt}
-                  active={filters.format === fmt}
-                  onClick={() => set({ format: filters.format === fmt ? '' : fmt })}
-                  label={fmt}
+                  key={value}
+                  active={filters.format === value}
+                  onClick={() => set({ format: filters.format === value ? '' : value })}
+                  label={label}
                 />
               ))}
             </>
@@ -472,7 +486,7 @@ export default function Products() {
           <div className="mt-3 flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
               {refreshing && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
-              {t('store.resultCount', { count: products.length })}
+              {t(hasMore ? 'store.loadedCount' : 'store.resultCount', { count: products.length })}
             </span>
             <button
               type="button"
@@ -487,7 +501,7 @@ export default function Products() {
         </motion.div>
 
       {/* The query is capped; never imply the user saw the whole catalogue. */}
-      {products.length === LIST_CAP && !loading && (
+      {products.length === LIST_CAP && !hasMore && !loading && (
         <p className="mb-4 text-[11px] text-[var(--text-secondary)]">
           {t('store.resultCountCapped', { count: LIST_CAP })}
         </p>

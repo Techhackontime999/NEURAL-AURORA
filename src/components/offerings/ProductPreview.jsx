@@ -102,7 +102,7 @@ export default function ProductPreview({ product, images = [], onOpen }) {
           >
             <img
               src={active.url}
-              alt={`${product?.title || 'Product'} — ${t('store.previewImage', { index: index + 1 })}`}
+              alt={`${product?.title || t('store.digitalProduct')} — ${t('store.previewImage', { index: index + 1 })}`}
               className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
               decoding="async"
               onError={() => setFailed((prev) => ({ ...prev, [active.url]: true }))}
@@ -118,7 +118,7 @@ export default function ProductPreview({ product, images = [], onOpen }) {
           <object
             data={`${active.url}#toolbar=0&navpanes=0`}
             type="application/pdf"
-            title={`${product?.title || 'Product'} — PDF preview`}
+            title={`${product?.title || t('store.digitalProduct')} — ${t('store.pdfPreview')}`}
             className="h-full w-full"
           >
             <div className="flex h-full items-center justify-center px-6 text-center text-xs text-[var(--text-secondary)]">

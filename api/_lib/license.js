@@ -168,6 +168,7 @@ function buildLicensePdf(record = {}) {
   const issuer = truncateText(record.issuer || 'NEURAL AURORA', 42)
   const terms = cleanText(record.terms || record.license_summary || 'See the product page for license terms.')
   const key = cleanText(record.license_key || '—')
+  const signature = record.signature && Buffer.isBuffer(record.signature.buffer) ? record.signature : null
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -291,12 +292,48 @@ function buildLicensePdf(record = {}) {
         ellipsis: true,
       })
 
-    // Card footer.
+    // Card footer. When an admin signature is present it occupies the right
+    // side, so the note is constrained to the left column instead of running
+    // underneath it.
+    const footerNoteWidth = signature ? cardW - 48 - 196 : cardW - 48
     doc.fillColor(C.muted).font('Helvetica').fontSize(8)
       .text('This certificate records the license issued for the order above. It is not a payment receipt.',
-        leftX, cardY + cardH - 34, { width: cardW - 48 })
-    doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(8)
-      .text(issuer.toUpperCase(), leftX, cardY + cardH - 18, { width: cardW - 48, align: 'right', characterSpacing: 1 })
+        leftX, cardY + cardH - 34, { width: footerNoteWidth })
+    // The signature block replaces the plain issuer line so a two-line note
+    // cannot collide with it.
+    if (!signature) {
+      doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(8)
+        .text(issuer.toUpperCase(), leftX, cardY + cardH - 18, {
+          width: footerNoteWidth,
+          align: 'right',
+          characterSpacing: 1,
+        })
+    }
+
+    if (signature) {
+      const sigW = 172
+      const sigX = cardX + cardW - 24 - sigW
+      const sigY = cardY + cardH - 112
+
+      doc.save()
+      doc.strokeOpacity(0.55).lineWidth(1).strokeColor(C.border)
+      doc.moveTo(sigX, sigY + 62).lineTo(sigX + sigW, sigY + 62).stroke()
+      doc.image(signature.buffer, sigX, sigY, {
+        fit: [sigW, 56],
+        align: 'center',
+        valign: 'bottom',
+      })
+      doc.restore()
+
+      if (signature.name) {
+        doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(8.5)
+          .text(signature.name, sigX, sigY + 68, { width: sigW, align: 'right', ellipsis: true })
+      }
+      if (signature.title) {
+        doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
+          .text(signature.title, sigX, sigY + 82, { width: sigW, align: 'right', ellipsis: true })
+      }
+    }
 
     doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
       .text('Verified digitally by NEURAL AURORA · support@neuralaurora.com', 0, H - 32, { width: W, align: 'center' })

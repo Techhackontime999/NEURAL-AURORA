@@ -26,6 +26,8 @@ import {
   formatBytes,
 } from '../../lib/products'
 import { getProductLicenseOptions } from '../../lib/licenses'
+import { getPublicSettings } from '../../lib/supabase'
+import { hasVisibleSignature, mergeDocumentSignature } from '../../lib/documentSignatureDefaults'
 import { getRecentlyViewed, rememberViewedProduct } from '../../lib/recommendations'
 import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
@@ -55,6 +57,7 @@ export default function ProductDetail() {
   const [selectedLicense, setSelectedLicense] = useState('')
   const [fileManifest, setFileManifest] = useState([])
   const [recentlyViewed, setRecentlyViewed] = useState([])
+  const [documentSignature, setDocumentSignature] = useState(null)
 
   // Purchase panel state.
   const [email, setEmail] = useState('')
@@ -81,6 +84,7 @@ export default function ProductDetail() {
       setSelectedLicense('')
       setFileManifest([])
       setRecentlyViewed([])
+      setDocumentSignature(null)
       try {
         const item = await getProductBySlug(slug)
         if (cancelled) return
@@ -100,10 +104,14 @@ export default function ProductDetail() {
           getRelatedProducts(item, 3),
           getProductLicenseOptions(item.id),
           getProductFileManifest(item.id),
-        ]).then(([relatedResult, optionsResult, filesResult]) => {
+          getPublicSettings(),
+        ]).then(([relatedResult, optionsResult, filesResult, settingsResult]) => {
           if (cancelled) return
           if (relatedResult.status === 'fulfilled') setRelated(relatedResult.value)
           if (filesResult.status === 'fulfilled') setFileManifest(filesResult.value)
+          if (settingsResult.status === 'fulfilled') {
+            setDocumentSignature(mergeDocumentSignature(settingsResult.value?.document_signature))
+          }
           if (optionsResult.status === 'fulfilled') {
             const options = optionsResult.value || []
             setLicenseOptions(options)
@@ -480,6 +488,32 @@ export default function ProductDetail() {
                 <Term label={t('store.supportPolicy')} value={product.support_policy} />
                 <Term label={t('store.refundPolicy')} value={product.refund_policy} />
               </dl>
+              {hasVisibleSignature(documentSignature) && (
+                <div className="mt-4 flex items-center gap-4 rounded-lg border border-black/5 bg-black/[0.02] px-3 py-3 dark:border-white/5 dark:bg-white/[0.02]">
+                  <img
+                    src={documentSignature.url}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-12 w-24 shrink-0 object-contain"
+                    onError={(event) => { event.currentTarget.style.display = 'none' }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40">
+                      {t('store.signedBy')}
+                    </p>
+                    {documentSignature.name && (
+                      <p className="truncate text-xs font-medium text-[var(--text-primary)]">
+                        {documentSignature.name}
+                      </p>
+                    )}
+                    {documentSignature.title && (
+                      <p className="truncate text-[10px] text-[var(--text-tertiary)]">
+                        {documentSignature.title}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </Section>
 
             {faqsOf(product.faqs).length > 0 && (

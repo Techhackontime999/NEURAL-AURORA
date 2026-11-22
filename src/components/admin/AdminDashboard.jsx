@@ -29,6 +29,7 @@ import AdminVideoHero from './AdminVideoHero'
 import AdminStoreHero from './AdminStoreHero'
 import AdminAppearance from './AdminAppearance'
 import AdminPaymentSettings from './AdminPaymentSettings'
+import AdminDocumentSignature from './AdminDocumentSignature'
 import AdminDataTransfer from './AdminDataTransfer'
 export default function AdminDashboard() {
   return (
@@ -63,6 +64,7 @@ export default function AdminDashboard() {
         <Route path="appearance" element={<AdminAppearance />} />
         <Route path="ai-automation" element={<AdminAiAutomation />} />
         <Route path="payment-settings" element={<AdminPaymentSettings />} />
+        <Route path="document-signature" element={<AdminDocumentSignature />} />
         <Route path="data" element={<AdminDataTransfer />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

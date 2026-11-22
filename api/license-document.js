@@ -10,16 +10,18 @@
 const { createClient } = require('@supabase/supabase-js')
 const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
 const { buildLicensePdf, safeFilename } = require('./_lib/license')
+const { fetchSignatureImage } = require('./_lib/document-signature')
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const requestId = newRequestId()
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceKey || supabaseUrl === 'https://placeholder.supabase.co') {
-    logError('license-document', newRequestId(), {
+    logError('license-document', requestId, {
       stage: 'env-check',
       env: envPresence(SUPABASE_ENV_NAMES),
     })
@@ -72,10 +74,26 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: 'License not found.' })
     }
 
+    // Signature is decorative: if settings are missing, stale or unreachable,
+    // still issue the certificate. Never let an image failure block a licence.
+    let signature = null
+    try {
+      const { data: settings, error: settingsError } = await supabase
+        .from('admin_settings')
+        .select('document_signature')
+        .eq('id', 1)
+        .maybeSingle()
+      if (settingsError) throw settingsError
+      signature = await fetchSignatureImage(settings?.document_signature, requestId)
+    } catch (err) {
+      logError('license-document', requestId, { stage: 'signature-skipped', message: err?.message })
+    }
+
     const pdf = await buildLicensePdf({
       ...license,
       product_title: license.products?.title || license.products?.slug || '',
       issuer: 'NEURAL AURORA',
+      signature,
     })
 
     const filename = safeFilename(`license-${license.license_ref || license.id}`)
@@ -86,7 +104,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     return res.status(200).send(pdf)
   } catch (err) {
-    logError('license-document', newRequestId(), { stage: 'exception', message: err?.message })
+    logError('license-document', requestId, { stage: 'exception', message: err?.message })
     return res.status(500).json({ error: 'Could not prepare your license document.' })
   }
 }

@@ -35,6 +35,7 @@ const navItems = [
   { path: '/admin/store-hero', label: 'Store Hero Carousel', icon: '▦' },
   { path: '/admin/appearance', label: 'Site Preferences', icon: '◑' },
   { path: '/admin/payment-settings', label: 'Payment Settings', icon: '₹' },
+  { path: '/admin/document-signature', label: 'Document Signature', icon: '✎' },
   { path: '/admin/data', label: 'Import / Export Data', icon: '⇅' },
 ]
 

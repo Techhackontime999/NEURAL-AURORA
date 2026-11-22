@@ -22,6 +22,12 @@ const {
   safeFilename,
   PDF_COLORS,
 } = require('../api/_lib/license.js')
+const {
+  normaliseDocumentSignature,
+  isAllowedSignatureUrl,
+  hasAllowedImageMagic,
+  fetchSignatureImage,
+} = require('../api/_lib/document-signature.js')
 const { priceProductOrder } = require('../api/_lib/order-pricing.js')
 
 const { rankRelatedProducts } = await import('../src/lib/recommendations.js')
@@ -200,6 +206,79 @@ function pdfText(pdf) {
     'hostile row values cannot inject markup or scripts',
     !raw.includes('<img') && !raw.includes('onerror=') && pdf.subarray(0, 5).toString() === '%PDF-'
   )
+}
+
+// --- admin-managed signature ------------------------------------------------
+{
+  const previousUrl = process.env.SUPABASE_URL
+  const previousViteUrl = process.env.VITE_SUPABASE_URL
+  process.env.SUPABASE_URL = 'https://demo.supabase.co'
+  delete process.env.VITE_SUPABASE_URL
+
+  try {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==',
+      'base64'
+    )
+    const allowed = 'https://demo.supabase.co/storage/v1/object/public/portfolio-images/signature.png'
+    const normalised = normaliseDocumentSignature({
+      enabled: 'yes',
+      url: `  ${allowed}  `,
+      name: '  Aarav   Mehta  ',
+      title: 'Founder, Neural Aurora',
+      admin_email: 'should-be-dropped@example.com',
+    })
+    check(
+      'signature normaliser keeps only display fields',
+      normalised.enabled === false &&
+        normalised.url === allowed &&
+        normalised.name === 'Aarav Mehta' &&
+        normalised.title === 'Founder, Neural Aurora' &&
+        !('admin_email' in normalised)
+    )
+    check('signature URL accepts the configured public bucket', isAllowedSignatureUrl(allowed))
+    check(
+      'signature URL rejects foreign, private and query-bearing URLs',
+      !isAllowedSignatureUrl('https://evil.test/storage/v1/object/public/portfolio-images/s.png') &&
+        !isAllowedSignatureUrl('https://demo.supabase.co/storage/v1/object/private/digital-products/s.png') &&
+        !isAllowedSignatureUrl(`${allowed}?download=1`)
+    )
+    check('signature magic bytes are validated', hasAllowedImageMagic(png, 'image/png') && !hasAllowedImageMagic(png, 'image/jpeg'))
+
+    const bytes = new Uint8Array(png)
+    const loaded = await fetchSignatureImage(
+      { enabled: true, url: allowed, name: normalised.name, title: normalised.title },
+      'test-request',
+      async () => ({
+        ok: true,
+        headers: {
+          get: (name) =>
+            ({ 'content-type': 'image/png', 'content-length': String(png.length) })[name.toLowerCase()] || null,
+        },
+        arrayBuffer: async () => bytes.buffer,
+      })
+    )
+    check('valid signature image is loaded', Boolean(loaded?.buffer) && loaded.name === 'Aarav Mehta')
+
+    const pdf = await buildLicensePdf({
+      product_title: 'Starter Kit',
+      license_ref: 'LIC-2026-ABCDEF',
+      license_key: 'NA-STAR-AAAAA-BBBBB-CCCCC-DDDDD',
+      signature: loaded,
+    })
+    const text = pdfText(pdf)
+    check(
+      'PDF renders the admin signature block',
+      pdf.subarray(0, 5).toString() === '%PDF-' &&
+        text.includes('Aarav Mehta') &&
+        text.includes('Founder, Neural Aurora')
+    )
+  } finally {
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL
+    else process.env.SUPABASE_URL = previousUrl
+    if (previousViteUrl === undefined) delete process.env.VITE_SUPABASE_URL
+    else process.env.VITE_SUPABASE_URL = previousViteUrl
+  }
 }
 
 // --- recommendations --------------------------------------------------------

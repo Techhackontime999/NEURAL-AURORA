@@ -18,6 +18,8 @@ Status: implementation complete on `feat/premium-store-commerce`; awaiting live 
 - Real not-found state is used for unknown product URLs; no invented catalogue is shown.
 - Library shows issued licenses with masked keys, reveal/copy, and server-generated print-ready PDF certificates (navy / cyan / violet, vector text, no client-rendered HTML).
 - Admin: `/admin/licences` manages product license options and issued licenses.
+- Admin `/admin/document-signature` uploads a PNG/JPG signature, signer name and title into `admin_settings.document_signature`; the signed URL is allowlisted in `public_site_settings`.
+- Licence PDFs embed the signature after strict origin/bucket/MIME/size checks; product detail pages show the same trust mark. Stored product PDFs are not rewritten.
 - Storefront colors were normalized to design tokens; no raw hex values remain in the storefront components.
 
 ### Security invariants

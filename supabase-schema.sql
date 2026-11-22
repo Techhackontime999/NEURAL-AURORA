@@ -253,6 +253,10 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   -- Public support/donation configuration. This is exposed through the
   -- public_site_settings view; never store secrets in this document.
   payment_settings JSONB DEFAULT '{}'::jsonb,
+  -- Admin-managed signature block (enabled, url, name, title) used on licence
+  -- PDFs and product detail. The image lives in the public portfolio-images
+  -- bucket; no secrets belong in this document.
+  document_signature JSONB NOT NULL DEFAULT '{}'::jsonb,
   docs_url TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -271,7 +275,7 @@ CREATE OR REPLACE VIEW public_site_settings AS
 SELECT
   id, site_name, site_description, theme, maintenance_mode,
   crm_url, youtube_channel_id, docs_url, video_hero, store_hero,
-  appearance, payment_settings, created_at, updated_at
+  appearance, payment_settings, document_signature, created_at, updated_at
 FROM admin_settings
 WHERE id = 1;
 ALTER VIEW public_site_settings SET (security_barrier = true);

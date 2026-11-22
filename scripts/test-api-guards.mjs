@@ -898,6 +898,29 @@ setEnv({ SITE_URL: 'https://neural-aurora.vercel.app' })
     schema.includes('CREATE OR REPLACE VIEW public_site_settings') &&
       manual.includes('CREATE OR REPLACE VIEW public_site_settings')
   )
+
+  const signatureMigration = fs.readFileSync(
+    'supabase/migrations/20261122120000_add_document_signature_setting.sql',
+    'utf8'
+  )
+  const signatureViewStart = signatureMigration.indexOf('CREATE VIEW public.public_site_settings')
+  const signatureViewEnd = signatureMigration.indexOf('ALTER VIEW public.public_site_settings')
+  check(
+    'signature migration: public view includes only the display document',
+    signatureViewStart > -1 &&
+      signatureViewEnd > signatureViewStart &&
+      signatureMigration.slice(signatureViewStart, signatureViewEnd).includes('s.document_signature') &&
+      !signatureMigration.slice(signatureViewStart, signatureViewEnd).includes('admin_email')
+  )
+  check(
+    'signature migration: private table remains admin-only',
+    signatureMigration.includes('ALTER TABLE public.admin_settings') &&
+      signatureMigration.includes('ADD COLUMN IF NOT EXISTS document_signature')
+  )
+  check(
+    'signature client: public reads request the display document',
+    client.includes('payment_settings, document_signature')
+  )
 }
 
 {

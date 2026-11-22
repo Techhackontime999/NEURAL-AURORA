@@ -311,6 +311,15 @@ controls, status/seats/expiry and a downloadable server-generated document. A
 non-owner cannot enumerate ids: `/api/license-document` returns the same `404`
 for a missing id and someone else's licence.
 
+Admins can upload a signature under `/admin/document-signature`. The image is
+stored in the public `portfolio-images` bucket; only its URL, signer name and
+title are saved in `admin_settings.document_signature` and exposed through
+`public_site_settings`. The licence endpoint re-validates the URL against the
+configured Supabase origin and public bucket before fetching the PNG/JPG image,
+and falls back to an unsigned certificate if the image cannot be loaded. The
+same trust mark is shown on product detail pages. Stored product PDFs are not
+rewritten.
+
 ### Endpoints
 
 | Endpoint | Auth | Purpose |

@@ -405,7 +405,7 @@ export async function getPublicSettings() {
   const { data, error } = await supabase
     .from('public_site_settings')
     .select(
-      'id, site_name, site_description, theme, maintenance_mode, crm_url, youtube_channel_id, docs_url, video_hero, store_hero, appearance, payment_settings'
+      'id, site_name, site_description, theme, maintenance_mode, crm_url, youtube_channel_id, docs_url, video_hero, store_hero, appearance, payment_settings, document_signature'
     )
     .eq('id', 1)
     .maybeSingle()

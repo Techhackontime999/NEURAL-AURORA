@@ -15,6 +15,7 @@ const ACTIONS = [
   { value: 'revoke', label: 'Revoke', needsReason: true },
   { value: 'reinstate', label: 'Reinstate', needsReason: false },
   { value: 'reissue', label: 'Rotate key', needsReason: false },
+  { value: 'delete', label: 'Delete licence', needsReason: true },
 ]
 
 const inputStyle = {
@@ -185,6 +186,15 @@ export default function AdminLicenses() {
     if (meta?.needsReason && String(choice.reason || '').trim().length < 3) {
       return toast.error('A reason is required for this change.')
     }
+    if (choice.action === 'delete') {
+      const ok = await confirm({
+        title: 'Delete issued licence',
+        message: `Permanently delete ${license.license_ref}? It will disappear from the customer's library. This cannot be undone.`,
+        confirmText: 'Delete',
+        danger: true,
+      })
+      if (!ok) return
+    }
     setBusyId(license.id)
     try {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -202,7 +212,7 @@ export default function AdminLicenses() {
       const body = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(body?.error || 'Could not update the licence.')
       setActions((current) => ({ ...current, [license.id]: {} }))
-      toast.success(`Licence ${choice.action} applied`)
+      toast.success(choice.action === 'delete' ? 'Licence deleted' : `Licence ${choice.action} applied`)
       loadLicenses()
     } catch (err) {
       toast.error(err.message)
@@ -451,7 +461,7 @@ export default function AdminLicenses() {
                     onClick={() => handleLicenseAction(license)}
                     disabled={busyId === license.id}
                     className="rounded px-3 py-1.5 text-xs text-white disabled:opacity-50"
-                    style={{ background: 'var(--accent)' }}
+                    style={{ background: actions[license.id]?.action === 'delete' ? '#dc2626' : 'var(--accent)' }}
                   >
                     Apply
                   </button>

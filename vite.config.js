@@ -258,6 +258,89 @@ export default defineConfig(({ mode }) => {
               res.end(JSON.stringify({ error: 'Webhook processing failed' }))
             }
           })
+
+          // Dev parity for the remaining serverless routes. Without this,
+          // /api/license-document falls through to Vite's SPA handler and the
+          // library reports a generic download error. The three routes above
+          // predate this bridge and keep their existing behaviour.
+          const bridgedRoutes = new Set([
+            'admin-access-link',
+            'admin-delete-orders',
+            'admin-license',
+            'admin-reconcile-order',
+            'customer-signin-link',
+            'download',
+            'license-document',
+            'license-verify',
+            'order-status',
+          ])
+
+          server.middlewares.use('/api', async (req, res, next) => {
+            const name = String(req.url || '')
+              .split('?')[0]
+              .split('/')
+              .filter(Boolean)[0]
+            if (!bridgedRoutes.has(name)) return next()
+
+            // Handlers read process.env directly; Vite only exposes VITE_*
+            // values to the browser, so mirror the loaded .env for them.
+            for (const [key, value] of Object.entries(env)) {
+              if (process.env[key] === undefined) process.env[key] = value
+            }
+
+            req.query = Object.fromEntries(
+              new URL(req.url || '/', 'http://localhost').searchParams.entries()
+            )
+
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+              let raw = ''
+              try {
+                raw = await new Promise((resolve, reject) => {
+                  req.on('data', (chunk) => { raw += chunk })
+                  req.on('end', () => resolve(raw))
+                  req.on('error', reject)
+                })
+              } catch {
+                res.statusCode = 400
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: 'Invalid request body' }))
+                return
+              }
+              try {
+                req.body = raw ? JSON.parse(raw) : {}
+              } catch {
+                req.body = null
+              }
+            }
+
+            // Minimal Vercel-response adapter for the real handler.
+            res.status = (code) => {
+              res.statusCode = code
+              return res
+            }
+            res.json = (data) => {
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(data))
+              return res
+            }
+            res.send = (data) => {
+              res.end(data)
+              return res
+            }
+
+            try {
+              await requireCjs(`./api/${name}.js`)(req, res)
+            } catch (err) {
+              console.error(`[API] ${name} failed:`, err)
+              if (res.headersSent) {
+                res.end()
+              } else {
+                res.statusCode = 500
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: 'API request failed' }))
+              }
+            }
+          })
         },
       },
     ],

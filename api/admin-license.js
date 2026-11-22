@@ -15,7 +15,7 @@ const {
   hashLicenseKey,
 } = require('./_lib/license')
 
-const ALLOWED_ACTIONS = new Set(['suspend', 'revoke', 'reinstate', 'reissue'])
+const ALLOWED_ACTIONS = new Set(['suspend', 'revoke', 'reinstate', 'reissue', 'delete'])
 
 module.exports = async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) {
@@ -99,18 +99,46 @@ module.exports = async function handler(req, res) {
     if (!/^\d+$/.test(id) || !ALLOWED_ACTIONS.has(action)) {
       return res.status(400).json({ error: 'A valid license and action are required.' })
     }
-    if (['suspend', 'revoke'].includes(action) && reason.length < 3) {
+    if (['suspend', 'revoke', 'delete'].includes(action) && reason.length < 3) {
       return res.status(400).json({ error: 'A reason is required for this change.' })
     }
 
     const { data: license, error: lookupError } = await supabase
       .from('licenses')
-      .select('id, status, license_key, license_option_id, product_id, customer_email, user_id')
+      .select('id, license_ref, status, license_key, license_option_id, product_id, customer_email, user_id')
       .eq('id', Number(id))
       .maybeSingle()
 
     if (lookupError) throw lookupError
     if (!license) return res.status(404).json({ error: 'License not found.' })
+
+    if (action === 'delete') {
+      // Write the audit row first and embed the reference in its reason: the
+      // license id is about to disappear. The event's foreign key is SET NULL
+      // on delete, so the audit trail itself survives.
+      const auditReason = `Deleted by administrator · ${license.license_ref}${reason ? ` · ${reason}` : ''}`
+      const { error: auditError } = await supabase.from('license_events').insert({
+        license_id: license.id,
+        action: 'deleted',
+        reason: auditReason.slice(0, 500),
+        actor_user_id: admin.id,
+      })
+      if (auditError) throw auditError
+
+      const { error: deleteError } = await supabase
+        .from('licenses')
+        .delete()
+        .eq('id', license.id)
+      if (deleteError) throw deleteError
+
+      logError('admin-license', requestId, {
+        stage: 'audit',
+        action,
+        license_id: license.id,
+        actor: admin.id,
+      })
+      return res.status(200).json({ deleted: true, license_ref: license.license_ref, action })
+    }
 
     const now = new Date().toISOString()
     const patch = { updated_at: now }

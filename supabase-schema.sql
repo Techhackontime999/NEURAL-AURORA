@@ -2027,8 +2027,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE licenses TO service_role;
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS license_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  license_id BIGINT NOT NULL REFERENCES licenses(id) ON DELETE CASCADE,
-  action TEXT NOT NULL CHECK (action IN ('issued', 'suspended', 'revoked', 'reinstated', 'reissued', 'expired')),
+  license_id BIGINT REFERENCES licenses(id) ON DELETE SET NULL,
+  action TEXT NOT NULL CHECK (action IN ('issued', 'suspended', 'revoked', 'reinstated', 'reissued', 'expired', 'deleted')),
   reason TEXT DEFAULT '',
   actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()

@@ -133,7 +133,6 @@ export function ThemeToggle({
     color: t.btnText,
     boxShadow: `0 0 0 1.5px ${t.btnRing}`,
     zIndex: 9999,
-    outline: "none",
     transition:
       "background 0.3s ease, color 0.3s ease, transform 0.15s ease, box-shadow 0.3s ease",
     marginLeft: isAppBar ? "16px" : "0",

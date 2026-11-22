@@ -71,9 +71,10 @@
     background: var(--bg-primary);
   }
 
-  /* Fix navbar overlap on anchor scroll */
-  section[id] {
-    scroll-margin-top: 5rem;
+  /* Fixed/ sticky headers must never cover an anchor target. This applies to
+     sections and to in-page targets such as #donate and #purchase-panel. */
+  [id] {
+    scroll-margin-top: var(--anchor-scroll-margin, 5.5rem);
   }
 
   body {
@@ -116,6 +117,7 @@
     --app-font-scale: 1;
     --app-font-size: 16px;
     --app-radius-scale: 1;
+    --anchor-scroll-margin: 5.5rem;
     --bg-primary: #faf8f5;
     --bg-secondary: #ffffff;
     --text-primary: #1d1d1f;
@@ -214,6 +216,45 @@
 }
 
 @layer components {
+  /* One content container for store pages: equal 16px gutters on a phone and
+     a 1200px measure (120px margins at 1440) on larger screens. */
+  .wrap {
+    width: min(calc(100% - 2rem), 1200px);
+    margin-inline: auto;
+  }
+
+  /* Tailwind's outline-none utilities must never leave a control without a
+     visible focus indicator. The ring is applied after the utility layer so
+     keyboard focus stays obvious. */
+  .focus\:outline-none:focus,
+  .focus-visible\:outline-none:focus-visible {
+    outline: 2px solid var(--accent-glow);
+    outline-offset: 2px;
+  }
+
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent-glow);
+    outline-offset: 2px;
+  }
+
+  .skip-link {
+    position: fixed;
+    top: 0.25rem;
+    left: 0.25rem;
+    z-index: 100000;
+    transform: translateY(-200%);
+    border-radius: 0.5rem;
+    background: var(--bg-primary);
+    padding: 0.625rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
   .glass-panel {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);

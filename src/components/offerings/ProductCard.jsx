@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FileText, Download } from 'lucide-react'
@@ -27,18 +26,7 @@ export default function ProductCard({ product, index = 0 }) {
   const open = () => navigate(href)
 
   return (
-    <motion.article
-      custom={index}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{
-        delay: Math.min(index, 6) * 0.07,
-        duration: 0.5,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="glass-panel rounded-xl overflow-hidden group flex flex-col focus-within:ring-1 focus-within:ring-cyan-500/50"
-    >
+    <article className="glass-panel group flex flex-col overflow-hidden rounded-xl focus-within:ring-1 focus-within:ring-cyan-500/50">
       {/* Decorative: the image duplicates the title button and CTA below, so it
           is hidden from assistive tech rather than announced twice. */}
       <div
@@ -133,7 +121,7 @@ export default function ProductCard({ product, index = 0 }) {
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/5 pt-4 dark:border-white/5">
           <Link
             to={href}
-            className="flex-1 rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest py-2.5 text-center hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
+            className="flex min-h-11 flex-1 items-center justify-center rounded-lg bg-black/90 text-center text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black active:scale-[0.98] dark:bg-white/90 dark:text-black dark:hover:bg-white"
           >
             {isFree ? t('store.viewAndDownload') : t('store.viewDetails')}
           </Link>
@@ -148,6 +136,6 @@ export default function ProductCard({ product, index = 0 }) {
           )}
         </div>
       </div>
-    </motion.article>
+    </article>
   )
 }

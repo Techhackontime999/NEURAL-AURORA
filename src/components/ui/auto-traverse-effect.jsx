@@ -71,13 +71,10 @@ function TraverseSuggestion({ visible, shouldReduceMotion }) {
           <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl px-4 py-2"
             style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)' }}
           >
-            {!shouldReduceMotion && (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              className="w-3 h-3 rounded-full border-2 border-transparent shrink-0"
-              style={{ borderTopColor: '#00f0ff', borderRightColor: '#00f0ff' }}
-            />)}
+            <span
+              aria-hidden="true"
+              className="h-3 w-3 shrink-0 rounded-full bg-cyan-400"
+            />
             <span className="text-[11px] text-white/60 font-mono tracking-wide">
               Auto-traversing
             </span>

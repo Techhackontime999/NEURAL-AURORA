@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2 } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2, FileText } from 'lucide-react'
 import {
   getPublishedProducts,
   getCategories,
@@ -280,6 +280,7 @@ export default function Products() {
       eyebrow={t('store.eyebrow')}
       title={t('store.title')}
       subtitle={t('store.subtitle')}
+      action={{ href: '#catalogue', label: t('store.browseStore') }}
     >
       {!hasActiveFilters && featuredProducts.length > 0 && (
         <motion.section
@@ -305,28 +306,70 @@ export default function Products() {
         </motion.section>
       )}
 
-      {/* --- Filter bar ---------------------------------------------------- */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-panel rounded-xl p-4 md:p-5 mb-8"
-        aria-label={t('store.filters')}
+      {/* --- Filters + catalogue: one full-screen section ------------------ */}
+      <section
+        id="catalogue"
+        aria-labelledby="catalogue-heading"
+        className="flex h-[100svh] flex-col pt-10"
       >
+        <div className="wrap flex flex-1 flex-col">
+        <h2
+          id="catalogue-heading"
+          className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]"
+        >
+          {t('store.filters')}
+        </h2>
+
+        <div
+          data-ui
+          aria-hidden="true"
+          className="relative mb-4 flex min-h-[176px] flex-col justify-between gap-4 overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.03] via-transparent to-cyan-400/10 p-5 dark:border-white/10 md:min-h-[192px]"
+        >
+          <div className="flex flex-1 items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-400/10">
+              <FileText className="h-6 w-6 text-cyan-500" />
+            </div>
+            <div className="w-full max-w-sm space-y-2">
+              <div className="h-2 w-1/3 rounded-full bg-cyan-500/40" />
+              <div className="h-2 w-2/3 rounded-full bg-black/10 dark:bg-white/10" />
+              <div className="h-2 w-1/2 rounded-full bg-black/10 dark:bg-white/10" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 self-end md:w-1/2">
+            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">ZIP</div>
+            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">PDF</div>
+            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">CODE</div>
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-panel rounded-xl p-4 md:p-5"
+        >
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={t('store.searchPlaceholder')}
-              aria-label={t('store.searchPlaceholder')}
-              className="w-full rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-            />
+            <label
+              htmlFor="store-search"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              {t('store.searchPlaceholder')}
+            </label>
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]"
+                aria-hidden="true"
+              />
+              <input
+                id="store-search"
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={t('store.searchPlaceholder')}
+                className="min-h-11 w-full rounded-lg border border-black/10 bg-black/5 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5"
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -336,7 +379,7 @@ export default function Products() {
                 value={filters.sort}
                 onChange={(e) => set({ sort: e.target.value })}
                 aria-label={t('store.sortLabel')}
-                className="rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                className="min-h-11 rounded-lg border border-black/10 bg-black/5 px-3 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5"
               >
                 {Object.keys(PRODUCT_SORTS).map((key) => (
                   <option key={key} value={key}>
@@ -346,12 +389,12 @@ export default function Products() {
               </select>
             </label>
 
-            <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
+            <label className="flex min-h-11 items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={filters.freeOnly}
                 onChange={(e) => set({ freeOnly: e.target.checked })}
-                className="h-3.5 w-3.5 rounded border-black/20 dark:border-white/20 accent-cyan-500"
+                className="h-5 w-5 rounded border-black/20 accent-cyan-500 dark:border-white/20"
               />
               {t('store.freeOnly')}
             </label>
@@ -420,14 +463,14 @@ export default function Products() {
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400 transition-colors"
+              className="inline-flex min-h-11 items-center gap-1.5 text-[10px] uppercase tracking-widest text-cyan-500 transition-colors hover:text-cyan-400"
             >
               <X className="w-3 h-3" />
               {t('store.clearFilters')}
             </button>
           </div>
         )}
-      </motion.section>
+        </motion.div>
 
       {/* The query is capped; never imply the user saw the whole catalogue. */}
       {products.length === LIST_CAP && !loading && (
@@ -439,13 +482,22 @@ export default function Products() {
       {/* --- Catalogue ----------------------------------------------------- */}
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass-panel rounded-xl overflow-hidden animate-pulse">
-              <div className="aspect-[16/10] bg-black/5 dark:bg-white/5" />
-              <div className="p-5 space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-xl border border-black/10 bg-white/50 dark:border-white/10 dark:bg-white/5">
+              <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-black/5 dark:bg-white/5">
+                <div className="absolute inset-0 animate-pulse bg-black/5 dark:bg-white/5" />
+                <div className="absolute inset-x-4 top-4 flex items-center gap-2">
+                  <span className="h-5 w-16 rounded-full bg-black/10 dark:bg-white/10" />
+                  <span className="h-5 w-12 rounded-full bg-black/10 dark:bg-white/10" />
+                </div>
+                <FileText className="relative h-10 w-10 text-[var(--text-tertiary)]" aria-hidden="true" />
+              </div>
+              <div className="space-y-3 p-5">
                 <div className="h-3 w-2/3 rounded bg-black/5 dark:bg-white/5" />
                 <div className="h-2 w-full rounded bg-black/5 dark:bg-white/5" />
-                <div className="h-8 w-full rounded-lg bg-black/5 dark:bg-white/5" />
+                <div className="flex min-h-11 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">
+                  <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" aria-hidden="true" />
+                </div>
               </div>
             </div>
           ))}
@@ -460,7 +512,7 @@ export default function Products() {
             <button
               type="button"
               onClick={() => setReloadToken((n) => n + 1)}
-              className="rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-black/90 px-4 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black active:scale-[0.98] dark:bg-white/90 dark:text-black dark:hover:bg-white"
             >
               {t('store.retry')}
             </button>
@@ -476,7 +528,7 @@ export default function Products() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-lg bg-black/90 dark:bg-white/90 text-white dark:text-black text-[11px] uppercase tracking-widest px-4 py-2.5 hover:bg-black hover:dark:bg-white transition-colors active:scale-[0.98]"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-black/90 px-4 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black active:scale-[0.98] dark:bg-white/90 dark:text-black dark:hover:bg-white"
               >
                 {t('store.clearFilters')}
               </button>
@@ -515,7 +567,7 @@ export default function Products() {
               type="button"
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-5 py-2.5 text-[11px] uppercase tracking-widest text-[var(--text-secondary)] transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/10 px-5 text-[11px] uppercase tracking-widest text-[var(--text-secondary)] transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10"
             >
               {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
               {loadingMore ? t('store.loadingMore') : t('store.loadMore')}
@@ -529,6 +581,20 @@ export default function Products() {
           )}
         </div>
       )}
+
+      <div className="mt-auto flex flex-col items-center gap-3 pt-6">
+        <p className="text-xs text-[var(--text-secondary)]">
+          {t('store.digitalProduct')}
+        </p>
+        <Link
+          to="/support"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 text-xs font-semibold uppercase tracking-widest text-black transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:bg-cyan-400"
+        >
+          {t('nav.support')}
+        </Link>
+      </div>
+        </div>
+      </section>
     </StoreShell>
   )
 }
@@ -539,7 +605,7 @@ function CategoryChip({ active, onClick, label }) {
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1.5 text-[11px] tracking-wide transition-colors ${
+      className={`inline-flex min-h-11 items-center rounded-full border px-4 text-[11px] tracking-wide transition-colors ${
         active
           ? 'border-cyan-500/60 bg-cyan-500/10 text-cyan-500'
           : 'border-black/10 dark:border-white/10 text-[var(--text-secondary)] hover:text-black/80 dark:hover:text-white/80'

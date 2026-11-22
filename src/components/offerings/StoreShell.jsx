@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import ServiceNavbar from '../ServiceNavbar'
-import AuroraBackground from '../AuroraBackground'
 import { Footer } from '../ui/footer-section'
 import { useStoreHeroSettings } from '../../lib/usePortfolioData'
 import { mergeStoreHeroConfig } from '../../lib/storeHeroDefaults'
@@ -33,7 +33,7 @@ function HeroCarousel({ slides, intervalSeconds }) {
   if (!slides.length) return null
 
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+    <div className="absolute inset-x-0 bottom-8 top-20 z-0 overflow-hidden" aria-hidden="true">
       <AnimatePresence initial={false}>
         <motion.img
           key={slides[active].url}
@@ -54,7 +54,7 @@ function HeroCarousel({ slides, intervalSeconds }) {
 
       {/* Legibility scrim so the card copy stays readable over any image,
           in both light and dark mode. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/55 dark:from-black/55 dark:via-black/40 dark:to-black/65" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/50 to-black/75" />
 
       {/* Slide indicators */}
       {slides.length > 1 && (
@@ -65,10 +65,14 @@ function HeroCarousel({ slides, intervalSeconds }) {
               type="button"
               aria-label={`Show slide ${index + 1}`}
               onClick={() => setActive(index)}
-              className={`h-1 rounded-full transition-all duration-300 ${
-                index === active ? 'w-6 bg-white/90' : 'w-2.5 bg-white/40 hover:bg-white/60'
-              }`}
-            />
+              className="group flex h-11 w-7 items-center justify-center"
+            >
+              <span
+                className={`block h-1 rounded-full transition-all duration-300 ${
+                  index === active ? 'w-6 bg-white/90' : 'w-2.5 bg-white/40 group-hover:bg-white/60'
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
@@ -83,7 +87,7 @@ function HeroCarousel({ slides, intervalSeconds }) {
  * switcher — ServiceNavbar falls back to /offerings when an anchor like
  * "#pricing" does not exist on a store page.
  */
-export default function StoreShell({ eyebrow, title, subtitle, children }) {
+export default function StoreShell({ eyebrow, title, subtitle, action, children }) {
   const settings = useStoreHeroSettings()
   const cfg = useMemo(() => mergeStoreHeroConfig(settings), [settings])
   const slides = useMemo(
@@ -94,30 +98,21 @@ export default function StoreShell({ eyebrow, title, subtitle, children }) {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <AuroraBackground />
       <ServiceNavbar />
 
-      <main className="relative z-10 max-w-[1200px] mx-auto px-6 md:px-12 pt-32 pb-20">
+      <main className="wrap relative z-10 pb-0 pt-0">
         {title && (
-          <motion.div
+          <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative overflow-hidden rounded-[2rem] border border-black/10 dark:border-white/10 mb-10"
+            className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden rounded-[2rem] border border-black/10 pb-20 pt-24 dark:border-white/10 md:pb-24 md:pt-28"
           >
-            {/* Gradient layers sit under the carousel and act as the visual
-                fallback when no images are available. */}
-            <div className="absolute inset-0 z-0">
-              <div className="absolute -inset-[40%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent opacity-60 dark:from-cyan-400/25" />
-              <div className="absolute -bottom-[60%] -right-[30%] bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent opacity-50 dark:from-purple-400/25" />
-              <div className="absolute -bottom-[40%] -left-[20%] bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-amber-500/15 via-transparent to-transparent opacity-40 dark:from-amber-400/20" />
-            </div>
-
             <HeroCarousel slides={slides} intervalSeconds={cfg.intervalSeconds} />
 
-            <div className="relative z-10 px-6 md:px-12 py-12 md:py-16 text-center">
+            <div className="wrap relative z-10 py-12 text-center md:py-16">
               {eyebrow && (
-                <span className={hasImageBg ? 'eyebrow text-white/80 [&_*]:text-white/80' : 'eyebrow'}>
+                <span className={hasImageBg ? 'eyebrow text-white [&_*]:text-white' : 'eyebrow'}>
                   {eyebrow}
                 </span>
               )}
@@ -136,15 +131,35 @@ export default function StoreShell({ eyebrow, title, subtitle, children }) {
                 <p
                   className={
                     hasImageBg
-                      ? 'text-sm md:text-base text-white/85 drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)] mt-4 max-w-2xl mx-auto leading-relaxed'
+                      ? 'text-sm md:text-base text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.8)] mt-4 max-w-2xl mx-auto leading-relaxed'
                       : 'text-sm md:text-base text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto leading-relaxed'
                   }
                 >
                   {subtitle}
                 </p>
               )}
+
+              {action && (
+                <div className="mt-7 flex justify-center">
+                  {action.to ? (
+                    <Link
+                      to={action.to}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 text-xs font-semibold uppercase tracking-widest text-black transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:bg-cyan-400"
+                    >
+                      {action.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={action.href}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 text-xs font-semibold uppercase tracking-widest text-black transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:bg-cyan-400"
+                    >
+                      {action.label}
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
-          </motion.div>
+          </motion.section>
         )}
 
         {children}

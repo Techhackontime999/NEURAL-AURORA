@@ -72,12 +72,13 @@ export default function ServiceNavbar() {
           scrolled ? 'mt-0' : 'mt-4'
         }`}
       >
-        <div className={`mx-auto w-max transition-all duration-500 ${
+        <a href="#catalogue" className="skip-link">Skip to content</a>
+        <div className={`mx-auto flex w-full max-w-[calc(100vw-1rem)] items-center transition-all duration-500 md:w-max ${
           scrolled
-            ? 'glass-panel-strong rounded-2xl px-4 py-2'
-            : 'glass-panel rounded-full px-6 py-3'
-        }`}>
-          <div className="flex items-center gap-8">
+            ? 'glass-panel-strong rounded-2xl px-3 py-2 md:px-4'
+            : 'glass-panel rounded-full px-3 py-2 md:px-6 md:py-3'
+        } bg-white/95 dark:bg-black/85`}>
+          <div className="flex flex-1 items-center justify-between gap-2 md:flex-none md:gap-8">
             <BrandLogo
               size="small"
               onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
@@ -87,7 +88,7 @@ export default function ServiceNavbar() {
                 <button
                   key={link.href}
                   onClick={() => handleClick(link.href, link.route)}
-                  className={`text-xs tracking-wider uppercase transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
+                  className={`inline-flex min-h-11 items-center text-xs tracking-wider uppercase transition-all duration-[400ms] active:scale-[0.97] ${
                     link.route && location.pathname === link.href
                       ? 'text-black/90 dark:text-white/90'
                       : 'text-black/50 dark:text-white/50 hover:text-black/90 dark:hover:text-white/90'
@@ -98,10 +99,10 @@ export default function ServiceNavbar() {
               ))}
             </div>
             <LanguageSwitcher />
-            <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
+            <ThemeToggle variant="icon" buttonSize={44} defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
-              className="md:hidden relative w-6 h-6 flex items-center justify-center"
+              className="relative flex h-11 w-11 items-center justify-center md:hidden"
               aria-label={t('common.menu')}
             >
               <div className="flex flex-col gap-1.5">
@@ -139,7 +140,7 @@ export default function ServiceNavbar() {
                 initial="hidden"
                 animate="visible"
                 onClick={() => { setOpen(false); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
+                className="inline-flex min-h-11 items-center text-2xl tracking-tight text-black/70 transition-colors hover:text-black dark:text-white/70 dark:hover:text-white"
               >
                 {t('common.home')}
               </motion.button>
@@ -151,7 +152,7 @@ export default function ServiceNavbar() {
                   initial="hidden"
                   animate="visible"
                   onClick={() => handleClick(link.href, link.route)}
-                  className="text-2xl tracking-tight text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors"
+                  className="inline-flex min-h-11 items-center text-2xl tracking-tight text-black/70 transition-colors hover:text-black dark:text-white/70 dark:hover:text-white"
                 >
                   {t(link.label)}
                 </motion.button>

@@ -66,7 +66,7 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative flex items-center justify-center gap-1.5 w-auto h-7 px-2 rounded-lg text-black/40 dark:text-white/40 hover:text-black/80 dark:hover:text-white/80 active:scale-[0.92] transition-all duration-300"
+        className="relative flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-black/70 transition-all duration-300 hover:text-black active:scale-[0.92] dark:text-white/70 dark:hover:text-white"
         title={t('nav.language', 'Language')}
         aria-label={t('nav.language', 'Language')}
         aria-expanded={open}
@@ -112,7 +112,7 @@ export default function LanguageSwitcher() {
                 <button
                   key={lang.code}
                   onClick={() => changeLang(lang.code)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs tracking-wide active:scale-[0.98] transition-all duration-300 ${
+                  className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 text-xs tracking-wide transition-all duration-300 active:scale-[0.98] ${
                     isActive ? 'font-semibold' : ''
                   }`}
                   style={{

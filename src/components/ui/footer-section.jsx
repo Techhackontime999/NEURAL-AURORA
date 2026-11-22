@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LiveVisitorCount from './LiveVisitorCount'
@@ -26,24 +25,6 @@ const iconMap = {
   facebook: FacebookIcon,
 }
 
-function AnimatedContainer({ className, delay = 0.1, children }) {
-  const shouldReduceMotion = useReducedMotion()
-
-  if (shouldReduceMotion) return children
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay, duration: 0.8 }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
 export function Footer() {
   const { t } = useTranslation()
   const { data: personalInfo } = usePersonalInfo()
@@ -54,19 +35,19 @@ export function Footer() {
     {
       label: t('footer.skills'),
       links: [
-        { title: t('footer.reactNext'), href: '#skills' },
-        { title: t('footer.threeWebGL'), href: '#skills' },
-        { title: t('footer.uiUxDesign'), href: '#skills' },
-        { title: t('footer.fullStackDev'), href: '#skills' },
+        { title: t('footer.reactNext'), href: '/#skills' },
+        { title: t('footer.threeWebGL'), href: '/#skills' },
+        { title: t('footer.uiUxDesign'), href: '/#skills' },
+        { title: t('footer.fullStackDev'), href: '/#skills' },
       ],
     },
     {
       label: t('footer.projects'),
       links: [
-        { title: t('footer.neuralAurora'), href: '#projects' },
-        { title: t('footer.synapticDashboard'), href: '#projects' },
-        { title: t('footer.auroraEngine'), href: '#projects' },
-        { title: t('footer.viewAll'), href: '#projects' },
+        { title: t('footer.neuralAurora'), href: '/#projects' },
+        { title: t('footer.synapticDashboard'), href: '/#projects' },
+        { title: t('footer.auroraEngine'), href: '/#projects' },
+        { title: t('footer.viewAll'), href: '/#projects' },
       ],
     },
     {
@@ -82,18 +63,17 @@ export function Footer() {
   ]
 
   return (
-    <footer className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 pb-8">
-      <div className="relative w-full flex flex-col items-center justify-center rounded-[2rem] border border-black/10 dark:border-white/[0.06] bg-[radial-gradient(35%_128px_at_50%_0%,rgba(255,255,255,0.04),transparent)] px-6 py-12 lg:py-16 overflow-hidden">
-        <div className="absolute top-0 left-1/2 h-px w-1/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur" />
-
-        <AnimatedContainer className="w-full">
-          <BrandLogoFull className="mb-12" />
-        </AnimatedContainer>
+    <footer className="closing relative z-10 flex min-h-[100svh] w-full items-center">
+      <div className="wrap relative flex flex-col gap-10 overflow-hidden rounded-[2rem] border border-black/10 bg-white/95 py-12 pb-28 dark:border-white/10 dark:bg-black/85 lg:py-16 lg:pb-16">
+        <div>
+        <div className="w-full">
+          <BrandLogoFull className="mb-10" />
+        </div>
 
         <div className="grid w-full gap-8 md:grid-cols-3">
-          {footerSections.map((section, index) => (
-            <AnimatedContainer key={section.label} delay={0.1 + index * 0.1}>
-              <h3 className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/40 font-medium mb-5">
+          {footerSections.map((section) => (
+            <div key={section.label}>
+              <h3 className="mb-5 text-xs font-medium uppercase tracking-[0.15em] text-black/70 dark:text-white/70">
                 {section.label}
               </h3>
               <ul className="space-y-3">
@@ -103,7 +83,7 @@ export function Footer() {
                       href={link.href}
                       target={link.href.startsWith('http') ? '_blank' : undefined}
                       rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      className="inline-flex items-center gap-2 text-sm text-black/40 dark:text-white/30 hover:text-black/70 dark:hover:text-white/70 active:scale-[0.97] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group"
+                      className="group inline-flex min-h-11 items-center gap-2 text-sm text-black/70 transition-all duration-[400ms] hover:text-black active:scale-[0.97] dark:text-white/70 dark:hover:text-white"
                     >
                       {link.icon && <link.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
                       {link.title}
@@ -111,13 +91,14 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </AnimatedContainer>
+            </div>
           ))}
         </div>
+        </div>
 
-        <AnimatedContainer delay={0.4} className="w-full mt-12 pt-8 border-t border-black/10 dark:border-white/[0.04]">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-black/25 dark:text-white/15">
+        <div className="w-full">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <p className="text-xs text-black/60 dark:text-white/60">
               {currentYear} {personalInfo.handle}. {t('footer.synapticPortfolio')}
             </p>
             <LiveVisitorCount />
@@ -131,7 +112,7 @@ export function Footer() {
                     target="_self"
                     rel="noopener noreferrer"
                     aria-label={`${link.label} profile`}
-                    className="text-black/30 dark:text-white/20 hover:text-black/60 dark:hover:text-white/60 active:scale-90 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center text-black/60 transition-all duration-[400ms] hover:text-black active:scale-90 dark:text-white/60 dark:hover:text-white"
                   >
                     <Icon
                       aria-hidden="true"
@@ -142,7 +123,10 @@ export function Footer() {
               })}
             </div>
           </div>
-        </AnimatedContainer>
+          <p className="mt-6 text-center text-[10px] text-black/50 dark:text-white/50">
+            Photography: Unsplash (licensed stand-ins).
+          </p>
+        </div>
       </div>
     </footer>
   )

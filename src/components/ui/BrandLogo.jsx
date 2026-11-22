@@ -265,7 +265,7 @@ export function BrandLogoFull({ className = '' }) {
         AURORA
       </span>
       <motion.p
-        className="text-[10px] text-black/40 dark:text-white/20 tracking-[0.2em] uppercase mt-1"
+        className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]"
         animate={shouldReduceMotion ? undefined : { opacity: [0.3, 0.6, 0.3] }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       >

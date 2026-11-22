@@ -85,12 +85,7 @@ export default function LiveVisitorCount() {
   const shouldReduceMotion = useReducedMotion()
 
   return (
-    <motion.div
-      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="relative"
-    >
+    <div className="relative">
       <div
         className="relative overflow-hidden rounded-xl border px-4 py-2.5 backdrop-blur-sm"
         style={{
@@ -154,7 +149,7 @@ export default function LiveVisitorCount() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

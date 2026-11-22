@@ -11,6 +11,7 @@ import {
   PRODUCT_PAGE_SIZE,
   PRODUCT_MAX_RESULTS,
 } from '../../lib/products'
+import { isSupabaseConfigured } from '../../lib/supabase'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 
@@ -313,12 +314,25 @@ export default function Products() {
         className="flex min-h-[100svh] flex-col pt-10"
       >
         <div className="wrap flex flex-1 flex-col">
-        <h2
-          id="catalogue-heading"
-          className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]"
-        >
-          {t('store.filters')}
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="catalogue-heading"
+            className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]"
+          >
+            {t('store.filters')}
+          </h2>
+          <span
+            data-testid="store-data-status"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest ${
+              isSupabaseConfigured
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
+                : 'border-amber-500/30 bg-amber-500/5 text-amber-500'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
+            {isSupabaseConfigured ? t('store.liveData') : t('store.localData')}
+          </span>
+        </div>
 
         <div
           data-ui

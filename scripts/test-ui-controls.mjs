@@ -78,6 +78,30 @@ check('loader: new sections use shared portfolio hooks', ['useGallery()', 'useCe
 check('loader: store keeps an honest unconfigured state', loader.includes('getPublishedProducts({ limit: 8 })') && loader.includes("storeStatus === 'loading'") && loader.includes("storeStatus === 'error'") && !productsSourceHasSecret())
 check('loader: new sections keep honest unconfigured states', loader.includes('function ContentState(') && ['gallery.empty', 'certificates.empty', 'achievements.empty', 'reviews.empty', 'resume.empty'].every((key) => loader.includes(`loader.explore.${key}`)))
 check('loader: exploration copy is translated', ['digitalStore', 'storeDesc', 'blogDesc', 'caseStudies', 'projectsDesc', 'services', 'skillsDesc', 'experience', 'education', 'gallery', 'galleryDesc', 'certificates', 'certificatesDesc', 'achievements', 'achievementsDesc', 'reviews', 'reviewsDesc', 'resume', 'resumeDesc'].every((key) => Boolean(en.loader?.cards?.[key])) && ['eyebrow', 'title', 'subtitle', 'back', 'continue', 'openFull', 'loading', 'empty', 'error', 'viewCredential', 'viewLink', 'gallery', 'certificates', 'achievements', 'reviews', 'resume', 'store'].every((key) => Boolean(en.loader?.explore?.[key])))
+check(
+  'loader: gateway can be filtered and searched',
+  loader.includes('const GATEWAY_FILTERS = [') &&
+    loader.includes('data-gateway-item') &&
+    loader.includes('type="search"') &&
+    loader.includes('visibleGatewayCount') &&
+    ['all', 'verify', 'explore', 'exit'].every((key) => Boolean(en.loader?.gateway?.filters?.[key])) &&
+    Boolean(en.loader?.gateway?.noResults)
+)
+check(
+  'loader: gateway and gallery disclose live data state',
+  loader.includes('function LiveDataBadge(') &&
+    loader.includes("'gateway-data-status'") &&
+    loader.includes("'gallery-data-status'") &&
+    Boolean(en.loader?.gateway?.liveData) &&
+    Boolean(en.loader?.gateway?.localData)
+)
+check(
+  'loader: every gallery tab uses shared portfolio hooks',
+  ['useBlogPosts()', 'useCaseStudies()', 'useProjects()', 'useServices()', 'useSkills()', 'useExperience()', 'useEducation()'].every((hook) => loader.includes(hook)) &&
+    loader.includes('invalidatePortfolioCache(activeSection.resourceKey)') &&
+    Boolean(en.loader?.explore?.emptyNamed) &&
+    Boolean(en.loader?.explore?.retry)
+)
 
 function productsSourceHasSecret() {
   // Keep the gallery coupled to the shared published-products API, never a

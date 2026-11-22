@@ -170,6 +170,20 @@
   "loader": {
     "verificationRequired": "Verification Required",
     "proveIdentity": "Prove your identity to access the system.",
+    "gateway": {
+      "filterLabel": "Gateway filters",
+      "searchPlaceholder": "Find a gateway...",
+      "liveData": "Live data",
+      "localData": "Local sample",
+      "resultCount": "{{count}} gateways",
+      "noResults": "No gateway matches that filter.",
+      "filters": {
+        "all": "All",
+        "verify": "Verify",
+        "explore": "Explore",
+        "exit": "Exit"
+      }
+    },
     "cards": {
       "sayName": "Say “{{name}}”",
       "voiceRecognition": "Voice recognition",
@@ -225,6 +239,12 @@
       "eyebrow": "Verified access",
       "title": "Explore the archive",
       "subtitle": "Browse a section, then continue when you're ready.",
+      "sectionLabel": "Current section",
+      "recordCount": "{{count}} record(s)",
+      "refresh": "Refresh this section",
+      "retry": "Retry",
+      "emptyNamed": "No {{name}} records have been published yet.",
+      "staleNotice": "Live refresh failed. Showing the last available data.",
       "back": "Back to verification",
       "continue": "Continue to site",
       "openFull": "Open full section",
@@ -338,6 +358,8 @@
     "title": "Digital Products",
     "subtitle": "Templates, source code, UI kits, ebooks and automation resources built by NEURAL AURORA - instant download, first-party, no marketplace in between. Built for web, mobile and desktop.",
     "filters": "Product filters",
+    "liveData": "Live catalogue",
+    "localData": "Local sample",
     "searchPlaceholder": "Search products and tags...",
     "sortLabel": "Sort products",
     "sort": {

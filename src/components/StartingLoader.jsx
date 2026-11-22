@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion, MotionConfig } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { RefreshCw, Search } from 'lucide-react'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
 import { useMood } from '../context/MoodContext'
-import { getActiveAdVideos, incrementAdViewCount, getPublicSettings, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB } from '../lib/supabase'
+import { getActiveAdVideos, incrementAdViewCount, getPublicSettings, getBlogPosts as getBlogPostsFromDB, getSkills as getSkillsFromDB, getProjects as getProjectsFromDB, getEducation as getEducationFromDB, getExperience as getExperienceFromDB, getServices as getServicesFromDB, getCaseStudies as getCaseStudiesFromDB, getPersonalInfo as getPersonalInfoFromDB, getSocialLinks as getSocialLinksFromDB, isSupabaseConfigured } from '../lib/supabase'
 import AdVideoPlayer from './ui/AdVideoPlayer'
 import YouTubeBrowse from './ui/YouTubeBrowse'
 import MoodSwing from './MoodSwing'
@@ -13,7 +14,21 @@ import { personalInfo, socialLinks, skills, projects, education, experience, ser
 import { callAi } from '../lib/ai/provider'
 import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
 import { getPublishedProducts, formatPrice } from '../lib/products'
-import { usePersonalInfo, useReviews, useCertificates, useAchievements, useGallery } from '../lib/usePortfolioData'
+import {
+  usePersonalInfo,
+  useReviews,
+  useCertificates,
+  useAchievements,
+  useGallery,
+  useBlogPosts,
+  useCaseStudies,
+  useProjects,
+  useServices,
+  useSkills,
+  useExperience,
+  useEducation,
+  invalidatePortfolioCache,
+} from '../lib/usePortfolioData'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -27,6 +42,70 @@ const TERMINAL_LINES = [
 // input before the failsafe lets them through. Long enough to read and scroll
 // the verification options, short enough not to park an idle tab forever.
 const IDLE_SKIP_MS = 30_000
+
+// The gateway is intentionally grouped: verification challenges stay separate
+// from content exploration so a first-time visitor sees a short list, not 22
+// equally weighted choices. Every id keeps its own test id for regression tests.
+const GATEWAY_FILTERS = ['all', 'verify', 'explore', 'exit']
+const GATEWAY_VERIFY_IDS = [
+  'voice',
+  'quiz',
+  'autoTraverse',
+  'ads',
+  'mood',
+  'cmd',
+  'interview',
+  'pattern',
+  'youtube',
+]
+const GATEWAY_EXIT_IDS = ['skip']
+
+const EXPLORE_GATEWAY_OPTIONS = [
+  { id: 'store', emoji: '🛍️', titleKey: 'digitalStore', descKey: 'storeDesc', accent: '0,240,255', section: 'store' },
+  { id: 'blog', emoji: '📝', titleKey: 'blog', descKey: 'blogDesc', accent: '167,139,250', section: 'blog' },
+  { id: 'case-studies', emoji: '🧪', titleKey: 'caseStudies', descKey: 'caseStudiesDesc', accent: '244,114,182', section: 'caseStudies' },
+  { id: 'projects', emoji: '🚀', titleKey: 'projects', descKey: 'projectsDesc', accent: '52,211,153', section: 'projects' },
+  { id: 'services', emoji: '🧠', titleKey: 'services', descKey: 'servicesDesc', accent: '250,204,21', section: 'services' },
+  { id: 'skills', emoji: '🛠️', titleKey: 'skills', descKey: 'skillsDesc', accent: '96,165,250', section: 'skills' },
+  { id: 'experience', emoji: '📈', titleKey: 'experience', descKey: 'experienceDesc', accent: '251,146,60', section: 'experience' },
+  { id: 'education', emoji: '🎓', titleKey: 'education', descKey: 'educationDesc', accent: '192,132,252', section: 'education' },
+  { id: 'gallery', emoji: '🖼️', titleKey: 'gallery', descKey: 'galleryDesc', accent: '45,212,191', section: 'gallery' },
+  { id: 'certificates', emoji: '📜', titleKey: 'certificates', descKey: 'certificatesDesc', accent: '250,204,21', section: 'certificates' },
+  { id: 'achievements', emoji: '🏆', titleKey: 'achievements', descKey: 'achievementsDesc', accent: '251,146,60', section: 'achievements' },
+  { id: 'reviews', emoji: '⭐', titleKey: 'reviews', descKey: 'reviewsDesc', accent: '244,114,182', section: 'reviews' },
+  { id: 'resume', emoji: '📄', titleKey: 'resume', descKey: 'resumeDesc', accent: '148,163,184', section: 'resume' },
+]
+
+function gatewayGroupFor(id) {
+  if (GATEWAY_VERIFY_IDS.includes(id)) return 'verify'
+  if (GATEWAY_EXIT_IDS.includes(id)) return 'exit'
+  return 'explore'
+}
+
+/** display:contents keeps filtered cards in the same CSS grid without wrappers. */
+function GatewayItem({ visible, children }) {
+  return visible ? <div className="contents">{children}</div> : null
+}
+
+function LiveDataBadge({ compact = false }) {
+  const { t } = useTranslation()
+  const live = isSupabaseConfigured
+  return (
+    <span
+      data-testid={compact ? 'gallery-data-status' : 'gateway-data-status'}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono uppercase tracking-widest ${
+        compact ? 'text-[9px]' : 'text-[10px]'
+      } ${
+        live
+          ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+          : 'border-amber-400/25 bg-amber-400/5 text-amber-300/80'
+      }`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-emerald-400' : 'bg-amber-400/70'}`} aria-hidden="true" />
+      {live ? t('loader.gateway.liveData') : t('loader.gateway.localData')}
+    </span>
+  )
+}
 
 function Particles() {
   const ref = useRef(null)
@@ -491,6 +570,8 @@ function VerificationOption({ testId, emoji, title, description, accent = '0,240
     <motion.button
       type="button"
       data-testid={testId}
+      data-gateway-item={testId?.replace('verification-option-', '')}
+      data-gateway-group="explore"
       onClick={onClick}
       whileHover={shouldReduceMotion ? undefined : { scale: 1.02, y: -1 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
@@ -555,14 +636,28 @@ function StoreCards({ products, status }) {
   )
 }
 
-function ContentState({ status, emptyKey }) {
+function ContentState({ status, emptyKey, emptyVars, onRetry }) {
   const { t } = useTranslation()
   const key = status === 'loading'
     ? 'loader.explore.loading'
     : status === 'error'
       ? 'loader.explore.error'
       : emptyKey
-  return <p className="text-xs text-white/40 font-mono py-8 text-center">{t(key)}</p>
+  return (
+    <div className="flex flex-col items-center gap-3 py-8 text-center">
+      <p className="text-xs text-white/40 font-mono">{t(key, emptyVars)}</p>
+      {status === 'error' && onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/5 px-3 py-1.5 text-[10px] font-mono text-cyan-200/80 transition-colors hover:bg-cyan-400/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+        >
+          <RefreshCw className="h-3 w-3" aria-hidden="true" />
+          {t('loader.explore.retry')}
+        </button>
+      )}
+    </div>
+  )
 }
 
 function GalleryCards({ items, isLoading, error }) {
@@ -575,7 +670,7 @@ function GalleryCards({ items, isLoading, error }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
       {items.map((item, index) => (
-        <div key={item.id || item.image_url || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <div key={item.id || item.image_url || index} className="relative rounded-lg border border-white/[0.06] bg-white/[0.02] overflow-hidden">
           <img
             src={item.image_url}
             alt={item.title || t('loader.explore.gallery.image')}
@@ -584,12 +679,12 @@ function GalleryCards({ items, isLoading, error }) {
             className="w-full aspect-square object-cover bg-black/20"
           />
           {(item.title || item.category) && (
-            <div className="p-2">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-2 pt-6">
               {item.category && (
-                <p className="text-[9px] uppercase tracking-widest text-cyan-300/60">{item.category}</p>
+                <p className="text-[9px] uppercase tracking-widest text-cyan-300/80">{item.category}</p>
               )}
               {item.title && (
-                <p className="text-[11px] text-white/70 line-clamp-2">{item.title}</p>
+                <p className="text-[11px] text-white/90 line-clamp-2">{item.title}</p>
               )}
             </div>
           )}
@@ -707,17 +802,36 @@ function ResumeCard({ url }) {
   )
 }
 
+function sectionStatus(loading, error, count) {
+  if (loading && !count) return 'loading'
+  if (error && !count) return 'error'
+  if (!count) return 'empty'
+  return 'ready'
+}
+
 function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [active, setActive] = useState(initialSection)
   const [products, setProducts] = useState([])
   const [storeStatus, setStoreStatus] = useState('idle')
+  const [storeReloadToken, setStoreReloadToken] = useState(0)
+
+  // Every tab reads the same shared cache the public site uses, so a deployed
+  // Supabase project supplies the real rows while an unconfigured build keeps
+  // its honest local fallback. No tab still reads a static import directly.
   const { data: galleryItems = [], isLoading: galleryLoading, error: galleryError } = useGallery()
   const { data: certificates = [], isLoading: certificatesLoading, error: certificatesError } = useCertificates()
   const { data: achievements = [], isLoading: achievementsLoading, error: achievementsError } = useAchievements()
   const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useReviews()
-  const { data: personal = personalInfo } = usePersonalInfo()
+  const { data: blogItems = [], isLoading: blogLoading, error: blogError } = useBlogPosts()
+  const { data: caseStudyItems = [], isLoading: caseStudiesLoading, error: caseStudiesError } = useCaseStudies()
+  const { data: projectItems = [], isLoading: projectsLoading, error: projectsError } = useProjects()
+  const { data: serviceItems = [], isLoading: servicesLoading, error: servicesError } = useServices()
+  const { data: skillItems = [], isLoading: skillsLoading, error: skillsError } = useSkills()
+  const { data: experienceItems = [], isLoading: experienceLoading, error: experienceError } = useExperience()
+  const { data: educationItems = [], isLoading: educationLoading, error: educationError } = useEducation()
+  const { data: personal = personalInfo, error: personalError } = usePersonalInfo()
   const resumeUrl = personal?.resume
 
   useEffect(() => {
@@ -735,22 +849,22 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
         setStoreStatus('error')
       })
     return () => { cancelled = true }
-  }, [])
+  }, [storeReloadToken])
 
   const sections = [
-    { id: 'store', icon: '🛍️', label: t('loader.cards.digitalStore'), count: storeStatus === 'ready' ? products.length : storeStatus === 'loading' ? '…' : storeStatus === 'error' ? '—' : '—', href: '/offerings/products' },
-    { id: 'blog', icon: '📝', label: t('loader.cards.blog'), count: blogPosts.length, href: '/blog' },
-    { id: 'caseStudies', icon: '🧪', label: t('loader.cards.caseStudies'), count: caseStudies.length, href: '/more#case-studies' },
-    { id: 'projects', icon: '🚀', label: t('loader.cards.projects'), count: projects.length, href: '/#projects' },
-    { id: 'services', icon: '🧠', label: t('loader.cards.services'), count: services.length, href: '/offerings' },
-    { id: 'skills', icon: '🛠️', label: t('loader.cards.skills'), count: skills.length, href: '/#skills' },
-    { id: 'experience', icon: '📈', label: t('loader.cards.experience'), count: experience.length, href: '/more' },
-    { id: 'education', icon: '🎓', label: t('loader.cards.education'), count: education.length, href: '/more' },
-    { id: 'gallery', icon: '🖼️', label: t('loader.cards.gallery'), count: galleryLoading && !galleryItems.length ? '…' : galleryItems.length, href: '/more/gallery' },
-    { id: 'certificates', icon: '📜', label: t('loader.cards.certificates'), count: certificatesLoading && !certificates.length ? '…' : certificates.length, href: '/more/certificates' },
-    { id: 'achievements', icon: '🏆', label: t('loader.cards.achievements'), count: achievementsLoading && !achievements.length ? '…' : achievements.length, href: '/more/achievements' },
-    { id: 'reviews', icon: '⭐', label: t('loader.cards.reviews'), count: reviewsLoading && !reviews.length ? '…' : reviews.length, href: '/#reviews' },
-    { id: 'resume', icon: '📄', label: t('loader.cards.resume'), count: resumeUrl ? 1 : 0, href: '/#resume' },
+    { id: 'store', icon: '🛍️', label: t('loader.cards.digitalStore'), descKey: 'storeDesc', count: storeStatus === 'ready' ? products.length : storeStatus === 'loading' ? '…' : '—', status: storeStatus, error: storeStatus === 'error', href: '/offerings/products' },
+    { id: 'blog', icon: '📝', label: t('loader.cards.blog'), descKey: 'blogDesc', count: blogItems.length, status: sectionStatus(blogLoading, blogError, blogItems.length), error: blogError, resourceKey: 'blogPosts', href: '/blog' },
+    { id: 'caseStudies', icon: '🧪', label: t('loader.cards.caseStudies'), descKey: 'caseStudiesDesc', count: caseStudyItems.length, status: sectionStatus(caseStudiesLoading, caseStudiesError, caseStudyItems.length), error: caseStudiesError, resourceKey: 'caseStudies', href: '/more#case-studies' },
+    { id: 'projects', icon: '🚀', label: t('loader.cards.projects'), descKey: 'projectsDesc', count: projectItems.length, status: sectionStatus(projectsLoading, projectsError, projectItems.length), error: projectsError, resourceKey: 'projects', href: '/#projects' },
+    { id: 'services', icon: '🧠', label: t('loader.cards.services'), descKey: 'servicesDesc', count: serviceItems.length, status: sectionStatus(servicesLoading, servicesError, serviceItems.length), error: servicesError, resourceKey: 'services', href: '/offerings' },
+    { id: 'skills', icon: '🛠️', label: t('loader.cards.skills'), descKey: 'skillsDesc', count: skillItems.length, status: sectionStatus(skillsLoading, skillsError, skillItems.length), error: skillsError, resourceKey: 'skills', href: '/#skills' },
+    { id: 'experience', icon: '📈', label: t('loader.cards.experience'), descKey: 'experienceDesc', count: experienceItems.length, status: sectionStatus(experienceLoading, experienceError, experienceItems.length), error: experienceError, resourceKey: 'experience', href: '/more' },
+    { id: 'education', icon: '🎓', label: t('loader.cards.education'), descKey: 'educationDesc', count: educationItems.length, status: sectionStatus(educationLoading, educationError, educationItems.length), error: educationError, resourceKey: 'education', href: '/more' },
+    { id: 'gallery', icon: '🖼️', label: t('loader.cards.gallery'), descKey: 'galleryDesc', count: galleryItems.length, status: sectionStatus(galleryLoading, galleryError, galleryItems.length), error: galleryError, resourceKey: 'gallery', href: '/more/gallery' },
+    { id: 'certificates', icon: '📜', label: t('loader.cards.certificates'), descKey: 'certificatesDesc', count: certificates.length, status: sectionStatus(certificatesLoading, certificatesError, certificates.length), error: certificatesError, resourceKey: 'certificates', href: '/more/certificates' },
+    { id: 'achievements', icon: '🏆', label: t('loader.cards.achievements'), descKey: 'achievementsDesc', count: achievements.length, status: sectionStatus(achievementsLoading, achievementsError, achievements.length), error: achievementsError, resourceKey: 'achievements', href: '/more/achievements' },
+    { id: 'reviews', icon: '⭐', label: t('loader.cards.reviews'), descKey: 'reviewsDesc', count: reviews.length, status: sectionStatus(reviewsLoading, reviewsError, reviews.length), error: reviewsError, resourceKey: 'reviews', href: '/#reviews' },
+    { id: 'resume', icon: '📄', label: t('loader.cards.resume'), descKey: 'resumeDesc', count: resumeUrl ? 1 : 0, status: resumeUrl ? 'ready' : 'empty', error: personalError, resourceKey: 'personalInfo', href: '/#resume' },
   ]
 
   const activeIndex = Math.max(0, sections.findIndex((item) => item.id === active))
@@ -765,16 +879,42 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
     document.getElementById(`explore-tab-${sections[next].id}`)?.focus()
   }
 
+  function refreshActive() {
+    if (active === 'store') {
+      setStoreReloadToken((token) => token + 1)
+      return
+    }
+    if (activeSection?.resourceKey) invalidatePortfolioCache(activeSection.resourceKey)
+  }
+
+  function renderPanel() {
+    if (activeSection.status === 'loading') return <ContentState status="loading" />
+    if (activeSection.status === 'error') return <ContentState status="error" onRetry={refreshActive} />
+    if (activeSection.status === 'empty') {
+      return <ContentState status="empty" emptyKey="loader.explore.emptyNamed" emptyVars={{ name: activeSection.label }} />
+    }
+    return (
+      <>
+        {activeSection.error && (
+          <p role="status" className="mb-3 rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[10px] font-mono text-amber-300/80">
+            {t('loader.explore.staleNotice')}
+          </p>
+        )}
+        {renderContent()}
+      </>
+    )
+  }
+
   function renderContent() {
     switch (active) {
       case 'store': return <StoreCards products={products} status={storeStatus} />
-      case 'blog': return <BlogCards items={blogPosts} />
-      case 'caseStudies': return <CaseStudyCards items={caseStudies} />
-      case 'projects': return <ProjectCards items={projects} />
-      case 'services': return <ServicesCards items={services} />
-      case 'skills': return <SkillsContent items={skills} />
-      case 'experience': return <ExperienceCards items={experience} />
-      case 'education': return <EducationCards items={education} />
+      case 'blog': return <BlogCards items={blogItems} />
+      case 'caseStudies': return <CaseStudyCards items={caseStudyItems} />
+      case 'projects': return <ProjectCards items={projectItems} />
+      case 'services': return <ServicesCards items={serviceItems} />
+      case 'skills': return <SkillsContent items={skillItems} />
+      case 'experience': return <ExperienceCards items={experienceItems} />
+      case 'education': return <EducationCards items={educationItems} />
       case 'gallery': return <GalleryCards items={galleryItems} isLoading={galleryLoading} error={galleryError} />
       case 'certificates': return <CertificateCards items={certificates} isLoading={certificatesLoading} error={certificatesError} />
       case 'achievements': return <AchievementCards items={achievements} isLoading={achievementsLoading} error={achievementsError} />
@@ -804,7 +944,7 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
         </motion.div>
 
         <div role="tablist" aria-label={t('loader.explore.title')}
-          className="flex gap-2 overflow-x-auto pb-1 w-full scrollbar-thin scrollbar-thumb-white/10"
+          className="flex gap-2 overflow-x-auto pb-1 w-full scrollbar-thin scrollbar-thumb-white/10 md:flex-wrap md:overflow-visible"
         >
           {sections.map((section, index) => {
             const selected = section.id === active
@@ -837,7 +977,33 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
           data-testid="explore-panel"
           className="rounded-xl border border-white/[0.05] bg-black/20 p-3 sm:p-4 min-h-[220px] max-h-[46dvh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
         >
-          {renderContent()}
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[9px] font-mono uppercase tracking-[0.28em] text-cyan-300/60">
+                {t('loader.explore.sectionLabel')}
+              </p>
+              <h3 className="font-display font-semibold text-white text-sm mt-0.5">{activeSection.label}</h3>
+              <p className="text-white/35 text-[11px] mt-0.5">
+                {t(`loader.cards.${activeSection.descKey}`)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LiveDataBadge compact />
+              <span className="rounded-full border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[9px] font-mono text-white/40">
+                {t('loader.explore.recordCount', { count: activeSection.count })}
+              </span>
+              <button
+                type="button"
+                onClick={refreshActive}
+                aria-label={t('loader.explore.refresh')}
+                title={t('loader.explore.refresh')}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] text-white/45 transition-colors hover:border-cyan-400/40 hover:text-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          {renderPanel()}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
@@ -2722,9 +2888,58 @@ export default function StartingLoader({ onComplete }) {
   const [currentAd, setCurrentAd] = useState(null)
   const [adLoading, setAdLoading] = useState(false)
   const [ytChannelId, setYtChannelId] = useState(null)
+  const [gatewayFilter, setGatewayFilter] = useState('all')
+  const [gatewayQuery, setGatewayQuery] = useState('')
   const { enabled: autoTraverse, toggle: toggleAutoTraverse } = useAutoTraverse()
   const { selectedMood, selectMood, startMusic } = useMood()
   const firstName = 'Amit'
+
+  const gatewayLabels = useMemo(() => ({
+    voice: `${t('loader.cards.sayName', { name: firstName })} ${t('loader.cards.voiceRecognition')}`,
+    quiz: `${t('loader.cards.solvePuzzle')} ${t('loader.cards.oneQuestion')}`,
+    autoTraverse: `${t('loader.cards.autoTraverse')} ${t('loader.cards.traverseTourDesc')}`,
+    ads: `${t('loader.cards.watchDevAds')} ${t('loader.cards.videoAdsToUnlock')}`,
+    mood: `${t('loader.cards.moodSwing')} ${t('loader.cards.setVibeMusic')}`,
+    cmd: `${t('loader.cards.neuralCmd')} ${t('loader.cards.exploreTerminal')}`,
+    interview: `${t('loader.cards.takeInterview')} ${t('loader.cards.voiceAiInterview')}`,
+    pattern: `${t('loader.cards.patternLock')} ${t('loader.cards.memoryChallenge')}`,
+    youtube: `${t('loader.cards.channelStream')} ${t('loader.cards.browseVideos')}`,
+    skip: `${t('loader.cards.skipVibes')} ${t('loader.cards.directEntry')}`,
+    ...Object.fromEntries(
+      EXPLORE_GATEWAY_OPTIONS.map((option) => [
+        option.id,
+        `${t(`loader.cards.${option.titleKey}`)} ${t(`loader.cards.${option.descKey}`)}`,
+      ]),
+    ),
+  }), [t, firstName])
+
+  const availableGatewayIds = useMemo(() => [
+    ...GATEWAY_VERIFY_IDS.filter((id) => id !== 'youtube' || ytChannelId),
+    ...EXPLORE_GATEWAY_OPTIONS.map((option) => option.id),
+  ], [ytChannelId])
+
+  const normalizedGatewayQuery = gatewayQuery.trim().toLowerCase()
+  const isGatewayVisible = useCallback((id) => {
+    if (gatewayFilter !== 'all' && gatewayFilter !== gatewayGroupFor(id)) return false
+    if (!normalizedGatewayQuery) return true
+    return (gatewayLabels[id] || id).toLowerCase().includes(normalizedGatewayQuery)
+  }, [gatewayFilter, normalizedGatewayQuery, gatewayLabels])
+  const visibleGatewayCount = (gatewayFilter === 'exit'
+    ? [...availableGatewayIds, 'skip']
+    : availableGatewayIds).filter(isGatewayVisible).length
+
+  // The gateway cards are a mix of bespoke challenge buttons and shared
+  // exploration options. Tagging each button with an id lets one effect apply
+  // the same filter/search rules without duplicating JSX or losing animation.
+  useEffect(() => {
+    if (phase !== 'selecting') return
+    const grid = document.querySelector('[data-testid="verification-grid"]')
+    if (!grid) return
+    grid.querySelectorAll('[data-gateway-item]').forEach((node) => {
+      node.hidden = !isGatewayVisible(node.getAttribute('data-gateway-item'))
+    })
+  }, [phase, isGatewayVisible, availableGatewayIds])
+
   const doneRef = useRef(onComplete)
   const [docsUrl, setDocsUrl] = useState('')
   doneRef.current = onComplete
@@ -3047,6 +3262,49 @@ export default function StartingLoader({ onComplete }) {
                 style={{ fontSize: 'clamp(0.625rem, 2vw, 0.75rem)' }}
               >{t('loader.proveIdentity')}</motion.p>
 
+              <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div role="tablist" aria-label={t('loader.gateway.filterLabel')}
+                  className="flex flex-wrap justify-center gap-1.5"
+                >
+                  {GATEWAY_FILTERS.map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      role="tab"
+                      aria-selected={gatewayFilter === filter}
+                      aria-pressed={gatewayFilter === filter}
+                      onClick={() => setGatewayFilter(filter)}
+                      className={`rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                        gatewayFilter === filter
+                          ? 'border-cyan-400/50 bg-cyan-400/10 text-white'
+                          : 'border-white/[0.07] bg-white/[0.02] text-white/40 hover:border-white/20 hover:text-white/80'
+                      }`}
+                    >
+                      {t(`loader.gateway.filters.${filter}`)}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="relative w-full sm:w-48">
+                  <span className="sr-only">{t('loader.gateway.searchPlaceholder')}</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={gatewayQuery}
+                    onChange={(event) => setGatewayQuery(event.target.value)}
+                    placeholder={t('loader.gateway.searchPlaceholder')}
+                    className="w-full rounded-full border border-white/[0.08] bg-white/[0.02] py-1.5 pl-8 pr-3 text-[11px] font-mono text-white/80 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+                  />
+                </label>
+              </div>
+
+              <div className="w-full flex flex-wrap items-center justify-center gap-2">
+                <LiveDataBadge />
+                <span className="text-[10px] font-mono uppercase tracking-widest text-white/25">
+                  {t('loader.gateway.resultCount', { count: visibleGatewayCount })}
+                </span>
+              </div>
+
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -3058,6 +3316,9 @@ export default function StartingLoader({ onComplete }) {
                 }}
               >
                 <motion.button
+                  data-testid="verification-option-voice"
+                  data-gateway-item="voice"
+                  data-gateway-group="verify"
                   onClick={() => setPhase('voice')}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3087,6 +3348,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-quiz"
+                  data-gateway-item="quiz"
+                  data-gateway-group="verify"
                   onClick={async () => { await loadQuestion(); setPhase('mcq') }}
                   disabled={loadingQ}
                   whileHover={loadingQ ? {} : { scale: 1.02, y: -1 }}
@@ -3118,6 +3382,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-auto-traverse"
+                  data-gateway-item="autoTraverse"
+                  data-gateway-group="verify"
                   onClick={toggleAutoTraverse}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3151,6 +3418,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-ads"
+                  data-gateway-item="ads"
+                  data-gateway-group="verify"
                   onClick={handleWatchAds}
                   disabled={adLoading}
                   whileHover={adLoading ? {} : { scale: 1.02, y: -1 }}
@@ -3180,6 +3450,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-mood"
+                  data-gateway-item="mood"
+                  data-gateway-group="verify"
                   onClick={() => setPhase('mood-swing')}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3206,6 +3479,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-cmd"
+                  data-gateway-item="cmd"
+                  data-gateway-group="verify"
                   onClick={() => setPhase('cmd')}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3235,6 +3511,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-interview"
+                  data-gateway-item="interview"
+                  data-gateway-group="verify"
                   onClick={() => setPhase('interview')}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3265,6 +3544,9 @@ export default function StartingLoader({ onComplete }) {
                 </motion.button>
 
                 <motion.button
+                  data-testid="verification-option-pattern"
+                  data-gateway-item="pattern"
+                  data-gateway-group="verify"
                   onClick={() => setPhase('pattern-lock')}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3296,6 +3578,9 @@ export default function StartingLoader({ onComplete }) {
 
                 {ytChannelId && (
                   <motion.button
+                    data-testid="verification-option-youtube"
+                    data-gateway-item="youtube"
+                    data-gateway-group="verify"
                     onClick={() => setPhase('youtube-browse')}
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
@@ -3431,6 +3716,9 @@ className="group w-full rounded-xl border p-3 sm:p-4"
                 />
 
                 <motion.button
+                  data-testid="gateway-skip"
+                  data-gateway-item="skip"
+                  data-gateway-group="exit"
                   onClick={handleSkipVibes}
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
@@ -3462,6 +3750,12 @@ className="group w-full rounded-xl border p-3 sm:p-4"
                   </div>
                 </motion.button>
               </motion.div>
+
+              {visibleGatewayCount === 0 && (
+                <p className="text-[11px] font-mono text-white/35 text-center">
+                  {t('loader.gateway.noResults')}
+                </p>
+              )}
 
               {docsUrl && (
                 <motion.a

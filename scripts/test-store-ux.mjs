@@ -187,6 +187,12 @@ check(
     !products.includes('className="flex h-[100svh] flex-col pt-10"') &&
     products.includes('data-testid="store-catalogue-footer"')
 )
+check(
+  'catalogue: data source is disclosed without credentials',
+  products.includes('data-testid="store-data-status"') &&
+    products.includes('isSupabaseConfigured') &&
+    !/DATABASE_URL|SUPABASE_SERVICE|SERVICE_ROLE/i.test(products)
+)
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------
 check(

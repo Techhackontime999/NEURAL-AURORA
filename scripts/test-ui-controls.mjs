@@ -19,6 +19,7 @@ const boundary = read('src/lib/RenderErrorBoundary.jsx')
 const notFound = read('src/components/NotFound.jsx')
 const css = read('src/index.css')
 const projects = read('src/components/Projects.jsx')
+const loader = read('src/components/StartingLoader.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 const videoDefaults = read('src/lib/videoHeroDefaults.js')
 
@@ -66,6 +67,11 @@ check('error boundary: route key is supplied', app.includes('resetKey={`${locati
 check('anchors: every id target gets scroll margin', /\[id\]\s*\{[^}]*scroll-margin-top/.test(css) && css.includes('--anchor-scroll-margin'))
 check('projects: explicit keyboard toggle on each card', projects.includes('aria-expanded={expanded}') && projects.includes('type="button"') && projects.includes('event.stopPropagation()'))
 check('projects: toggle copy is translated', en.projects?.showDetails === 'Show details' && en.projects?.hideDetails === 'Hide details' && projects.includes("t('projects.showDetails'") && projects.includes("t('projects.hideDetails'"))
+
+// --- Verification screen scrolling ----------------------------------------
+check('loader: verification cards use a vertical wrapped grid', loader.includes('grid-cols-2 md:grid-cols-3 lg:grid-cols-4') && loader.includes('overflow-y-auto overflow-x-hidden') && !loader.includes('md:flex overflow-auto'))
+check('loader: mouse wheel is not hijacked into horizontal scroll', !loader.includes('onWheel') && !loader.includes('scrollLeft') && !loader.includes("scrollSnapType: 'x mandatory'"))
+check('loader: cards no longer force a horizontal min width', !loader.includes("minWidth: 'clamp(120px, 30vw, 160px)'") && !loader.includes("scrollSnapAlign: 'start'"))
 
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed === 0 ? 0 : 1)

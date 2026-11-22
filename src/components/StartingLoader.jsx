@@ -2647,22 +2647,15 @@ export default function StartingLoader({ onComplete }) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 80, damping: 18 }}
-                className="grid grid-cols-2 md:flex overflow-auto md:overflow-x-auto w-full pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 md:max-h-none"
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 overflow-y-auto overflow-x-hidden w-full pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
                 style={{
                   gap: 'clamp(0.375rem, 1.5vw, 0.75rem)',
                   maxHeight: 'clamp(280px, 55vh, 450px)',
-                  scrollSnapType: 'x mandatory',
+                  overscrollBehavior: 'contain',
+                  touchAction: 'pan-y',
                   WebkitOverflowScrolling: 'touch',
-                  WebkitMaskImage: 'linear-gradient(to right, black 95%, transparent 100%), linear-gradient(to bottom, black 95%, transparent 100%)',
-                  WebkitMaskComposite: 'source-in',
-                  maskImage: 'linear-gradient(to right, black 95%, transparent 100%), linear-gradient(to bottom, black 95%, transparent 100%)',
-                  maskComposite: 'intersect',
-                }}
-                onWheel={e => {
-                  if (window.innerWidth >= 768 && e.deltaY !== 0) {
-                    e.currentTarget.scrollLeft += e.deltaY;
-                    e.preventDefault();
-                  }
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 94%, transparent 100%)',
+                  maskImage: 'linear-gradient(to bottom, black 94%, transparent 100%)',
                 }}
               >
                 <motion.button
@@ -2670,10 +2663,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2702,10 +2693,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={loadingQ ? {} : { scale: 1.02, y: -1 }}
                   whileTap={loadingQ ? {} : { scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2734,10 +2723,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: autoTraverse ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)',
                     background: autoTraverse ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2770,10 +2757,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={adLoading ? {} : { scale: 1.02, y: -1 }}
                   whileTap={adLoading ? {} : { scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4 disabled:opacity-50"
+                  className="group w-full rounded-xl border p-3 sm:p-4 disabled:opacity-50"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2800,10 +2785,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2828,10 +2811,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2859,10 +2840,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2891,10 +2870,8 @@ export default function StartingLoader({ onComplete }) {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(255,255,255,0.06)',
                     background: 'rgba(255,255,255,0.02)',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2924,10 +2901,8 @@ export default function StartingLoader({ onComplete }) {
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+className="group w-full rounded-xl border p-3 sm:p-4"
                     style={{
-                      scrollSnapAlign: 'start',
-                      minWidth: 'clamp(120px, 30vw, 160px)',
                       borderColor: 'rgba(255,255,255,0.06)',
                       background: 'rgba(255,255,255,0.02)',
                       transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -2956,10 +2931,8 @@ className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="group w-full md:flex-shrink-0 rounded-xl border p-3 sm:p-4"
+                  className="group w-full rounded-xl border p-3 sm:p-4"
                   style={{
-                    scrollSnapAlign: 'start',
-                    minWidth: 'clamp(120px, 30vw, 160px)',
                     borderColor: 'rgba(0,240,255,0.15)',
                     background: 'linear-gradient(135deg, rgba(0,240,255,0.06), rgba(184,41,221,0.06))',
                     transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',

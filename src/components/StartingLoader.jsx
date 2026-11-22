@@ -12,6 +12,7 @@ import { getMoodById } from '../lib/moodMusic'
 import { personalInfo, socialLinks, skills, projects, education, experience, services, blogPosts, caseStudies } from '../data/portfolio'
 import { callAi } from '../lib/ai/provider'
 import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
+import { getPublishedProducts, formatPrice } from '../lib/products'
 
 const TERMINAL_LINES = [
   'Initializing Neural Aurora system...',
@@ -476,6 +477,214 @@ function ImpressScreen({ onDone, title, skillsCount, projectsCount, servicesCoun
           className="text-xs text-white/30 font-mono tracking-wider"
         >Entering the neural network...</motion.p>
       )}
+    </div>
+  )
+}
+
+function VerificationOption({ testId, emoji, title, description, accent = '0,240,255', onClick }) {
+  const shouldReduceMotion = useReducedMotion()
+  const idleBackground = `linear-gradient(135deg, rgba(${accent},0.05), rgba(184,41,221,0.05))`
+  const hoverBackground = `linear-gradient(135deg, rgba(${accent},0.12), rgba(184,41,221,0.12))`
+
+  return (
+    <motion.button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      whileHover={shouldReduceMotion ? undefined : { scale: 1.02, y: -1 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      aria-label={`${title} — ${description}`}
+      className="group w-full rounded-xl border p-3 sm:p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+      style={{
+        borderColor: `rgba(${accent},0.14)`,
+        background: idleBackground,
+        transition: 'border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1)',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = `rgba(${accent},0.45)`; e.currentTarget.style.background = hoverBackground }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = `rgba(${accent},0.14)`; e.currentTarget.style.background = idleBackground }}
+    >
+      <div className="flex flex-col items-center gap-2 text-center">
+        <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 text-lg sm:text-xl"
+          style={{ background: `rgba(${accent},0.1)` }}
+          aria-hidden="true"
+        >{emoji}</span>
+        <div className="min-w-0">
+          <p className="text-white font-medium leading-tight" style={{ fontSize: 'clamp(0.6875rem, 2vw, 0.875rem)' }}>{title}</p>
+          <p className="text-white/30 mt-0.5" style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.625rem)' }}>{description}</p>
+        </div>
+      </div>
+    </motion.button>
+  )
+}
+
+function StoreCards({ products, status }) {
+  const { t } = useTranslation()
+
+  if (status === 'loading') {
+    return <p className="text-xs text-white/40 font-mono py-8 text-center">{t('loader.explore.store.loading')}</p>
+  }
+  if (status === 'error') {
+    return <p className="text-xs text-amber-300/70 font-mono py-8 text-center">{t('loader.explore.store.error')}</p>
+  }
+  if (!products.length) {
+    return <p className="text-xs text-white/40 font-mono py-8 text-center">{t('loader.explore.store.empty')}</p>
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+      {products.map((product) => (
+        <a
+          key={product.id || product.slug}
+          href={`/offerings/products/${product.slug}`}
+          className="block rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 hover:border-cyan-400/35 hover:bg-cyan-400/[0.05] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-white/85 text-sm font-medium leading-snug truncate">{product.title}</p>
+            <span className="text-emerald-400 text-[10px] font-mono shrink-0">
+              {product.price_paise === 0 ? t('loader.explore.store.free') : formatPrice(product.price_paise)}
+            </span>
+          </div>
+          <p className="text-white/35 text-[11px] leading-snug mt-1 line-clamp-2">
+            {product.short_description || product.description || product.format || t('loader.explore.store.item')}
+          </p>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
+  const [active, setActive] = useState(initialSection)
+  const [products, setProducts] = useState([])
+  const [storeStatus, setStoreStatus] = useState('idle')
+
+  useEffect(() => {
+    let cancelled = false
+    setStoreStatus('loading')
+    getPublishedProducts({ limit: 8 })
+      .then((rows) => {
+        if (cancelled) return
+        setProducts(Array.isArray(rows) ? rows : [])
+        setStoreStatus('ready')
+      })
+      .catch(() => {
+        if (cancelled) return
+        setProducts([])
+        setStoreStatus('error')
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const sections = [
+    { id: 'store', icon: '🛍️', label: t('loader.cards.digitalStore'), count: storeStatus === 'ready' ? products.length : storeStatus === 'loading' ? '…' : storeStatus === 'error' ? '—' : '—', href: '/offerings/products' },
+    { id: 'blog', icon: '📝', label: t('loader.cards.blog'), count: blogPosts.length, href: '/blog' },
+    { id: 'caseStudies', icon: '🧪', label: t('loader.cards.caseStudies'), count: caseStudies.length, href: '/more#case-studies' },
+    { id: 'projects', icon: '🚀', label: t('loader.cards.projects'), count: projects.length, href: '/#projects' },
+    { id: 'services', icon: '🧠', label: t('loader.cards.services'), count: services.length, href: '/offerings' },
+    { id: 'skills', icon: '🛠️', label: t('loader.cards.skills'), count: skills.length, href: '/#skills' },
+    { id: 'experience', icon: '📈', label: t('loader.cards.experience'), count: experience.length, href: '/more' },
+    { id: 'education', icon: '🎓', label: t('loader.cards.education'), count: education.length, href: '/more' },
+  ]
+
+  const activeIndex = Math.max(0, sections.findIndex((item) => item.id === active))
+  const activeSection = sections[activeIndex]
+
+  function handleTabKeyDown(event, index) {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+    event.preventDefault()
+    const delta = event.key === 'ArrowRight' ? 1 : -1
+    const next = (index + delta + sections.length) % sections.length
+    setActive(sections[next].id)
+    document.getElementById(`explore-tab-${sections[next].id}`)?.focus()
+  }
+
+  function renderContent() {
+    switch (active) {
+      case 'store': return <StoreCards products={products} status={storeStatus} />
+      case 'blog': return <BlogCards items={blogPosts} />
+      case 'caseStudies': return <CaseStudyCards items={caseStudies} />
+      case 'projects': return <ProjectCards items={projects} />
+      case 'services': return <ServicesCards items={services} />
+      case 'skills': return <SkillsContent items={skills} />
+      case 'experience': return <ExperienceCards items={experience} />
+      case 'education': return <EducationCards items={education} />
+      default: return null
+    }
+  }
+
+  return (
+    <div data-testid="explore-gallery" className="relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-6">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+        style={{
+          background: 'rgba(10,10,18,0.72)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px -15px rgba(0,0,0,0.4)',
+          touchAction: 'pan-y',
+        }}
+      >
+        <motion.div initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }} animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }} className="text-center">
+          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-emerald-400/60">{t('loader.explore.eyebrow')}</p>
+          <h2 className="font-display font-bold text-white tracking-tight mt-1" style={{ fontSize: 'clamp(1.125rem, 4vw, 1.75rem)' }}>
+            {t('loader.explore.title')}
+          </h2>
+          <p className="text-white/35 font-mono text-[11px] sm:text-xs mt-1">{t('loader.explore.subtitle')}</p>
+        </motion.div>
+
+        <div role="tablist" aria-label={t('loader.explore.title')}
+          className="flex gap-2 overflow-x-auto pb-1 w-full scrollbar-thin scrollbar-thumb-white/10"
+        >
+          {sections.map((section, index) => {
+            const selected = section.id === active
+            return (
+              <button
+                key={section.id}
+                type="button"
+                role="tab"
+                id={`explore-tab-${section.id}`}
+                aria-selected={selected}
+                aria-controls="explore-panel"
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActive(section.id)}
+                onKeyDown={(event) => handleTabKeyDown(event, index)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-mono transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                  selected
+                    ? 'border-cyan-400/50 bg-cyan-400/10 text-white'
+                    : 'border-white/[0.07] bg-white/[0.02] text-white/45 hover:text-white/80 hover:border-white/20'
+                }`}
+              >
+                <span aria-hidden="true" className="mr-1.5">{section.icon}</span>
+                {section.label}
+                <span className="ml-2 text-white/25">{section.count}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div id="explore-panel" role="tabpanel" aria-labelledby={`explore-tab-${active}`}
+          data-testid="explore-panel"
+          className="rounded-xl border border-white/[0.05] bg-black/20 p-3 sm:p-4 min-h-[220px] max-h-[46dvh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+        >
+          {renderContent()}
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+          <button type="button" onClick={onBack}
+            className="rounded-full border border-white/[0.08] px-4 py-2 text-[11px] font-mono text-white/45 hover:text-white hover:border-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+          >{t('loader.explore.back')}</button>
+          <div className="flex items-center gap-3">
+            <a href={activeSection.href} onClick={onComplete}
+              className="text-[11px] font-mono text-white/35 hover:text-cyan-300 transition-colors focus:outline-none focus-visible:underline"
+            >{t('loader.explore.openFull')} <span aria-hidden="true">↗</span></a>
+            <button type="button" onClick={onComplete}
+              className="rounded-full bg-cyan-400/15 border border-cyan-400/40 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+            >{t('loader.explore.continue')}</button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -2337,6 +2546,7 @@ export default function StartingLoader({ onComplete }) {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [phase, setPhase] = useState('booting')
+  const [exploreSection, setExploreSection] = useState('store')
   const [question, setQuestion] = useState(null)
   const [loadingQ, setLoadingQ] = useState(false)
   const [adVideos, setAdVideos] = useState([])
@@ -2561,6 +2771,18 @@ export default function StartingLoader({ onComplete }) {
     setPhase('success')
     setTimeout(() => setPhase('transitioning'), 2200)
     setTimeout(() => doneRef.current(), 3500)
+  }
+
+  function handleExploreDone() {
+    sessionStorage.setItem('neural-aurora-verified', 'true')
+    setPhase('success')
+    setTimeout(() => setPhase('transitioning'), 2200)
+    setTimeout(() => doneRef.current(), 3500)
+  }
+
+  function handleExploreOption(section) {
+    setExploreSection(section)
+    setPhase('explore')
   }
 
   // Verified earlier in this tab: render nothing. Returning null keeps the
@@ -2934,6 +3156,71 @@ className="group w-full rounded-xl border p-3 sm:p-4"
                   </motion.button>
                 )}
 
+                <VerificationOption
+                  testId="verification-option-store"
+                  emoji="🛍️"
+                  title={t('loader.cards.digitalStore')}
+                  description={t('loader.cards.storeDesc')}
+                  accent="0,240,255"
+                  onClick={() => handleExploreOption('store')}
+                />
+                <VerificationOption
+                  testId="verification-option-blog"
+                  emoji="📝"
+                  title={t('loader.cards.blog')}
+                  description={t('loader.cards.blogDesc')}
+                  accent="167,139,250"
+                  onClick={() => handleExploreOption('blog')}
+                />
+                <VerificationOption
+                  testId="verification-option-case-studies"
+                  emoji="🧪"
+                  title={t('loader.cards.caseStudies')}
+                  description={t('loader.cards.caseStudiesDesc')}
+                  accent="244,114,182"
+                  onClick={() => handleExploreOption('caseStudies')}
+                />
+                <VerificationOption
+                  testId="verification-option-projects"
+                  emoji="🚀"
+                  title={t('loader.cards.projects')}
+                  description={t('loader.cards.projectsDesc')}
+                  accent="52,211,153"
+                  onClick={() => handleExploreOption('projects')}
+                />
+                <VerificationOption
+                  testId="verification-option-services"
+                  emoji="🧠"
+                  title={t('loader.cards.services')}
+                  description={t('loader.cards.servicesDesc')}
+                  accent="250,204,21"
+                  onClick={() => handleExploreOption('services')}
+                />
+                <VerificationOption
+                  testId="verification-option-skills"
+                  emoji="🛠️"
+                  title={t('loader.cards.skills')}
+                  description={t('loader.cards.skillsDesc')}
+                  accent="96,165,250"
+                  onClick={() => handleExploreOption('skills')}
+                />
+                <VerificationOption
+                  testId="verification-option-experience"
+                  emoji="📈"
+                  title={t('loader.cards.experience')}
+                  description={t('loader.cards.experienceDesc')}
+                  accent="251,146,60"
+                  onClick={() => handleExploreOption('experience')}
+                />
+                <VerificationOption
+                  testId="verification-option-education"
+                  emoji="🎓"
+                  title={t('loader.cards.education')}
+                  description={t('loader.cards.educationDesc')}
+                  accent="192,132,252"
+                  onClick={() => handleExploreOption('education')}
+                />
+
                 <motion.button
                   onClick={handleSkipVibes}
                   whileHover={{ scale: 1.02, y: -1 }}
@@ -3183,6 +3470,16 @@ className="group w-full rounded-xl border p-3 sm:p-4"
           </motion.div>
         )}
 
+        {phase === 'explore' && (
+          <motion.div key="explore" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ExploreGallery
+              initialSection={exploreSection}
+              onBack={() => setPhase('selecting')}
+              onComplete={handleExploreDone}
+            />
+          </motion.div>
+        )}
+
         {phase === 'success' && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <SuccessScreen name={firstName} />
@@ -3210,7 +3507,7 @@ className="group w-full rounded-xl border p-3 sm:p-4"
       </AnimatePresence>
 
       <AnimatePresence>
-        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview' || phase === 'pattern-lock' || phase === 'youtube-browse') && (
+        {(phase === 'voice' || phase === 'mcq' || phase === 'ad-watching' || phase === 'cmd' || phase === 'mood-swing' || phase === 'interview' || phase === 'pattern-lock' || phase === 'youtube-browse' || phase === 'explore') && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => {
               if (phase === 'ad-watching') { setCurrentAd(null); setAdVideos([]) }

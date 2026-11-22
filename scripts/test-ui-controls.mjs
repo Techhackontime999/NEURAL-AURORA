@@ -68,6 +68,21 @@ check('anchors: every id target gets scroll margin', /\[id\]\s*\{[^}]*scroll-mar
 check('projects: explicit keyboard toggle on each card', projects.includes('aria-expanded={expanded}') && projects.includes('type="button"') && projects.includes('event.stopPropagation()'))
 check('projects: toggle copy is translated', en.projects?.showDetails === 'Show details' && en.projects?.hideDetails === 'Hide details' && projects.includes("t('projects.showDetails'") && projects.includes("t('projects.hideDetails'"))
 
+// --- Verification content exploration --------------------------------------
+const exploreOptions = ['store', 'blog', 'case-studies', 'projects', 'services', 'skills', 'experience', 'education']
+check('loader: eight content options exist', exploreOptions.every((id) => loader.includes(`testId="verification-option-${id}"`)))
+check('loader: content options open the exploration gallery', loader.includes('function handleExploreOption(section)') && loader.includes("setPhase('explore')") && loader.includes('initialSection={exploreSection}'))
+check('loader: exploration gallery uses accessible tabs', loader.includes('role="tablist"') && loader.includes('role="tab"') && loader.includes('role="tabpanel"') && loader.includes('aria-selected={selected}') && loader.includes('aria-controls="explore-panel"'))
+check('loader: gallery reuses existing content cards', ['<BlogCards', '<CaseStudyCards', '<ProjectCards', '<ServicesCards', '<SkillsContent', '<ExperienceCards', '<EducationCards'].every((component) => loader.includes(component)))
+check('loader: store keeps an honest unconfigured state', loader.includes('getPublishedProducts({ limit: 8 })') && loader.includes("storeStatus === 'loading'") && loader.includes("storeStatus === 'error'") && !productsSourceHasSecret())
+check('loader: exploration copy is translated', ['digitalStore', 'storeDesc', 'blogDesc', 'caseStudies', 'projectsDesc', 'services', 'skillsDesc', 'experience', 'education'].every((key) => Boolean(en.loader?.cards?.[key])) && ['eyebrow', 'title', 'subtitle', 'back', 'continue', 'openFull', 'store'].every((key) => Boolean(en.loader?.explore?.[key])))
+
+function productsSourceHasSecret() {
+  // Keep the gallery coupled to the shared published-products API, never a
+  // browser-side admin credential.
+  return /DATABASE_URL|SUPABASE_SERVICE|SERVICE_ROLE/i.test(loader)
+}
+
 // --- Verification screen scrolling ----------------------------------------
 check('loader: verification cards reflow from one column to four', loader.includes("grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4") && !loader.includes('md:flex overflow-auto'))
 check('loader: responsive verification hooks are exposed', loader.includes('data-testid="verification-panel"') && loader.includes('data-testid="verification-grid"'))

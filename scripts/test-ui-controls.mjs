@@ -130,5 +130,63 @@ check('loader: explore controls stay usable on touch screens',
   loader.includes("phase === 'explore' ? 'hidden sm:flex' : 'flex'")
 )
 
+// --- Stale lazy-chunk recovery ----------------------------------------------
+const { isChunkLoadError, recoverFromChunkError } = await import('../src/lib/chunkRecovery.js')
+check(
+  'chunk recovery: recognises Vite lazy import failures',
+  isChunkLoadError(new TypeError('Failed to fetch dynamically imported module: https://x.test/assets/Page-a1b2.js'))
+)
+check(
+  'chunk recovery: ignores ordinary render errors',
+  !isChunkLoadError(new Error('Cannot read properties of undefined'))
+)
+check(
+  'chunk recovery: boundary forwards errors to the app',
+  boundary.includes('this.props.onError?.(error, info)') && app.includes('onError={handleRouteError}')
+)
+check(
+  'chunk recovery: manual reload uses the bounded helper',
+  app.includes('const recovered = await recoverFromChunkError()')
+)
+
+{
+  const values = new Map()
+  const storage = {
+    getItem: (key) => (values.has(key) ? values.get(key) : null),
+    setItem: (key, value) => values.set(key, value),
+    removeItem: (key) => values.delete(key),
+  }
+  let reloads = 0
+  let unregisters = 0
+  let skipMessages = 0
+  const registration = {
+    waiting: { postMessage: () => { skipMessages++ } },
+    unregister: async () => { unregisters++ },
+  }
+  const options = {
+    storage,
+    isOnline: () => true,
+    reload: () => { reloads++ },
+    getRegistration: async () => registration,
+    clearCaches: async () => 1,
+    now: () => 1000,
+  }
+
+  const first = await recoverFromChunkError(options)
+  check(
+    'chunk recovery: first failure clears caches and reloads once',
+    first === true && reloads === 1 && skipMessages === 1 && unregisters === 0
+  )
+  const second = await recoverFromChunkError(options)
+  check(
+    'chunk recovery: second failure unregisters the stale worker',
+    second === true && reloads === 2 && unregisters === 1
+  )
+  const third = await recoverFromChunkError(options)
+  check('chunk recovery: stops after two attempts', third === false && reloads === 2)
+  const offline = await recoverFromChunkError({ ...options, isOnline: () => false })
+  check('chunk recovery: offline never reloads', offline === false && reloads === 2)
+}
+
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed === 0 ? 0 : 1)

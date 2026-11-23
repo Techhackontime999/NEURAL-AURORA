@@ -22,6 +22,9 @@ export default class RenderErrorBoundary extends Component {
   componentDidCatch(error, info) {
     // Keep the detail in the console for debugging; the fallback stays quiet.
     console.error('[RenderErrorBoundary]', error, info?.componentStack)
+    // Let the app classify a stale lazy chunk and reload once while keeping
+    // ordinary render bugs visible instead of hiding them behind a reload.
+    this.props.onError?.(error, info)
   }
 
   componentDidUpdate(prevProps) {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
@@ -26,6 +26,7 @@ import { NeuralCursor } from './components/ui/neural-cursor'
 import MithiWidget from './components/mithi/MithiWidget'
 import { useMood } from './context/MoodContext'
 import { clearRuntimeCaches } from './lib/pwaCaches'
+import { isChunkLoadError, recoverFromChunkError } from './lib/chunkRecovery'
 import DocumentHead from './components/ui/DocumentHead'
 import { SITE_NAME } from './lib/documentHead'
 
@@ -67,6 +68,17 @@ function RouteFallback() {
 function RouteErrorFallback() {
   const offline = typeof navigator !== 'undefined' && !navigator.onLine
   const [clearing, setClearing] = useState(false)
+  const [recovering, setRecovering] = useState(false)
+
+  async function handleReload() {
+    setRecovering(true)
+    try {
+      const recovered = await recoverFromChunkError()
+      if (!recovered) window.location.reload()
+    } catch {
+      window.location.reload()
+    }
+  }
 
   async function handleClear() {
     setClearing(true)
@@ -90,10 +102,11 @@ function RouteErrorFallback() {
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button
-          onClick={() => window.location.reload()}
-          className="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          onClick={handleReload}
+          disabled={recovering || clearing}
+          className="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors disabled:opacity-50"
         >
-          Reload
+          {recovering ? 'Retrying…' : 'Reload'}
         </button>
         {!offline && (
           <button
@@ -403,6 +416,12 @@ function AppContent() {
   const showMithi = !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
+  // A failed lazy import after a deploy is a stale-cache problem, not a page
+  // bug. Recover once automatically; real render errors keep the manual UI.
+  const handleRouteError = useCallback((error) => {
+    if (isChunkLoadError(error)) recoverFromChunkError()
+  }, [])
+
   useEffect(() => {
     // If user navigates away from home, skip the full verification loader.
     if (location.pathname !== '/') {
@@ -430,6 +449,7 @@ function AppContent() {
             <RouteHead />
             <RenderErrorBoundary
               resetKey={`${location.pathname}${location.search}`}
+              onError={handleRouteError}
               fallback={<RouteErrorFallback />}
             >
             <Suspense fallback={<RouteFallback />}>

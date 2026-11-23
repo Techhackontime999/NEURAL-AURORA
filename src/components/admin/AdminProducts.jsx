@@ -44,6 +44,7 @@ const emptyForm = {
   requirementsText: '',
   tagsText: '',
   faqsText: '',
+  document_policy: 'license',
   license_type: '',
   license_summary: '',
   support_policy: '',
@@ -150,6 +151,7 @@ export default function AdminProducts() {
         .map((t) => t.trim())
         .filter(Boolean),
       faqs: textToFaqs(form.faqsText),
+      document_policy: form.document_policy === 'receipt' ? 'receipt' : 'license',
       license_type: form.license_type,
       license_summary: form.license_summary,
       support_policy: form.support_policy,
@@ -338,6 +340,7 @@ export default function AdminProducts() {
     { key: 'requirementsText', label: 'Requirements (one per line)', type: 'textarea' },
     { key: 'tagsText', label: 'Tags (comma separated)' },
     { key: 'faqsText', label: 'FAQs (one per line: Question | Answer)', type: 'textarea', wide: true },
+    { key: 'document_policy', label: 'Document type', type: 'document-policy' },
     { key: 'license_type', label: 'Licence type' },
     { key: 'license_summary', label: 'Permitted usage', type: 'textarea' },
     { key: 'support_policy', label: 'Support policy', type: 'textarea' },
@@ -427,6 +430,26 @@ export default function AdminProducts() {
             <option value="published">Published — visible and purchasable</option>
             <option value="archived">Archived — hidden, kept for records</option>
           </select>
+        </div>
+      )
+    }
+
+    if (field.type === 'document-policy') {
+      return (
+        <div key={field.key}>
+          {label}
+          <select
+            value={value ?? 'license'}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm outline-none"
+            style={inputStyle}
+          >
+            <option value="license">Licence certificate — software, templates, code</option>
+            <option value="receipt">Receipt only — ebooks, artwork, one-off files</option>
+          </select>
+          <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+            Both types unlock downloads. Licence options below apply only to licence products.
+          </p>
         </div>
       )
     }

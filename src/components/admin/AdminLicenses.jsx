@@ -29,6 +29,7 @@ const emptyOption = {
   label: '',
   summary: '',
   terms: '',
+  validity_days: '',
   display_order: '0',
   is_default: false,
 }
@@ -119,8 +120,18 @@ export default function AdminLicenses() {
       return 'Code must use lowercase letters, numbers and single hyphens.'
     }
     if (!String(value.label || '').trim()) return 'A label is required.'
+    const raw = String(value.validity_days ?? '').trim()
+    if (raw) {
+      const days = Number(raw)
+      if (!Number.isInteger(days) || days < 1 || days > 36500) {
+        return 'Validity must be empty (perpetual) or a whole number of days (1-36500).'
+      }
+    }
     return null
   }
+
+  const validityDays = (value) =>
+    String(value ?? '').trim() === '' ? null : Number(value)
 
   async function handleCreateOption(event) {
     event.preventDefault()
@@ -132,6 +143,7 @@ export default function AdminLicenses() {
         product_id: Number(productId),
         code: draft.code.trim().toLowerCase(),
         label: draft.label.trim(),
+        validity_days: validityDays(draft.validity_days),
         display_order: Number(draft.display_order) || 0,
       })
       setDraft(emptyOption)
@@ -151,6 +163,7 @@ export default function AdminLicenses() {
         label: editing.label.trim(),
         summary: editing.summary,
         terms: editing.terms,
+        validity_days: validityDays(editing.validity_days),
         display_order: Number(editing.display_order) || 0,
         is_default: Boolean(editing.is_default),
       })
@@ -268,6 +281,20 @@ export default function AdminLicenses() {
           />
         </label>
         <label className="block">
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Validity (days, blank = perpetual)
+          </span>
+          <input
+            type="number"
+            min="1"
+            value={value.validity_days ?? ''}
+            onChange={(e) => onChange({ ...value, validity_days: e.target.value })}
+            placeholder="Never expires"
+            className="mt-1 w-full rounded border px-3 py-2 text-sm outline-none"
+            style={inputStyle}
+          />
+        </label>
+        <label className="block">
           <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Display order</span>
           <input
             type="number"
@@ -297,6 +324,7 @@ export default function AdminLicenses() {
         </h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Configure the licence options buyers can choose, and manage licences already issued.
+          Set each product's document type (licence certificate or receipt only) in Products.
         </p>
       </div>
 
@@ -317,7 +345,7 @@ export default function AdminLicenses() {
             <option value="">Choose a product…</option>
             {products.map((product) => (
               <option key={product.id} value={product.id}>
-                {product.title}
+                {product.title} · {product.document_policy === 'receipt' ? 'receipt only' : 'licence'}
               </option>
             ))}
           </select>
@@ -351,6 +379,9 @@ export default function AdminLicenses() {
                           <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{option.label}</span>
                           <code className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{option.code}</code>
                           {option.is_default && <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-500">Default</span>}
+                          <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                            {option.validity_days ? `${option.validity_days} days` : 'Perpetual'}
+                          </span>
                         </div>
                         {option.summary && <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>{option.summary}</p>}
                         {option.terms && <p className="mt-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{option.terms}</p>}

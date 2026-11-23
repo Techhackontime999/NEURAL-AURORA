@@ -278,5 +278,8 @@ function buildLicensePdf(record = {}) {
 module.exports = {
   buildLicensePdf,
   safeFilename,
+  cleanText,
+  truncateText,
+  formatDate,
   PDF_COLORS,
 }

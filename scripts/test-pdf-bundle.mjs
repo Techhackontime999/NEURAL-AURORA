@@ -53,6 +53,12 @@ const staticFontRequires = [
 ].every((font) => pdfBuilderSource.includes(`require('pdfkit/standard-fonts/${font}')`))
 check('PDF builder statically requires the fonts it draws with', staticFontRequires)
 
+const receiptBuilderSource = fs.readFileSync(path.join(base, 'api/_lib/receipt-pdf.js'), 'utf8')
+const receiptFontRequires = ['Helvetica', 'HelveticaBold', 'CourierBold'].every((font) =>
+  receiptBuilderSource.includes(`require('pdfkit/standard-fonts/${font}')`)
+)
+check('receipt builder statically requires the fonts it draws with', receiptFontRequires)
+
 check('licence function bundles PDFKit', has('pdfkit/js/pdfkit.js'))
 check(
   'licence function bundles the standard fonts PDFKit loads dynamically',
@@ -90,8 +96,25 @@ try {
     issuer: 'NEURAL AURORA',
   })
   check('certificate builds from the traced bundle alone', Buffer.isBuffer(pdf) && pdf.subarray(0, 5).toString() === '%PDF-')
+
+  const { buildReceiptPdf } = require(path.join(sandbox, 'api/_lib/receipt-pdf.js'))
+  const receipt = await buildReceiptPdf({
+    order: {
+      order_ref: 'NA-BUNDLE00000001',
+      email: 'buyer@example.com',
+      currency: 'INR',
+      total_paise: 49900,
+      paid_at: '2026-11-23T10:00:00Z',
+    },
+    items: [{ title: 'Bundle Ebook', quantity: 1, total_paise: 49900 }],
+  })
+  check(
+    'receipt builds from the traced bundle alone',
+    Buffer.isBuffer(receipt) && receipt.subarray(0, 5).toString() === '%PDF-'
+  )
 } catch (err) {
   check('certificate builds from the traced bundle alone', false, err?.message)
+  check('receipt builds from the traced bundle alone', false, err?.message)
 } finally {
   fs.rmSync(sandbox, { recursive: true, force: true })
 }

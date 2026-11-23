@@ -232,7 +232,7 @@ export default function ProductDetail() {
           name: (name || '').trim(),
           phone: buyerPhone,
           quantity: isFree ? 1 : requestedQuantity,
-          licenseCode: selectedLicense,
+          licenseCode: product.document_policy === 'receipt' ? '' : selectedLicense,
         })
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
@@ -318,6 +318,10 @@ export default function ProductDetail() {
     new Set([product.cover_image_url, ...extraImages].filter(Boolean))
   )
   const selectedLicenseOption = licenseOptions.find((option) => option.code === selectedLicense)
+  // Ebooks and other non-licensed products get a receipt, not a licence key.
+  const isReceiptProduct = product.document_policy === 'receipt'
+  const validityLabel = (option) =>
+    option?.validity_days ? t('store.validityDays', { count: option.validity_days }) : t('store.perpetualLicense')
 
   const productUrl = `${SITE_ORIGIN}/offerings/products/${product.slug}`
   const productDescription = toPlainText(product.short_description || product.description)
@@ -501,8 +505,16 @@ export default function ProductDetail() {
 
             <Section title={t('store.licenceAndTerms')}>
               <dl className="space-y-3">
-                <Term label={t('store.licenceType')} value={product.license_type} />
-                <Term label={t('store.licenceSummary')} value={product.license_summary} />
+                <Term
+                  label={t('store.documentType')}
+                  value={isReceiptProduct ? t('store.receiptOnly') : t('store.licenceCertificate')}
+                />
+                {!isReceiptProduct && (
+                  <>
+                    <Term label={t('store.licenceType')} value={product.license_type} />
+                    <Term label={t('store.licenceSummary')} value={product.license_summary} />
+                  </>
+                )}
                 <Term label={t('store.supportPolicy')} value={product.support_policy} />
                 <Term label={t('store.refundPolicy')} value={product.refund_policy} />
               </dl>
@@ -602,7 +614,13 @@ export default function ProductDetail() {
               handlePurchase()
             }}
           >
-            {!isFree && licenseOptions.length > 0 && (
+            {isReceiptProduct && (
+              <p className="rounded-lg border border-black/5 bg-black/[0.02] px-3 py-2 text-[10px] leading-relaxed text-[var(--text-secondary)] dark:border-white/5 dark:bg-white/[0.02]">
+                {t('store.receiptOnlyNotice')}
+              </p>
+            )}
+
+            {!isFree && !isReceiptProduct && licenseOptions.length > 0 && (
               <fieldset className="rounded-lg border border-black/10 dark:border-white/10 px-3 py-3">
                 <legend className="px-1 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                   {t('store.chooseLicense')}
@@ -629,6 +647,9 @@ export default function ProductDetail() {
                               {t('store.defaultLicense')}
                             </span>
                           )}
+                        </span>
+                        <span className="mt-0.5 block text-[10px] text-[var(--text-tertiary)]">
+                          {validityLabel(option)}
                         </span>
                         {option.summary && (
                           <span className="mt-0.5 block text-[10px] leading-relaxed text-[var(--text-secondary)]">

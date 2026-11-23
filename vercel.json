@@ -10,6 +10,10 @@
       "destination": "/api/license?action=document"
     },
     {
+      "source": "/api/order-receipt",
+      "destination": "/api/license?action=receipt"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

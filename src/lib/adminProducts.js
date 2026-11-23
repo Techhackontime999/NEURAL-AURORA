@@ -94,6 +94,7 @@ function normaliseProduct(payload) {
     'requirements',
     'license_type',
     'license_summary',
+    'document_policy',
     'support_policy',
     'refund_policy',
     'faqs',
@@ -106,6 +107,11 @@ function normaliseProduct(payload) {
   const out = {}
   for (const key of allowed) {
     if (payload[key] !== undefined) out[key] = payload[key]
+  }
+  // The database also checks this; normalising here keeps a stale form value
+  // from turning an ebook into a licensed product by accident.
+  if (out.document_policy !== undefined) {
+    out.document_policy = out.document_policy === 'receipt' ? 'receipt' : 'license'
   }
   return out
 }
@@ -166,7 +172,7 @@ export async function deleteCategory(id) {
 export async function getLicenseOptions(productId) {
   const { data, error } = await supabase
     .from('product_license_options')
-    .select('id, product_id, code, label, summary, terms, display_order, is_default')
+    .select('id, product_id, code, label, summary, terms, validity_days, display_order, is_default')
     .eq('product_id', productId)
     .order('display_order', { ascending: true })
 
@@ -207,6 +213,7 @@ export function normaliseLicenseOption(payload = {}) {
     'label',
     'summary',
     'terms',
+    'validity_days',
     'display_order',
     'is_default',
   ]
@@ -215,6 +222,18 @@ export function normaliseLicenseOption(payload = {}) {
     if (payload[key] !== undefined) out[key] = payload[key]
   }
   if (out.code !== undefined) out.code = String(out.code).trim().toLowerCase()
+  if (out.validity_days !== undefined) {
+    const raw = String(out.validity_days ?? '').trim()
+    if (raw === '') {
+      out.validity_days = null // perpetual
+    } else {
+      const days = Number(raw)
+      if (!Number.isInteger(days) || days < 1 || days > 36500) {
+        throw new Error('Validity must be empty or a whole number of days (1-36500)')
+      }
+      out.validity_days = days
+    }
+  }
   if (out.display_order !== undefined) {
     const order = Number(out.display_order)
     out.display_order = Number.isFinite(order) ? Math.trunc(order) : 0

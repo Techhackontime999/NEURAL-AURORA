@@ -6,12 +6,12 @@ navigation, theme toggle and localisation all keep working unchanged.
 | Route | Purpose |
 | --- | --- |
 | `/offerings/products` | Storefront: search, category/format/featured/free filters, sort; filter state is URL-synced |
-| `/offerings/products/:slug` | Product page: validated preview, public file manifest, description, licence options, FAQs, purchase panel |
-| `/library` | The signed-in customer's purchases, masked licence keys, licence documents and downloads |
+| `/offerings/products/:slug` | Product page: validated preview, public file manifest, description, licence options or receipt-only notice, FAQs, purchase panel |
+| `/library` | The signed-in customer's purchases, masked licence keys, licence documents, receipts and downloads |
 | `/purchase/success?ref=NA-…` | Order status (polls the server; never trusts the redirect) |
 | `/checkout/:orderId` | Alias that redirects to the status screen above |
 | `/admin/products` | Admin: create/edit/publish/archive products, upload paid files |
-| `/admin/licences` | Admin: configure product licence options; suspend/revoke/reinstate/reissue licences |
+| `/admin/licences` | Admin: configure product licence options (perpetual or timed); suspend/revoke/reinstate/reissue licences |
 | `/admin/orders` | Admin: orders, revenue summary, entitlements and revocation |
 
 ---
@@ -149,6 +149,7 @@ error instead of issuing an order.
 npm run check              # route ranking + i18n keys + SQL structural lint
 npm run test               # pricing, API, store, UI and route guards
 npm run test:licensing     # licence options/keys/verification + preview + recommendation guards
+npm run test:document-policy # licence vs receipt policy, validity snapshots and receipt PDF
 npm run test:store-ux      # storefront URL filters, manifest, preview and licence UI guards
 npm run build              # production build
 ```
@@ -320,10 +321,38 @@ and falls back to an unsigned certificate if the image cannot be loaded. The
 same trust mark is shown on product detail pages. Stored product PDFs are not
 rewritten.
 
+### Document policy: licence certificate or receipt
+
+Every product declares `products.document_policy`:
+
+- `license` (the default) issues a licence certificate. Each
+  `product_license_options` row can be **perpetual** (`validity_days = NULL`, the
+  "always use" option) or **timed** (`validity_days = N`). At checkout the server
+  snapshots the resulting `order_items.license_expires_at`, so a later admin edit
+  cannot shorten a licence the customer already paid for. The expiry is shown in
+  the library and on the certificate.
+- `receipt` issues **no licence and no licence selector**. The purchase produces
+  a server-generated PDF receipt instead. This is the right choice for ebooks,
+  artwork and one-off files. Entitlements and downloads are unchanged — both
+  document types unlock the buyer's files.
+
+Migration `20261123000000_add_product_document_policy.sql` adds the three
+columns (`products.document_policy`, `product_license_options.validity_days`,
+`order_items.license_expires_at`). It is additive: existing products keep the
+licence behaviour, and the server falls back to the legacy column set if the
+migration has not yet been applied.
+
+Receipts are listed in `/library` for paid orders and offered on the purchase
+success screen, including to guests. Access is keyed by the unguessable order
+reference (the same capability used by `/api/order-status`), and every amount,
+item and date in the PDF comes from the stored order and its item snapshots —
+never from the browser. A receipt is only available once the order is paid.
+
 ### Endpoints
 
 | Endpoint | Auth | Purpose |
 | --- | --- | --- |
+| `GET /api/order-receipt?ref=<order-ref>` | Order reference capability | Generate a print-ready PDF receipt from the stored paid order; `Cache-Control: no-store` |
 | `GET /api/license-document?id=<numeric-id>` | Bearer session token | Generate a print-ready PDF certificate from the stored licence row; ownership checked server-side, `Cache-Control: no-store` |
 | `POST /api/license-verify` | None, rate-limited by hashed caller | Check whether a key is active for a product slug; looks up `key_hash`, returns only validity/status/type/expiry and never PII or the key |
 | `GET /api/admin-license?search=&status=` | Admin bearer token | List licences with product/order data and recent events |

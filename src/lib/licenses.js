@@ -13,7 +13,7 @@ export async function getProductLicenseOptions(productId) {
   if (!productId) return []
   const { data, error } = await supabase
     .from('product_license_options')
-    .select('id, code, label, summary, terms, display_order, is_default')
+    .select('id, code, label, summary, terms, validity_days, display_order, is_default')
     .eq('product_id', productId)
     .order('display_order', { ascending: true })
 

@@ -93,6 +93,8 @@ const licenseVerify = (req, res) =>
   licenseHandler({ ...req, query: { ...(req.query || {}), action: 'verify' } }, res)
 const licenseDocument = (req, res) =>
   licenseHandler({ ...req, query: { ...(req.query || {}), action: 'document' } }, res)
+const orderReceipt = (req, res) =>
+  licenseHandler({ ...req, query: { ...(req.query || {}), action: 'receipt' } }, res)
 const adminLicense = require('../api/admin-license.js')
 const customerSigninLink = require('../api/customer-signin-link.js')
 const adminAuth = require('../api/_lib/adminAuth.js')
@@ -1024,6 +1026,7 @@ setEnv({})
 {
   const endpoints = [
     ['license-document', licenseDocument, 'GET', {}],
+    ['order-receipt', orderReceipt, 'GET', {}],
     ['license-verify', licenseVerify, 'POST', { body: { product_slug: 'kit', license_key: 'NA-KIT-AAAAA-BBBBB-CCCCC-DDDDD' } }],
     ['admin-license', adminLicense, 'GET', {}],
   ]
@@ -1044,6 +1047,8 @@ setEnv({})
   check('license-verify: GET -> 405', methodRes.statusCode === 405, `got ${methodRes.statusCode}`)
   const { res: docMethodRes } = await capture((r) => licenseDocument({ method: 'POST', headers: {} }, r))
   check('license-document: POST -> 405', docMethodRes.statusCode === 405, `got ${docMethodRes.statusCode}`)
+  const { res: receiptMethodRes } = await capture((r) => orderReceipt({ method: 'POST', headers: {} }, r))
+  check('order-receipt: POST -> 405', receiptMethodRes.statusCode === 405, `got ${receiptMethodRes.statusCode}`)
   const { res: adminMethodRes } = await capture((r) => adminLicense({ method: 'DELETE', headers: {} }, r))
   check('admin-license: DELETE -> 405', adminMethodRes.statusCode === 405, `got ${adminMethodRes.statusCode}`)
 }
@@ -1075,6 +1080,15 @@ setEnv({
   )
   check('license-document: anonymous -> 401', res.statusCode === 401, `got ${res.statusCode}`)
   check('license-document: 401 leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
+}
+{
+  // The receipt is capability-based, so the reference must be well-formed
+  // before any database lookup is attempted.
+  const { res, lines } = await capture((r) =>
+    orderReceipt({ method: 'GET', headers: {}, query: { ref: '../secret' } }, r)
+  )
+  check('order-receipt: malformed ref -> 400', res.statusCode === 400, `got ${res.statusCode}`)
+  check('order-receipt: malformed ref leaks no secrets', noSecrets(jsonBody(res)) && noSecrets(lines))
 }
 {
   // Admin actions always go through the shared gate; no bearer token -> 403.
@@ -1341,6 +1355,10 @@ setEnv({
   check(
     'vercel hobby: /api/license-document keeps its URL',
     rewrites.some((rule) => rule.source === '/api/license-document' && rule.destination === '/api/license?action=document')
+  )
+  check(
+    'vercel hobby: /api/order-receipt keeps its URL',
+    rewrites.some((rule) => rule.source === '/api/order-receipt' && rule.destination === '/api/license?action=receipt')
   )
 }
 

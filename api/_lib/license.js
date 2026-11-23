@@ -104,10 +104,58 @@ function hashLicenseKey(crypto, key) {
   return crypto.createHash('sha256').update(String(key || '').trim().toUpperCase()).digest('hex')
 }
 
+// --- document policy & licence validity ------------------------------------
+
+const MAX_VALIDITY_DAYS = 36500 // ~100 years; also enforced by the DB check
+
+/** Unknown/missing values fall back to the historical behaviour: a licence. */
+function normaliseDocumentPolicy(value) {
+  return String(value || '').trim().toLowerCase() === 'receipt' ? 'receipt' : 'license'
+}
+
+function isReceiptOnly(product) {
+  return normaliseDocumentPolicy(product?.document_policy) === 'receipt'
+}
+
+/**
+ * Parse an option's validity in days. Empty means perpetual ("always use").
+ * Invalid input is reported instead of being silently turned into a short
+ * licence the buyer never agreed to.
+ */
+function parseValidityDays(value) {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return { ok: true, days: null }
+  }
+  const days = Number(value)
+  if (!Number.isInteger(days) || days < 1 || days > MAX_VALIDITY_DAYS) {
+    return { ok: false, error: 'Validity must be empty or a whole number of days (1-36500)' }
+  }
+  return { ok: true, days }
+}
+
+/**
+ * Snapshot the expiry a paid line item will receive. NULL means perpetual and
+ * is intentionally left as NULL in the database — the PDF renders it as
+ * "Not applicable" / perpetual.
+ */
+function licenseExpiryFromDays(days, now = new Date()) {
+  const parsed = parseValidityDays(days)
+  if (!parsed.ok || parsed.days === null) return null
+  const start = new Date(now)
+  if (Number.isNaN(start.getTime())) return null
+  start.setUTCDate(start.getUTCDate() + parsed.days)
+  return start.toISOString()
+}
+
 module.exports = {
   CODE_PATTERN,
+  MAX_VALIDITY_DAYS,
   normaliseLicenseCode,
   resolveLicenseOption,
+  normaliseDocumentPolicy,
+  isReceiptOnly,
+  parseValidityDays,
+  licenseExpiryFromDays,
   generateLicenseKey,
   generateLicenseRef,
   hashLicenseKey,

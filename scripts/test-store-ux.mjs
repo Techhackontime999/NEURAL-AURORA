@@ -140,7 +140,7 @@ check(
 check(
   'checkout: quantity reaches the checkout client',
   detail.includes('quantity: isFree ? 1 : requestedQuantity') &&
-    detail.includes('licenseCode: selectedLicense') &&
+    detail.includes("licenseCode: product.document_policy === 'receipt' ? '' : selectedLicense") &&
     read('src/lib/checkout.js').includes('quantity = 1') &&
     read('src/lib/checkout.js').includes(
       "items: [{ slug: product.slug, quantity, license_code: licenseCode }]"

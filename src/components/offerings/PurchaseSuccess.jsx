@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Loader2, XCircle, AlertTriangle, Clock, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Loader2, XCircle, AlertTriangle, Clock, RefreshCw, Download } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getOrderStatus } from '../../lib/checkout'
 import { formatPrice } from '../../lib/products'
 import { friendlyStoreError } from '../../lib/storeErrors'
+import { downloadOrderReceipt } from '../../lib/receipts'
 import StoreShell from './StoreShell'
 
 const POLL_INTERVAL_MS = 3000
@@ -30,6 +31,8 @@ export default function PurchaseSuccess() {
   const [order, setOrder] = useState(null)
   const [error, setError] = useState(null)
   const [retryToken, setRetryToken] = useState(0)
+  const [receiptBusy, setReceiptBusy] = useState(false)
+  const [receiptError, setReceiptError] = useState(null)
   const cancelled = useRef(false)
   const polls = useRef(0)
 
@@ -93,6 +96,18 @@ export default function PurchaseSuccess() {
       if (timer) clearTimeout(timer)
     }
   }, [ref, t, retryToken])
+
+  const handleReceiptDownload = async () => {
+    setReceiptBusy(true)
+    setReceiptError(null)
+    try {
+      await downloadOrderReceipt(ref)
+    } catch (err) {
+      setReceiptError(err?.message || t('store.receiptDownloadFailed'))
+    } finally {
+      setReceiptBusy(false)
+    }
+  }
 
   const tone = {
     paid: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -176,6 +191,22 @@ export default function PurchaseSuccess() {
                 {t('store.statusRetry')}
               </button>
             )}
+            {status === 'paid' && (
+              <button
+                type="button"
+                disabled={receiptBusy}
+                onClick={handleReceiptDownload}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 py-2.5 text-[11px] uppercase tracking-widest text-[var(--text-primary)] transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+              >
+                {receiptBusy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {t('store.downloadReceipt')}
+              </button>
+            )}
+
             {(status === 'paid' || status === 'slow' || status === 'pending') && (
               <Link
                 to="/library"
@@ -194,6 +225,12 @@ export default function PurchaseSuccess() {
               </Link>
             )}
           </div>
+
+          {receiptError && (
+            <p role="alert" className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500">
+              {receiptError}
+            </p>
+          )}
 
           {status === 'paid' && !user && (
             <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">

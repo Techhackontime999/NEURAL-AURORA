@@ -20,7 +20,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { getDownloadUrl } from '../../lib/checkout'
-import { getMyLibrary } from '../../lib/products'
+import { formatPrice, getMyLibrary } from '../../lib/products'
 import { downloadLicenseDocument, getMyLicenses } from '../../lib/licenses'
 import StoreShell from './StoreShell'
 
@@ -854,6 +854,89 @@ export default function Library() {
                 </div>
               )
             })}
+          </div>
+        </section>
+      )}
+
+      {!loading && !error && receipts.length > 0 && (
+        <section className="mt-16">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+              {t('store.yourReceipts')}
+            </h2>
+            <p className="text-[10px] text-[var(--text-tertiary)]">
+              {t('store.receiptCount', { count: receipts.length })}
+            </p>
+          </div>
+          <p className="mb-4 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+            {t('store.receiptIntro')}
+          </p>
+
+          {receiptError && (
+            <p role="alert" className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-500">
+              {receiptError}
+            </p>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {receipts.map((order) => (
+              <div key={order.order_ref} className="glass-panel rounded-xl p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                      <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+                      {t('store.purchaseReceipt')}
+                    </h3>
+                    <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                      {order.order_ref}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] uppercase tracking-widest text-emerald-500">
+                    {t('store.paid')}
+                  </span>
+                </div>
+
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                      {t('store.licenseIssued')}
+                    </dt>
+                    <dd className="text-[var(--text-primary)]">
+                      {order.paid_at
+                        ? new Date(order.paid_at).toLocaleDateString()
+                        : order.created_at
+                          ? new Date(order.created_at).toLocaleDateString()
+                          : t('store.unavailable')}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                      {t('store.total')}
+                    </dt>
+                    <dd className="text-[var(--text-primary)]">
+                      {formatPrice(order.total_paise, order.currency)}
+                    </dd>
+                  </div>
+                </dl>
+
+                <button
+                  type="button"
+                  disabled={receiptBusyRef === order.order_ref}
+                  onClick={() => handleReceiptDownload(order)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black/90 px-4 py-2.5 text-[10px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                >
+                  {receiptBusyRef === order.order_ref ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  {t('store.downloadReceipt')}
+                  <span className="rounded border border-white/20 px-1.5 py-0.5 text-[8px] tracking-normal dark:border-black/20">
+                    PDF
+                  </span>
+                </button>
+              </div>
+            ))}
           </div>
         </section>
       )}

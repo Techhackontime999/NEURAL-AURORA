@@ -225,10 +225,20 @@ module.exports = async function handler(req, res) {
         buyer_authenticated: Boolean(verifiedUser),
       })
 
-      const { data: products, error: productError } = await supabase
+      let { data: products, error: productError } = await supabase
         .from('products')
-        .select('id, slug, title, price_paise, currency, status, version')
+        .select('id, slug, title, price_paise, currency, status, version, document_policy')
         .in('slug', [...collected.wanted.keys()])
+
+      // Safe rollout: code may reach a database that has not applied the
+      // document-policy migration yet. Keep selling with the legacy shape.
+      if (productError && isMissingColumnError(productError, 'document_policy')) {
+        log('create-order', requestId, { stage: 'document-policy-column-missing' })
+        ;({ data: products, error: productError } = await supabase
+          .from('products')
+          .select('id, slug, title, price_paise, currency, status, version')
+          .in('slug', [...collected.wanted.keys()]))
+      }
 
       if (productError) {
         logError('create-order', requestId, {
@@ -241,12 +251,21 @@ module.exports = async function handler(req, res) {
       // License options are resolved server-side too: a browser may name an
       // option but can never invent one or redefine its terms.
       const productIds = (products || []).map((product) => product.id)
-      const { data: licenseOptions, error: licenseOptionsError } = productIds.length
+      let { data: licenseOptions, error: licenseOptionsError } = productIds.length
         ? await supabase
             .from('product_license_options')
-            .select('id, product_id, code, label, is_default')
+            .select('id, product_id, code, label, is_default, validity_days')
             .in('product_id', productIds)
         : { data: [], error: null }
+
+      if (licenseOptionsError && isMissingColumnError(licenseOptionsError, 'validity_days')) {
+        ;({ data: licenseOptions, error: licenseOptionsError } = productIds.length
+          ? await supabase
+              .from('product_license_options')
+              .select('id, product_id, code, label, is_default')
+              .in('product_id', productIds)
+          : { data: [], error: null })
+      }
 
       if (licenseOptionsError) {
         logError('create-order', requestId, {
@@ -350,9 +369,16 @@ module.exports = async function handler(req, res) {
         ...item,
         license_option_id: priced.lines[i].licenseOption?.id || null,
         license_type_snapshot: priced.lines[i].licenseTypeSnapshot || '',
+        // NULL means a perpetual licence. The expiry is captured NOW so later
+        // option edits cannot shorten what the customer already paid for.
+        license_expires_at: priced.lines[i].licenseExpiresAt || null,
       }))
 
       let { error: itemsInsertError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsInsertError && isMissingColumnError(itemsInsertError, 'license_expires_at')) {
+        orderItems = orderItems.map(({ license_expires_at, ...item }) => item)
+        ;({ error: itemsInsertError } = await supabase.from('order_items').insert(orderItems))
+      }
       if (itemsInsertError && isMissingColumnError(itemsInsertError, 'license_option_id')) {
         // A deployment that has not applied the licensing migration can still
         // sell. The license is not issued in that case; the order remains fully

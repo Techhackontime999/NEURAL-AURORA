@@ -1209,6 +1209,8 @@ CREATE TABLE IF NOT EXISTS products (
   requirements JSONB NOT NULL DEFAULT '[]'::jsonb,
   license_type TEXT DEFAULT '',
   license_summary TEXT DEFAULT '',
+  document_policy TEXT NOT NULL DEFAULT 'license'
+    CHECK (document_policy IN ('license', 'receipt')),
   support_policy TEXT DEFAULT '',
   refund_policy TEXT DEFAULT '',
   faqs JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -1900,6 +1902,8 @@ CREATE TABLE IF NOT EXISTS product_license_options (
   label TEXT NOT NULL,
   summary TEXT DEFAULT '',
   terms TEXT DEFAULT '',
+  validity_days INTEGER
+    CHECK (validity_days IS NULL OR (validity_days > 0 AND validity_days <= 36500)),
   display_order INT NOT NULL DEFAULT 0,
   is_default BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1955,6 +1959,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE product_license_options TO service
 ALTER TABLE order_items ADD COLUMN IF NOT EXISTS license_option_id BIGINT
   REFERENCES product_license_options(id) ON DELETE SET NULL;
 ALTER TABLE order_items ADD COLUMN IF NOT EXISTS license_type_snapshot TEXT DEFAULT '';
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS license_expires_at TIMESTAMPTZ;
 
 -- ------------------------------------------------------------
 -- ISSUED LICENSES

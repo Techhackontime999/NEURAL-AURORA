@@ -10,7 +10,11 @@
 // what those slugs cost.
 // ---------------------------------------------------------------------------
 
-const { resolveLicenseOption } = require('./license')
+const {
+  resolveLicenseOption,
+  normaliseDocumentPolicy,
+  licenseExpiryFromDays,
+} = require('./license')
 
 const MAX_ITEMS = 20
 const MAX_QUANTITY = 10
@@ -67,13 +71,16 @@ function collectRequestedItems(requestedItems) {
  * @param {object}   input
  * @param {Array}    input.requestedItems  Raw `items` from the request body.
  * @param {Array}    input.products        Rows from `products` (id, slug, title,
- *                                         price_paise, currency, status, version).
- * @param {Array}   [input.licenseOptions] Configured options for those products.
+ *                                         price_paise, currency, status, version,
+ *                                         document_policy).
+ * @param {Array}   [input.licenseOptions] Configured options for those products
+ *                                         (including validity_days).
+ * @param {Date}    [input.now]            Clock used for licence expiry snapshots.
  * @returns {{ ok: true, totalPaise, currency, itemCount, lines } |
  *           { ok: false, error, status }}
  *          `status` is the HTTP status the caller should return.
  */
-function priceProductOrder({ requestedItems, products, licenseOptions = [] }) {
+function priceProductOrder({ requestedItems, products, licenseOptions = [], now = new Date() }) {
   const collected = collectRequestedItems(requestedItems)
   if (!collected.ok) {
     return { ok: false, error: collected.error, status: 400 }
@@ -91,9 +98,18 @@ function priceProductOrder({ requestedItems, products, licenseOptions = [] }) {
 
   // Resolve licenses after products are known: only options belonging to the
   // purchased product may be selected, and the snapshot is stored on the item.
+  // Receipt-only products (ebooks, artwork, ...) never issue a licence, so a
+  // stale `license_code` from an older page must not fail their checkout.
   const selectedLicenses = new Map()
+  const documentPolicies = new Map()
   for (const [slug, product] of bySlug) {
     if (!wanted.has(slug)) continue
+    const policy = normaliseDocumentPolicy(product.document_policy)
+    documentPolicies.set(slug, policy)
+    if (policy === 'receipt') {
+      selectedLicenses.set(slug, null)
+      continue
+    }
     const resolved = resolveLicenseOption({
       requestedCode: licenseCodes.get(slug),
       options: optionsByProduct.get(product.id) || [],
@@ -147,6 +163,7 @@ function priceProductOrder({ requestedItems, products, licenseOptions = [] }) {
     totalPaise += lineTotal
 
     const licenseOption = selectedLicenses.get(slug) || null
+    const documentPolicy = documentPolicies.get(slug) || 'license'
     lines.push({
       product,
       quantity,
@@ -154,6 +171,11 @@ function priceProductOrder({ requestedItems, products, licenseOptions = [] }) {
       totalPricePaise: lineTotal,
       licenseOption,
       licenseTypeSnapshot: licenseOption?.label || licenseOption?.code || '',
+      documentPolicy,
+      licenseExpiresAt:
+        documentPolicy === 'license' && licenseOption
+          ? licenseExpiryFromDays(licenseOption.validity_days, now)
+          : null,
     })
   }
 

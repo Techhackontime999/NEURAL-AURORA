@@ -18,7 +18,12 @@
 
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
-const { generateLicenseKey, generateLicenseRef, hashLicenseKey } = require('./license')
+const {
+  generateLicenseKey,
+  generateLicenseRef,
+  hashLicenseKey,
+  licenseExpiryFromDays,
+} = require('./license')
 
 /** Smallest database client for service-role work, or null if unconfigured. */
 function getServiceClient() {
@@ -48,17 +53,33 @@ function isMissingColumnError(error, column) {
  * not applied the licensing migration keep selling through the older shape.
  */
 async function loadOrderItems(supabase, orderId) {
-  const withLicense = await supabase
+  const withExpiry = await supabase
     .from('order_items')
-    .select('id, product_id, quantity, license_option_id, license_type_snapshot')
+    .select('id, product_id, quantity, license_option_id, license_type_snapshot, license_expires_at')
     .eq('order_id', orderId)
 
-  if (!withLicense.error) return withLicense.data || []
-  if (
-    !isMissingColumnError(withLicense.error, 'license_option_id') &&
-    !isMissingColumnError(withLicense.error, 'license_type_snapshot')
+  if (!withExpiry.error) return withExpiry.data || []
+
+  // The expiry snapshot arrives with the document-policy migration. Losing it
+  // must not stop licence issuance: older rows simply get a perpetual licence
+  // (or one derived from the option's own validity_days).
+  if (isMissingColumnError(withExpiry.error, 'license_expires_at')) {
+    const withLicense = await supabase
+      .from('order_items')
+      .select('id, product_id, quantity, license_option_id, license_type_snapshot')
+      .eq('order_id', orderId)
+    if (!withLicense.error) return withLicense.data || []
+    if (
+      !isMissingColumnError(withLicense.error, 'license_option_id') &&
+      !isMissingColumnError(withLicense.error, 'license_type_snapshot')
+    ) {
+      throw new Error(`Order items lookup failed: ${withLicense.error.message}`)
+    }
+  } else if (
+    !isMissingColumnError(withExpiry.error, 'license_option_id') &&
+    !isMissingColumnError(withExpiry.error, 'license_type_snapshot')
   ) {
-    throw new Error(`Order items lookup failed: ${withLicense.error.message}`)
+    throw new Error(`Order items lookup failed: ${withExpiry.error.message}`)
   }
 
   const legacy = await supabase
@@ -83,11 +104,11 @@ async function issueOrderLicenses(supabase, dbOrder) {
   for (const item of items) {
     if (!item.license_option_id || !item.product_id) continue
 
-    const [{ data: option, error: optionError }, { data: entitlement, error: entitlementError }] =
+    let [{ data: option, error: optionError }, { data: entitlement, error: entitlementError }] =
       await Promise.all([
         supabase
           .from('product_license_options')
-          .select('id, label, terms, summary')
+          .select('id, label, terms, summary, validity_days')
           .eq('id', item.license_option_id)
           .maybeSingle(),
         supabase
@@ -97,6 +118,16 @@ async function issueOrderLicenses(supabase, dbOrder) {
           .eq('status', 'active')
           .maybeSingle(),
       ])
+
+    if (optionError && isMissingColumnError(optionError, 'validity_days')) {
+      const retry = await supabase
+        .from('product_license_options')
+        .select('id, label, terms, summary')
+        .eq('id', item.license_option_id)
+        .maybeSingle()
+      option = retry.data
+      optionError = retry.error
+    }
 
     if (optionError || entitlementError) {
       if (isMissingObjectError(optionError, 'product_license_options') || isMissingObjectError(entitlementError, 'entitlements')) {
@@ -128,6 +159,9 @@ async function issueOrderLicenses(supabase, dbOrder) {
         seats: Math.max(1, Number(item.quantity) || 1),
         status: 'active',
         issued_at: new Date().toISOString(),
+        // Snapshot from checkout wins; fall back to the option for older
+        // orders that were paid before expiry snapshots existed.
+        expires_at: item.license_expires_at || licenseExpiryFromDays(option.validity_days),
       })
       .select('id')
       .maybeSingle()

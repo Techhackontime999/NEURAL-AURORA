@@ -3,9 +3,11 @@
 // vercel.json:
 //   /api/license-verify   -> /api/license?action=verify
 //   /api/license-document -> /api/license?action=document
+//   /api/order-receipt    -> /api/license?action=receipt
 
 const verifyLicense = require('./_lib/license-verify-handler')
 const licenseDocument = require('./_lib/license-document-handler')
+const orderReceipt = require('./_lib/order-receipt-handler')
 
 function requestedAction(req) {
   const direct = String(req.query?.action || '').trim().toLowerCase()
@@ -22,6 +24,8 @@ module.exports = async function handler(req, res) {
       return verifyLicense(req, res)
     case 'document':
       return licenseDocument(req, res)
+    case 'receipt':
+      return orderReceipt(req, res)
     default:
       return res.status(404).json({ error: 'Not found' })
   }

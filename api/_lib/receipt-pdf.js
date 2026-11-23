@@ -13,16 +13,14 @@ const { PDF_COLORS, truncateText, formatDate } = require('./license-pdf')
 function formatMoney(paise, currency = 'INR') {
   const amount = (Number(paise) || 0) / 100
   const code = String(currency || 'INR').toUpperCase()
-  try {
-    return new Intl.NumberFormat(code === 'USD' ? 'en-US' : 'en-IN', {
-      style: 'currency',
-      currency: code,
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount)
-  } catch {
-    const symbol = code === 'USD' ? '$' : '₹'
-    return `${symbol}${amount.toFixed(2)}`
-  }
+  const digits = new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  }).format(amount)
+  // PDFKit's standard Helvetica is WinAnsi-encoded and has no ₹ glyph — Intl's
+  // "₹9,999" would be drawn as "¹9,999". Keep the label ASCII-only.
+  if (code === 'INR') return `Rs. ${digits}`
+  if (code === 'USD') return `$${digits}`
+  return `${code} ${digits}`
 }
 
 /**
@@ -55,9 +53,15 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
   const rows = (Array.isArray(items) ? items : [])
     .slice(0, 10)
     .map((item) => ({
-      title: truncateText(item.title || item.slug || 'Digital product', 64),
+      // Accept both the PDF builder's field names and the stored order_items
+      // column names, so a future caller cannot silently print "Digital
+      // product" / Rs. 0 again.
+      title: truncateText(
+        item.title || item.slug || item.product_title_snapshot || item.product_slug_snapshot || 'Digital product',
+        64
+      ),
       quantity: Math.max(1, Number(item.quantity) || 1),
-      amount: formatMoney(item.total_paise, currency),
+      amount: formatMoney(item.total_paise ?? item.total_price_paise, currency),
     }))
 
   return new Promise((resolve, reject) => {

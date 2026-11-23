@@ -204,6 +204,40 @@ try {
     Number.isFinite(panelBottom) && imageTop >= panelBottom + 8,
     `panelBottom=${panelBottom} imageTop=${imageTop}`
   )
+
+  // The handler reads order_items snapshot columns, not the builder's field
+  // names. Decode the PDF glyph runs to prove the real item reaches the page.
+  const fromDb = await buildReceiptPdf({
+    order: {
+      order_ref: 'NA-A412C9392B4956F9',
+      email: 'buyer@example.com',
+      currency: 'INR',
+      total_paise: 999900,
+      paid_at: '2026-11-23T10:00:00Z',
+    },
+    items: [
+      {
+        product_title_snapshot: 'The Ebook',
+        product_slug_snapshot: 'ebook',
+        quantity: 1,
+        total_price_paise: 999900,
+      },
+    ],
+  })
+  const decoded = Array.from(fromDb.toString('latin1').matchAll(/<([0-9A-Fa-f]+)>/g))
+    .map((m) => Buffer.from(m[1], 'hex').toString('latin1'))
+    .join('')
+  check(
+    'receipt shows the stored product and its amount',
+    decoded.includes('The Ebook') &&
+      decoded.includes('Rs. 9,999') &&
+      !decoded.includes('Digital product'),
+    decoded.slice(-300)
+  )
+  check(
+    'receipt avoids the rupee glyph missing from Helvetica',
+    !decoded.includes('₹') && !decoded.includes('\u00b9')
+  )
 } catch (err) {
   check('receipt PDF builds', false, err?.message)
 }
@@ -213,6 +247,11 @@ try {
 check('combined function routes the receipt action', has('api/license.js', "case 'receipt'"))
 check('Vercel rewrites /api/order-receipt', has('vercel.json', '"/api/order-receipt"'))
 check('receipt handler reads only stored order data', has('api/_lib/order-receipt-handler.js', "order.payment_status !== 'paid'"))
+check(
+  'receipt handler maps snapshot columns for the builder',
+  has('api/_lib/order-receipt-handler.js', 'total_paise: item.total_price_paise') &&
+    has('api/_lib/order-receipt-handler.js', 'items: receiptItems')
+)
 check(
   'checkout snapshots the expiry onto the order item',
   has('api/create-order.js', 'license_expires_at: priced.lines[i].licenseExpiresAt')

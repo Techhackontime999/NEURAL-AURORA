@@ -65,6 +65,15 @@ module.exports = async function orderReceipt(req, res) {
       .order('id', { ascending: true })
     if (itemsError) throw itemsError
 
+    // order_items uses snapshot column names; the PDF builder works in
+    // customer-facing names. Map them here rather than letting every row fall
+    // back to "Digital product" and Rs. 0.
+    const receiptItems = (items || []).map((item) => ({
+      title: item.product_title_snapshot || item.product_slug_snapshot,
+      quantity: item.quantity,
+      total_paise: item.total_price_paise,
+    }))
+
     // Payment transactions are audit rows; an older deployment may not have
     // them yet, and a missing gateway id must never block the receipt.
     let paymentId = null
@@ -97,7 +106,7 @@ module.exports = async function orderReceipt(req, res) {
 
     const pdf = await buildReceiptPdf({
       order: { ...order, payment_id: paymentId },
-      items: items || [],
+      items: receiptItems,
       signature,
     })
 

@@ -68,6 +68,28 @@ function buildLicensePdf(record = {}) {
   // the rest of the combined licence function from starting on Vercel.
   const PDFDocument = require('pdfkit')
 
+  // PDFKit 0.20.x loads its built-in fonts lazily through package `imports`
+  // self-references (`createRequire(...)('#standard-fonts/Helvetica')`).
+  // Vercel's file tracer cannot see those dynamic specifiers, so the font
+  // modules are left out of the deployed function and the first .font() call
+  // throws — every certificate download then fails with a 500. Requiring the
+  // public export subpaths here is static and traceable, which forces the
+  // font files into the bundle; PDFKit's own loaders resolve them at runtime.
+  require('pdfkit/standard-fonts/Courier')
+  require('pdfkit/standard-fonts/CourierBold')
+  require('pdfkit/standard-fonts/CourierBoldOblique')
+  require('pdfkit/standard-fonts/CourierOblique')
+  require('pdfkit/standard-fonts/Helvetica')
+  require('pdfkit/standard-fonts/HelveticaBold')
+  require('pdfkit/standard-fonts/HelveticaBoldOblique')
+  require('pdfkit/standard-fonts/HelveticaOblique')
+  require('pdfkit/standard-fonts/Symbol')
+  require('pdfkit/standard-fonts/TimesBold')
+  require('pdfkit/standard-fonts/TimesBoldItalic')
+  require('pdfkit/standard-fonts/TimesItalic')
+  require('pdfkit/standard-fonts/TimesRoman')
+  require('pdfkit/standard-fonts/ZapfDingbats')
+
   const product = truncateText(record.product_title || record.product_slug || 'Product', 62)
   const holder = truncateText(record.customer_name || record.customer_email || 'License holder', 68)
   const reference = truncateText(record.license_ref || record.id || 'Pending', 32)

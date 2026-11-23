@@ -13,6 +13,8 @@ const routes = [
   { path: '/offerings/:serviceId' },
   { path: '/services' },
   { path: '/services/*' },
+  { path: '/cart' },
+  { path: '/wishlist' },
   { path: '*' },
 ]
 
@@ -24,6 +26,8 @@ const cases = [
   // A real service id must still reach the service-detail page, and a slug
   // that happens to be a product name must not leak into service detail.
   ['/offerings/custom-web-dev', '/offerings/:serviceId'],
+  ['/cart', '/cart'],
+  ['/wishlist', '/wishlist'],
 ]
 
 let failures = 0

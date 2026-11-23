@@ -18,6 +18,10 @@ const cardFallback = read('src/components/ui/ImageLightbox.jsx')
 const razorpay = read('src/lib/razorpay.js')
 const rail = read('src/components/offerings/ProductRail.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
+const storeContext = read('src/context/StoreContext.jsx')
+const cart = read('src/components/offerings/Cart.jsx')
+const wishlist = read('src/components/offerings/Wishlist.jsx')
+const navbar = read('src/components/ServiceNavbar.jsx')
 
 let passed = 0
 let failed = 0
@@ -378,6 +382,104 @@ check(
       (source.includes('shouldReduceMotion ? false') || source.includes('initial: false'))
     )
   })
+)
+check(
+  'cart/wishlist: state is versioned, bounded and persisted',
+  storeContext.includes("const CART_KEY = 'neural-aurora:cart:v1'") &&
+    storeContext.includes("const WISHLIST_KEY = 'neural-aurora:wishlist:v1'") &&
+    storeContext.includes('export const CART_MAX_ITEMS = 20') &&
+    storeContext.includes('export const CART_MAX_QUANTITY = 10') &&
+    storeContext.includes('window.localStorage.setItem(key, JSON.stringify(value))') &&
+    storeContext.includes("window.addEventListener('storage', onStorage)") &&
+    storeContext.includes('return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>') &&
+    storeContext.includes('useStore must be used within a StoreProvider')
+)
+check(
+  'cart: multi-item checkout never sends a client price',
+  cart.includes('startCartCheckout({') &&
+    cart.includes('quantity: line.quantity') &&
+    cart.includes('license_code: line.license_code') &&
+    cart.includes('normalisePhone(phone)') &&
+    cart.includes('type="checkbox"') &&
+    cart.includes('checked={termsAccepted}') &&
+    cart.includes('setCheckoutError(t(\'store.mixedCurrency\'))') &&
+    cart.includes('getProductsBySlugs(slugsKey.split(\',\'), CART_MAX_ITEMS)') &&
+    cart.includes("paidLines.length === 0 && (") &&
+    cart.includes("t('store.emailLabel')") &&
+    !cart.includes('price_paise:')
+)
+check(
+  'cart: free items keep the existing placeholder-tab download flow',
+  cart.includes("window.open('about:blank', '_blank')") &&
+    cart.includes('downloadTab.opener = null') &&
+    cart.includes('await requestFreeDownload(') &&
+    cart.includes('downloadTab.location.replace(result.url)') &&
+    cart.includes("result?.code === 'magicLinkSent'")
+)
+check(
+  'wishlist: saved products are re-resolved and can move to cart',
+  wishlist.includes('getProductsBySlugs(slugsKey.split(\',\'), 200)') &&
+    wishlist.includes('moveToCart(product.slug)') &&
+    wishlist.includes('removeFromWishlist(product.slug)') &&
+    wishlist.includes('<ProductCard product={product} index={index} />') &&
+    wishlist.includes("t('store.wishlistEmpty')")
+)
+check(
+  'card: wishlist and quick-add controls are real buttons',
+  card.includes('useStore()') &&
+    card.includes('useToast()') &&
+    card.includes('onClick={handleWishlist}') &&
+    card.includes('aria-pressed={saved}') &&
+    card.includes('onClick={handleAddToCart}') &&
+    card.includes('event.stopPropagation()') &&
+    card.includes('aria-label={t(\'store.addToCart\')}')
+)
+check(
+  'detail: purchase panel offers add-to-cart and wishlist',
+  detail.includes('useStore()') &&
+    detail.includes('useToast()') &&
+    detail.includes('id="purchase-panel"') &&
+    detail.includes('onClick={handleAddToCart}') &&
+    detail.includes('onClick={handleWishlist}') &&
+    detail.includes('addToCart(product, { licenseCode })')
+)
+check(
+  'navbar: cart and wishlist counts are visible on desktop and mobile',
+  navbar.includes('useStore()') &&
+    navbar.includes('const { cartCount, wishlistCount } = useStore()') &&
+    navbar.includes('to="/cart"') &&
+    navbar.includes('to="/wishlist"') &&
+    navbar.includes('{cartCount > 9 ? \'9+\' : cartCount}') &&
+    navbar.includes('{wishlistCount > 9 ? \'9+\' : wishlistCount}') &&
+    navbar.includes("navigate('/cart')") &&
+    navbar.includes("navigate('/wishlist')")
+)
+check(
+  'cart/wishlist i18n copy is translated',
+  [
+    'addToCart',
+    'addedToCart',
+    'saveToWishlist',
+    'removeFromWishlist',
+    'savedToWishlist',
+    'removedFromWishlist',
+    'cartTitle',
+    'cartEmpty',
+    'paidItems',
+    'freeItems',
+    'saveForLater',
+    'checkoutTitle',
+    'mixedCurrency',
+    'cartTotalNote',
+    'placeOrder',
+    'cartClear',
+    'wishlistTitle',
+    'wishlistEmpty',
+    'addAllToCart',
+    'moveToCart',
+  ].every((key) => Boolean(en.store?.[key])) &&
+    en.services?.nav?.cart === 'Cart' &&
+    en.services?.nav?.wishlist === 'Wishlist'
 )
 check(
   'best-version i18n copy is present',

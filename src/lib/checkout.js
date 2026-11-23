@@ -92,6 +92,77 @@ export async function startProductCheckout({ product, email, name = '', phone = 
 }
 
 /**
+ * Create one server-priced order for a whole cart and open Razorpay.
+ *
+ * `/api/create-order` already resolves multiple product slugs, verifies every
+ * price and rejects mixed currencies or free products. This helper only sends
+ * slugs, quantities and optional licence codes — never a client-side amount.
+ *
+ * @param {object}   options
+ * @param {Array}    options.items           [{ slug, quantity, license_code }]
+ * @param {string}   options.email
+ * @param {string}  [options.name]
+ * @param {string}  [options.phone]
+ * @param {string}  [options.currency]
+ * @param {string}  [options.description]
+ * @returns {Promise<{orderRef: string, response: object}>}
+ */
+export async function startCartCheckout({
+  items,
+  email,
+  name = '',
+  phone = '',
+  currency = 'INR',
+  description = 'Digital Products',
+}) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Your cart is empty.')
+  }
+
+  const buyerPhone = normalisePhone(phone)
+  let authHeader = {}
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    if (token) authHeader = { Authorization: `Bearer ${token}` }
+  } catch {
+    /* guest checkout */
+  }
+
+  const order = await postJson(
+    '/api/create-order',
+    {
+      order_type: 'product',
+      items: items.map((item) => ({
+        slug: item.slug,
+        quantity: item.quantity,
+        license_code: item.license_code || '',
+      })),
+      email,
+      name,
+      phone: buyerPhone,
+      currency,
+    },
+    authHeader
+  )
+
+  if (!order?.id || !order?.amount || !order?.order_ref) {
+    throw new Error('The server did not return a verified order.')
+  }
+
+  const response = await openCheckoutModal({
+    order_id: order.id,
+    amount: order.amount,
+    currency: order.currency || 'INR',
+    description,
+    prefill: { email, name, ...(buyerPhone ? { contact: `+${buyerPhone}` } : {}) },
+    notes: { order_ref: order.order_ref, item_type: 'product' },
+  })
+
+  return { orderRef: order.order_ref, response }
+}
+
+/**
  * Acquire a free product.
  *
  * Signed-in users get a short-lived signed URL straight away (the server

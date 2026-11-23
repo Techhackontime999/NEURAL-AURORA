@@ -15,8 +15,12 @@ import {
   Download,
   Layers,
   RefreshCw,
+  Heart,
+  ShoppingBag,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useStore } from '../../context/StoreContext'
+import { useToast } from '../../context/ToastContext'
 import { sanitizeHtml } from '../../lib/utils'
 import {
   getProductBySlug,
@@ -54,6 +58,8 @@ export default function ProductDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { addToCart, toggleWishlist, isWishlisted } = useStore()
+  const { toast } = useToast()
 
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
@@ -167,6 +173,23 @@ export default function ProductDetail() {
   const displayTotalPaise = product
     ? product.price_paise * (isFree ? 1 : displayQuantity)
     : 0
+
+  const saved = product ? isWishlisted(product.slug) : false
+
+  const handleAddToCart = () => {
+    if (!product) return
+    const licenseCode =
+      isFree || product.document_policy === 'receipt' ? '' : selectedLicense
+    if (addToCart(product, { licenseCode })) {
+      toast.success(t('store.addedToCart'))
+    }
+  }
+
+  const handleWishlist = () => {
+    if (!product) return
+    const nowSaved = toggleWishlist(product.slug)
+    toast.success(nowSaved ? t('store.savedToWishlist') : t('store.removedFromWishlist'))
+  }
 
   const handlePurchase = async () => {
     if (busy) return
@@ -573,6 +596,19 @@ export default function ProductDetail() {
                 {product.format || t('store.digitalProduct')}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={handleWishlist}
+              aria-label={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
+              aria-pressed={saved}
+              title={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/10 transition-colors hover:border-rose-500/60 hover:text-rose-500 dark:border-white/10"
+            >
+              <Heart
+                className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
           <div className="mt-4 flex items-baseline gap-2">
@@ -606,6 +642,15 @@ export default function ProductDetail() {
               </span>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/10 text-[11px] uppercase tracking-widest text-[var(--text-primary)] transition-colors hover:border-cyan-500/60 hover:text-cyan-500 dark:border-white/10"
+          >
+            <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+            {t('store.addToCart')}
+          </button>
 
           <form
             className="mt-5 space-y-2.5"

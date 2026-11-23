@@ -11,6 +11,8 @@ const FILES = [
   'src/components/offerings/StoreShell.jsx',
   'src/components/offerings/Library.jsx',
   'src/components/offerings/PurchaseSuccess.jsx',
+  'src/components/offerings/Cart.jsx',
+  'src/components/offerings/Wishlist.jsx',
   'src/components/ServiceNavbar.jsx',
 ]
 

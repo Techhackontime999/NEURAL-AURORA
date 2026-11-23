@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Heart, ShoppingBag } from 'lucide-react'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
 import LanguageSwitcher from './LanguageSwitcher'
+import { useStore } from '../context/StoreContext'
 
 const navLinks = [
   { label: 'services.nav.services', href: '#services' },
@@ -31,6 +33,7 @@ export default function ServiceNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { cartCount, wishlistCount } = useStore()
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
@@ -99,6 +102,32 @@ export default function ServiceNavbar() {
               ))}
             </div>
             <LanguageSwitcher />
+            <Link
+              to="/wishlist"
+              aria-label={`${t('services.nav.wishlist')} (${wishlistCount})`}
+              title={t('services.nav.wishlist')}
+              className="relative inline-flex h-11 w-11 items-center justify-center text-black/50 transition-colors hover:text-rose-500 dark:text-white/50"
+            >
+              <Heart className="h-4 w-4" aria-hidden="true" />
+              {wishlistCount > 0 && (
+                <span className="absolute right-0 top-0 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to="/cart"
+              aria-label={`${t('services.nav.cart')} (${cartCount})`}
+              title={t('services.nav.cart')}
+              className="relative inline-flex h-11 w-11 items-center justify-center text-black/50 transition-colors hover:text-cyan-500 dark:text-white/50"
+            >
+              <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+              {cartCount > 0 && (
+                <span className="absolute right-0 top-0 inline-flex min-w-4 items-center justify-center rounded-full bg-cyan-500 px-1 text-[9px] font-semibold leading-4 text-black">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </Link>
             <ThemeToggle variant="icon" buttonSize={44} defaultTheme="dark" duration={550} />
             <button
               onClick={() => setOpen(!open)}
@@ -144,10 +173,38 @@ export default function ServiceNavbar() {
               >
                 {t('common.home')}
               </motion.button>
+              <motion.button
+                custom={1}
+                variants={staggerItem}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { setOpen(false); navigate('/wishlist') }}
+                className="inline-flex min-h-11 items-center gap-2 text-2xl tracking-tight text-black/70 transition-colors hover:text-rose-500 dark:text-white/70 dark:hover:text-rose-400"
+              >
+                <Heart className="h-5 w-5" aria-hidden="true" />
+                {t('services.nav.wishlist')}
+                {wishlistCount > 0 && (
+                  <span className="text-xs text-rose-500">({wishlistCount})</span>
+                )}
+              </motion.button>
+              <motion.button
+                custom={2}
+                variants={staggerItem}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { setOpen(false); navigate('/cart') }}
+                className="inline-flex min-h-11 items-center gap-2 text-2xl tracking-tight text-black/70 transition-colors hover:text-cyan-500 dark:text-white/70 dark:hover:text-cyan-400"
+              >
+                <ShoppingBag className="h-5 w-5" aria-hidden="true" />
+                {t('services.nav.cart')}
+                {cartCount > 0 && (
+                  <span className="text-xs text-cyan-500">({cartCount})</span>
+                )}
+              </motion.button>
               {navLinks.map((link, i) => (
                 <motion.button
                   key={link.href}
-                  custom={i + 1}
+                  custom={i + 3}
                   variants={staggerItem}
                   initial="hidden"
                   animate="visible"

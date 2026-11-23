@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-do
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
+import { StoreProvider } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
 import { MoodProvider } from './context/MoodContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
@@ -43,6 +44,8 @@ const Products = lazy(() => import('./components/offerings/Products'))
 const ProductDetail = lazy(() => import('./components/offerings/ProductDetail'))
 const Library = lazy(() => import('./components/offerings/Library'))
 const PurchaseSuccess = lazy(() => import('./components/offerings/PurchaseSuccess'))
+const Cart = lazy(() => import('./components/offerings/Cart'))
+const Wishlist = lazy(() => import('./components/offerings/Wishlist'))
 const Blog = lazy(() => import('./components/Blog'))
 const BlogPost = lazy(() => import('./components/BlogPost'))
 const CaseStudyDetail = lazy(() => import('./components/CaseStudyDetail'))
@@ -221,6 +224,8 @@ function headForPath(pathname) {
   }
   if (
     pathname === '/library' ||
+    pathname === '/cart' ||
+    pathname === '/wishlist' ||
     pathname === '/purchase/success' ||
     pathname.startsWith('/checkout/') ||
     pathname === '/login' ||
@@ -468,6 +473,9 @@ function AppContent() {
               {/* Customer purchase library and post-payment status screen. */}
               <Route path="/library" element={<Library />} />
               <Route path="/purchase/success" element={<PurchaseSuccess />} />
+              {/* Saved shopping state. Noindex: personal, device-local views. */}
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/wishlist" element={<Wishlist />} />
               {/* /checkout/:orderId is an alias for the status screen. */}
               <Route
                 path="/checkout/:orderId"
@@ -510,11 +518,13 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <AuthProvider>
       <ToastProvider>
-        <AutoTraverseProvider>
-          <MoodProvider>
-            <AppContent />
-          </MoodProvider>
-        </AutoTraverseProvider>
+        <StoreProvider>
+          <AutoTraverseProvider>
+            <MoodProvider>
+              <AppContent />
+            </MoodProvider>
+          </AutoTraverseProvider>
+        </StoreProvider>
       </ToastProvider>
     </AuthProvider>
     </MotionConfig>

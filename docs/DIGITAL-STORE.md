@@ -41,9 +41,10 @@ before changing anything in `api/` or the migrations.
   the pricing module.
 - **Money is integer minor units (paise) end to end.** No float ever touches an
   authoritative total. The database stores `INTEGER`/`BIGINT` paise.
-- **Payment is verified server-side, over the raw webhook body.** The HMAC is
-  computed on the unparsed body with `timingSafeEqual`. A redirect or callback
-  grants nothing.
+- **Payment is verified server-side, over the webhook body bytes.** The HMAC is
+  computed with `timingSafeEqual` on the raw body when available; when the host
+  pre-parses `application/json`, the canonical re-serialization is HMAC-checked
+  before the parsed object is trusted. A redirect or callback grants nothing.
 - **Entitlements are the only thing that unlocks a download.** They are created
   exclusively by `fulfilDigitalOrder` in `api/_lib/fulfilment.js`, which runs
   only after a payment has been proven — either by the webhook's HMAC signature
@@ -237,9 +238,15 @@ https://<your-domain>/api/razorpay-webhook
   - `order.failed`, `order.cancelled` — mark the order cancelled (recommended)
 
 The handler verifies the `X-Razorpay-Signature` header against an HMAC-SHA256 of
-the **raw request body** using a constant-time comparison. It writes the legacy
-`payments` row exactly as before, then runs the additive digital-store
-fulfilment step, which is a no-op for service/support payments.
+the **request body bytes** using a constant-time comparison. Vercel's Node
+runtime pre-parses `application/json` for standalone functions (the Next-style
+`bodyParser: false` flag is ignored there), so the handler also accepts a
+canonical re-serialization of that parsed object — but only after the HMAC over
+those exact candidate bytes verifies. A bad or missing signature still returns
+`400` and grants nothing.
+
+It writes the legacy `payments` row exactly as before, then runs the additive
+digital-store fulfilment step, which is a no-op for service/support payments.
 
 A correct setup is verifiable without a payment: fire a test event from the
 dashboard's webhook page (or use the *Resend* action on a past delivery). The

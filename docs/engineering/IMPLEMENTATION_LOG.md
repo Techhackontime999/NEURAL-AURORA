@@ -398,6 +398,29 @@
 
 ---
 
+## Post-release fixes (2026-11-23) — committed and pushed
+
+- `d6fe23a` **Stale lazy chunks after a deploy.** Added `src/lib/chunkRecovery.js`.
+  Failed dynamic imports are now recognised in `RenderErrorBoundary` and recover
+  automatically: clear optional runtime caches, let a waiting worker take over,
+  reload once; a second attempt unregisters the old worker so a stale precached
+  shell cannot keep requesting a dead chunk. Two attempts per 10 minutes, then
+  the manual fallback stays visible. The fallback's Reload button uses the same
+  bounded helper. Offline never triggers a reload.
+- `04fe240` **Razorpay webhook rejected on Vercel.** Vercel's Node runtime
+  pre-parses `application/json` for standalone functions; the Next-style
+  `bodyParser: false` flag is ignored, so every webhook was answered `400` with
+  `pre-parsed webhook body` in the logs. `api/razorpay-webhook.js` now collects
+  raw/string/Buffer bodies plus a canonical re-serialization of the parsed
+  object and verifies the HMAC over the exact candidate bytes before trusting
+  the payload. A bad signature still fails closed. Added positive and negative
+  pre-parsed-body guard tests.
+- `npm test`: **463 passed, 0 failed**; `npm run check`: PASS; `npm run build`: PASS.
+- Both commits were pushed to `origin/main`. Live webhook delivery and signed
+  fulfilment still need a resend from the Razorpay dashboard after deployment.
+
+---
+
 ## Change-management record
 
 - No secrets were read, printed or stored. Environment variable **names** only were inspected.

@@ -42,7 +42,7 @@ Selective precache is implemented and measured locally; full inventory and evide
 - `npm run build`: PASS with pre-existing warnings — 2,943 modules; entry 1,283.88 kB / 377.80 kB gzip; PWA 9 entries / 1,491.77 KiB build-reported.
 - Browser: local Edge 157 + CDP against `vite preview`, **47/47** checks passed at 1440×900 and 390×844 on catalogue, detail and library with mocked Supabase fixtures and a local fixture session. Covered featured chip 3→2, result count, cap notice at 200, translated image count, gallery thumbnails, purchase panel, library search/sort/no-results, responsive overflow and console errors. No rendered FAIL required a source fix.
 - **Limit:** mocked data and a local session were used. This is rendered-browser verification of the UI contracts, not a live Supabase/RLS, Razorpay, entitlement or download test.
-- **Security:** `scripts/migrate.cjs` and `scripts/seed.cjs` now require `DATABASE_URL`; `api/razorpay-webhook.js` disables Vercel body parsing and fails closed on a pre-parsed body. The old credential remains in pushed Git history (`dfc452e`) and **must be rotated**.
+- **Security:** `scripts/migrate.cjs` and `scripts/seed.cjs` now require `DATABASE_URL`; `api/razorpay-webhook.js` verifies the HMAC over the exact candidate body bytes and accepts a pre-parsed JSON object only after that check succeeds. (The Next-style `bodyParser: false` flag alone does not disable parsing on standalone Vercel functions.) The old credential remains in pushed Git history (`dfc452e`) and **must be rotated**.
 
 ## 1d. Batch 8 status (catalogue pagination + tag search)
 
@@ -83,7 +83,7 @@ Selective precache is implemented and measured locally; full inventory and evide
 ## 2. Release blockers (must clear before any production sign-off)
 
 1. **Rotate the exposed Supabase DB password (urgent).** It was committed in `dfc452e`, which is an ancestor of HEAD and was pushed via `origin/main`. Removing it from current source does not remove it from history. Set `DATABASE_URL` wherever `migrate.cjs`/`seed.cjs` are run, then rotate the credential.
-2. **Verify webhook raw-body + HMAC (urgent).** `api/razorpay-webhook.js` now declares `bodyParser: false` and fails closed on a pre-parsed body, but no live or signed test event was sent. Confirm the deployed platform honours the config and that a correctly signed test payload fulfils exactly once.
+2. **Verify webhook HMAC end to end (urgent).** The handler now verifies a pre-parsed JSON body after HMAC-checking its canonical re-serialization, so the earlier Vercel pre-parse rejection is fixed in source. No live signed test event has been sent yet: resend a captured delivery after deployment and confirm `200` plus exactly one fulfilment.
 3. **Post-apply verification (urgent).** User reports both migrations were applied directly to **production**, in order, on 2026-11-21; the planned staging pass was skipped. Run the read-only checks in `STAGING_MIGRATION_RUNBOOK.md` §2/§3 and §6 against production now, archive the output, and keep `supabase/rollback/*.down.sql` ready. Do not infer success from the user's report alone.
 4. **SEC-001 verification** — confirm the deployed route emails only, never returns a link, Supabase redirect allowlisting is correct, and buyers still receive mail under the project's mailer limits.
 5. **SEC-006** — **fixed in source; migration user-reported applied to production**: verify anon cannot SELECT `admin_settings`, the view excludes `admin_email`, and public branding/admin settings still render. No browser evidence yet.

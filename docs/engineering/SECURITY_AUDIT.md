@@ -9,7 +9,7 @@
 | Control | Evidence | Status |
 |---|---|---|
 | Server-authoritative integer-paise pricing; browser price ignored | `api/_lib/order-pricing.js:62-138`; 23 passing tests | Verified |
-| Razorpay webhook HMAC-SHA256 over **raw body**, `timingSafeEqual`; pre-parsed body now fails closed | `api/razorpay-webhook.js`; batch-7 guard tests | Verified in source; live event not tested |
+| Razorpay webhook HMAC-SHA256 over body bytes, `timingSafeEqual`; pre-parsed JSON accepted only after HMAC verifies the same candidate bytes | `api/razorpay-webhook.js`; webhook guard tests | Verified in source; live event not tested |
 | Amount/currency mismatch never auto-fulfils; order left pending | `api/_lib/fulfilment.js:97-120` | Verified |
 | Idempotent entitlement grant (unique payment id, unique entitlement, guarded update) | `api/_lib/fulfilment.js:41-45,72-90,122-157` | Verified |
 | Centralized admin gate reads role from DB, not the browser | `api/_lib/adminAuth.js:26-48`; guard tests | Verified |

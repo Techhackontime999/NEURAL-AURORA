@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2, FileText } from 'lucide-react'
+import { Search, SlidersHorizontal, AlertTriangle, PackageOpen, X, Loader2, FileText, RefreshCw } from 'lucide-react'
 import {
   getPublishedProducts,
   getCategories,
@@ -32,6 +32,10 @@ const PAGE_SIZE = PRODUCT_PAGE_SIZE
 
 // Typing is debounced so a search does not fire a request per keystroke.
 const SEARCH_DEBOUNCE_MS = 300
+
+// The format tiles in the catalogue header are quick filters, not decoration.
+// Values match normaliseFormatFilter() so a stored "PDF" resolves to "pdf".
+const QUICK_FORMATS = ['zip', 'pdf', 'code']
 
 // Filters live in the URL so a filtered catalogue can be linked, bookmarked and
 // restored with the browser's back button. Unknown values are dropped rather
@@ -337,9 +341,12 @@ export default function Products() {
           >
             {t('store.filters')}
           </h2>
-          <span
+          <button
+            type="button"
             data-testid="store-data-status"
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest ${
+            onClick={() => setReloadToken((n) => n + 1)}
+            title={t('store.retry')}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80 ${
               isSupabaseConfigured
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
                 : 'border-amber-500/30 bg-amber-500/5 text-amber-500'
@@ -347,12 +354,12 @@ export default function Products() {
           >
             <span className={`h-1.5 w-1.5 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
             {isSupabaseConfigured ? t('store.liveData') : t('store.localData')}
-          </span>
+            <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+          </button>
         </div>
 
         <div
           data-ui
-          aria-hidden="true"
           className="relative mb-4 flex min-h-[176px] flex-col justify-between gap-4 overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.03] via-transparent to-cyan-400/10 p-5 dark:border-white/10 md:min-h-[192px]"
         >
           <div className="flex flex-1 items-center gap-4">
@@ -366,9 +373,26 @@ export default function Products() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 self-end md:w-1/2">
-            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">ZIP</div>
-            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">PDF</div>
-            <div className="flex h-12 items-center justify-center rounded-lg border border-black/10 bg-white/50 text-[10px] font-semibold uppercase tracking-widest text-black/60 dark:border-white/10 dark:bg-white/5 dark:text-white/60">CODE</div>
+            {QUICK_FORMATS.map((value) => {
+              const label = value.toUpperCase()
+              const active = filters.format === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={active}
+                  onClick={() => set({ format: active ? '' : value })}
+                  className={`flex h-12 items-center justify-center rounded-lg border text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                    active
+                      ? 'border-cyan-400 bg-cyan-400/15 text-cyan-500'
+                      : 'border-black/10 bg-white/50 text-black/60 hover:border-cyan-400/50 hover:text-cyan-500 dark:border-white/10 dark:bg-white/5 dark:text-white/60'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         </div>
 

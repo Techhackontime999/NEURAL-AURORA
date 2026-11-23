@@ -196,6 +196,19 @@ check(
     products.includes('isSupabaseConfigured') &&
     !/DATABASE_URL|SUPABASE_SERVICE|SERVICE_ROLE/i.test(products)
 )
+check(
+  'catalogue: format tiles are wired quick filters',
+  products.includes("const QUICK_FORMATS = ['zip', 'pdf', 'code']") &&
+    products.includes('QUICK_FORMATS.map((value)') &&
+    products.includes("onClick={() => set({ format: active ? '' : value })}") &&
+    products.includes('aria-pressed={active}')
+)
+check(
+  'catalogue: live-data badge refreshes the catalogue',
+  products.includes('data-testid="store-data-status"') &&
+    products.includes('onClick={() => setReloadToken((n) => n + 1)}') &&
+    products.includes('RefreshCw')
+)
 
 // --- ST-U08: library search/sort is client-side over entitled entries -------
 check(

@@ -89,7 +89,9 @@ function generateLicenseKey(crypto, slug = 'product') {
     .replace(/[^a-zA-Z0-9]/g, '')
     .slice(0, 4)
     .toUpperCase() || 'NA'
-  return `NA-${prefix}-${grouped}`
+  // Callers pass 'na' when they have no product slug. Do not turn that into
+  // "NA-NA-…" on top of the brand prefix.
+  return prefix === 'NA' ? `NA-${grouped}` : `NA-${prefix}-${grouped}`
 }
 
 /** Deterministic reference, safe to show in support conversations. */

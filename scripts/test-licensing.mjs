@@ -162,6 +162,12 @@ const options = [
     [...keys].every((key) => /^NA-[A-Z0-9]{4}(?:-[A-Z0-9]{5}){4}$/.test(key)),
     [...keys][0]
   )
+  const naKeys = Array.from({ length: 20 }, () => generateLicenseKey(crypto, 'na'))
+  check(
+    'a placeholder slug never doubles the NA prefix',
+    naKeys.every((key) => /^NA-[A-Z0-9]{5}(?:-[A-Z0-9]{5}){3}$/.test(key)),
+    naKeys[0]
+  )
   check(
     'keys carry no customer data',
     [...keys].every((key) => !/test|example|admin|@/i.test(key))

@@ -85,7 +85,7 @@ try {
   const { buildLicensePdf } = require(path.join(sandbox, 'api/_lib/license-pdf.js'))
   const pdf = await buildLicensePdf({
     license_ref: 'LIC-TEST-0001',
-    license_key: 'NA-NA-4TESTTESTTESTTESTC',
+    license_key: 'NA-4TEST-TESTT-TESTT-TESTT',
     license_type: 'developer license',
     product_title: 'Test Product',
     customer_email: 'owner@example.com',

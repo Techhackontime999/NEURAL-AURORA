@@ -85,13 +85,15 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
     const H = doc.page.height
     const M = 38
     const cardX = M
-    const cardY = 134
+    // The header needs room for the ORDER line above the card, otherwise the
+    // card paints over white header text and it disappears on white.
+    const cardY = 162
     const cardW = W - M * 2
     const cardH = H - cardY - 54
 
     // Background and quiet aurora header.
     doc.rect(0, 0, W, H).fill(C.background)
-    doc.rect(0, 0, W, 166).fill(C.navy)
+    doc.rect(0, 0, W, 188).fill(C.navy)
     doc.save()
     doc.strokeOpacity(0.26).lineWidth(1.4).strokeColor(C.cyan)
     doc.moveTo(W - 190, 0).bezierCurveTo(W - 120, 60, W - 60, 100, W + 20, 150).stroke()
@@ -109,8 +111,12 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
       .text('PURCHASE RECEIPT', M, 68, { characterSpacing: 1.4 })
     doc.fillColor(C.white).font('Helvetica-Bold').fontSize(25)
       .text('Thank you for your purchase', M, 90, { width: W - M * 2 - 40, height: 44, ellipsis: true })
+    // Restore opacity here: a leaked 0.72 would also make the white card
+    // translucent, letting the navy header wash out this text.
+    doc.save()
     doc.fillOpacity(0.72).fillColor(C.white).font('Helvetica').fontSize(9)
       .text(`ORDER  ${reference}`, M, 146)
+    doc.restore()
 
     // Main card.
     doc.save()

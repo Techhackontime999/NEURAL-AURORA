@@ -167,6 +167,36 @@ try {
     `bytes=${pdf.length}`
   )
 
+  // The ORDER line is white header text. It used to be painted underneath the
+  // white card (and through a leaked 0.72 opacity), so it vanished. Read the
+  // real PDF operators: its baseline must be above the card's top edge.
+  const pdfSource = read('api/_lib/receipt-pdf.js')
+  const cardY = Number(pdfSource.match(/const cardY = (\d+)/)?.[1])
+  const headerH = Number(pdfSource.match(/doc\.rect\(0, 0, W, (\d+)\)\.fill\(C\.navy\)/)?.[1])
+  const ops = text.split('\n')
+  const orderNeedle = Buffer.from('ORDER  NA-').toString('hex')
+  const orderIdx = ops.findIndex((line) => line.includes(orderNeedle))
+  const tm = ops
+    .slice(0, orderIdx)
+    .reverse()
+    .find((line) => / Tm$/.test(line.trim()))
+    ?.match(/1 0 0 1 [\d.]+ ([\d.]+) Tm/)
+  const orderTop = 841.89 - Number(tm?.[1])
+  check(
+    'receipt ORDER line sits above the card on the navy header',
+    Number.isFinite(cardY) && Number.isFinite(headerH) && Number.isFinite(orderTop) &&
+      orderTop < cardY && headerH > cardY,
+    `orderTop=${orderTop} cardY=${cardY} headerH=${headerH}`
+  )
+  const orderSource = pdfSource.slice(
+    pdfSource.indexOf('// Restore opacity here'),
+    pdfSource.indexOf('// Main card.')
+  )
+  check(
+    'receipt header opacity is restored before the card is drawn',
+    orderSource.includes('doc.save()') && orderSource.includes('doc.restore()')
+  )
+
   // A signature used to be drawn at a fixed card offset that sat inside the
   // total panel. Read the raw (uncompressed) PDF operators back: the signature
   // image box must begin BELOW the bottom edge of the total panel.
@@ -187,15 +217,15 @@ try {
     items: [{ title: 'The Ebook', quantity: 1, total_paise: 49900 }],
     signature: { buffer: png, name: 'Aarav Mehta', title: 'Founder, Neural Aurora' },
   })
-  const ops = signed.toString('latin1').split('\n')
+  const signedOps = signed.toString('latin1').split('\n')
   const panelBottom = Math.max(
-    ...ops
+    ...signedOps
       .map((line) => line.match(/^[\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+ ([\d.]+) c$/))
       .filter(Boolean)
       .map((m) => Number(m[1]))
       .filter((y) => y > 600 && y < 760)
   )
-  const imageOp = ops
+  const imageOp = signedOps
     .map((line) => line.match(/^([\d.]+) 0 0 -([\d.]+) [\d.]+ ([\d.]+) cm$/))
     .find((m) => m && m[1] === m[2] && Number(m[3]) < 800)
   const imageTop = imageOp ? Number(imageOp[3]) - Number(imageOp[2]) : NaN

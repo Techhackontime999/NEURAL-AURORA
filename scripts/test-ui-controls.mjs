@@ -22,6 +22,7 @@ const projects = read('src/components/Projects.jsx')
 const loader = read('src/components/StartingLoader.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 const videoDefaults = read('src/lib/videoHeroDefaults.js')
+const signatureForm = read('src/components/admin/AdminDocumentSignature.jsx')
 
 let passed = 0
 let failed = 0
@@ -35,6 +36,14 @@ function check(name, cond) {
     console.log(`FAIL  ${name}`)
   }
 }
+
+// --- Document signature form ------------------------------------------------
+check(
+  'signature form: typing keeps internal spaces',
+  signatureForm.includes('setForm((current) => ({ ...current, ...next }))') &&
+    !signatureForm.includes('mergeDocumentSignature({ ...current, ...next })') &&
+    signatureForm.includes('const next = mergeDocumentSignature(form)')
+)
 
 // --- Shared picker ----------------------------------------------------------
 check('picker: exports a shared glyph renderer', picker.includes('export function IconGlyph'))

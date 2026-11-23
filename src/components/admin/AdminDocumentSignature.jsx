@@ -35,7 +35,10 @@ export default function AdminDocumentSignature() {
 
   function patch(next) {
     setMessage(null)
-    setForm((current) => mergeDocumentSignature({ ...current, ...next }))
+    // Keep raw text while the user is typing. Normalising on every keystroke
+    // trims the trailing space they just typed, turning "AMIT KUMAR" into
+    // "AMITKUMAR". mergeDocumentSignature() runs on load and on save only.
+    setForm((current) => ({ ...current, ...next }))
   }
 
   async function handleFile(event) {

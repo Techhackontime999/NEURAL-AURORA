@@ -8,6 +8,7 @@
 //
 // Run: npm run test:api-guards
 import { createRequire } from 'node:module'
+import { createHmac } from 'node:crypto'
 import fs from 'node:fs'
 
 const require = createRequire(import.meta.url)
@@ -310,9 +311,31 @@ setEnv({})
     )
   )
   check(
-    'webhook: pre-parsed body fails closed -> 400',
+    'webhook: pre-parsed body with a bad signature fails closed -> 400',
     preParsed.statusCode === 400,
     `got ${preParsed.statusCode}`
+  )
+
+  // Vercel pre-parses application/json even for standalone functions. A genuine
+  // Razorpay event must still get past signature verification; with no database
+  // configured it then stops at the env check (500), never at the HMAC (400).
+  const parsedPayload = { event: 'payment.captured', payload: { payment: { entity: {} } } }
+  const canonical = JSON.stringify(parsedPayload)
+  const parsedSignature = createHmac('sha256', SENTINEL_RAZORPAY).update(canonical).digest('hex')
+  const { res: parsedValid } = await capture((r) =>
+    webhook(
+      {
+        method: 'POST',
+        headers: { 'x-razorpay-signature': parsedSignature },
+        body: parsedPayload,
+      },
+      r
+    )
+  )
+  check(
+    'webhook: pre-parsed body with a valid signature is accepted',
+    parsedValid.statusCode === 500,
+    `got ${parsedValid.statusCode}`
   )
 }
 {

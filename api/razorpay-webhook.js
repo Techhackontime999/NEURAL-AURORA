@@ -7,30 +7,63 @@ const {
   recordDigitalFailure,
 } = require('./_lib/fulfilment')
 
-async function readRawBody(req) {
-  if (req.rawBody) {
-    return Buffer.isBuffer(req.rawBody) ? req.rawBody.toString('utf8') : String(req.rawBody)
+const BODY_SUFFIXES = ['', '\n', '\r\n']
+
+function textCandidates(value) {
+  if (value == null) return []
+  return [Buffer.isBuffer(value) ? value.toString('utf8') : String(value)]
+}
+
+/**
+ * All byte sequences the platform may have handed us, paired with the
+ * already-parsed object when it parsed the JSON for us.
+ *
+ * Vercel's Node.js runtime pre-parses `application/json` for standalone
+ * functions. The Next.js-style `bodyParser: false` config below is ignored
+ * there. Razorpay signs the exact bytes it sent, so a re-serialization is only
+ * acceptable if the HMAC over *those same bytes* verifies. That check keeps
+ * this path fail-closed: no valid signature, no fulfilment.
+ */
+async function bodyCandidates(req) {
+  const candidates = []
+
+  if (req.rawBody != null) {
+    for (const text of textCandidates(req.rawBody)) candidates.push({ text, payload: null })
   }
-  if (typeof req.body === 'string') {
-    return req.body
+
+  if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+    for (const text of textCandidates(req.body)) candidates.push({ text, payload: null })
+  } else if (req.body && typeof req.body === 'object') {
+    try {
+      const canonical = JSON.stringify(req.body)
+      for (const suffix of BODY_SUFFIXES) {
+        candidates.push({ text: canonical + suffix, payload: req.body })
+      }
+    } catch {
+      // Non-serialisable bodies cannot be authenticated and are rejected below.
+    }
   }
-  if (Buffer.isBuffer(req.body)) {
-    return req.body.toString('utf8')
+
+  if (candidates.length === 0) {
+    const text = await new Promise((resolve, reject) => {
+      const chunks = []
+      req.on('data', chunk => chunks.push(Buffer.from(chunk)))
+      req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+      req.on('error', reject)
+    })
+    candidates.push({ text, payload: null })
   }
-  if (req.body) {
-    // Razorpay signs the exact bytes it sent. A re-serialized object will not
-    // reproduce those bytes (key order/whitespace differ), so verification
-    // would fail for every genuine webhook. Fail closed instead of guessing.
-    // `module.exports.config` below tells the platform not to pre-parse.
-    console.error('[Razorpay Webhook] Body was pre-parsed by the runtime; refusing to re-serialize for HMAC')
-    throw new Error('pre-parsed webhook body')
-  }
-  return await new Promise((resolve, reject) => {
-    const chunks = []
-    req.on('data', chunk => chunks.push(Buffer.from(chunk)))
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-    req.on('error', reject)
-  })
+
+  return candidates
+}
+
+function signatureMatches(text, signature, secret) {
+  const expectedDigest = crypto.createHmac('sha256', secret).update(text).digest()
+  const receivedDigest = Buffer.from(String(signature), 'hex')
+  return (
+    expectedDigest.length === receivedDigest.length &&
+    crypto.timingSafeEqual(expectedDigest, receivedDigest)
+  )
 }
 
 const handler = async function handler(req, res) {
@@ -51,9 +84,21 @@ const handler = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing signature header' })
   }
 
+  // Verify the signature against the exact bytes we were given. A pre-parsed
+  // object is only trusted after its canonical re-serialization verifies.
   let rawBody
+  let payload
   try {
-    rawBody = await readRawBody(req)
+    const candidates = await bodyCandidates(req)
+    const matched = candidates.find((candidate) =>
+      signatureMatches(candidate.text, signature, webhookSecret)
+    )
+    if (!matched) {
+      console.warn('[Razorpay Webhook] Signature verification failed')
+      return res.status(400).json({ error: 'Invalid signature' })
+    }
+    rawBody = matched.text
+    payload = matched.payload
   } catch (err) {
     console.error('[Razorpay Webhook] Error reading request body:', err)
     return res.status(400).json({ error: 'Failed to read request body' })
@@ -63,31 +108,13 @@ const handler = async function handler(req, res) {
     return res.status(400).json({ error: 'Empty request body' })
   }
 
-  // Verify signature using HMAC SHA256 over the exact raw body bytes
-  try {
-    const expectedDigest = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest()
-    const receivedDigest = Buffer.from(String(signature), 'hex')
-
-    if (
-      expectedDigest.length !== receivedDigest.length ||
-      !crypto.timingSafeEqual(expectedDigest, receivedDigest)
-    ) {
-      console.warn('[Razorpay Webhook] Signature verification failed')
-      return res.status(400).json({ error: 'Invalid signature' })
+  if (!payload) {
+    try {
+      payload = JSON.parse(rawBody)
+    } catch (err) {
+      console.error('[Razorpay Webhook] Invalid JSON payload:', err)
+      return res.status(400).json({ error: 'Invalid JSON payload' })
     }
-  } catch (err) {
-    console.error('[Razorpay Webhook] Signature verification exception:', err)
-    return res.status(400).json({ error: 'Signature verification failed' })
-  }
-
-  // Parse payload JSON
-  let payload
-  try {
-    const isParsedBody = req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)
-    payload = isParsedBody ? req.body : JSON.parse(rawBody)
-  } catch (err) {
-    console.error('[Razorpay Webhook] Invalid JSON payload:', err)
-    return res.status(400).json({ error: 'Invalid JSON payload' })
   }
 
   const event = payload?.event

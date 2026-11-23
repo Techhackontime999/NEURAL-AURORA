@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "突触后台",
     "auroraEngine": "极光引擎",
-    "viewAll": "查看全部"
+    "viewAll": "查看全部",
+    "closeTitle": "让我们一起构建。",
+    "closeSubtitle": "欢迎合作，聊聊你的项目。",
+    "closeAction": "启动项目",
+    "lede": "神经网络与极光之光相遇的地方。",
+    "explore": "探索",
+    "offerings": "产品与服务",
+    "resources": "资源",
+    "services": "服务",
+    "store": "数字商店",
+    "library": "我的库",
+    "support": "支持",
+    "journal": "博客",
+    "certificates": "证书",
+    "achievements": "成就",
+    "gallery": "画廊",
+    "privacy": "隐私",
+    "terms": "条款",
+    "backToTop": "回到顶部",
+    "credit": "摄影:Unsplash(已授权替代图片)。"
+  },
+  "legal": {
+    "eyebrow": "法律",
+    "privacyTitle": "隐私政策",
+    "termsTitle": "使用条款"
   },
   "loader": {
     "verificationRequired": "需要验证",

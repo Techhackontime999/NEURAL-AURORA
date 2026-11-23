@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Sinaptik panel",
     "auroraEngine": "Aurora Motoru",
-    "viewAll": "Tümünü Gör"
+    "viewAll": "Tümünü Gör",
+    "closeTitle": "Birlikte inşa edelim.",
+    "closeSubtitle": "İş birliğine açığım. Projenizden bahsedin.",
+    "closeAction": "Proje başlat",
+    "lede": "Sinir ağlarının aurora ışığıyla buluştuğu yer.",
+    "explore": "Keşfet",
+    "offerings": "Teklifler",
+    "resources": "Kaynaklar",
+    "services": "Hizmetler",
+    "store": "Dijital Mağaza",
+    "library": "Kitaplığım",
+    "support": "Destek",
+    "journal": "Blog",
+    "certificates": "Sertifikalar",
+    "achievements": "Başarılar",
+    "gallery": "Galeri",
+    "privacy": "Gizlilik",
+    "terms": "Koşullar",
+    "backToTop": "Yukarı dön",
+    "credit": "Fotoğraf: Unsplash (lisanslı yer tutucular)."
+  },
+  "legal": {
+    "eyebrow": "Yasal",
+    "privacyTitle": "Gizlilik Politikası",
+    "termsTitle": "Kullanım Koşulları"
   },
   "loader": {
     "verificationRequired": "Doğrulama Gerekli",

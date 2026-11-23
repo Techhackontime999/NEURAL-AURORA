@@ -393,6 +393,21 @@
     background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent);
   }
 
+  /* Footer brand wordmark: the logo's own neural-lavender → aurora-green
+     gradient, with deeper stops on the light ground so the name keeps its
+     contrast in both themes. Used at two sizes (brand block, giant close). */
+  .footer-wordmark {
+    background-image: linear-gradient(100deg, #6c63d8 0%, #4a42b8 45%, #15795c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .dark .footer-wordmark {
+    background-image: linear-gradient(100deg, #eeedfe 0%, #afa9ec 45%, #5dcaa5 100%);
+  }
+
   .eyebrow {
     @apply inline-block rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium;
     background: var(--eyebrow-bg, rgba(0, 240, 255, 0.08));

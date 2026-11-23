@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Synaptisches Dashboard",
     "auroraEngine": "Aurora-Engine",
-    "viewAll": "Alle anzeigen"
+    "viewAll": "Alle anzeigen",
+    "closeTitle": "Lass uns gemeinsam bauen.",
+    "closeSubtitle": "Offen für Zusammenarbeit. Erzähl mir von deinem Projekt.",
+    "closeAction": "Projekt starten",
+    "lede": "Wo neuronale Netze auf Polarlicht treffen.",
+    "explore": "Entdecken",
+    "offerings": "Angebote",
+    "resources": "Ressourcen",
+    "services": "Leistungen",
+    "store": "Digitaler Store",
+    "library": "Meine Bibliothek",
+    "support": "Support",
+    "journal": "Blog",
+    "certificates": "Zertifikate",
+    "achievements": "Erfolge",
+    "gallery": "Galerie",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "backToTop": "Nach oben",
+    "credit": "Fotografie: Unsplash (lizenzierte Platzhalter)."
+  },
+  "legal": {
+    "eyebrow": "Rechtliches",
+    "privacyTitle": "Datenschutzerklärung",
+    "termsTitle": "Nutzungsbedingungen"
   },
   "loader": {
     "verificationRequired": "Verifizierung erforderlich",

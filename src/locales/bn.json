@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "সিন্যাপটিক প্যানেল",
     "auroraEngine": "অরোরা ইঞ্জিন",
-    "viewAll": "সব দেখুন"
+    "viewAll": "সব দেখুন",
+    "closeTitle": "আসুন একসাথে গড়ি।",
+    "closeSubtitle": "সহযোগিতার জন্য উন্মুক্ত। আপনার প্রকল্প সম্পর্কে বলুন।",
+    "closeAction": "প্রকল্প শুরু করুন",
+    "lede": "যেখানে নিউরাল নেটওয়ার্ক অরোরা আলোর সাথে মিলিত হয়।",
+    "explore": "অন্বেষণ",
+    "offerings": "অফার",
+    "resources": "রিসোর্স",
+    "services": "পরিষেবা",
+    "store": "ডিজিটাল স্টোর",
+    "library": "আমার লাইব্রেরি",
+    "support": "সহায়তা",
+    "journal": "ব্লগ",
+    "certificates": "সার্টিফিকেট",
+    "achievements": "অর্জন",
+    "gallery": "গ্যালারি",
+    "privacy": "গোপনীয়তা",
+    "terms": "শর্তাবলী",
+    "backToTop": "উপরে যান",
+    "credit": "ছবি: Unsplash (লাইসেন্সপ্রাপ্ত বিকল্প)।"
+  },
+  "legal": {
+    "eyebrow": "আইনি",
+    "privacyTitle": "গোপনীয়তা নীতি",
+    "termsTitle": "ব্যবহারের শর্তাবলী"
   },
   "loader": {
     "verificationRequired": "যাচাইকরণ প্রয়োজন",

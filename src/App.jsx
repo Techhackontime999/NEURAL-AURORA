@@ -46,6 +46,7 @@ const Blog = lazy(() => import('./components/Blog'))
 const BlogPost = lazy(() => import('./components/BlogPost'))
 const CaseStudyDetail = lazy(() => import('./components/CaseStudyDetail'))
 const Support = lazy(() => import('./components/Support'))
+const LegalPage = lazy(() => import('./components/legal/LegalPage'))
 const Login = lazy(() => import('./components/admin/Login'))
 const Register = lazy(() => import('./components/admin/Register'))
 const ForgotPassword = lazy(() => import('./components/admin/ForgotPassword'))
@@ -172,6 +173,14 @@ const ROUTE_HEADS = {
   '/support': {
     title: `Support — ${SITE_NAME}`,
     description: 'Get help with an order, download or digital product.',
+  },
+  '/privacy': {
+    title: `Privacy Policy — ${SITE_NAME}`,
+    description: 'How NEURAL AURORA collects, uses and protects your information.',
+  },
+  '/terms': {
+    title: `Terms of Use — ${SITE_NAME}`,
+    description: 'The terms that govern your use of NEURAL AURORA and its digital store.',
   },
 }
 
@@ -451,6 +460,8 @@ function AppContent() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+              <Route path="/terms" element={<LegalPage doc="terms" />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

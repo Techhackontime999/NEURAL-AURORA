@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Bảng điều khiển synap",
     "auroraEngine": "Động cơ Aurora",
-    "viewAll": "Xem tất cả"
+    "viewAll": "Xem tất cả",
+    "closeTitle": "Cùng nhau xây dựng.",
+    "closeSubtitle": "Sẵn sàng hợp tác. Hãy kể về dự án của bạn.",
+    "closeAction": "Bắt đầu dự án",
+    "lede": "Nơi mạng nơ-ron gặp ánh sáng cực quang.",
+    "explore": "Khám phá",
+    "offerings": "Ưu đãi",
+    "resources": "Tài nguyên",
+    "services": "Dịch vụ",
+    "store": "Cửa hàng số",
+    "library": "Thư viện của tôi",
+    "support": "Hỗ trợ",
+    "journal": "Blog",
+    "certificates": "Chứng chỉ",
+    "achievements": "Thành tích",
+    "gallery": "Bộ sưu tập",
+    "privacy": "Quyền riêng tư",
+    "terms": "Điều khoản",
+    "backToTop": "Lên đầu trang",
+    "credit": "Ảnh: Unsplash (ảnh thay thế được cấp phép)."
+  },
+  "legal": {
+    "eyebrow": "Pháp lý",
+    "privacyTitle": "Chính sách quyền riêng tư",
+    "termsTitle": "Điều khoản sử dụng"
   },
   "loader": {
     "verificationRequired": "Cần xác minh",

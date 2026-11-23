@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "لوحة تحكم تشابكية",
     "auroraEngine": "محرك الشفق القطبي",
-    "viewAll": "عرض الكل"
+    "viewAll": "عرض الكل",
+    "closeTitle": "لنبني معًا.",
+    "closeSubtitle": "متاح للتعاون. أخبرني عن مشروعك.",
+    "closeAction": "ابدأ مشروعًا",
+    "lede": "حيث تلتقي الشبكات العصبية بضوء الشفق.",
+    "explore": "استكشف",
+    "offerings": "العروض",
+    "resources": "الموارد",
+    "services": "الخدمات",
+    "store": "المتجر الرقمي",
+    "library": "مكتبتي",
+    "support": "الدعم",
+    "journal": "المدونة",
+    "certificates": "الشهادات",
+    "achievements": "الإنجازات",
+    "gallery": "المعرض",
+    "privacy": "الخصوصية",
+    "terms": "الشروط",
+    "backToTop": "العودة للأعلى",
+    "credit": "الصور: Unsplash (بدائل مرخّصة)."
+  },
+  "legal": {
+    "eyebrow": "قانوني",
+    "privacyTitle": "سياسة الخصوصية",
+    "termsTitle": "شروط الاستخدام"
   },
   "loader": {
     "verificationRequired": "التحقق مطلوب",

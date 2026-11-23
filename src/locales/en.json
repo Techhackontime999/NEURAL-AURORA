@@ -165,7 +165,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Synaptic Dashboard",
     "auroraEngine": "Aurora Engine",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "closeTitle": "Let's build together.",
+    "closeSubtitle": "Open for collaboration. Tell me about your project.",
+    "closeAction": "Start a project",
+    "lede": "Where neural networks meet aurora light.",
+    "explore": "Explore",
+    "offerings": "Offerings",
+    "resources": "Resources",
+    "services": "Services",
+    "store": "Digital Store",
+    "library": "My Library",
+    "support": "Support",
+    "journal": "Journal",
+    "certificates": "Certificates",
+    "achievements": "Achievements",
+    "gallery": "Gallery",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "backToTop": "Back to top",
+    "credit": "Photography: Unsplash (licensed stand-ins)."
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Use"
   },
   "loader": {
     "verificationRequired": "Verification Required",

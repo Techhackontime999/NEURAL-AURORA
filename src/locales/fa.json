@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "داشبورد سیناپسی",
     "auroraEngine": "موتور شفق",
-    "viewAll": "مشاهده همه"
+    "viewAll": "مشاهده همه",
+    "closeTitle": "بیایید با هم بسازیم.",
+    "closeSubtitle": "آماده همکاری‌ام. از پروژه‌تان بگویید.",
+    "closeAction": "شروع پروژه",
+    "lede": "جایی که شبکه‌های عصبی با نور شفق قطبی دیدار می‌کنند.",
+    "explore": "کاوش",
+    "offerings": "پیشنهادها",
+    "resources": "منابع",
+    "services": "خدمات",
+    "store": "فروشگاه دیجیتال",
+    "library": "کتابخانه من",
+    "support": "پشتیبانی",
+    "journal": "وبلاگ",
+    "certificates": "گواهینامه‌ها",
+    "achievements": "دستاوردها",
+    "gallery": "گالری",
+    "privacy": "حریم خصوصی",
+    "terms": "شرایط",
+    "backToTop": "بازگشت به بالا",
+    "credit": "عکس‌ها: Unsplash (جایگزین‌های دارای مجوز)."
+  },
+  "legal": {
+    "eyebrow": "حقوقی",
+    "privacyTitle": "سیاست حریم خصوصی",
+    "termsTitle": "شرایط استفاده"
   },
   "loader": {
     "verificationRequired": "احراز هویت الزامی است",

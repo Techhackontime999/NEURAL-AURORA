@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "לוח סינפטי",
     "auroraEngine": "מנוע אורורה",
-    "viewAll": "הצג הכל"
+    "viewAll": "הצג הכל",
+    "closeTitle": "בואו נבנה יחד.",
+    "closeSubtitle": "פתוח לשיתופי פעולה. ספרו לי על הפרויקט שלכם.",
+    "closeAction": "התחלת פרויקט",
+    "lede": "היכן שרשתות עצביות פוגשות את אור הזוהר.",
+    "explore": "גלו",
+    "offerings": "הצעות",
+    "resources": "משאבים",
+    "services": "שירותים",
+    "store": "חנות דיגיטלית",
+    "library": "הספרייה שלי",
+    "support": "תמיכה",
+    "journal": "בלוג",
+    "certificates": "תעודות",
+    "achievements": "הישגים",
+    "gallery": "גלריה",
+    "privacy": "פרטיות",
+    "terms": "תנאים",
+    "backToTop": "חזרה למעלה",
+    "credit": "צילום: Unsplash (תמונות חלופיות ברישיון)."
+  },
+  "legal": {
+    "eyebrow": "משפטי",
+    "privacyTitle": "מדיניות פרטיות",
+    "termsTitle": "תנאי שימוש"
   },
   "loader": {
     "verificationRequired": "נדרש אימות",

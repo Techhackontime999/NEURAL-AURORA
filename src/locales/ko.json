@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "시냅스 대시보드",
     "auroraEngine": "오로라 엔진",
-    "viewAll": "모두 보기"
+    "viewAll": "모두 보기",
+    "closeTitle": "함께 만들어 봐요.",
+    "closeSubtitle": "협업은 언제나 환영입니다. 프로젝트를 들려주세요.",
+    "closeAction": "프로젝트 시작",
+    "lede": "신경망과 오로라 빛이 만나는 곳.",
+    "explore": "둘러보기",
+    "offerings": "제공 상품",
+    "resources": "리소스",
+    "services": "서비스",
+    "store": "디지털 스토어",
+    "library": "내 라이브러리",
+    "support": "지원",
+    "journal": "블로그",
+    "certificates": "인증서",
+    "achievements": "업적",
+    "gallery": "갤러리",
+    "privacy": "개인정보",
+    "terms": "약관",
+    "backToTop": "맨 위로",
+    "credit": "사진: Unsplash(라이선스 대체 이미지)."
+  },
+  "legal": {
+    "eyebrow": "법적 고지",
+    "privacyTitle": "개인정보 처리방침",
+    "termsTitle": "이용약관"
   },
   "loader": {
     "verificationRequired": "본인 확인 필요",

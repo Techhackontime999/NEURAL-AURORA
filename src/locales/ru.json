@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Синаптическая панель",
     "auroraEngine": "Движок Aurora",
-    "viewAll": "Смотреть все"
+    "viewAll": "Смотреть все",
+    "closeTitle": "Давайте строить вместе.",
+    "closeSubtitle": "Открыт для сотрудничества. Расскажите о своём проекте.",
+    "closeAction": "Начать проект",
+    "lede": "Где нейронные сети встречают свет авроры.",
+    "explore": "Обзор",
+    "offerings": "Предложения",
+    "resources": "Ресурсы",
+    "services": "Услуги",
+    "store": "Цифровой магазин",
+    "library": "Моя библиотека",
+    "support": "Поддержка",
+    "journal": "Блог",
+    "certificates": "Сертификаты",
+    "achievements": "Достижения",
+    "gallery": "Галерея",
+    "privacy": "Конфиденциальность",
+    "terms": "Условия",
+    "backToTop": "Наверх",
+    "credit": "Фотографии: Unsplash (лицензированные заменители)."
+  },
+  "legal": {
+    "eyebrow": "Правовая информация",
+    "privacyTitle": "Политика конфиденциальности",
+    "termsTitle": "Условия использования"
   },
   "loader": {
     "verificationRequired": "Требуется проверка",

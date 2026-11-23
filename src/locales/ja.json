@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "シナプスダッシュボード",
     "auroraEngine": "オーロラエンジン",
-    "viewAll": "すべて見る"
+    "viewAll": "すべて見る",
+    "closeTitle": "一緒に作りましょう。",
+    "closeSubtitle": "コラボレーション歓迎。あなたのプロジェクトを聞かせてください。",
+    "closeAction": "プロジェクトを始める",
+    "lede": "ニューラルネットワークとオーロラの光が出会う場所。",
+    "explore": "探索",
+    "offerings": "提供内容",
+    "resources": "リソース",
+    "services": "サービス",
+    "store": "デジタルストア",
+    "library": "マイライブラリ",
+    "support": "サポート",
+    "journal": "ブログ",
+    "certificates": "資格",
+    "achievements": "実績",
+    "gallery": "ギャラリー",
+    "privacy": "プライバシー",
+    "terms": "利用規約",
+    "backToTop": "トップへ戻る",
+    "credit": "写真:Unsplash(ライセンス付き代替画像)。"
+  },
+  "legal": {
+    "eyebrow": "法務",
+    "privacyTitle": "プライバシーポリシー",
+    "termsTitle": "利用規約"
   },
   "loader": {
     "verificationRequired": "認証が必要です",

@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Synaptisk panel",
     "auroraEngine": "Aurora-motor",
-    "viewAll": "Visa alla"
+    "viewAll": "Visa alla",
+    "closeTitle": "Låt oss bygga tillsammans.",
+    "closeSubtitle": "Öppen för samarbeten. Berätta om ditt projekt.",
+    "closeAction": "Starta ett projekt",
+    "lede": "Där neurala nätverk möter auroraljus.",
+    "explore": "Utforska",
+    "offerings": "Erbjudanden",
+    "resources": "Resurser",
+    "services": "Tjänster",
+    "store": "Digital butik",
+    "library": "Mitt bibliotek",
+    "support": "Support",
+    "journal": "Blogg",
+    "certificates": "Certifikat",
+    "achievements": "Prestationer",
+    "gallery": "Galleri",
+    "privacy": "Integritet",
+    "terms": "Villkor",
+    "backToTop": "Till toppen",
+    "credit": "Foto: Unsplash (licensierade ersättningsbilder)."
+  },
+  "legal": {
+    "eyebrow": "Juridik",
+    "privacyTitle": "Integritetspolicy",
+    "termsTitle": "Användarvillkor"
   },
   "loader": {
     "verificationRequired": "Verifiering krävs",

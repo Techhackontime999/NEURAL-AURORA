@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "سیناپٹک پینل",
     "auroraEngine": "ارورہ انجن",
-    "viewAll": "سب دیکھیں"
+    "viewAll": "سب دیکھیں",
+    "closeTitle": "آئیے مل کر بنائیں۔",
+    "closeSubtitle": "اشتراک کے لیے دستیاب۔ اپنے پروجیکٹ کے بارے میں بتائیں۔",
+    "closeAction": "پروجیکٹ شروع کریں",
+    "lede": "جہاں نیورل نیٹ ورک ارورا روشنی سے ملتے ہیں۔",
+    "explore": "دریافت",
+    "offerings": "پیشکشیں",
+    "resources": "وسائل",
+    "services": "خدمات",
+    "store": "ڈیجیٹل اسٹور",
+    "library": "میری لائبریری",
+    "support": "معاونت",
+    "journal": "بلاگ",
+    "certificates": "سرٹیفکیٹ",
+    "achievements": "کامیابیاں",
+    "gallery": "گیلری",
+    "privacy": "رازداری",
+    "terms": "شرائط",
+    "backToTop": "اوپر جائیں",
+    "credit": "تصاویر: Unsplash (لائسنس یافتہ متبادل)۔"
+  },
+  "legal": {
+    "eyebrow": "قانونی",
+    "privacyTitle": "رازداری کی پالیسی",
+    "termsTitle": "استعمال کی شرائط"
   },
   "loader": {
     "verificationRequired": "تصدیق درکار",

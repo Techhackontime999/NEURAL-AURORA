@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "แดชบอร์ดซินแนปส์",
     "auroraEngine": "เอ็นจิ้นออโรร่า",
-    "viewAll": "ดูทั้งหมด"
+    "viewAll": "ดูทั้งหมด",
+    "closeTitle": "มาสร้างด้วยกัน",
+    "closeSubtitle": "เปิดรับความร่วมมือ เล่าโปรเจกต์ของคุณให้ฟังหน่อย",
+    "closeAction": "เริ่มโปรเจกต์",
+    "lede": "ที่ที่โครงข่ายประสาทพบกับแสงออโรรา",
+    "explore": "สำรวจ",
+    "offerings": "ข้อเสนอ",
+    "resources": "แหล่งข้อมูล",
+    "services": "บริการ",
+    "store": "สโตร์ดิจิทัล",
+    "library": "คลังของฉัน",
+    "support": "ฝ่ายช่วยเหลือ",
+    "journal": "บล็อก",
+    "certificates": "ใบรับรอง",
+    "achievements": "ความสำเร็จ",
+    "gallery": "แกลเลอรี",
+    "privacy": "ความเป็นส่วนตัว",
+    "terms": "ข้อกำหนด",
+    "backToTop": "กลับไปด้านบน",
+    "credit": "ภาพถ่าย: Unsplash (ภาพตัวแทนที่มีลิขสิทธิ์)"
+  },
+  "legal": {
+    "eyebrow": "กฎหมาย",
+    "privacyTitle": "นโยบายความเป็นส่วนตัว",
+    "termsTitle": "ข้อกำหนดการใช้งาน"
   },
   "loader": {
     "verificationRequired": "ต้องยืนยันตัวตน",

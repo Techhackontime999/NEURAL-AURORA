@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Panel sinaptik",
     "auroraEngine": "Mesin Aurora",
-    "viewAll": "Lihat Semua"
+    "viewAll": "Lihat Semua",
+    "closeTitle": "Mari membangun bersama.",
+    "closeSubtitle": "Terbuka untuk kolaborasi. Ceritakan proyek Anda.",
+    "closeAction": "Mulai proyek",
+    "lede": "Tempat jaringan saraf bertemu cahaya aurora.",
+    "explore": "Jelajahi",
+    "offerings": "Penawaran",
+    "resources": "Sumber Daya",
+    "services": "Layanan",
+    "store": "Toko Digital",
+    "library": "Perpustakaan Saya",
+    "support": "Dukungan",
+    "journal": "Blog",
+    "certificates": "Sertifikat",
+    "achievements": "Pencapaian",
+    "gallery": "Galeri",
+    "privacy": "Privasi",
+    "terms": "Ketentuan",
+    "backToTop": "Kembali ke atas",
+    "credit": "Fotografi: Unsplash (gambar pengganti berlisensi)."
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "privacyTitle": "Kebijakan Privasi",
+    "termsTitle": "Ketentuan Penggunaan"
   },
   "loader": {
     "verificationRequired": "Verifikasi Diperlukan",

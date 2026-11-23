@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Synaptisch dashboard",
     "auroraEngine": "Aurora-engine",
-    "viewAll": "Alles bekijken"
+    "viewAll": "Alles bekijken",
+    "closeTitle": "Laten we samen bouwen.",
+    "closeSubtitle": "Open voor samenwerking. Vertel me over je project.",
+    "closeAction": "Start een project",
+    "lede": "Waar neurale netwerken auroralicht ontmoeten.",
+    "explore": "Verkennen",
+    "offerings": "Aanbod",
+    "resources": "Bronnen",
+    "services": "Diensten",
+    "store": "Digitale winkel",
+    "library": "Mijn bibliotheek",
+    "support": "Support",
+    "journal": "Blog",
+    "certificates": "Certificaten",
+    "achievements": "Prestaties",
+    "gallery": "Galerij",
+    "privacy": "Privacy",
+    "terms": "Voorwaarden",
+    "backToTop": "Naar boven",
+    "credit": "Fotografie: Unsplash (gelicentieerde stand-ins)."
+  },
+  "legal": {
+    "eyebrow": "Juridisch",
+    "privacyTitle": "Privacybeleid",
+    "termsTitle": "Gebruiksvoorwaarden"
   },
   "loader": {
     "verificationRequired": "Verificatie vereist",

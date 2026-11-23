@@ -120,7 +120,31 @@
     "neuralAurora": "NEURAL AURORA",
     "synapticDashboard": "Синаптична панель",
     "auroraEngine": "Рушій Aurora",
-    "viewAll": "Переглянути все"
+    "viewAll": "Переглянути все",
+    "closeTitle": "Будуймо разом.",
+    "closeSubtitle": "Відкритий до співпраці. Розкажіть про свій проєкт.",
+    "closeAction": "Почати проєкт",
+    "lede": "Де нейронні мережі зустрічають світло аврори.",
+    "explore": "Огляд",
+    "offerings": "Пропозиції",
+    "resources": "Ресурси",
+    "services": "Послуги",
+    "store": "Цифрова крамниця",
+    "library": "Моя бібліотека",
+    "support": "Підтримка",
+    "journal": "Блог",
+    "certificates": "Сертифікати",
+    "achievements": "Досягнення",
+    "gallery": "Галерея",
+    "privacy": "Конфіденційність",
+    "terms": "Умови",
+    "backToTop": "Догори",
+    "credit": "Фотографії: Unsplash (ліцензовані замінники)."
+  },
+  "legal": {
+    "eyebrow": "Правова інформація",
+    "privacyTitle": "Політика конфіденційності",
+    "termsTitle": "Умови використання"
   },
   "loader": {
     "verificationRequired": "Потрібна верифікація",

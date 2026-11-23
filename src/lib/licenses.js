@@ -53,11 +53,23 @@ export async function downloadLicenseDocument(licenseId) {
   })
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body?.error || 'Could not download the license document.')
+    // Vercel/platform errors (502/503/500) are plain text or HTML, not JSON.
+    // Keep the status so the real cause is visible instead of a generic message.
+    const contentType = response.headers.get('content-type') || ''
+    const body = contentType.includes('application/json')
+      ? await response.json().catch(() => ({}))
+      : {}
+    const message =
+      typeof body?.error === 'string' && body.error.trim()
+        ? body.error
+        : `Could not download the license document. (HTTP ${response.status})`
+    throw new Error(message)
   }
 
   const blob = await response.blob()
+  if (!blob.size || !String(blob.type || '').includes('application/pdf')) {
+    throw new Error('Could not download the license document. The server did not return a PDF.')
+  }
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   const disposition = response.headers.get('content-disposition') || ''

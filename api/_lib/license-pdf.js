@@ -5,9 +5,12 @@
 // auth only need the pure option/key helpers. If PDFKit were required from
 // that shared module, a missing/broken PDF dependency would take down every
 // checkout request with a 500 before the handler even ran.
+//
+// PDFKit is also loaded lazily inside buildLicensePdf(). Node's module tracer
+// and CommonJS resolution disagree about some PDFKit builds, so a failure must
+// stay inside this one request: the handler can still return a JSON error
+// instead of taking the whole /api/license function down with a 500.
 // ---------------------------------------------------------------------------
-
-const PDFDocument = require('pdfkit')
 
 function cleanText(value, fallback = '') {
   return String(value ?? fallback)
@@ -61,6 +64,10 @@ function statusColor(status) {
  * inject markup or scripts into the document.
  */
 function buildLicensePdf(record = {}) {
+  // Loaded here, not at module scope, so a broken PDF dependency cannot stop
+  // the rest of the combined licence function from starting on Vercel.
+  const PDFDocument = require('pdfkit')
+
   const product = truncateText(record.product_title || record.product_slug || 'Product', 62)
   const holder = truncateText(record.customer_name || record.customer_email || 'License holder', 68)
   const reference = truncateText(record.license_ref || record.id || 'Pending', 32)

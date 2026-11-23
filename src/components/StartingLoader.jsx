@@ -622,12 +622,12 @@ function StoreCards({ products, status }) {
           className="block rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 hover:border-cyan-400/35 hover:bg-cyan-400/[0.05] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="text-white/85 text-sm font-medium leading-snug truncate">{product.title}</p>
-            <span className="text-emerald-400 text-[10px] font-mono shrink-0">
+            <p className="min-w-0 text-white/85 text-sm font-medium leading-snug break-words">{product.title}</p>
+            <span className="text-emerald-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
               {product.price_paise === 0 ? t('loader.explore.store.free') : formatPrice(product.price_paise)}
             </span>
           </div>
-          <p className="text-white/35 text-[11px] leading-snug mt-1 line-clamp-2">
+          <p className="text-white/35 text-[11px] leading-snug mt-1 line-clamp-2 break-words">
             {product.short_description || product.description || product.format || t('loader.explore.store.item')}
           </p>
         </a>
@@ -684,7 +684,7 @@ function GalleryCards({ items, isLoading, error }) {
                 <p className="text-[9px] uppercase tracking-widest text-cyan-300/80">{item.category}</p>
               )}
               {item.title && (
-                <p className="text-[11px] text-white/90 line-clamp-2">{item.title}</p>
+                <p className="text-[11px] text-white/90 line-clamp-2 break-words">{item.title}</p>
               )}
             </div>
           )}
@@ -705,8 +705,8 @@ function CertificateCards({ items, isLoading, error }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
       {items.map((item, index) => (
         <div key={item.id || index} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-          <p className="text-white/85 text-sm font-medium leading-snug">{item.title}</p>
-          {item.issuer && <p className="text-white/40 text-[11px] mt-1">{item.issuer}</p>}
+          <p className="text-white/85 text-sm font-medium leading-snug break-words">{item.title}</p>
+          {item.issuer && <p className="text-white/40 text-[11px] mt-1 break-words">{item.issuer}</p>}
           {(item.issue_date || item.description) && (
             <p className="text-white/30 text-[10px] font-mono mt-1 line-clamp-2">
               {item.issue_date || item.description}
@@ -740,9 +740,9 @@ function AchievementCards({ items, isLoading, error }) {
           {item.achieved_date && (
             <p className="text-[10px] font-mono uppercase tracking-widest text-amber-300/60">{item.achieved_date}</p>
           )}
-          <p className="text-white/85 text-sm font-medium leading-snug mt-1">{item.title}</p>
-          {item.organization && <p className="text-white/40 text-[11px] mt-1">{item.organization}</p>}
-          {item.description && <p className="text-white/30 text-[11px] mt-1 line-clamp-2">{item.description}</p>}
+          <p className="text-white/85 text-sm font-medium leading-snug mt-1 break-words">{item.title}</p>
+          {item.organization && <p className="text-white/40 text-[11px] mt-1 break-words">{item.organization}</p>}
+          {item.description && <p className="text-white/30 text-[11px] mt-1 line-clamp-2 break-words">{item.description}</p>}
           {item.link_url && (
             <a
               href={item.link_url}
@@ -773,8 +773,8 @@ function ReviewCards({ items, isLoading, error }) {
             <p className="text-amber-300 text-xs tracking-widest" aria-label={`${rating} / 5`}>
               {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
             </p>
-            <p className="text-white/65 text-[12px] mt-2 leading-snug line-clamp-3">{item.message}</p>
-            {item.name && <p className="text-white/30 text-[10px] font-mono mt-2">{item.name}</p>}
+            <p className="text-white/65 text-[12px] mt-2 leading-snug line-clamp-3 break-words">{item.message}</p>
+            {item.name && <p className="text-white/30 text-[10px] font-mono mt-2 break-words">{item.name}</p>}
           </div>
         )
       })}
@@ -925,17 +925,16 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
   }
 
   return (
-    <div data-testid="explore-gallery" className="relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-6">
-      <div className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+    <div data-testid="explore-gallery" className="relative z-10 w-full min-w-0 max-w-4xl mx-auto px-3 sm:px-6">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/[0.06] p-3 sm:p-6 md:p-8 flex flex-col gap-3 sm:gap-4 md:gap-5 max-h-[calc(100dvh-1.5rem)]"
         style={{
           background: 'rgba(10,10,18,0.72)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px -15px rgba(0,0,0,0.4)',
-          touchAction: 'pan-y',
         }}
       >
-        <motion.div initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }} animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }} className="text-center">
+        <motion.div initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }} animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }} className="shrink-0 text-center">
           <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-emerald-400/60">{t('loader.explore.eyebrow')}</p>
           <h2 className="font-display font-bold text-white tracking-tight mt-1" style={{ fontSize: 'clamp(1.125rem, 4vw, 1.75rem)' }}>
             {t('loader.explore.title')}
@@ -944,7 +943,7 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
         </motion.div>
 
         <div role="tablist" aria-label={t('loader.explore.title')}
-          className="flex gap-2 overflow-x-auto pb-1 w-full scrollbar-thin scrollbar-thumb-white/10 md:flex-wrap md:overflow-visible"
+          className="flex shrink-0 gap-2 overflow-x-auto pb-1 w-full min-w-0 scrollbar-thin scrollbar-thumb-white/10 md:flex-wrap md:overflow-visible"
         >
           {sections.map((section, index) => {
             const selected = section.id === active
@@ -959,15 +958,15 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setActive(section.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, index)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-mono transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                className={`inline-flex shrink-0 min-h-10 items-center rounded-full border px-3 py-2 text-xs font-mono transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:min-h-0 sm:py-1.5 sm:text-[11px] ${
                   selected
                     ? 'border-cyan-400/50 bg-cyan-400/10 text-white'
                     : 'border-white/[0.07] bg-white/[0.02] text-white/45 hover:text-white/80 hover:border-white/20'
                 }`}
               >
                 <span aria-hidden="true" className="mr-1.5">{section.icon}</span>
-                {section.label}
-                <span className="ml-2 text-white/25">{section.count}</span>
+                <span className="whitespace-nowrap">{section.label}</span>
+                <span className="ml-1.5 whitespace-nowrap text-white/25 tabular-nums sm:ml-2">{section.count}</span>
               </button>
             )
           })}
@@ -975,21 +974,22 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
 
         <div id="explore-panel" role="tabpanel" aria-labelledby={`explore-tab-${active}`}
           data-testid="explore-panel"
-          className="rounded-xl border border-white/[0.05] bg-black/20 p-3 sm:p-4 min-h-[220px] max-h-[46dvh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+          className="min-h-0 flex-1 rounded-xl border border-white/[0.05] bg-black/20 p-2.5 sm:p-4 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
+          style={{ touchAction: 'pan-y' }}
         >
-          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[9px] font-mono uppercase tracking-[0.28em] text-cyan-300/60">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-mono uppercase tracking-[0.28em] text-cyan-300/60">
                 {t('loader.explore.sectionLabel')}
               </p>
-              <h3 className="font-display font-semibold text-white text-sm mt-0.5">{activeSection.label}</h3>
-              <p className="text-white/35 text-[11px] mt-0.5">
+              <h3 className="font-display font-semibold text-white text-sm sm:text-base mt-0.5 break-words">{activeSection.label}</h3>
+              <p className="text-white/40 text-xs mt-0.5 sm:text-[11px] break-words">
                 {t(`loader.cards.${activeSection.descKey}`)}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
               <LiveDataBadge compact />
-              <span className="rounded-full border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[9px] font-mono text-white/40">
+              <span className="rounded-full border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[9px] font-mono text-white/40 whitespace-nowrap">
                 {t('loader.explore.recordCount', { count: activeSection.count })}
               </span>
               <button
@@ -997,25 +997,25 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
                 onClick={refreshActive}
                 aria-label={t('loader.explore.refresh')}
                 title={t('loader.explore.refresh')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] text-white/45 transition-colors hover:border-cyan-400/40 hover:text-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] text-white/45 transition-colors hover:border-cyan-400/40 hover:text-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:h-7 sm:w-7"
               >
-                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                <RefreshCw className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>
           {renderPanel()}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+        <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 border-t border-white/[0.06] pt-3 sm:pt-4">
           <button type="button" onClick={onBack}
-            className="rounded-full border border-white/[0.08] px-4 py-2 text-[11px] font-mono text-white/45 hover:text-white hover:border-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+            className="inline-flex min-h-10 items-center justify-center rounded-full border border-white/[0.08] px-4 py-2 text-xs font-mono text-white/45 hover:text-white hover:border-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:min-h-0 sm:text-[11px]"
           >{t('loader.explore.back')}</button>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 sm:justify-end">
             <a href={activeSection.href} onClick={onComplete}
-              className="text-[11px] font-mono text-white/35 hover:text-cyan-300 transition-colors focus:outline-none focus-visible:underline"
+              className="inline-flex min-h-10 items-center justify-center px-2 text-xs font-mono text-white/35 hover:text-cyan-300 transition-colors focus:outline-none focus-visible:underline sm:min-h-0 sm:text-[11px]"
             >{t('loader.explore.openFull')} <span aria-hidden="true">↗</span></a>
             <button type="button" onClick={onComplete}
-              className="rounded-full bg-cyan-400/15 border border-cyan-400/40 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-cyan-400/15 border border-cyan-400/40 px-4 py-2 text-xs font-mono text-cyan-200 hover:bg-cyan-400/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:min-h-0 sm:text-[11px]"
             >{t('loader.explore.continue')}</button>
           </div>
         </div>
@@ -1233,11 +1233,11 @@ function AnimatedBar({ name, level }) {
   const shouldReduceMotion = useReducedMotion()
   return (
     <div>
-      <div className="flex justify-between text-[11px] mb-1 font-mono">
-        <span className="text-white/80">{name}</span>
+      <div className="flex justify-between gap-2 text-[11px] mb-1 font-mono">
+        <span className="min-w-0 text-white/80 break-words">{name}</span>
         <motion.span
           initial={shouldReduceMotion ? false : { opacity: 0 }} animate={shouldReduceMotion ? undefined : { opacity: 1 }} transition={shouldReduceMotion ? undefined : { delay: 0.3 }}
-          className="text-emerald-400 font-bold"
+          className="shrink-0 text-emerald-400 font-bold"
         >{level}%</motion.span>
       </div>
       <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
@@ -1283,15 +1283,15 @@ function ProjectCards({ items }) {
         <motion.div key={p.id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.08 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3 hover:border-white/10 transition-colors"
         >
-          <div className="text-white font-bold text-xs mb-1" style={{ textShadow: '0 0 8px rgba(0,240,255,0.15)' }}>{p.title}</div>
-          <div className="text-white/50 text-[11px] leading-relaxed mb-1.5">{p.description}</div>
+          <div className="text-white font-bold text-xs break-words mb-1" style={{ textShadow: '0 0 8px rgba(0,240,255,0.15)' }}>{p.title}</div>
+          <div className="text-white/50 text-[11px] leading-relaxed mb-1.5 break-words">{p.description}</div>
           <div className="flex flex-wrap gap-1.5 mb-1.5">
             {p.technologies?.map(t => (
-              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
+              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono whitespace-nowrap">{t}</span>
             ))}
           </div>
           {p.github && (
-            <div className="text-[10px] text-blue-400/70 font-mono">
+            <div className="min-w-0 text-[10px] text-blue-400/70 font-mono break-all">
               <span className="text-white/30">{'\u2192'} </span>{p.github}
             </div>
           )}
@@ -1309,10 +1309,10 @@ function EducationCards({ items }) {
         <motion.div key={e.id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
-          <div className="text-white font-bold text-xs">{e.degree}</div>
-          <div className="text-white/40 text-[11px] mt-0.5">{e.school}</div>
-          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1">{e.year}</div>
-          <div className="text-white/40 text-[11px] leading-relaxed">{e.description}</div>
+          <div className="text-white font-bold text-xs break-words">{e.degree}</div>
+          <div className="text-white/40 text-[11px] mt-0.5 break-words">{e.school}</div>
+          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1 whitespace-nowrap">{e.year}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed break-words">{e.description}</div>
         </motion.div>
       ))}
     </div>
@@ -1327,10 +1327,10 @@ function ExperienceCards({ items }) {
         <motion.div key={e.id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
-          <div className="text-white font-bold text-xs">{e.role}</div>
-          <div className="text-white/40 text-[11px] mt-0.5">{e.company}</div>
-          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1">{e.year}</div>
-          <div className="text-white/40 text-[11px] leading-relaxed">{e.description}</div>
+          <div className="text-white font-bold text-xs break-words">{e.role}</div>
+          <div className="text-white/40 text-[11px] mt-0.5 break-words">{e.company}</div>
+          <div className="text-neural-blue/60 text-[10px] font-mono mt-0.5 mb-1 whitespace-nowrap">{e.year}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed break-words">{e.description}</div>
         </motion.div>
       ))}
     </div>
@@ -1345,12 +1345,12 @@ function ServicesCards({ items }) {
         <motion.div key={s.service_id || s.id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.08 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
-          <div className="text-white font-bold text-xs mb-1">{s.title}</div>
-          <div className="text-emerald-400/70 text-[11px] italic mb-1">"{s.tagline}"</div>
-          <div className="text-white/40 text-[11px] leading-relaxed">{s.description}</div>
+          <div className="text-white font-bold text-xs break-words mb-1">{s.title}</div>
+          <div className="text-emerald-400/70 text-[11px] italic mb-1 break-words">"{s.tagline}"</div>
+          <div className="text-white/40 text-[11px] leading-relaxed break-words">{s.description}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {s.features?.map(f => (
-              <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.02] text-white/30 font-mono">{f}</span>
+              <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.02] text-white/30 font-mono whitespace-nowrap">{f}</span>
             ))}
           </div>
         </motion.div>
@@ -1367,14 +1367,14 @@ function CaseStudyCards({ items }) {
         <motion.div key={c.id || c.cs_id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
-          <div className="text-white font-bold text-xs mb-1">{c.title}</div>
-          <div className="text-white/40 text-[11px] leading-relaxed mb-1">{c.description}</div>
+          <div className="text-white font-bold text-xs break-words mb-1">{c.title}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed break-words mb-1">{c.description}</div>
           <div className="flex flex-wrap gap-1.5 mb-1">
             {c.tech?.map(t => (
-              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono">{t}</span>
+              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.03] text-neural-blue/70 font-mono whitespace-nowrap">{t}</span>
             ))}
           </div>
-          <div className="text-emerald-400/60 text-[10px] font-mono">{c.outcome}</div>
+          <div className="text-emerald-400/60 text-[10px] font-mono break-words">{c.outcome}</div>
         </motion.div>
       ))}
     </div>
@@ -1389,9 +1389,9 @@ function BlogCards({ items }) {
         <motion.div key={b.id || b.post_id} initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }} animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }} transition={shouldReduceMotion ? undefined : { delay: i * 0.1 }}
           className="border border-white/[0.04] rounded-lg bg-white/[0.01] p-3"
         >
-          <div className="text-white font-bold text-xs mb-1">{b.title}</div>
-          <div className="text-white/40 text-[11px] leading-relaxed mb-1">{b.excerpt}</div>
-          <div className="flex gap-3 text-[10px] font-mono">
+          <div className="text-white font-bold text-xs break-words mb-1">{b.title}</div>
+          <div className="text-white/40 text-[11px] leading-relaxed break-words mb-1">{b.excerpt}</div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-mono">
             <span className="text-neural-blue/50">{b.date || b.created_at?.slice(0, 10)}</span>
             <span className="text-emerald-400/50">{b.readTime || b.read_time}</span>
           </div>
@@ -3974,7 +3974,7 @@ className="group w-full rounded-xl border p-3 sm:p-4"
         )}
 
         {phase === 'explore' && (
-          <motion.div key="explore" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="explore" data-testid="explore-stage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full min-w-0">
             <ExploreGallery
               initialSection={exploreSection}
               onBack={() => setPhase('selecting')}
@@ -4017,7 +4017,7 @@ className="group w-full rounded-xl border p-3 sm:p-4"
               if (phase === 'interview') { window.speechSynthesis?.cancel() }
               setPhase('selecting')
             }}
-            className="absolute top-5 left-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all"
+            className={`absolute top-5 left-5 z-10 w-9 h-9 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm items-center justify-center text-white/30 hover:text-white hover:border-white/30 transition-all ${phase === 'explore' ? 'hidden sm:flex' : 'flex'}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
               <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />

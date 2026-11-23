@@ -117,6 +117,18 @@ check('loader: mouse wheel is not hijacked into horizontal scroll', !loader.incl
 check('loader: cards no longer force a horizontal min width', !loader.includes("minWidth: 'clamp(120px, 30vw, 160px)'") && !loader.includes("scrollSnapAlign: 'start'"))
 check('loader: idle failsafe waits 30 seconds', loader.includes('const IDLE_SKIP_MS = 30_000') && loader.includes('}, IDLE_SKIP_MS)') && !loader.includes('}, 10000)'))
 check('loader: scrolling counts as interaction', loader.includes("addEventListener('wheel', onInteract") && loader.includes("addEventListener('scroll', onInteract") && loader.includes("removeEventListener('wheel', onInteract") && loader.includes("removeEventListener('scroll', onInteract"))
+check('loader: explore panel fills its width and keeps one scroll region',
+  loader.includes('data-testid="explore-stage"') &&
+  loader.includes('className="w-full min-w-0"') &&
+  loader.includes('md:gap-5 max-h-[calc(100dvh-1.5rem)]"') &&
+  loader.includes('min-h-0 flex-1 rounded-xl') &&
+  !loader.includes('max-h-[46dvh]')
+)
+check('loader: explore controls stay usable on touch screens',
+  loader.includes('min-h-10 items-center rounded-full border px-3 py-2') &&
+  loader.includes('inline-flex h-9 w-9 shrink-0 items-center justify-center') &&
+  loader.includes("phase === 'explore' ? 'hidden sm:flex' : 'flex'")
+)
 
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed === 0 ? 0 : 1)

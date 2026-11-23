@@ -157,8 +157,9 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
     }
 
     // Total panel, anchored to the card bottom so long item lists cannot
-    // collide with it (rows are capped above).
-    const totalY = cardY + cardH - 132
+    // collide with it (rows are capped above). It sits high enough to leave
+    // room for the signature block BELOW it — never underneath it.
+    const totalY = cardY + cardH - 148
     doc.roundedRect(leftX, totalY, cardW - 48, 56, 10).fill(C.navySoft)
     doc.fillColor(C.white).font('Helvetica-Bold').fontSize(9)
       .text('TOTAL PAID', leftX + 18, totalY + 20, { characterSpacing: 1 })
@@ -178,20 +179,23 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
 
     if (signature) {
       const sigW = 172
+      const sigH = 40
       const sigX = cardX + cardW - 24 - sigW
-      const sigY = cardY + cardH - 112
+      // Start below the total panel (including a clear gap) instead of at a
+      // fixed card offset, so the image and amount can never share the same y.
+      const sigY = totalY + 56 + 12
       doc.save()
       doc.strokeOpacity(0.55).lineWidth(1).strokeColor(C.border)
-      doc.moveTo(sigX, sigY + 62).lineTo(sigX + sigW, sigY + 62).stroke()
-      doc.image(signature.buffer, sigX, sigY, { fit: [sigW, 56], align: 'center', valign: 'bottom' })
+      doc.moveTo(sigX, sigY + sigH + 6).lineTo(sigX + sigW, sigY + sigH + 6).stroke()
+      doc.image(signature.buffer, sigX, sigY, { fit: [sigW, sigH], align: 'center', valign: 'bottom' })
       doc.restore()
       if (signature.name) {
         doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(8.5)
-          .text(signature.name, sigX, sigY + 68, { width: sigW, align: 'right', ellipsis: true })
+          .text(signature.name, sigX, sigY + sigH + 12, { width: sigW, align: 'right', ellipsis: true })
       }
       if (signature.title) {
         doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
-          .text(signature.title, sigX, sigY + 82, { width: sigW, align: 'right', ellipsis: true })
+          .text(signature.title, sigX, sigY + sigH + 26, { width: sigW, align: 'right', ellipsis: true })
       }
     }
 

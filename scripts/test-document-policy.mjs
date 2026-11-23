@@ -166,6 +166,44 @@ try {
     Buffer.isBuffer(pdf) && text.startsWith('%PDF-') && text.includes('%%EOF') && pdf.length > 3000,
     `bytes=${pdf.length}`
   )
+
+  // A signature used to be drawn at a fixed card offset that sat inside the
+  // total panel. Read the raw (uncompressed) PDF operators back: the signature
+  // image box must begin BELOW the bottom edge of the total panel.
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
+    'base64'
+  )
+  const signed = await buildReceiptPdf({
+    order: {
+      order_ref: 'NA-0123456789ABCDEF',
+      customer_name: 'Ada Lovelace',
+      email: 'ada@example.com',
+      currency: 'INR',
+      total_paise: 49900,
+      paid_at: '2026-11-23T10:00:00Z',
+      payment_id: 'pay_TEST123',
+    },
+    items: [{ title: 'The Ebook', quantity: 1, total_paise: 49900 }],
+    signature: { buffer: png, name: 'Aarav Mehta', title: 'Founder, Neural Aurora' },
+  })
+  const ops = signed.toString('latin1').split('\n')
+  const panelBottom = Math.max(
+    ...ops
+      .map((line) => line.match(/^[\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+ ([\d.]+) c$/))
+      .filter(Boolean)
+      .map((m) => Number(m[1]))
+      .filter((y) => y > 600 && y < 760)
+  )
+  const imageOp = ops
+    .map((line) => line.match(/^([\d.]+) 0 0 -([\d.]+) [\d.]+ ([\d.]+) cm$/))
+    .find((m) => m && m[1] === m[2] && Number(m[3]) < 800)
+  const imageTop = imageOp ? Number(imageOp[3]) - Number(imageOp[2]) : NaN
+  check(
+    'receipt signature starts below the total panel',
+    Number.isFinite(panelBottom) && imageTop >= panelBottom + 8,
+    `panelBottom=${panelBottom} imageTop=${imageTop}`
+  )
 } catch (err) {
   check('receipt PDF builds', false, err?.message)
 }

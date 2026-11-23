@@ -7,14 +7,17 @@ import {
   getPublishedProducts,
   getCategories,
   getPublishedFormats,
+  getProductsBySlugs,
   PRODUCT_SORTS,
   PRODUCT_PAGE_SIZE,
   PRODUCT_MAX_RESULTS,
 } from '../../lib/products'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { normaliseFormatFilter } from '../../lib/productQuery'
+import { getRecentlyViewed } from '../../lib/recommendations'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
+import ProductRail from './ProductRail'
 
 const EMPTY_FILTERS = {
   search: '',
@@ -108,6 +111,7 @@ export default function Products() {
   const [categories, setCategories] = useState([])
   const [formats, setFormats] = useState([])
   const [featuredProducts, setFeaturedProducts] = useState([])
+  const [recommended, setRecommended] = useState([])
 
   const [filters, setFilters] = useState(initialFilters)
   // The raw input value, which lags behind `filters.search` by the debounce.
@@ -174,6 +178,28 @@ export default function Products() {
       })
       .catch(() => {
         /* the rail is a nicety; the catalogue below still works */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadToken])
+
+  // --- recommended shelf (below the catalogue) ------------------------------
+  // Recently viewed products are the most useful suggestion; without any, the
+  // published featured set becomes the honest fallback. Both are bounded.
+  useEffect(() => {
+    let cancelled = false
+    const recent = getRecentlyViewed()
+    const load = recent.length
+      ? getProductsBySlugs(recent, 8)
+      : getPublishedProducts({ featuredOnly: true, sort: 'featured', limit: 8 })
+
+    load
+      .then((items) => {
+        if (!cancelled) setRecommended(items.filter((item) => item.status === 'published').slice(0, 8))
+      })
+      .catch(() => {
+        if (!cancelled) setRecommended([])
       })
     return () => {
       cancelled = true
@@ -647,6 +673,12 @@ export default function Products() {
       </div>
         </div>
       </section>
+
+      <ProductRail
+        id="recommended-products"
+        title={t('store.relatedProducts')}
+        products={recommended}
+      />
     </StoreShell>
   )
 }

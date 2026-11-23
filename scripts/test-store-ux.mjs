@@ -16,6 +16,7 @@ const purchaseSuccess = read('src/components/offerings/PurchaseSuccess.jsx')
 const shell = read('src/components/offerings/StoreShell.jsx')
 const cardFallback = read('src/components/ui/ImageLightbox.jsx')
 const razorpay = read('src/lib/razorpay.js')
+const rail = read('src/components/offerings/ProductRail.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -338,6 +339,28 @@ check(
   card.includes('const [imageFailed, setImageFailed] = useState(false)') &&
     card.includes('hasCover && !imageFailed') &&
     card.includes('onError={() => setImageFailed(true)}')
+)
+check(
+  'rail: horizontal snap scroller with working edge controls',
+  rail.includes('snap-x snap-mandatory gap-4 overflow-x-auto') &&
+    rail.includes('track.scrollBy({ left: direction * step') &&
+    rail.includes('disabled={!edges.start}') &&
+    rail.includes('disabled={!edges.end}') &&
+    rail.includes('new ResizeObserver(measure)')
+)
+check(
+  'store: recommended rail sits below the catalogue',
+  products.includes('getProductsBySlugs(recent, 8)') &&
+    products.includes('getRecentlyViewed()') &&
+    products.includes('<ProductRail') &&
+    products.includes('id="recommended-products"')
+)
+check(
+  'detail: related and recently viewed are horizontal rails',
+  detail.includes('id="related-products"') &&
+    detail.includes('id="recently-viewed-products"') &&
+    (detail.match(/<ProductRail/g) || []).length === 2 &&
+    !detail.includes('grid sm:grid-cols-2 lg:grid-cols-3')
 )
 check(
   'lightbox: focus is trapped, restored and translated',

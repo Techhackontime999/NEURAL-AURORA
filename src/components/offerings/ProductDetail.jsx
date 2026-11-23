@@ -34,7 +34,7 @@ import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
 import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
-import ProductCard from './ProductCard'
+import ProductRail from './ProductRail'
 import ProductPreview from './ProductPreview'
 import ImageLightbox from '../ui/ImageLightbox'
 import DocumentHead from '../ui/DocumentHead'
@@ -824,31 +824,17 @@ export default function ProductDetail() {
         </motion.aside>
       </div>
 
-      {recentlyViewed.length > 0 && (
-        <section className="mt-16">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
-            {t('store.recentlyViewed')}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recentlyViewed.map((item, i) => (
-              <ProductCard key={item.id} product={item} index={i} />
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductRail
+        id="related-products"
+        title={t('store.relatedProducts')}
+        products={related}
+      />
 
-      {related.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-            {t('store.relatedProducts')}
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {related.map((item, i) => (
-              <ProductCard key={item.id} product={item} index={i} />
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductRail
+        id="recently-viewed-products"
+        title={t('store.recentlyViewed')}
+        products={recentlyViewed}
+      />
 
       <AnimatePresence>
         {galleryIndex !== null && (

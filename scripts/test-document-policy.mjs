@@ -199,6 +199,21 @@ check(
   'library lists receipts',
   has('src/components/offerings/Library.jsx', "t('store.yourReceipts')")
 )
+// The JSX alone is not enough: a receipt section with no state or handler is a
+// guaranteed ReferenceError on the signed-in library page.
+check(
+  'library declares receipt state and loader',
+  has('src/components/offerings/Library.jsx', 'const [receipts, setReceipts] = useState([])') &&
+    has('src/components/offerings/Library.jsx', 'getMyPaidOrders(),')
+)
+check(
+  'library declares receipt download handler',
+  has('src/components/offerings/Library.jsx', 'const handleReceiptDownload = async (order) =>') &&
+    has(
+      'src/components/offerings/Library.jsx',
+      "import { downloadOrderReceipt, getMyPaidOrders } from '../../lib/receipts'"
+    )
+)
 check(
   'success screen offers a receipt',
   has('src/components/offerings/PurchaseSuccess.jsx', "t('store.downloadReceipt')")

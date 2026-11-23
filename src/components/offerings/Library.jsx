@@ -22,6 +22,7 @@ import { supabase } from '../../lib/supabase'
 import { getDownloadUrl } from '../../lib/checkout'
 import { formatPrice, getMyLibrary } from '../../lib/products'
 import { downloadLicenseDocument, getMyLicenses } from '../../lib/licenses'
+import { downloadOrderReceipt, getMyPaidOrders } from '../../lib/receipts'
 import StoreShell from './StoreShell'
 
 /** Supabase's default minimum; the project may require a longer one. */
@@ -84,6 +85,12 @@ export default function Library() {
   const [documentBusyId, setDocumentBusyId] = useState(null)
   const [licenseError, setLicenseError] = useState(null)
 
+  // Receipts come from paid order rows only. A missing document-policy
+  // migration must not hide a customer's existing downloads or licences.
+  const [receipts, setReceipts] = useState([])
+  const [receiptError, setReceiptError] = useState(null)
+  const [receiptBusyRef, setReceiptBusyRef] = useState(null)
+
   // Sign-in method. Password is the default because it is the only method that
   // sends NOTHING: the email link is rate limited by Supabase's built-in mailer,
   // a password sign-in is not limited by mail at all.
@@ -124,16 +131,20 @@ export default function Library() {
       setEntries([])
       setLicenses([])
       setRevealedLicenses([])
+      setReceipts([])
       return
     }
     setLoading(true)
     setError(null)
     setLicenseError(null)
+    setReceiptError(null)
     try {
-      // A missing licensing migration must not hide already-owned downloads.
-      const [libraryResult, licensesResult] = await Promise.allSettled([
+      // A missing licensing/document-policy migration must not hide
+      // already-owned downloads. Each list degrades independently.
+      const [libraryResult, licensesResult, receiptsResult] = await Promise.allSettled([
         getMyLibrary(),
         getMyLicenses(),
+        getMyPaidOrders(),
       ])
       if (libraryResult.status === 'fulfilled') {
         setEntries(libraryResult.value)
@@ -141,6 +152,7 @@ export default function Library() {
         throw libraryResult.reason
       }
       setLicenses(licensesResult.status === 'fulfilled' ? licensesResult.value : [])
+      setReceipts(receiptsResult.status === 'fulfilled' ? receiptsResult.value : [])
     } catch (err) {
       console.error('Failed to load library:', err?.message || err)
       setError(err)
@@ -286,6 +298,18 @@ export default function Library() {
       setLicenseError(err?.message || t('store.licenseDocumentFailed'))
     } finally {
       setDocumentBusyId(null)
+    }
+  }
+
+  const handleReceiptDownload = async (order) => {
+    setReceiptBusyRef(order.order_ref)
+    setReceiptError(null)
+    try {
+      await downloadOrderReceipt(order.order_ref)
+    } catch (err) {
+      setReceiptError(err?.message || t('store.receiptDownloadFailed'))
+    } finally {
+      setReceiptBusyRef(null)
     }
   }
 

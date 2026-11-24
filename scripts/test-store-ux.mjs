@@ -332,11 +332,13 @@ check(
     purchaseSuccess.includes("t('store.statusRetry')")
 )
 check(
-  'hero: one still image, no timed carousel or focusable hidden dots',
-  shell.includes('function HeroBackdrop(') &&
-    !shell.includes('setInterval') &&
-    !shell.includes('aria-label={`Show slide') &&
-    !shell.includes('AnimatePresence')
+  'hero: crossfading carousel with timed advance and accessible dots',
+  shell.includes('function HeroCarousel(') &&
+    shell.includes('setInterval(') &&
+    shell.includes('aria-label={`Show slide ${index + 1}`}') &&
+    shell.includes('AnimatePresence') &&
+    shell.includes('shouldReduceMotion') &&
+    shell.includes('cfg.images.filter((image) => image.enabled && image.url)')
 )
 check(
   'card: a dead cover falls back to the local icon',

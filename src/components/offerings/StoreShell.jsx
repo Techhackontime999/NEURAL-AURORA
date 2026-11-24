@@ -1,37 +1,86 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import ServiceNavbar from '../ServiceNavbar'
 import { Footer } from '../ui/footer-section'
 import { useStoreHeroSettings } from '../../lib/usePortfolioData'
 import { mergeStoreHeroConfig } from '../../lib/storeHeroDefaults'
 
 /**
- * One still photograph behind the hero card. Images come from
- * admin_settings.store_hero (editable at /admin/store-hero) and fall back to
- * the curated default when nothing is saved. No timer and no focusable dots:
- * the hero is the work, not a slideshow.
+ * Crossfading background-image carousel for the store hero card. Images come
+ * from admin_settings.store_hero (editable at /admin/store-hero) and fall
+ * back to the curated defaults when nothing is saved. Auto-advance respects
+ * reduced motion; the dots always stay available for manual navigation.
  */
-function HeroBackdrop({ image }) {
+function HeroCarousel({ slides, intervalSeconds }) {
   const shouldReduceMotion = useReducedMotion()
-  if (!image?.url) return null
+  const [active, setActive] = useState(0)
+
+  // Keep the active index inside the list whenever the admin changes slots.
+  useEffect(() => {
+    if (active >= slides.length) setActive(0)
+  }, [slides.length, active])
+
+  // Auto-advance; paused for reduced motion or a single slide.
+  useEffect(() => {
+    if (slides.length < 2 || shouldReduceMotion) return undefined
+    const timer = setInterval(
+      () => setActive((index) => (index + 1) % slides.length),
+      intervalSeconds * 1000,
+    )
+    return () => clearInterval(timer)
+  }, [slides.length, intervalSeconds, shouldReduceMotion])
+
+  if (!slides.length) return null
+
+  const current = slides[active] ?? slides[0]
 
   return (
-    <div className="absolute inset-x-0 bottom-8 top-20 z-0 overflow-hidden" aria-hidden="true">
-      <motion.img
-        src={image.url}
-        alt=""
-        initial={shouldReduceMotion ? false : { opacity: 0, scale: 1.03 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute inset-0 h-full w-full object-cover"
-        onError={(event) => {
-          // A dead URL should never break the hero — the gradient scrim and
-          // page colour underneath remain legible.
-          event.currentTarget.style.display = 'none'
-        }}
-      />
+    <div className="absolute inset-x-0 bottom-8 top-20 z-0 overflow-hidden">
+      <AnimatePresence initial={false}>
+        <motion.img
+          key={`${current.url}-${active}`}
+          src={current.url}
+          alt=""
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 1.1, ease: 'easeInOut' }}
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(event) => {
+            // A dead URL should never break the hero — hide the slide so the
+            // gradient fallback underneath shows through.
+            event.currentTarget.style.display = 'none'
+          }}
+        />
+      </AnimatePresence>
+
+      {/* Legibility scrim so the card copy stays readable over any image,
+          in both light and dark mode. */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/50 to-black/75" />
+
+      {/* Slide indicators stay labelled buttons (the image itself is decorative
+          with alt=""), so they remain keyboard- and screen-reader-accessible. */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
+          {slides.map((image, index) => (
+            <button
+              key={`${image.url}-${index}`}
+              type="button"
+              aria-label={`Show slide ${index + 1}`}
+              aria-current={index === active ? 'true' : undefined}
+              onClick={() => setActive(index)}
+              className="group flex h-11 w-7 items-center justify-center"
+            >
+              <span
+                className={`block h-1 rounded-full transition-all duration-300 ${
+                  index === active ? 'w-6 bg-white/90' : 'w-2.5 bg-white/40 group-hover:bg-white/60'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -47,11 +96,11 @@ export default function StoreShell({ eyebrow, title, subtitle, action, children 
   const shouldReduceMotion = useReducedMotion()
   const settings = useStoreHeroSettings()
   const cfg = useMemo(() => mergeStoreHeroConfig(settings), [settings])
-  const heroImage = useMemo(
-    () => (cfg.enabled ? cfg.images.find((image) => image.enabled && image.url) : null),
+  const slides = useMemo(
+    () => (cfg.enabled ? cfg.images.filter((image) => image.enabled && image.url) : []),
     [cfg],
   )
-  const hasImageBg = Boolean(heroImage)
+  const hasImageBg = slides.length > 0
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -65,7 +114,7 @@ export default function StoreShell({ eyebrow, title, subtitle, action, children 
             transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden rounded-[2rem] border border-black/10 pb-20 pt-24 dark:border-white/10 md:pb-24 md:pt-28"
           >
-            <HeroBackdrop image={heroImage} />
+            <HeroCarousel slides={slides} intervalSeconds={cfg.intervalSeconds} />
 
             <div className="wrap relative z-10 py-12 text-center md:py-16">
               {eyebrow && (

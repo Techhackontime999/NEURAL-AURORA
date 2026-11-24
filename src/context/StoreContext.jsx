@@ -142,6 +142,17 @@ export function StoreProvider({ children }) {
     )
   }, [])
 
+  const setCartLicenseCode = useCallback((slug, licenseCode) => {
+    const key = normaliseSlug(slug)
+    const code = String(licenseCode || '').trim().slice(0, 80)
+    if (!key) return
+    setCartItems((current) =>
+      current.map((item) =>
+        item.slug === key ? { ...item, license_code: code } : item
+      )
+    )
+  }, [])
+
   const removeFromCart = useCallback((slug) => {
     const key = normaliseSlug(slug)
     setCartItems((current) => current.filter((item) => item.slug !== key))
@@ -204,6 +215,7 @@ export function StoreProvider({ children }) {
       cartCount,
       addToCart,
       updateCartQuantity,
+      setCartLicenseCode,
       removeFromCart,
       clearCart,
       wishlist,
@@ -220,6 +232,7 @@ export function StoreProvider({ children }) {
       cartCount,
       addToCart,
       updateCartQuantity,
+      setCartLicenseCode,
       removeFromCart,
       clearCart,
       wishlist,

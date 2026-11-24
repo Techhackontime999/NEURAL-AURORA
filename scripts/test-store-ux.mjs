@@ -395,6 +395,24 @@ check(
     storeContext.includes('useStore must be used within a StoreProvider')
 )
 check(
+  'cart: licence options load per paid product without blocking checkout',
+  cart.includes("import { getProductLicenseOptions } from '../../lib/licenses'") &&
+    cart.includes('licenseProductIdsKey') &&
+    cart.includes('return [id, null]') &&
+    cart.includes('setLicenseOptionsByProduct(Object.fromEntries(entries))') &&
+    cart.includes("document_policy !== 'receipt'")
+)
+check(
+  'cart: licence choice is editable and normalised before checkout',
+  storeContext.includes('const setCartLicenseCode = useCallback') &&
+    cart.includes('setCartLicenseCode') &&
+    cart.includes('data-testid="cart-license-option"') &&
+    cart.includes("t('store.chooseLicense')") &&
+    cart.includes('onChange={(event) => setCartLicenseCode(line.slug, event.target.value)}') &&
+    cart.includes('const next = fallback?.code ||') &&
+    cart.includes('license_code: line.license_code')
+)
+check(
   'cart: multi-item checkout never sends a client price',
   cart.includes('startCartCheckout({') &&
     cart.includes('quantity: line.quantity') &&

@@ -18,6 +18,7 @@ import { useStore, CART_MAX_ITEMS, CART_MAX_QUANTITY } from '../../context/Store
 import { useToast } from '../../context/ToastContext'
 import { formatPrice, getProductsBySlugs } from '../../lib/products'
 import { requestFreeDownload, startCartCheckout } from '../../lib/checkout'
+import { getProductLicenseOptions } from '../../lib/licenses'
 import { normalisePhone } from '../../lib/phone'
 import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
@@ -27,9 +28,17 @@ export default function Cart() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { toast } = useToast()
-  const { cartItems, updateCartQuantity, removeFromCart, clearCart, saveForLater } = useStore()
+  const {
+    cartItems,
+    updateCartQuantity,
+    setCartLicenseCode,
+    removeFromCart,
+    clearCart,
+    saveForLater,
+  } = useStore()
 
   const [products, setProducts] = useState([])
+  const [licenseOptionsByProduct, setLicenseOptionsByProduct] = useState({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -42,6 +51,10 @@ export default function Cart() {
   const [freeBusy, setFreeBusy] = useState('')
 
   const slugsKey = cartItems.map((item) => item.slug).join(',')
+  const licenseProductIdsKey = products
+    .filter((product) => product.price_paise > 0 && product.document_policy !== 'receipt')
+    .map((product) => product.id)
+    .join(',')
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +83,33 @@ export default function Cart() {
     }
   }, [slugsKey, reloadToken, t])
 
+  // Licence options are loaded independently: a failed options fetch must not
+  // break the cart. The server still resolves/snapshots the option at checkout.
+  useEffect(() => {
+    let cancelled = false
+    const ids = licenseProductIdsKey ? licenseProductIdsKey.split(',') : []
+    if (!ids.length) {
+      setLicenseOptionsByProduct({})
+      return undefined
+    }
+
+    Promise.all(
+      ids.map(async (id) => {
+        try {
+          return [id, await getProductLicenseOptions(id)]
+        } catch {
+          return [id, null]
+        }
+      })
+    ).then((entries) => {
+      if (!cancelled) setLicenseOptionsByProduct(Object.fromEntries(entries))
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [licenseProductIdsKey, reloadToken])
+
   const lines = useMemo(
     () =>
       cartItems
@@ -93,6 +133,24 @@ export default function Cart() {
     (sum, line) => sum + line.product.price_paise * line.quantity,
     0
   )
+
+  // A stale code from an older cart or a removed option must not reach checkout
+  // and fail after the buyer has entered payment details. Once options are
+  // known, normalise to the configured default (or clear it if none exist).
+  useEffect(() => {
+    if (!Object.keys(licenseOptionsByProduct).length) return
+    for (const line of paidLines) {
+      if (line.product.document_policy === 'receipt') continue
+      const options = licenseOptionsByProduct[line.product.id]
+      if (!options) continue
+
+      const current = String(line.license_code || '').trim()
+      if (current && options.some((option) => option.code === current)) continue
+      const fallback = options.find((option) => option.is_default) || options[0]
+      const next = fallback?.code || ''
+      if (next !== current) setCartLicenseCode(line.slug, next)
+    }
+  }, [licenseOptionsByProduct, paidLines, setCartLicenseCode])
 
   const handleCheckout = async (event) => {
     event.preventDefault()
@@ -183,8 +241,21 @@ export default function Cart() {
     toast.success(t('store.savedToWishlist'))
   }
 
+  const validityLabel = (option) =>
+    option?.validity_days
+      ? t('store.validityDays', { count: option.validity_days })
+      : t('store.perpetualLicense')
+
   const renderLine = (line, { free = false } = {}) => {
     const { product, quantity } = line
+    const licenseOptions =
+      !free && product.document_policy !== 'receipt'
+        ? licenseOptionsByProduct[product.id] || []
+        : []
+    const selectedLicenseOption =
+      licenseOptions.find((option) => option.code === line.license_code) ||
+      licenseOptions.find((option) => option.is_default) ||
+      licenseOptions[0]
     return (
       <li
         key={line.slug}
@@ -211,6 +282,33 @@ export default function Cart() {
             <p className="mt-1 text-xs text-[var(--text-secondary)]">
               {free ? t('store.free') : formatPrice(product.price_paise, product.currency)}
             </p>
+            {licenseOptions.length > 0 && (
+              <fieldset className="mt-3 rounded-lg border border-black/10 px-2.5 py-2 dark:border-white/10">
+                <legend className="px-1 text-[9px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                  {t('store.chooseLicense')}
+                </legend>
+                <select
+                  data-testid="cart-license-option"
+                  value={line.license_code || selectedLicenseOption?.code || ''}
+                  onChange={(event) => setCartLicenseCode(line.slug, event.target.value)}
+                  aria-label={t('store.chooseLicense')}
+                  className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-2 py-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10"
+                >
+                  {licenseOptions.map((option) => (
+                    <option key={option.id || option.code} value={option.code}>
+                      {option.label || option.code}
+                      {option.is_default ? ` · ${t('store.defaultLicense')}` : ''}
+                      {` · ${validityLabel(option)}`}
+                    </option>
+                  ))}
+                </select>
+                {selectedLicenseOption?.summary && (
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-[var(--text-secondary)]">
+                    {selectedLicenseOption.summary}
+                  </p>
+                )}
+              </fieldset>
+            )}
           </div>
         </div>
 

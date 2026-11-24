@@ -1348,6 +1348,8 @@ CREATE TABLE IF NOT EXISTS orders (
   subtotal_paise BIGINT NOT NULL DEFAULT 0 CHECK (subtotal_paise >= 0),
   discount_paise BIGINT NOT NULL DEFAULT 0 CHECK (discount_paise >= 0),
   total_paise BIGINT NOT NULL DEFAULT 0 CHECK (total_paise >= 0),
+  -- Canonical code applied at checkout (kept even if the coupon is deleted).
+  coupon_code_snapshot TEXT NOT NULL DEFAULT '',
   failure_reason TEXT DEFAULT '',
   paid_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -2093,5 +2095,85 @@ WHERE p.status = 'published';
 
 REVOKE ALL ON public_product_file_manifest FROM PUBLIC;
 GRANT SELECT ON public_product_file_manifest TO anon, authenticated;
+
+-- ------------------------------------------------------------
+-- COUPONS (server-authoritative discounts)
+-- No anon read path: a coupon code is a checkout input, not public
+-- catalogue data. Only admins manage them and the serverless checkout
+-- reads/claims them with the service role.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS coupons (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  code TEXT NOT NULL UNIQUE CHECK (code ~ '^[A-Z0-9][A-Z0-9_-]{2,23}$'),
+  description TEXT NOT NULL DEFAULT '',
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percent', 'fixed')),
+  value BIGINT NOT NULL CHECK (value > 0),
+  min_subtotal_paise BIGINT NOT NULL DEFAULT 0 CHECK (min_subtotal_paise >= 0),
+  max_discount_paise BIGINT CHECK (max_discount_paise IS NULL OR max_discount_paise >= 0),
+  product_slugs TEXT[],
+  starts_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  usage_limit INTEGER CHECK (usage_limit IS NULL OR usage_limit > 0),
+  uses_count INTEGER NOT NULL DEFAULT 0 CHECK (uses_count >= 0),
+  per_customer_limit INTEGER NOT NULL DEFAULT 1 CHECK (per_customer_limit > 0),
+  first_order_only BOOLEAN NOT NULL DEFAULT FALSE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT coupons_value_matches_type CHECK (
+    (discount_type = 'percent' AND value BETWEEN 1 AND 100) OR
+    (discount_type = 'fixed' AND value > 0)
+  ),
+  CONSTRAINT coupons_dates_in_order CHECK (
+    starts_at IS NULL OR expires_at IS NULL OR expires_at > starts_at
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons (active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_coupons_created_at ON coupons (created_at DESC);
+
+ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE coupons FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE coupons TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE coupons TO service_role;
+
+DROP POLICY IF EXISTS "Admin can read coupons" ON coupons;
+CREATE POLICY "Admin can read coupons"
+  ON coupons FOR SELECT TO authenticated USING (is_admin());
+DROP POLICY IF EXISTS "Admin can insert coupons" ON coupons;
+CREATE POLICY "Admin can insert coupons"
+  ON coupons FOR INSERT TO authenticated WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "Admin can update coupons" ON coupons;
+CREATE POLICY "Admin can update coupons"
+  ON coupons FOR UPDATE TO authenticated USING (is_admin());
+DROP POLICY IF EXISTS "Admin can delete coupons" ON coupons;
+CREATE POLICY "Admin can delete coupons"
+  ON coupons FOR DELETE TO authenticated USING (is_admin());
+
+CREATE TABLE IF NOT EXISTS coupon_redemptions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  coupon_id BIGINT NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+  order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  order_ref TEXT NOT NULL UNIQUE,
+  customer_email TEXT NOT NULL,
+  discount_paise BIGINT NOT NULL CHECK (discount_paise > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_coupon
+  ON coupon_redemptions (coupon_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_customer
+  ON coupon_redemptions (coupon_id, lower(customer_email));
+
+ALTER TABLE coupon_redemptions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE coupon_redemptions FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE coupon_redemptions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE coupon_redemptions TO service_role;
+
+DROP POLICY IF EXISTS "Admin can read coupon redemptions" ON coupon_redemptions;
+CREATE POLICY "Admin can read coupon redemptions"
+  ON coupon_redemptions FOR SELECT TO authenticated USING (is_admin());
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code_snapshot TEXT NOT NULL DEFAULT '';
 
 NOTIFY pgrst, 'reload schema';

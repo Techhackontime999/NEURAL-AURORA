@@ -14,6 +14,7 @@ const {
   SUPABASE_ENV_NAMES,
 } = require('./_lib/diag')
 const { normalisePhone } = require('./_lib/phone')
+const { normaliseCouponCode, applyCoupon, REASONS } = require('./_lib/coupons')
 
 // Static fallback data when Supabase is unreachable or in offline dev mode
 const fallbackServices = [
@@ -145,6 +146,70 @@ function isMissingColumnError(error, column) {
   return message.includes(column.toLowerCase()) && /column|schema cache/.test(message)
 }
 
+const COUPON_COLUMNS =
+  'id, code, description, discount_type, value, min_subtotal_paise, max_discount_paise, ' +
+  'product_slugs, starts_at, expires_at, usage_limit, uses_count, per_customer_limit, ' +
+  'first_order_only, active'
+
+/** Server-only coupon lookup. A missing table is a deployment issue, never a sale. */
+async function loadCoupon(supabase, code) {
+  const { data, error } = await supabase
+    .from('coupons')
+    .select(COUPON_COLUMNS)
+    .eq('code', code)
+    .maybeSingle()
+  return { coupon: data || null, error }
+}
+
+/** Usage counters are read from the database, never from the browser. */
+async function loadCouponUsage(supabase, coupon, email) {
+  const { count: customerUses, error: redemptionError } = await supabase
+    .from('coupon_redemptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('coupon_id', coupon.id)
+    .eq('customer_email', email)
+
+  if (redemptionError) return { error: redemptionError }
+
+  let customerOrders = null
+  if (coupon.first_order_only === true) {
+    const { count, error: orderError } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', email)
+      .eq('payment_status', 'paid')
+    if (orderError) return { error: orderError }
+    customerOrders = count || 0
+  }
+
+  return { customerUses: customerUses || 0, customerOrders }
+}
+
+/**
+ * Optimistic concurrency: the row is only claimed if its counter is still the
+ * value we validated against. Two simultaneous buyers cannot both spend the
+ * last slot of a limited coupon.
+ */
+async function claimCoupon(supabase, coupon) {
+  const { data, error } = await supabase
+    .from('coupons')
+    .update({ uses_count: coupon.uses_count + 1 })
+    .eq('id', coupon.id)
+    .eq('uses_count', coupon.uses_count)
+    .select('id')
+    .maybeSingle()
+  return { ok: Boolean(data), error }
+}
+
+/** Best-effort rollback when a claimed checkout fails before redemption. */
+async function releaseCoupon(supabase, coupon) {
+  await supabase
+    .from('coupons')
+    .update({ uses_count: coupon.uses_count })
+    .eq('id', coupon.id)
+    .eq('uses_count', coupon.uses_count + 1)
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -166,6 +231,10 @@ module.exports = async function handler(req, res) {
     email,
     name,
     phone,
+    // 'preview' prices a cart without writing an order or contacting Razorpay.
+    mode,
+    // Coupons are submitted as a CODE only — never an amount or percentage.
+    coupon_code: couponCodeInput,
   } = req.body || {}
 
   // Product orders may carry a Supabase JWT so the entitlement can be bound to
@@ -179,6 +248,9 @@ module.exports = async function handler(req, res) {
   // Non-null only for digital-store orders; used to persist the gateway
   // order id and return our own order reference.
   let digitalOrder = null
+  // Assigned by the product branch so a gateway failure can release a claimed
+  // coupon slot from the outer catch as well.
+  let releaseCouponClaim = async () => {}
 
   try {
     // -------------------------------------------------------------------------
@@ -186,6 +258,10 @@ module.exports = async function handler(req, res) {
     // -------------------------------------------------------------------------
     const type = order_type ||
       (package_name ? 'package' : (pricing_label ? 'pricing_tier' : (service_id === 'support' ? 'support' : 'service')))
+
+    if (mode === 'preview' && type !== 'product') {
+      return res.status(400).json({ error: 'Preview is only available for product orders' })
+    }
 
     if (type === 'product') {
       // -------------------------------------------------------------------------
@@ -285,12 +361,97 @@ module.exports = async function handler(req, res) {
         return res.status(priced.status || 400).json({ error: priced.error })
       }
 
-      const totalPaise = priced.totalPaise
       currency = priced.currency
 
       const customerEmail = String(email || '').trim().toLowerCase()
-      if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      if (mode !== 'preview' && (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail))) {
         return res.status(400).json({ error: 'A valid email address is required for the receipt and download access' })
+      }
+
+      // --- coupons: a code goes in, a bounded paise amount comes out. --------
+      // A browser can submit a code, never a discount, percentage or usage
+      // count. Every rule below is evaluated against server-loaded rows.
+      const couponCode = normaliseCouponCode(couponCodeInput)
+      let couponRow = null
+      let couponResult = null
+
+      if (couponCode) {
+        const lookup = await loadCoupon(supabase, couponCode)
+        if (lookup.error) {
+          logError('create-order', requestId, {
+            stage: 'coupon-lookup-failed',
+            db_error: lookup.error.message,
+          })
+          return res.status(503).json({ error: 'Could not verify that coupon right now. Please try again.' })
+        }
+        couponRow = lookup.coupon
+        if (!couponRow) {
+          return res.status(400).json({ error: REASONS.not_found.error, reason: REASONS.not_found.reason })
+        }
+
+        const usage = await loadCouponUsage(supabase, couponRow, customerEmail)
+        if (usage.error) {
+          logError('create-order', requestId, {
+            stage: 'coupon-usage-lookup-failed',
+            db_error: usage.error.message,
+          })
+          return res.status(503).json({ error: 'Could not verify that coupon right now. Please try again.' })
+        }
+
+        couponResult = applyCoupon({
+          coupon: couponRow,
+          subtotalPaise: priced.subtotalPaise,
+          lines: priced.lines,
+          priorUses: couponRow.uses_count || 0,
+          customerUses: usage.customerUses,
+          customerOrders: usage.customerOrders,
+        })
+        if (!couponResult.ok) {
+          return res.status(couponResult.status || 400).json({
+            error: couponResult.error,
+            reason: couponResult.reason,
+            ...(couponResult.minimumPaise ? { minimum_paise: couponResult.minimumPaise } : {}),
+          })
+        }
+      }
+
+      const discountPaise = couponResult?.discountPaise || 0
+      const totalPaise = priced.subtotalPaise - discountPaise
+
+      // Preview prices the cart (with or without a coupon) without writing a
+      // row or contacting the gateway. It never reaches the Razorpay section.
+      if (mode === 'preview') {
+        return res.status(200).json({
+          preview: true,
+          subtotal_paise: priced.subtotalPaise,
+          discount_paise: discountPaise,
+          total_paise: totalPaise,
+          currency: priced.currency,
+          coupon: couponResult
+            ? {
+                code: couponResult.code,
+                discount_paise: discountPaise,
+                description: couponRow?.description || '',
+              }
+            : null,
+        })
+      }
+
+      // Claim AFTER validation and before persistence. The equality check on
+      // uses_count makes the last slot of a limited coupon single-winner.
+      let claimedCoupon = false
+      if (couponResult) {
+        const claim = await claimCoupon(supabase, couponRow)
+        if (!claim.ok) {
+          log('create-order', requestId, { stage: 'coupon-claim-lost', coupon: couponCode })
+          return res.status(400).json({ error: REASONS.usage_limit.error, reason: REASONS.usage_limit.reason })
+        }
+        claimedCoupon = true
+      }
+      releaseCouponClaim = async () => {
+        if (!claimedCoupon) return
+        claimedCoupon = false
+        await releaseCoupon(supabase, couponRow)
       }
 
       // Optional: only used so the admin can hand this customer their sign-in
@@ -310,22 +471,23 @@ module.exports = async function handler(req, res) {
         provider: 'razorpay',
         payment_status: 'pending',
         currency,
-        subtotal_paise: totalPaise,
-        discount_paise: 0,
+        subtotal_paise: priced.subtotalPaise,
+        discount_paise: discountPaise,
         total_paise: totalPaise,
+        ...(couponCode ? { coupon_code_snapshot: couponCode } : {}),
       }
 
       let orderRow = null
       let orderInsertError = null
-      {
-        const attempt = customerPhone
-          ? await supabase
-              .from('orders')
-              .insert({ ...orderFields, customer_phone: customerPhone })
-              .select('id')
-              .single()
-          : await supabase.from('orders').insert(orderFields).select('id').single()
+      const tryInsertOrder = async (fields, withPhone) =>
+        supabase
+          .from('orders')
+          .insert(withPhone && customerPhone ? { ...fields, customer_phone: customerPhone } : fields)
+          .select('id')
+          .single()
 
+      {
+        let attempt = await tryInsertOrder(orderFields, true)
         orderRow = attempt.data
         orderInsertError = attempt.error
 
@@ -338,18 +500,58 @@ module.exports = async function handler(req, res) {
             stage: 'customer-phone-column-missing',
             order_ref: orderRef,
           })
-          const retry = await supabase.from('orders').insert(orderFields).select('id').single()
-          orderRow = retry.data
-          orderInsertError = retry.error
+          attempt = await tryInsertOrder(orderFields, false)
+          orderRow = attempt.data
+          orderInsertError = attempt.error
+        }
+
+        // Coupons ship as an additive migration. A deployment that has not
+        // applied it yet must still be able to sell: retry without the snapshot
+        // column rather than losing the order.
+        if (orderInsertError && isMissingColumnError(orderInsertError, 'coupon_code_snapshot')) {
+          log('create-order', requestId, {
+            stage: 'coupon-column-missing',
+            order_ref: orderRef,
+          })
+          const { coupon_code_snapshot: _snapshot, ...compatFields } = orderFields
+          attempt = await tryInsertOrder(compatFields, true)
+          if (attempt.error && isMissingColumnError(attempt.error, 'customer_phone')) {
+            attempt = await tryInsertOrder(compatFields, false)
+          }
+          orderRow = attempt.data
+          orderInsertError = attempt.error
         }
       }
 
       if (orderInsertError || !orderRow) {
+        await releaseCouponClaim()
         logError('create-order', requestId, {
           stage: 'order-persist-failed',
           db_error: orderInsertError?.message || 'no row returned',
         })
         return res.status(500).json({ error: 'Could not create your order' })
+      }
+
+      // The redemption is the audit trail that makes the usage limit real. If
+      // it cannot be written the claim is released and the buyer is asked to
+      // retry rather than silently losing a coupon slot.
+      if (couponResult) {
+        const { error: redemptionError } = await supabase.from('coupon_redemptions').insert({
+          coupon_id: couponRow.id,
+          order_id: orderRow.id,
+          order_ref: orderRef,
+          customer_email: customerEmail,
+          discount_paise: discountPaise,
+        })
+        if (redemptionError) {
+          await releaseCouponClaim()
+          logError('create-order', requestId, {
+            stage: 'coupon-redemption-failed',
+            order_ref: orderRef,
+            db_error: redemptionError.message,
+          })
+          return res.status(500).json({ error: 'Could not apply your coupon. Please try again.' })
+        }
       }
 
       const baseOrderItems = priced.lines.map((line) => ({
@@ -391,6 +593,7 @@ module.exports = async function handler(req, res) {
         ;({ error: itemsInsertError } = await supabase.from('order_items').insert(orderItems))
       }
       if (itemsInsertError) {
+        await releaseCouponClaim()
         logError('create-order', requestId, {
           stage: 'order-items-persist-failed',
           order_ref: orderRef,
@@ -409,7 +612,15 @@ module.exports = async function handler(req, res) {
         pricing_label: 'Digital Product',
         product_slugs: priced.lines.map((line) => line.product.slug).join(','),
       }
-      digitalOrder = { orderRef, dbOrderId: orderRow.id, customerPhone }
+      digitalOrder = {
+        orderRef,
+        dbOrderId: orderRow.id,
+        customerPhone,
+        subtotalPaise: priced.subtotalPaise,
+        discountPaise,
+        totalPaise,
+        couponCode: couponCode || null,
+      }
 
     } else if (type === 'package' || package_name) {
       const targetName = (package_name || notes.pricing_label || '').trim().toLowerCase()
@@ -611,6 +822,7 @@ module.exports = async function handler(req, res) {
         // The customer can still pay, but the webhook will not be able to match
         // this payment automatically. Fail loudly so it can be reconciled
         // rather than silently issuing nothing.
+        await releaseCouponClaim()
         logError('create-order', requestId, {
           stage: 'gateway-order-link-failed',
           order_ref: digitalOrder.orderRef,
@@ -636,9 +848,18 @@ module.exports = async function handler(req, res) {
       currency: order.currency,
       receipt: order.receipt,
       notes: order.notes,
-      ...(digitalOrder ? { order_ref: digitalOrder.orderRef } : {}),
+      ...(digitalOrder
+        ? {
+            order_ref: digitalOrder.orderRef,
+            subtotal_paise: digitalOrder.subtotalPaise,
+            discount_paise: digitalOrder.discountPaise,
+            total_paise: digitalOrder.totalPaise,
+            coupon_code: digitalOrder.couponCode,
+          }
+        : {}),
     })
   } catch (err) {
+    await releaseCouponClaim()
     logError('create-order', requestId, {
       stage: 'razorpay-order-create-failed',
       error: err?.message || String(err),

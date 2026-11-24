@@ -11,6 +11,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 const CART_KEY = 'neural-aurora:cart:v1'
 const WISHLIST_KEY = 'neural-aurora:wishlist:v1'
+// Coupons are remembered as a CODE only. It is always re-verified on the
+// server: a saved code can expire or be exhausted between visits.
+const COUPON_KEY = 'neural-aurora:coupon:v1'
 
 // Mirrors api/_lib/order-pricing.js (MAX_ITEMS / MAX_QUANTITY).
 export const CART_MAX_ITEMS = 20
@@ -61,6 +64,34 @@ function cleanCart(items) {
   return cleaned
 }
 
+function cleanCoupon(value) {
+  const code = String(value || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .toUpperCase()
+    .slice(0, 24)
+  return /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code) ? code : ''
+}
+
+function readCoupon() {
+  if (typeof window === 'undefined') return ''
+  try {
+    return cleanCoupon(window.localStorage.getItem(COUPON_KEY))
+  } catch {
+    return ''
+  }
+}
+
+function writeCoupon(value) {
+  if (typeof window === 'undefined') return
+  try {
+    if (value) window.localStorage.setItem(COUPON_KEY, value)
+    else window.localStorage.removeItem(COUPON_KEY)
+  } catch {
+    /* private browsing or a full quota: the in-memory value still works */
+  }
+}
+
 function cleanWishlist(items) {
   const seen = new Set()
   const cleaned = []
@@ -77,6 +108,7 @@ function cleanWishlist(items) {
 export function StoreProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => cleanCart(readList(CART_KEY)))
   const [wishlist, setWishlist] = useState(() => cleanWishlist(readList(WISHLIST_KEY)))
+  const [couponCode, setCouponCode] = useState(() => readCoupon())
 
   useEffect(() => {
     writeList(CART_KEY, cartItems)
@@ -87,10 +119,15 @@ export function StoreProvider({ children }) {
   }, [wishlist])
 
   useEffect(() => {
+    writeCoupon(couponCode)
+  }, [couponCode])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined
     const onStorage = (event) => {
       if (event.key === CART_KEY) setCartItems(cleanCart(readList(CART_KEY)))
       if (event.key === WISHLIST_KEY) setWishlist(cleanWishlist(readList(WISHLIST_KEY)))
+      if (event.key === COUPON_KEY) setCouponCode(readCoupon())
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
@@ -158,7 +195,14 @@ export function StoreProvider({ children }) {
     setCartItems((current) => current.filter((item) => item.slug !== key))
   }, [])
 
-  const clearCart = useCallback(() => setCartItems([]), [])
+  const applyCouponCode = useCallback((value) => setCouponCode(cleanCoupon(value)), [])
+  const clearCouponCode = useCallback(() => setCouponCode(''), [])
+
+  const clearCart = useCallback(() => {
+    setCartItems([])
+    // A coupon belongs to a completed checkout, not the next basket.
+    setCouponCode('')
+  }, [])
 
   const addToWishlist = useCallback((slug) => {
     const key = normaliseSlug(slug)
@@ -218,6 +262,9 @@ export function StoreProvider({ children }) {
       setCartLicenseCode,
       removeFromCart,
       clearCart,
+      couponCode,
+      applyCouponCode,
+      clearCouponCode,
       wishlist,
       wishlistCount: wishlist.length,
       addToWishlist,
@@ -235,6 +282,9 @@ export function StoreProvider({ children }) {
       setCartLicenseCode,
       removeFromCart,
       clearCart,
+      couponCode,
+      applyCouponCode,
+      clearCouponCode,
       wishlist,
       addToWishlist,
       removeFromWishlist,

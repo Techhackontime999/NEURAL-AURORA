@@ -169,6 +169,18 @@ export default function PurchaseSuccess() {
                 ))}
               </ul>
 
+              {Number(order.subtotal_paise) > 0 && (
+                <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3 text-[11px] text-[var(--text-secondary)] dark:border-white/5">
+                  <span>{t('store.purchase.subtotal')}</span>
+                  <span>{formatPrice(order.subtotal_paise, order.currency)}</span>
+                </div>
+              )}
+              {Number(order.discount_paise) > 0 && (
+                <div className="mt-1.5 flex items-center justify-between text-[11px] text-emerald-500">
+                  <span>{t('store.purchase.discount')}</span>
+                  <span>−{formatPrice(order.discount_paise, order.currency)}</span>
+                </div>
+              )}
               <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3 text-xs font-semibold text-black/80 dark:border-white/5 dark:text-white/80">
                 <span>{t('store.purchase.total')}</span>
                 <span>{formatPrice(order.total_paise, order.currency)}</span>

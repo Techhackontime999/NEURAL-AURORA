@@ -38,6 +38,7 @@ import { startProductCheckout, requestFreeDownload } from '../../lib/checkout'
 import { normalisePhone } from '../../lib/phone'
 import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
+import CouponField from './CouponField'
 import ProductRail from './ProductRail'
 import ProductPreview from './ProductPreview'
 import ImageLightbox from '../ui/ImageLightbox'
@@ -58,7 +59,7 @@ export default function ProductDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { addToCart, toggleWishlist, isWishlisted } = useStore()
+  const { addToCart, toggleWishlist, isWishlisted, couponCode, applyCouponCode } = useStore()
   const { toast } = useToast()
 
   const [product, setProduct] = useState(null)
@@ -83,6 +84,8 @@ export default function ProductDetail() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
   const [actionNotice, setActionNotice] = useState(null)
+  // Server-priced coupon preview for this purchase panel.
+  const [couponSummary, setCouponSummary] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -93,6 +96,7 @@ export default function ProductDetail() {
       setLoadError(null)
       setActionError(null)
       setActionNotice(null)
+      setCouponSummary(null)
       setGalleryIndex(null)
       setQuantity('1')
       setTermsAccepted(false)
@@ -170,9 +174,20 @@ export default function ProductDetail() {
     requestedQuantity <= PRODUCT_MAX_QUANTITY
   const displayQuantity = hasValidQuantity ? requestedQuantity : 1
   // Display only: /api/create-order resolves the canonical amount server-side.
-  const displayTotalPaise = product
+  const subtotalPaise = product
     ? product.price_paise * (isFree ? 1 : displayQuantity)
     : 0
+  const discountPaise = couponSummary?.discountPaise || 0
+  const displayTotalPaise = couponSummary?.totalPaise ?? subtotalPaise
+  const couponItems = product && !isFree
+    ? [
+        {
+          slug: product.slug,
+          quantity: displayQuantity,
+          license_code: product.document_policy === 'receipt' ? '' : selectedLicense,
+        },
+      ]
+    : []
 
   const saved = product ? isWishlisted(product.slug) : false
 
@@ -256,7 +271,9 @@ export default function ProductDetail() {
           phone: buyerPhone,
           quantity: isFree ? 1 : requestedQuantity,
           licenseCode: product.document_policy === 'receipt' ? '' : selectedLicense,
+          couponCode,
         })
+        setCouponSummary(null)
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
       }
     } catch (err) {
@@ -804,6 +821,19 @@ export default function ProductDetail() {
             )}
 
             {!isFree && (
+              <CouponField
+                items={couponItems}
+                email={(email || '').trim() || user?.email || ''}
+                code={couponCode}
+                summary={couponSummary}
+                onCodeChange={applyCouponCode}
+                onSummaryChange={setCouponSummary}
+                currency={product.currency}
+                disabled={busy}
+              />
+            )}
+
+            {!isFree && (
               <div className="rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-3 text-[11px] text-[var(--text-secondary)]">
                   <span className="truncate">{t('store.summaryTitle')}</span>
@@ -811,6 +841,12 @@ export default function ProductDetail() {
                     {formatPrice(product.price_paise, product.currency)} × {displayQuantity}
                   </span>
                 </div>
+                {discountPaise > 0 && (
+                  <div className="mt-1.5 flex items-baseline justify-between gap-3 text-[11px] text-emerald-500">
+                    <span>{t('store.couponDiscount', { code: couponCode })}</span>
+                    <span>−{formatPrice(discountPaise, product.currency)}</span>
+                  </div>
+                )}
                 <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 dark:border-white/5 pt-2">
                   <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
                     {t('store.total')}

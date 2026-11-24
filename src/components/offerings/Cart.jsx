@@ -22,6 +22,7 @@ import { getProductLicenseOptions } from '../../lib/licenses'
 import { normalisePhone } from '../../lib/phone'
 import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
+import CouponField from './CouponField'
 
 export default function Cart() {
   const { t } = useTranslation()
@@ -35,6 +36,8 @@ export default function Cart() {
     removeFromCart,
     clearCart,
     saveForLater,
+    couponCode,
+    applyCouponCode,
   } = useStore()
 
   const [products, setProducts] = useState([])
@@ -49,6 +52,9 @@ export default function Cart() {
   const [busy, setBusy] = useState(false)
   const [checkoutError, setCheckoutError] = useState(null)
   const [freeBusy, setFreeBusy] = useState('')
+  // Amounts here always come from the server's preview response; the real
+  // order re-verifies them before Razorpay sees any money.
+  const [couponSummary, setCouponSummary] = useState(null)
 
   const slugsKey = cartItems.map((item) => item.slug).join(',')
   const licenseProductIdsKey = products
@@ -129,10 +135,17 @@ export default function Cart() {
   const freeLines = lines.filter((line) => line.product.price_paise === 0)
   const currency = paidLines[0]?.product.currency || 'INR'
   const mixedCurrency = paidLines.some((line) => line.product.currency !== currency)
-  const displayTotalPaise = paidLines.reduce(
+  const subtotalPaise = paidLines.reduce(
     (sum, line) => sum + line.product.price_paise * line.quantity,
     0
   )
+  const discountPaise = couponSummary?.discountPaise || 0
+  const displayTotalPaise = couponSummary?.totalPaise ?? subtotalPaise
+  const couponItems = paidLines.map((line) => ({
+    slug: line.slug,
+    quantity: line.quantity,
+    license_code: line.license_code,
+  }))
 
   // A stale code from an older cart or a removed option must not reach checkout
   // and fail after the buyer has entered payment details. Once options are
@@ -189,8 +202,10 @@ export default function Cart() {
         phone: buyerPhone,
         currency,
         description: paidLines.length === 1 ? paidLines[0].product.title : t('store.cartTitle'),
+        couponCode,
       })
       clearCart()
+      setCouponSummary(null)
       navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
     } catch (err) {
       setCheckoutError(friendlyStoreError(err, t, 'store.checkoutFailed'))
@@ -582,14 +597,36 @@ export default function Cart() {
                     <span>{t('store.termsAccept')}</span>
                   </label>
 
+                  <CouponField
+                    items={couponItems}
+                    email={(email || '').trim() || user?.email || ''}
+                    code={couponCode}
+                    summary={couponSummary}
+                    onCodeChange={applyCouponCode}
+                    onSummaryChange={setCouponSummary}
+                    currency={currency}
+                    disabled={busy}
+                  />
+
                   <div className="rounded-lg border border-black/10 px-3 py-2.5 dark:border-white/10">
                     <div className="flex items-baseline justify-between gap-3 text-[11px] text-[var(--text-secondary)]">
                       <span>{t('store.cartCount', { count: paidLines.length })}</span>
-                      <span>{t('store.total')}</span>
+                      <span>{formatPrice(subtotalPaise, currency)}</span>
                     </div>
-                    <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
-                      {formatPrice(displayTotalPaise, currency)}
-                    </p>
+                    {discountPaise > 0 && (
+                      <div className="mt-1.5 flex items-baseline justify-between gap-3 text-[11px] text-emerald-500">
+                        <span>{t('store.couponDiscount', { code: couponCode })}</span>
+                        <span>−{formatPrice(discountPaise, currency)}</span>
+                      </div>
+                    )}
+                    <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 pt-2 dark:border-white/5">
+                      <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+                        {t('store.total')}
+                      </span>
+                      <span className="text-xl font-semibold text-[var(--text-primary)]">
+                        {formatPrice(displayTotalPaise, currency)}
+                      </span>
+                    </div>
                     <p className="mt-1 text-[10px] leading-relaxed text-[var(--text-tertiary)]">
                       {t('store.cartTotalNote')}
                     </p>

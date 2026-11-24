@@ -76,7 +76,7 @@ function collectRequestedItems(requestedItems) {
  * @param {Array}   [input.licenseOptions] Configured options for those products
  *                                         (including validity_days).
  * @param {Date}    [input.now]            Clock used for licence expiry snapshots.
- * @returns {{ ok: true, totalPaise, currency, itemCount, lines } |
+ * @returns {{ ok: true, subtotalPaise, totalPaise, currency, itemCount, lines } |
  *           { ok: false, error, status }}
  *          `status` is the HTTP status the caller should return.
  */
@@ -192,6 +192,9 @@ function priceProductOrder({ requestedItems, products, licenseOptions = [], now 
 
   return {
     ok: true,
+    // Explicit subtotal so coupon logic never has to guess whether `totalPaise`
+    // already includes a discount. They are identical until a coupon applies.
+    subtotalPaise: totalPaise,
     totalPaise,
     currency: currency || 'INR',
     itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),

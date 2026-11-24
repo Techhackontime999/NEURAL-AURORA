@@ -50,8 +50,10 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
   const date = formatDate(order.paid_at || order.created_at)
   const paymentId = truncateText(order.payment_id || '—', 40)
   const issuer = 'NEURAL AURORA'
+  const subtotalPaise = Number(order.subtotal_paise) || 0
+  const discountPaise = Number(order.discount_paise) || 0
   const rows = (Array.isArray(items) ? items : [])
-    .slice(0, 10)
+    .slice(0, 9)
     .map((item) => ({
       // Accept both the PDF builder's field names and the stored order_items
       // column names, so a future caller cannot silently print "Digital
@@ -169,15 +171,40 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
     // Total panel, anchored to the card bottom so long item lists cannot
     // collide with it (rows are capped above). It sits high enough to leave
     // room for the signature block BELOW it — never underneath it.
-    const totalY = cardY + cardH - 148
-    doc.roundedRect(leftX, totalY, cardW - 48, 56, 10).fill(C.navySoft)
-    doc.fillColor(C.white).font('Helvetica-Bold').fontSize(9)
-      .text('TOTAL PAID', leftX + 18, totalY + 20, { characterSpacing: 1 })
-    doc.fillColor(C.cyan).font('Helvetica-Bold').fontSize(16)
-      .text(formatMoney(order.total_paise, currency), rightX - 18, totalY + 17, {
-        width: colW,
-        align: 'right',
-      })
+    const totalY = cardY + cardH - 176
+    doc.roundedRect(leftX, totalY, cardW - 48, 84, 10).fill(C.navySoft)
+
+    if (discountPaise > 0) {
+      doc.fillColor('#B9C8D6').font('Helvetica').fontSize(8.5)
+        .text('SUBTOTAL', leftX + 18, totalY + 12, { characterSpacing: 0.8 })
+      doc.fillColor('#B9C8D6').font('Helvetica').fontSize(8.5)
+        .text(formatMoney(subtotalPaise, currency), rightX - 18, totalY + 11, {
+          width: colW,
+          align: 'right',
+        })
+      doc.fillColor('#6EE7C8').font('Helvetica').fontSize(8.5)
+        .text('COUPON DISCOUNT', leftX + 18, totalY + 30, { characterSpacing: 0.8 })
+      doc.fillColor('#6EE7C8').font('Helvetica').fontSize(8.5)
+        .text(`-${formatMoney(discountPaise, currency)}`, rightX - 18, totalY + 29, {
+          width: colW,
+          align: 'right',
+        })
+      doc.fillColor(C.white).font('Helvetica-Bold').fontSize(9)
+        .text('TOTAL PAID', leftX + 18, totalY + 58, { characterSpacing: 1 })
+      doc.fillColor(C.cyan).font('Helvetica-Bold').fontSize(16)
+        .text(formatMoney(order.total_paise, currency), rightX - 18, totalY + 53, {
+          width: colW,
+          align: 'right',
+        })
+    } else {
+      doc.fillColor(C.white).font('Helvetica-Bold').fontSize(9)
+        .text('TOTAL PAID', leftX + 18, totalY + 32, { characterSpacing: 1 })
+      doc.fillColor(C.cyan).font('Helvetica-Bold').fontSize(16)
+        .text(formatMoney(order.total_paise, currency), rightX - 18, totalY + 29, {
+          width: colW,
+          align: 'right',
+        })
+    }
 
     doc.fillColor(C.muted).font('Helvetica').fontSize(8)
       .text(
@@ -193,7 +220,7 @@ function buildReceiptPdf({ order = {}, items = [], signature = null } = {}) {
       const sigX = cardX + cardW - 24 - sigW
       // Start below the total panel (including a clear gap) instead of at a
       // fixed card offset, so the image and amount can never share the same y.
-      const sigY = totalY + 56 + 12
+      const sigY = totalY + 84 + 12
       doc.save()
       doc.strokeOpacity(0.55).lineWidth(1).strokeColor(C.border)
       doc.moveTo(sigX, sigY + sigH + 6).lineTo(sigX + sigW, sigY + sigH + 6).stroke()

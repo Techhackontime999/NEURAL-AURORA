@@ -21,7 +21,13 @@ async function postJson(url, body, headers = {}) {
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed (${res.status})`)
+    const error = new Error(data?.error || `Request failed (${res.status})`)
+    // Structured failure details let the coupon UI show a translated reason
+    // instead of a raw server string. Ordinary callers still use `message`.
+    error.reason = data?.reason
+    error.minimumPaise = data?.minimum_paise
+    error.status = res.status
+    throw error
   }
   return data
 }
@@ -38,9 +44,18 @@ async function postJson(url, body, headers = {}) {
  *                                    admin can WhatsApp the sign-in link.
  * @param {number}  [options.quantity]
  * @param {string}  [options.licenseCode]  Configured option chosen on the PDP.
- * @returns {Promise<{orderRef: string, response: object}>}
+ * @param {string}  [options.couponCode]   Server-validated discount code.
+ * @returns {Promise<{orderRef: string, response: object, subtotalPaise: number, discountPaise: number, totalPaise: number}>}
  */
-export async function startProductCheckout({ product, email, name = '', phone = '', quantity = 1, licenseCode = '' }) {
+export async function startProductCheckout({
+  product,
+  email,
+  name = '',
+  phone = '',
+  quantity = 1,
+  licenseCode = '',
+  couponCode = '',
+}) {
   if (!product?.slug) throw new Error('Missing product.')
 
   // Normalising here as well as in the form means every caller sends the same
@@ -69,6 +84,7 @@ export async function startProductCheckout({ product, email, name = '', phone = 
       name,
       phone: buyerPhone,
       currency: product.currency || 'INR',
+      coupon_code: couponCode,
     },
     authHeader
   )
@@ -88,7 +104,13 @@ export async function startProductCheckout({ product, email, name = '', phone = 
 
   // Entitlement is granted by the webhook, never by this return value. The
   // success page polls the server for the real payment status.
-  return { orderRef: order.order_ref, response }
+  return {
+    orderRef: order.order_ref,
+    response,
+    subtotalPaise: order.subtotal_paise,
+    discountPaise: order.discount_paise,
+    totalPaise: order.total_paise,
+  }
 }
 
 /**
@@ -105,7 +127,8 @@ export async function startProductCheckout({ product, email, name = '', phone = 
  * @param {string}  [options.phone]
  * @param {string}  [options.currency]
  * @param {string}  [options.description]
- * @returns {Promise<{orderRef: string, response: object}>}
+ * @param {string}  [options.couponCode]
+ * @returns {Promise<{orderRef: string, response: object, subtotalPaise: number, discountPaise: number, totalPaise: number}>}
  */
 export async function startCartCheckout({
   items,
@@ -114,6 +137,7 @@ export async function startCartCheckout({
   phone = '',
   currency = 'INR',
   description = 'Digital Products',
+  couponCode = '',
 }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Your cart is empty.')
@@ -142,6 +166,7 @@ export async function startCartCheckout({
       name,
       phone: buyerPhone,
       currency,
+      coupon_code: couponCode,
     },
     authHeader
   )
@@ -159,7 +184,55 @@ export async function startCartCheckout({
     notes: { order_ref: order.order_ref, item_type: 'product' },
   })
 
-  return { orderRef: order.order_ref, response }
+  return {
+    orderRef: order.order_ref,
+    response,
+    subtotalPaise: order.subtotal_paise,
+    discountPaise: order.discount_paise,
+    totalPaise: order.total_paise,
+  }
+}
+
+/**
+ * Ask the server to price a cart (optionally with a coupon) WITHOUT creating
+ * an order. The returned amounts are display-only; checkout re-verifies them.
+ *
+ * @param {object} options
+ * @param {Array}  options.items    [{ slug, quantity, license_code }]
+ * @param {string} [options.email]
+ * @param {string} [options.couponCode]
+ * @returns {Promise<{subtotalPaise: number, discountPaise: number, totalPaise: number,
+ *                    currency: string, coupon: object|null}>}
+ */
+export async function previewOrderPricing({ items, email = '', couponCode = '' }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Your cart is empty.')
+  }
+
+  const data = await postJson('/api/create-order', {
+    mode: 'preview',
+    order_type: 'product',
+    items: items.map((item) => ({
+      slug: item.slug,
+      quantity: item.quantity,
+      license_code: item.license_code || '',
+    })),
+    email,
+    coupon_code: couponCode,
+  })
+
+  const totalPaise = Number(data?.total_paise)
+  if (!Number.isInteger(totalPaise) || totalPaise < 0) {
+    throw new Error('The server did not return a verified price.')
+  }
+
+  return {
+    subtotalPaise: Number(data.subtotal_paise) || 0,
+    discountPaise: Number(data.discount_paise) || 0,
+    totalPaise,
+    currency: data.currency || 'INR',
+    coupon: data.coupon || null,
+  }
 }
 
 /**

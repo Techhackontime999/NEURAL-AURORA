@@ -22,6 +22,8 @@ const storeContext = read('src/context/StoreContext.jsx')
 const cart = read('src/components/offerings/Cart.jsx')
 const wishlist = read('src/components/offerings/Wishlist.jsx')
 const navbar = read('src/components/ServiceNavbar.jsx')
+const couponField = read('src/components/offerings/CouponField.jsx')
+const checkoutClient = read('src/lib/checkout.js')
 
 let passed = 0
 let failed = 0
@@ -515,6 +517,58 @@ check(
     ['previous', 'next', 'close', 'view', 'thumb'].every((key) =>
       Boolean(en.media?.lightbox?.[key])
     )
+)
+
+// --- coupons: server-priced, accessible, admin-managed ------------------------
+check(
+  'coupon: entry uses the server preview, never client-side pricing',
+  couponField.includes('previewOrderPricing(') &&
+    couponField.includes('onSummaryChange?.(result)') &&
+    !/formatPrice\([^)]*\*|price_paise\s*\*/.test(couponField)
+)
+check(
+  'coupon: applied chip is removable and errors are announced',
+  couponField.includes("aria-label={t('store.couponRemove')}") &&
+    couponField.includes('role="alert"') &&
+    couponField.includes('aria-invalid={Boolean(error)}')
+)
+check(
+  'coupon: both purchase surfaces send the code to checkout',
+  cart.includes('<CouponField') &&
+    detail.includes('<CouponField') &&
+    /couponCode,\s*\r?\n\s*\}\)/.test(cart) &&
+    /couponCode,\s*\r?\n\s*\}\)/.test(detail) &&
+    checkoutClient.includes('coupon_code: couponCode')
+)
+check(
+  'coupon: the saved code is normalised and cleared after checkout',
+  storeContext.includes("const COUPON_KEY = 'neural-aurora:coupon:v1'") &&
+    storeContext.includes('const applyCouponCode = useCallback') &&
+    storeContext.includes('setCouponCode(\'\')') &&
+    cart.includes('setCouponSummary(null)') &&
+    detail.includes('setCouponSummary(null)')
+)
+check(
+  'coupon: the success page shows the stored discount',
+  purchaseSuccess.includes("t('store.purchase.subtotal')") &&
+    purchaseSuccess.includes("t('store.purchase.discount')") &&
+    purchaseSuccess.includes('order.discount_paise')
+)
+check(
+  'coupon: customer-facing i18n copy is present',
+  [
+    'couponLabel',
+    'couponPlaceholder',
+    'couponApply',
+    'couponRemove',
+    'couponDiscount',
+    'couponInvalid',
+    'couponExpired',
+    'couponUsageLimit',
+    'couponMinimum',
+    'couponCheckFailed',
+  ].every((key) => Boolean(en.store?.[key])) &&
+    Boolean(en.store?.purchase?.discount)
 )
 
 console.log(`\n${passed} passed, ${failed} failed`)

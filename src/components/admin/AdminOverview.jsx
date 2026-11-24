@@ -51,6 +51,7 @@ const quickActionGroups = [
     group: 'Commerce',
     actions: [
       { href: '/admin/products', label: 'Manage Products' },
+      { href: '/admin/coupons', label: 'Manage Coupons' },
       { href: '/admin/orders', label: 'View Orders' },
       { href: '/admin/payments', label: 'View Payments' },
       { href: '/admin/payment-settings', label: 'Payment Settings' },

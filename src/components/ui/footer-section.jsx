@@ -96,6 +96,7 @@ export function Footer() {
         { title: t('footer.services'), to: '/offerings' },
         { title: t('footer.store'), to: '/offerings/products' },
         { title: t('footer.library'), to: '/library' },
+        { title: t('footer.affiliateApply'), to: '/affiliate-apply' },
         { title: t('footer.support'), to: '/support' },
       ],
     },

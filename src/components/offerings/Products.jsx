@@ -679,12 +679,20 @@ export default function Products() {
         <p className="text-xs text-[var(--text-secondary)]">
           {t('store.digitalProduct')}
         </p>
-        <Link
-          to="/support"
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 text-xs font-semibold uppercase tracking-widest text-black transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:bg-cyan-400"
-        >
-          {t('nav.support')}
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            to="/support"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 text-xs font-semibold uppercase tracking-widest text-black transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:bg-cyan-400"
+          >
+            {t('nav.support')}
+          </Link>
+          <Link
+            to="/affiliate-apply"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 px-6 text-xs font-semibold uppercase tracking-widest transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 dark:border-white/10"
+          >
+            {t('store.affiliateApplyCta')}
+          </Link>
+        </div>
       </div>
         </div>
       </section>

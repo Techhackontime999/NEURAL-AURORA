@@ -14,6 +14,7 @@ const FILES = [
   'src/components/offerings/Cart.jsx',
   'src/components/offerings/Wishlist.jsx',
   'src/components/ServiceNavbar.jsx',
+  'src/components/partner/AffiliateApply.jsx',
 ]
 
 const locales = JSON.parse(fs.readFileSync('src/locales/en.json', 'utf8'))

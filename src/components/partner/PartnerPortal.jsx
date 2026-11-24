@@ -104,9 +104,14 @@ export default function PartnerPortal() {
         <p className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
           {t('store.affiliateNotEnrolled')}
         </p>
-        <Link to="/offerings/products" className="mt-6 inline-block rounded-full bg-cyan-300 px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-black">
-          {t('store.affiliateBrowse')}
-        </Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link to="/affiliate-apply" className="inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-300 px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-black">
+            {t('store.affiliateApplyCta')}
+          </Link>
+          <Link to="/offerings/products" className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 px-6 py-3 text-[11px] font-semibold uppercase tracking-widest dark:border-white/10">
+            {t('store.affiliateBrowse')}
+          </Link>
+        </div>
       </div>
     )
   }

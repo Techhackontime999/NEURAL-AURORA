@@ -15,6 +15,11 @@ import {
   updateAffiliate,
   voidCommission,
 } from '../../lib/adminAffiliates'
+import {
+  approveAffiliateApplication,
+  listAffiliateApplications,
+  rejectAffiliateApplication,
+} from '../../lib/affiliateApplications'
 import { useToast } from '../../context/ToastContext'
 
 const emptyForm = {
@@ -23,6 +28,15 @@ const emptyForm = {
   email: '',
   commission_percent: '10',
   status: 'active',
+  product_slugs_csv: '',
+  notes: '',
+}
+
+const emptyReview = {
+  code: '',
+  display_name: '',
+  email: '',
+  commission_percent: '10',
   product_slugs_csv: '',
   notes: '',
 }
@@ -99,6 +113,10 @@ export default function AdminAffiliates() {
   const [ledgerAffiliate, setLedgerAffiliate] = useState(null)
   const [ledgerStatus, setLedgerStatus] = useState('')
   const [ledgerLoading, setLedgerLoading] = useState(false)
+  const [applications, setApplications] = useState([])
+  const [applicationFilter, setApplicationFilter] = useState('pending')
+  const [reviewId, setReviewId] = useState(null)
+  const [reviewDraft, setReviewDraft] = useState(emptyReview)
 
   const loadCommissions = useCallback(async (affiliateId = null, status = '') => {
     setLedgerLoading(true)
@@ -115,9 +133,14 @@ export default function AdminAffiliates() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [rows, options] = await Promise.all([listAffiliates(), listProductOptions().catch(() => [])])
+      const [rows, options, applications] = await Promise.all([
+        listAffiliates(),
+        listProductOptions().catch(() => []),
+        listAffiliateApplications().catch(() => []),
+      ])
       setAffiliates(rows)
       setProductOptions(options)
+      setApplications(applications)
       if (ledgerAffiliate) await loadCommissions(ledgerAffiliate.id, ledgerStatus)
     } catch (err) {
       toast.error('Failed to load partners: ' + err.message)
@@ -222,17 +245,72 @@ export default function AdminAffiliates() {
     }
   }
 
+  const openReview = (application) => {
+    setReviewId(application.id)
+    setReviewDraft({
+      code: application.proposed_code,
+      display_name: application.full_name,
+      email: application.email,
+      commission_percent: '10',
+      product_slugs_csv: '',
+      notes: `Applied via: ${application.channels}\n\n${application.message}`.slice(0, 500),
+    })
+  }
+
+  const handleApprove = async (event) => {
+    event.preventDefault()
+    const application = applications.find((row) => row.id === reviewId)
+    if (!application) return
+    const problem = validate(reviewDraft)
+    if (problem) return toast.error(problem)
+
+    setBusy(true)
+    try {
+      await approveAffiliateApplication(application, {
+        ...fromForm(reviewDraft),
+        status: 'active',
+      })
+      toast.success('Application approved. The partner can now sign in at /partner.')
+      setReviewId(null)
+      setReviewDraft(emptyReview)
+      await load()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleReject = async (application) => {
+    const ok = await confirm(`Reject the application from ${application.full_name}? This cannot be undone.`)
+    if (!ok) return
+    const reason = window.prompt('Internal reason (optional):', '')
+    if (reason === null) return
+    try {
+      await rejectAffiliateApplication(application.id, reason)
+      toast.success('Application rejected.')
+      if (reviewId === application.id) setReviewId(null)
+      await load()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
   const filtered = affiliates.filter((row) =>
     `${row.code} ${row.display_name} ${row.email}`.toLowerCase().includes(search.trim().toLowerCase())
   )
   const activeCount = affiliates.filter((row) => row.status === 'active').length
+  const pendingApplications = applications.filter((row) => row.status === 'pending')
+  const filteredApplications = applicationFilter
+    ? applications.filter((row) => row.status === applicationFilter)
+    : applications
   const averageRate = affiliates.length
     ? affiliates.reduce((sum, row) => sum + (Number(row.commission_bps) || 0), 0) / affiliates.length / 100
     : 0
   const paidPaise = commissions.filter((row) => row.status === 'paid').reduce((sum, row) => sum + (Number(row.commission_paise) || 0), 0)
   const pendingPaise = commissions.filter((row) => ['pending', 'approved'].includes(row.status)).reduce((sum, row) => sum + (Number(row.commission_paise) || 0), 0)
 
-  const renderForm = (value, onChange, onSubmit, submitLabel, onCancel) => (
+  const renderForm = (value, onChange, onSubmit, submitLabel, onCancel, hideStatus = false) => (
     <form onSubmit={onSubmit} className="mt-3 grid gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4 md:grid-cols-2">
       <label className="block">
         <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Referral code *</span>
@@ -287,17 +365,19 @@ export default function AdminAffiliates() {
           Percentage of the amount actually paid, after discounts.
         </span>
       </label>
-      <label className="block">
-        <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Status</span>
-        <select
-          value={value.status}
-          onChange={(e) => onChange({ ...value, status: e.target.value })}
-          className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-          style={inputStyle}
-        >
-          {AFFILIATE_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
-      </label>
+      {!hideStatus && (
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Status</span>
+          <select
+            value={value.status}
+            onChange={(e) => onChange({ ...value, status: e.target.value })}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+            style={inputStyle}
+          >
+            {AFFILIATE_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </label>
+      )}
       <label className="block">
         <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Product scope (CSV slugs)</span>
         <input
@@ -363,10 +443,11 @@ export default function AdminAffiliates() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {[
           { label: 'Partners', value: affiliates.length, icon: UserPlus },
           { label: 'Active', value: activeCount, icon: UserPlus },
+          { label: 'Applications', value: pendingApplications.length, icon: UserPlus },
           { label: 'Average rate', value: `${averageRate}%`, icon: TrendingUp },
           { label: 'Ledger pending', value: money(pendingPaise), icon: TrendingUp },
         ].map(({ label, value, icon: Icon }) => (
@@ -381,6 +462,118 @@ export default function AdminAffiliates() {
       </div>
 
       {showCreate && renderForm(draft, setDraft, handleCreate, 'Create partner', () => setShowCreate(false))}
+
+      <div className="glass-panel rounded-xl p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Partner applications</h2>
+            <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+              {pendingApplications.length} awaiting review · applicants choose a proposed code only; you set the final rate.
+            </p>
+          </div>
+          <select
+            value={applicationFilter}
+            onChange={(event) => {
+              setApplicationFilter(event.target.value)
+              setReviewId(null)
+            }}
+            className="rounded-lg border px-3 py-2 text-xs"
+            style={inputStyle}
+            aria-label="Filter applications"
+          >
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="">All</option>
+          </select>
+        </div>
+
+        {filteredApplications.length === 0 ? (
+          <p className="py-8 text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            No {applicationFilter || ''} applications.
+          </p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
+                  <th className="pb-3 pr-4">Applicant</th>
+                  <th className="pb-3 pr-4">Proposed code</th>
+                  <th className="pb-3 pr-4">Reach</th>
+                  <th className="pb-3 pr-4">Message</th>
+                  <th className="pb-3 pr-4">Received</th>
+                  <th className="pb-3 pr-4">Status</th>
+                  <th className="pb-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApplications.map((application) => (
+                  <tr key={application.id} className="border-t border-black/5 align-top dark:border-white/5">
+                    <td className="py-3 pr-4">
+                      <p className="font-medium">{application.full_name}</p>
+                      <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{application.email}</p>
+                    </td>
+                    <td className="py-3 pr-4 font-mono">{application.proposed_code}</td>
+                    <td className="py-3 pr-4">{application.channels}</td>
+                    <td className="py-3 pr-4">
+                      <p className="line-clamp-2 max-w-xs" title={application.message}>{application.message}</p>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {new Date(application.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className={application.status === 'approved' ? 'text-emerald-500' : application.status === 'rejected' ? 'text-red-500' : 'text-amber-500'}>
+                        {application.status}
+                      </span>
+                      {application.review_notes && (
+                        <p className="mt-1 max-w-[12rem] truncate text-[10px]" style={{ color: 'var(--text-tertiary)' }} title={application.review_notes}>
+                          {application.review_notes}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-3">
+                      {application.status === 'pending' ? (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => (reviewId === application.id ? setReviewId(null) : openReview(application))}
+                            className="text-[10px] uppercase tracking-widest text-cyan-500 hover:underline"
+                          >
+                            {reviewId === application.id ? 'Close' : 'Review'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleReject(application)}
+                            className="text-[10px] uppercase tracking-widest text-red-500 hover:underline"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Decided</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {reviewId && filteredApplications.some((row) => row.id === reviewId) && (
+                  <tr>
+                    <td colSpan={7}>
+                      {renderForm(
+                        reviewDraft,
+                        setReviewDraft,
+                        handleApprove,
+                        'Approve & create partner',
+                        () => setReviewId(null),
+                        true
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="glass-panel rounded-xl p-4">
         <label className="flex items-center gap-2 rounded-lg border px-3 py-2" style={inputStyle}>

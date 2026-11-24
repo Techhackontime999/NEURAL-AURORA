@@ -15,6 +15,7 @@ import {
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { normaliseFormatFilter } from '../../lib/productQuery'
 import { getRecentlyViewed } from '../../lib/recommendations'
+import { useStore } from '../../context/StoreContext'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 import ProductRail from './ProductRail'
@@ -39,6 +40,10 @@ const SEARCH_DEBOUNCE_MS = 300
 // The format tiles in the catalogue header are quick filters, not decoration.
 // Values match normaliseFormatFilter() so a stored "PDF" resolves to "pdf".
 const QUICK_FORMATS = ['zip', 'pdf', 'code']
+
+// Partner links are ?aff=CODE. This is NOT a catalogue filter: it is captured
+// into versioned browser storage and forwarded to checkout as a code only.
+const AFFILIATE_QUERY_KEY = 'aff'
 
 // Filters live in the URL so a filtered catalogue can be linked, bookmarked and
 // restored with the browser's back button. Unknown values are dropped rather
@@ -105,6 +110,7 @@ export default function Products() {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { applyAffiliateCode } = useStore()
   const initialFilters = filtersFromParams(searchParams)
 
   const [products, setProducts] = useState([])
@@ -220,15 +226,24 @@ export default function Products() {
   // --- URL synchronisation ---------------------------------------------------
   // Filters are written with `replace` so typing a search does not stuff the
   // history stack; back/forward still restores any committed filter state.
+  // The referral key is preserved so the link a partner shared stays visible
+  // while the visitor plays with filters.
   useEffect(() => {
     setSearchParams(
       (current) => {
         const next = paramsFromFilters(filters)
+        const referral = current.get(AFFILIATE_QUERY_KEY)
+        if (referral) next.set(AFFILIATE_QUERY_KEY, referral)
         return next.toString() === current.toString() ? current : next
       },
       { replace: true }
     )
   }, [filters, setSearchParams])
+
+  useEffect(() => {
+    const referral = searchParams.get(AFFILIATE_QUERY_KEY)
+    if (referral) applyAffiliateCode(referral)
+  }, [searchParams, applyAffiliateCode])
 
   useEffect(() => {
     const fromUrl = filtersFromParams(searchParams)

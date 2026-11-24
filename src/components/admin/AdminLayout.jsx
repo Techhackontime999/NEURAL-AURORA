@@ -22,6 +22,7 @@ const navItems = [
   { path: '/admin/licences', label: 'Licences', icon: '⚿' },
   { path: '/admin/orders', label: 'Orders', icon: '₹' },
   { path: '/admin/coupons', label: 'Coupons', icon: '%' },
+  { path: '/admin/affiliates', label: 'Affiliate Partners', icon: '↗' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
   { path: '/admin/messages', label: 'Messages', icon: '✉' },

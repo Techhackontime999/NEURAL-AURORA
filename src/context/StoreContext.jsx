@@ -14,6 +14,11 @@ const WISHLIST_KEY = 'neural-aurora:wishlist:v1'
 // Coupons are remembered as a CODE only. It is always re-verified on the
 // server: a saved code can expire or be exhausted between visits.
 const COUPON_KEY = 'neural-aurora:coupon:v1'
+// A referral sticks across visits and orders, like an affiliate cookie —
+// with the same 30-day window. Only the CODE and its capture time are stored;
+// the server re-validates the code on every checkout.
+const AFFILIATE_KEY = 'neural-aurora:affiliate:v1'
+const AFFILIATE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
 // Mirrors api/_lib/order-pricing.js (MAX_ITEMS / MAX_QUANTITY).
 export const CART_MAX_ITEMS = 20
@@ -73,6 +78,49 @@ function cleanCoupon(value) {
   return /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code) ? code : ''
 }
 
+const cleanAffiliateCode = cleanCoupon
+
+function readAffiliate() {
+  if (typeof window === 'undefined') return ''
+  try {
+    const raw = window.localStorage.getItem(AFFILIATE_KEY)
+    let parsed
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      parsed = raw // pre-window build stored a bare code
+    }
+    if (typeof parsed === 'string') return cleanAffiliateCode(parsed)
+
+    const code = cleanAffiliateCode(parsed?.code)
+    const capturedAt = Number(parsed?.capturedAt)
+    if (!code) return ''
+    if (!Number.isFinite(capturedAt) || Date.now() - capturedAt > AFFILIATE_WINDOW_MS) {
+      window.localStorage.removeItem(AFFILIATE_KEY)
+      return ''
+    }
+    return code
+  } catch {
+    return ''
+  }
+}
+
+function writeAffiliate(value) {
+  if (typeof window === 'undefined') return
+  try {
+    if (value) {
+      window.localStorage.setItem(
+        AFFILIATE_KEY,
+        JSON.stringify({ code: value, capturedAt: Date.now() })
+      )
+    } else {
+      window.localStorage.removeItem(AFFILIATE_KEY)
+    }
+  } catch {
+    /* private browsing or a full quota: the in-memory value still works */
+  }
+}
+
 function readCoupon() {
   if (typeof window === 'undefined') return ''
   try {
@@ -109,6 +157,7 @@ export function StoreProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => cleanCart(readList(CART_KEY)))
   const [wishlist, setWishlist] = useState(() => cleanWishlist(readList(WISHLIST_KEY)))
   const [couponCode, setCouponCode] = useState(() => readCoupon())
+  const [affiliateCode, setAffiliateCode] = useState(() => readAffiliate())
 
   useEffect(() => {
     writeList(CART_KEY, cartItems)
@@ -123,11 +172,16 @@ export function StoreProvider({ children }) {
   }, [couponCode])
 
   useEffect(() => {
+    writeAffiliate(affiliateCode)
+  }, [affiliateCode])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined
     const onStorage = (event) => {
       if (event.key === CART_KEY) setCartItems(cleanCart(readList(CART_KEY)))
       if (event.key === WISHLIST_KEY) setWishlist(cleanWishlist(readList(WISHLIST_KEY)))
       if (event.key === COUPON_KEY) setCouponCode(readCoupon())
+      if (event.key === AFFILIATE_KEY) setAffiliateCode(readAffiliate())
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
@@ -198,6 +252,13 @@ export function StoreProvider({ children }) {
   const applyCouponCode = useCallback((value) => setCouponCode(cleanCoupon(value)), [])
   const clearCouponCode = useCallback(() => setCouponCode(''), [])
 
+  // A later link may replace an earlier referral; an invalid link never wipes
+  // a valid one because the normaliser returns ''.
+  const applyAffiliateCode = useCallback((value) => {
+    const code = cleanAffiliateCode(value)
+    if (code) setAffiliateCode(code)
+  }, [])
+
   const clearCart = useCallback(() => {
     setCartItems([])
     // A coupon belongs to a completed checkout, not the next basket.
@@ -265,6 +326,8 @@ export function StoreProvider({ children }) {
       couponCode,
       applyCouponCode,
       clearCouponCode,
+      affiliateCode,
+      applyAffiliateCode,
       wishlist,
       wishlistCount: wishlist.length,
       addToWishlist,
@@ -285,6 +348,8 @@ export function StoreProvider({ children }) {
       couponCode,
       applyCouponCode,
       clearCouponCode,
+      affiliateCode,
+      applyAffiliateCode,
       wishlist,
       addToWishlist,
       removeFromWishlist,

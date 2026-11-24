@@ -38,6 +38,7 @@ export default function Cart() {
     saveForLater,
     couponCode,
     applyCouponCode,
+    affiliateCode,
   } = useStore()
 
   const [products, setProducts] = useState([])
@@ -203,6 +204,7 @@ export default function Cart() {
         currency,
         description: paidLines.length === 1 ? paidLines[0].product.title : t('store.cartTitle'),
         couponCode,
+        affiliateCode,
       })
       clearCart()
       setCouponSummary(null)
@@ -604,6 +606,7 @@ export default function Cart() {
                     summary={couponSummary}
                     onCodeChange={applyCouponCode}
                     onSummaryChange={setCouponSummary}
+                    affiliateCode={affiliateCode}
                     currency={currency}
                     disabled={busy}
                   />
@@ -618,6 +621,11 @@ export default function Cart() {
                         <span>{t('store.couponDiscount', { code: couponCode })}</span>
                         <span>−{formatPrice(discountPaise, currency)}</span>
                       </div>
+                    )}
+                    {couponSummary?.affiliate?.display_name && (
+                      <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)]">
+                        {t('store.referredBy', { name: couponSummary.affiliate.display_name })}
+                      </p>
                     )}
                     <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 pt-2 dark:border-white/5">
                       <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">

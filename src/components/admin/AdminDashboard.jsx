@@ -15,6 +15,7 @@ import AdminProducts from './AdminProducts'
 import AdminLicenses from './AdminLicenses'
 import AdminOrders from './AdminOrders'
 import AdminCoupons from './AdminCoupons'
+import AdminAffiliates from './AdminAffiliates'
 import AdminSocialLinks from './AdminSocialLinks'
 import AdminReviews from './AdminReviews'
 import AdminUsers from './AdminUsers'
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
         <Route path="licences" element={<AdminLicenses />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="coupons" element={<AdminCoupons />} />
+        <Route path="affiliates" element={<AdminAffiliates />} />
         <Route path="services" element={<AdminServices />} />
         <Route path="social-links" element={<AdminSocialLinks />} />
         <Route path="reviews" element={<AdminReviews />} />

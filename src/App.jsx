@@ -55,6 +55,7 @@ const Login = lazy(() => import('./components/admin/Login'))
 const Register = lazy(() => import('./components/admin/Register'))
 const ForgotPassword = lazy(() => import('./components/admin/ForgotPassword'))
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'))
+const PartnerPortal = lazy(() => import('./components/partner/PartnerPortal'))
 
 function RouteFallback() {
   return (
@@ -493,6 +494,8 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Signed-in resellers see their own earnings and referral links. */}
+              <Route path="/partner" element={<PartnerPortal />} />
               <Route
                 path="/admin/*"
                 element={

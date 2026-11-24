@@ -15,6 +15,10 @@ const {
 } = require('./_lib/diag')
 const { normalisePhone } = require('./_lib/phone')
 const { normaliseCouponCode, applyCoupon, REASONS } = require('./_lib/coupons')
+const {
+  normaliseAffiliateCode,
+  isAffiliateCode,
+} = require('./_lib/affiliate-commissions')
 
 // Static fallback data when Supabase is unreachable or in offline dev mode
 const fallbackServices = [
@@ -146,6 +150,16 @@ function isMissingColumnError(error, column) {
   return message.includes(column.toLowerCase()) && /column|schema cache/.test(message)
 }
 
+/** A table from an additive migration that is not deployed yet. */
+function isMissingRelationError(error, table) {
+  if (!error) return false
+  const message = String(error.message || '')
+  return (
+    message.includes(`relation "public.${table}" does not exist`) ||
+    (message.includes(table) && /schema cache|does not exist/i.test(message))
+  )
+}
+
 const COUPON_COLUMNS =
   'id, code, description, discount_type, value, min_subtotal_paise, max_discount_paise, ' +
   'product_slugs, starts_at, expires_at, usage_limit, uses_count, per_customer_limit, ' +
@@ -159,6 +173,33 @@ async function loadCoupon(supabase, code) {
     .eq('code', code)
     .maybeSingle()
   return { coupon: data || null, error }
+}
+
+/**
+ * An unknown or paused referral code is ignored, never fatal: a bad affiliate
+ * link must not stop someone from buying. Rates and product scope always come
+ * from this server-loaded row.
+ */
+async function loadAffiliate(supabase, code, slugs) {
+  if (!isAffiliateCode(code)) return { affiliate: null }
+  const { data, error } = await supabase
+    .from('affiliates')
+    .select('id, code, display_name, commission_bps, status, product_slugs')
+    .eq('code', code)
+    .maybeSingle()
+  if (error) return { error }
+
+  const affiliate = data || null
+  if (!affiliate || affiliate.status !== 'active') return { affiliate: null }
+
+  const scoped = Array.isArray(affiliate.product_slugs)
+    ? new Set(affiliate.product_slugs.map((slug) => String(slug).trim().toLowerCase()).filter(Boolean))
+    : null
+  if (scoped && scoped.size) {
+    const eligible = (slugs || []).some((slug) => scoped.has(String(slug).trim().toLowerCase()))
+    if (!eligible) return { affiliate: null }
+  }
+  return { affiliate }
 }
 
 /** Usage counters are read from the database, never from the browser. */
@@ -233,8 +274,9 @@ module.exports = async function handler(req, res) {
     phone,
     // 'preview' prices a cart without writing an order or contacting Razorpay.
     mode,
-    // Coupons are submitted as a CODE only — never an amount or percentage.
+    // Coupons and referrals are submitted as CODES only — never an amount.
     coupon_code: couponCodeInput,
+    affiliate_code: affiliateCodeInput,
   } = req.body || {}
 
   // Product orders may carry a Supabase JWT so the entitlement can be bound to
@@ -418,6 +460,24 @@ module.exports = async function handler(req, res) {
       const discountPaise = couponResult?.discountPaise || 0
       const totalPaise = priced.subtotalPaise - discountPaise
 
+      // Referrals follow the coupon rule: only a code crosses the network
+      // boundary. An unknown, paused or non-eligible partner is ignored so a
+      // stale link can never block a purchase. Rates and scope stay on the
+      // server-loaded row.
+      const affiliateCode = normaliseAffiliateCode(affiliateCodeInput)
+      const affiliateLookup = await loadAffiliate(
+        supabase,
+        affiliateCode,
+        priced.lines.map((line) => line.product.slug)
+      )
+      if (affiliateLookup.error) {
+        logError('create-order', requestId, {
+          stage: 'affiliate-lookup-failed',
+          db_error: affiliateLookup.error.message,
+        })
+      }
+      const affiliate = affiliateLookup.affiliate || null
+
       // Preview prices the cart (with or without a coupon) without writing a
       // row or contacting the gateway. It never reaches the Razorpay section.
       if (mode === 'preview') {
@@ -433,6 +493,9 @@ module.exports = async function handler(req, res) {
                 discount_paise: discountPaise,
                 description: couponRow?.description || '',
               }
+            : null,
+          affiliate: affiliate
+            ? { code: affiliate.code, display_name: affiliate.display_name }
             : null,
         })
       }
@@ -474,53 +537,36 @@ module.exports = async function handler(req, res) {
         subtotal_paise: priced.subtotalPaise,
         discount_paise: discountPaise,
         total_paise: totalPaise,
-        ...(couponCode ? { coupon_code_snapshot: couponCode } : {}),
       }
 
-      let orderRow = null
-      let orderInsertError = null
-      const tryInsertOrder = async (fields, withPhone) =>
+      // Additive migrations are optional at runtime: if a column is not
+      // deployed yet, drop just that field and keep selling. Every other
+      // failure still surfaces as a real error.
+      const optionalOrderFields = {
+        ...(customerPhone ? { customer_phone: customerPhone } : {}),
+        ...(couponCode ? { coupon_code_snapshot: couponCode } : {}),
+        ...(affiliate ? { affiliate_code_snapshot: affiliate.code } : {}),
+      }
+      const tryInsertOrder = () =>
         supabase
           .from('orders')
-          .insert(withPhone && customerPhone ? { ...fields, customer_phone: customerPhone } : fields)
+          .insert({ ...orderFields, ...optionalOrderFields })
           .select('id')
           .single()
 
-      {
-        let attempt = await tryInsertOrder(orderFields, true)
+      let attempt = await tryInsertOrder()
+      orderRow = attempt.data
+      orderInsertError = attempt.error
+      for (const column of ['customer_phone', 'coupon_code_snapshot', 'affiliate_code_snapshot']) {
+        if (!orderInsertError || !isMissingColumnError(orderInsertError, column)) continue
+        log('create-order', requestId, {
+          stage: `${column}-missing`,
+          order_ref: orderRef,
+        })
+        delete optionalOrderFields[column]
+        attempt = await tryInsertOrder()
         orderRow = attempt.data
         orderInsertError = attempt.error
-
-        // `customer_phone` arrives with migration …00008. A deployment that has
-        // not applied it yet must still be able to SELL: losing a paid order
-        // over an optional contact column would be far worse than the admin
-        // losing a WhatsApp shortcut. Retry once, without the phone.
-        if (orderInsertError && isMissingColumnError(orderInsertError, 'customer_phone')) {
-          log('create-order', requestId, {
-            stage: 'customer-phone-column-missing',
-            order_ref: orderRef,
-          })
-          attempt = await tryInsertOrder(orderFields, false)
-          orderRow = attempt.data
-          orderInsertError = attempt.error
-        }
-
-        // Coupons ship as an additive migration. A deployment that has not
-        // applied it yet must still be able to sell: retry without the snapshot
-        // column rather than losing the order.
-        if (orderInsertError && isMissingColumnError(orderInsertError, 'coupon_code_snapshot')) {
-          log('create-order', requestId, {
-            stage: 'coupon-column-missing',
-            order_ref: orderRef,
-          })
-          const { coupon_code_snapshot: _snapshot, ...compatFields } = orderFields
-          attempt = await tryInsertOrder(compatFields, true)
-          if (attempt.error && isMissingColumnError(attempt.error, 'customer_phone')) {
-            attempt = await tryInsertOrder(compatFields, false)
-          }
-          orderRow = attempt.data
-          orderInsertError = attempt.error
-        }
       }
 
       if (orderInsertError || !orderRow) {
@@ -551,6 +597,32 @@ module.exports = async function handler(req, res) {
             db_error: redemptionError.message,
           })
           return res.status(500).json({ error: 'Could not apply your coupon. Please try again.' })
+        }
+      }
+
+      // The attribution is immutable: later edits to a partner's rate must not
+      // retroactively change what that partner earned on this order.
+      if (affiliate) {
+        const { error: attributionError } = await supabase
+          .from('affiliate_attributions')
+          .insert({
+            affiliate_id: affiliate.id,
+            order_id: orderRow.id,
+            order_ref: orderRef,
+            affiliate_code: affiliate.code,
+            commission_bps: affiliate.commission_bps,
+          })
+        if (attributionError && !isMissingRelationError(attributionError, 'affiliate_attributions')) {
+          await releaseCouponClaim()
+          logError('create-order', requestId, {
+            stage: 'affiliate-attribution-failed',
+            order_ref: orderRef,
+            db_error: attributionError.message,
+          })
+          return res.status(500).json({ error: 'Could not record your referral. Please try again.' })
+        }
+        if (attributionError) {
+          log('create-order', requestId, { stage: 'affiliate-tables-missing', order_ref: orderRef })
         }
       }
 
@@ -620,6 +692,7 @@ module.exports = async function handler(req, res) {
         discountPaise,
         totalPaise,
         couponCode: couponCode || null,
+        affiliateCode: affiliate?.code || null,
       }
 
     } else if (type === 'package' || package_name) {
@@ -855,6 +928,7 @@ module.exports = async function handler(req, res) {
             discount_paise: digitalOrder.discountPaise,
             total_paise: digitalOrder.totalPaise,
             coupon_code: digitalOrder.couponCode,
+            affiliate_code: digitalOrder.affiliateCode,
           }
         : {}),
     })

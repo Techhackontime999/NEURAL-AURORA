@@ -24,6 +24,7 @@ const {
   hashLicenseKey,
   licenseExpiryFromDays,
 } = require('./license')
+const { ensureAffiliateCommission } = require('./affiliate-commissions')
 
 /** Smallest database client for service-role work, or null if unconfigured. */
 function getServiceClient() {
@@ -252,6 +253,12 @@ async function fulfilDigitalOrder(supabase, { payment, order, event, signatureVe
     // A replay is also the recovery path for an order that was marked paid
     // before licensing was introduced. Issuance is idempotent, so this is safe.
     await issueOrderLicenses(supabase, dbOrder)
+    await ensureAffiliateCommission(supabase, {
+      orderId: dbOrder.id,
+      orderRef: dbOrder.order_ref,
+      netPaise: dbOrder.total_paise,
+      currency: dbOrder.currency,
+    })
     console.log('[Fulfilment] Digital order already fulfilled (idempotent):', dbOrder.order_ref)
     return { status: 'already_paid', order_ref: dbOrder.order_ref }
   }
@@ -319,6 +326,15 @@ async function fulfilDigitalOrder(supabase, { payment, order, event, signatureVe
   }
 
   await issueOrderLicenses(supabase, dbOrder)
+
+  // Commission is earned on the verified, discounted amount actually paid —
+  // never on a pending order and never on a client-supplied number.
+  await ensureAffiliateCommission(supabase, {
+    orderId: dbOrder.id,
+    orderRef: dbOrder.order_ref,
+    netPaise: dbOrder.total_paise,
+    currency: dbOrder.currency,
+  })
 
   console.log('[Fulfilment] Digital order fulfilled:', dbOrder.order_ref)
   return { status: 'fulfilled', order_ref: dbOrder.order_ref }

@@ -45,6 +45,7 @@ async function postJson(url, body, headers = {}) {
  * @param {number}  [options.quantity]
  * @param {string}  [options.licenseCode]  Configured option chosen on the PDP.
  * @param {string}  [options.couponCode]   Server-validated discount code.
+ * @param {string}  [options.affiliateCode] Referral code; resolved server-side.
  * @returns {Promise<{orderRef: string, response: object, subtotalPaise: number, discountPaise: number, totalPaise: number}>}
  */
 export async function startProductCheckout({
@@ -55,6 +56,7 @@ export async function startProductCheckout({
   quantity = 1,
   licenseCode = '',
   couponCode = '',
+  affiliateCode = '',
 }) {
   if (!product?.slug) throw new Error('Missing product.')
 
@@ -85,6 +87,7 @@ export async function startProductCheckout({
       phone: buyerPhone,
       currency: product.currency || 'INR',
       coupon_code: couponCode,
+      affiliate_code: affiliateCode,
     },
     authHeader
   )
@@ -128,6 +131,7 @@ export async function startProductCheckout({
  * @param {string}  [options.currency]
  * @param {string}  [options.description]
  * @param {string}  [options.couponCode]
+ * @param {string}  [options.affiliateCode]
  * @returns {Promise<{orderRef: string, response: object, subtotalPaise: number, discountPaise: number, totalPaise: number}>}
  */
 export async function startCartCheckout({
@@ -138,6 +142,7 @@ export async function startCartCheckout({
   currency = 'INR',
   description = 'Digital Products',
   couponCode = '',
+  affiliateCode = '',
 }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Your cart is empty.')
@@ -167,6 +172,7 @@ export async function startCartCheckout({
       phone: buyerPhone,
       currency,
       coupon_code: couponCode,
+      affiliate_code: affiliateCode,
     },
     authHeader
   )
@@ -201,10 +207,11 @@ export async function startCartCheckout({
  * @param {Array}  options.items    [{ slug, quantity, license_code }]
  * @param {string} [options.email]
  * @param {string} [options.couponCode]
+ * @param {string} [options.affiliateCode]
  * @returns {Promise<{subtotalPaise: number, discountPaise: number, totalPaise: number,
  *                    currency: string, coupon: object|null}>}
  */
-export async function previewOrderPricing({ items, email = '', couponCode = '' }) {
+export async function previewOrderPricing({ items, email = '', couponCode = '', affiliateCode = '' }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Your cart is empty.')
   }
@@ -219,6 +226,7 @@ export async function previewOrderPricing({ items, email = '', couponCode = '' }
     })),
     email,
     coupon_code: couponCode,
+    affiliate_code: affiliateCode,
   })
 
   const totalPaise = Number(data?.total_paise)
@@ -232,6 +240,7 @@ export async function previewOrderPricing({ items, email = '', couponCode = '' }
     totalPaise,
     currency: data.currency || 'INR',
     coupon: data.coupon || null,
+    affiliate: data.affiliate || null,
   }
 }
 

@@ -19,6 +19,7 @@ export default function CouponField({
   summary = null,
   onCodeChange,
   onSummaryChange,
+  affiliateCode = '',
   currency = 'INR',
   disabled = false,
 }) {
@@ -30,7 +31,7 @@ export default function CouponField({
 
   const itemsKey = JSON.stringify(items)
   const applied = Boolean(summary?.coupon?.code)
-  const validationKey = `${code}|${itemsKey}|${email}`
+  const validationKey = `${code}|${itemsKey}|${email}|${affiliateCode}`
 
   useEffect(() => {
     setDraft(code)
@@ -44,7 +45,7 @@ export default function CouponField({
 
     let cancelled = false
     setBusy(true)
-    previewOrderPricing({ items, email, couponCode: code })
+    previewOrderPricing({ items, email, couponCode: code, affiliateCode })
       .then((result) => {
         if (cancelled) return
         validatedRef.current = validationKey
@@ -83,8 +84,8 @@ export default function CouponField({
     setBusy(true)
     setError(null)
     try {
-      const result = await previewOrderPricing({ items, email, couponCode: nextCode })
-      validatedRef.current = `${nextCode}|${itemsKey}|${email}`
+      const result = await previewOrderPricing({ items, email, couponCode: nextCode, affiliateCode })
+      validatedRef.current = `${nextCode}|${itemsKey}|${email}|${affiliateCode}`
       setDraft(nextCode)
       onCodeChange?.(nextCode)
       onSummaryChange?.(result)

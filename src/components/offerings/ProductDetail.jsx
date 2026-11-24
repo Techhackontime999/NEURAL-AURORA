@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
@@ -59,8 +59,24 @@ export default function ProductDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { addToCart, toggleWishlist, isWishlisted, couponCode, applyCouponCode } = useStore()
+  const {
+    addToCart,
+    toggleWishlist,
+    isWishlisted,
+    couponCode,
+    applyCouponCode,
+    affiliateCode,
+    applyAffiliateCode,
+  } = useStore()
   const { toast } = useToast()
+  const [searchParams] = useSearchParams()
+
+  // A partner can link straight to a product. Capture the code before the
+  // visitor checks out; invalid codes are rejected by the server, not here.
+  useEffect(() => {
+    const referral = searchParams.get('aff')
+    if (referral) applyAffiliateCode(referral)
+  }, [searchParams, applyAffiliateCode])
 
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
@@ -272,6 +288,7 @@ export default function ProductDetail() {
           quantity: isFree ? 1 : requestedQuantity,
           licenseCode: product.document_policy === 'receipt' ? '' : selectedLicense,
           couponCode,
+          affiliateCode,
         })
         setCouponSummary(null)
         navigate(`/purchase/success?ref=${encodeURIComponent(orderRef)}`)
@@ -828,6 +845,7 @@ export default function ProductDetail() {
                 summary={couponSummary}
                 onCodeChange={applyCouponCode}
                 onSummaryChange={setCouponSummary}
+                affiliateCode={affiliateCode}
                 currency={product.currency}
                 disabled={busy}
               />
@@ -846,6 +864,11 @@ export default function ProductDetail() {
                     <span>{t('store.couponDiscount', { code: couponCode })}</span>
                     <span>−{formatPrice(discountPaise, product.currency)}</span>
                   </div>
+                )}
+                {couponSummary?.affiliate?.display_name && (
+                  <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)]">
+                    {t('store.referredBy', { name: couponSummary.affiliate.display_name })}
+                  </p>
                 )}
                 <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-black/5 dark:border-white/5 pt-2">
                   <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">

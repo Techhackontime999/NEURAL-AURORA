@@ -178,6 +178,7 @@ supabase/migrations/20261018000006_digital_products_updated_at.sql
 supabase/migrations/20261018000007_harden_email_claim_policies.sql
 supabase/migrations/20261018000008_add_customer_phone.sql
 supabase/migrations/20261122000000_create_product_licenses.sql
+supabase/migrations/20261126000000_create_contributor_applications_and_personal_grants.sql
 ```
 
 `…00008` is additive (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) and safe to
@@ -192,6 +193,14 @@ licence options are used: `/api/create-order` deliberately returns `503` if
 store outage rather than an incorrectly licensed sale. If only the two
 `order_items` licence columns are missing, checkout still completes without
 issuing a licence, which keeps legacy deployments sellable.
+
+`…20261126000000` is additive and introduces the approved-contributor
+personal-use workflow: `contributor_applications`,
+`contributor_application_events`, source-aware non-purchase entitlement indexes,
+`approved_contributor_personal` entitlement source, and admin-issued grant fields
+on `licenses`. It does **not** auto-grant access. Purchase fulfillment remains
+verified-payment-only; contributor grants require explicit admin approval and
+recorded issuance.
 
 `supabase-schema.sql` is the canonical schema and already contains all of the
 above, so a fresh project can be created from it in one paste instead.
@@ -649,10 +658,41 @@ password), and the admin "Sign-in link" covers even that without the mailer.
 
 ---
 
-## 7. Production checklist
+## 7. Approved Contributor Personal-Use Grants (Draft)
 
-- [ ] All ten digital-store migrations applied, including
-      `20261122000000_create_product_licenses.sql`.
+> Draft policy. Requires qualified Indian software licensing lawyer review.
+
+- **No auto-grant:** PRs, commits, GitHub accounts, stars, forks, registration,
+  or issue activity never grant access.
+- **Application:** authenticated users can submit an application in `/library`
+  (Contributor personal-use access panel). Endpoint:
+  `POST /api/license?action=contributor-apply` (bearer token required).
+- **Admin review:** `/admin/contributor-applications` lists applications and
+  allows under-review/approve/reject with reason. Endpoint:
+  `/api/admin-license?resource=contributor-applications` (admin bearer token).
+- **Issuance:** admin explicitly issues a grant for an approved application and
+  selected product. Creates an active `entitlements` row with
+  `source=approved_contributor_personal` and a `licenses` row with
+  `grant_type=APPROVED_CONTRIBUTOR_PERSONAL`, personal-use scope/terms,
+  audit events, and optional expiry.
+- **Enforcement:** downloads are server-side gated by entitlement + license
+  status/expiry/scope through `api/_lib/entitlement-auth.js`. Admin
+  suspend/revoke/reinstate/delete on licenses syncs entitlement status.
+- **Scope limits:** personal use only by named approved individual. No
+  commercial/client deployment, no org/company-wide use, no resale,
+  redistribution, sublicensing, transfer, no paid/enterprise entitlements, no IP
+  ownership transfer.
+- **Payment safety:** verified payment fulfillment remains unchanged; contributor
+  grants are never issued by client-reported payment success.
+
+---
+
+## 8. Production checklist
+
+- [ ] All digital-store migrations applied, including
+      `20261122000000_create_product_licenses.sql` and
+      `20261126000000_create_contributor_applications_and_personal_grants.sql`
+      (if using approved contributor personal-use grants).
 - [ ] `digital-products` bucket exists and is **private**.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
       `RAZORPAY_WEBHOOK_SECRET` set in the hosting provider (not in the repo) —

@@ -5,7 +5,7 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 ## 1. Pre-Checks
 
 - [ ] Run full checks: `npm run check` (routes, i18n, SQL lint) – all green
-- [ ] Run tests: `npm test` (pricing, API, store, UI and route guards) – all green
+- [ ] Run tests: `npm test` (pricing, API, store, UI, route guards, contributor grants) – all green
 - [ ] Production build passes: `npm run build` – no errors/warnings blocking
 - [ ] Working tree clean: `git status --porcelain` empty
 - [ ] On `main` branch, up to date with remote
@@ -30,7 +30,7 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 
 ## 3. Supabase Configuration
 
-- [ ] **Migrations applied** – all 9 digital-store migrations (or schema up-to-date)
+- [ ] **Migrations applied** – all digital-store migrations up to date (or schema up-to-date), including `20261126000000_create_contributor_applications_and_personal_grants.sql` if approved contributor personal-use grants are enabled
 - [ ] **Storage bucket `digital-products`** – created as **Private**
 - [ ] **URL Configuration → Site URL** = `https://your-domain.com/`
 - [ ] **Redirect URLs** include `https://your-domain.com/**` and `http://localhost:5173/**`
@@ -49,15 +49,18 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 
 ## 5. Legal & Documentation
 
-- [ ] [LICENSE](../LICENSE) – Source-Available license present
-- [ ] [COMMERCIAL-LICENSE.md](../COMMERCIAL-LICENSE.md) – present
+- [ ] [LICENSE](../LICENSE) – draft proprietary transition present; **requires qualified Indian software licensing lawyer review before final adoption**
+- [ ] [LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md](../LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md) – legacy rights preserved
+- [ ] [COMMERCIAL-LICENSE.md](../COMMERCIAL-LICENSE.md) – present and marked draft/review-required
 - [ ] [TERMS_OF_USE.md](../TERMS_OF_USE.md) – present & up to date
 - [ ] [PRIVACY_POLICY.md](../PRIVACY_POLICY.md) – present & up to date
 - [ ] [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) – present
 - [ ] [SECURITY.md](../SECURITY.md) – present
 - [ ] [TRADEMARK.md](../TRADEMARK.md) – present
 - [ ] [docs/LICENSING-FAQ.md](LICENSING-FAQ.md) – present
-- [ ] README shows Source-Available + commercial terms clearly
+- [ ] [docs/LEGAL-POLICY-DRAFTS.md](LEGAL-POLICY-DRAFTS.md) – present
+- [ ] [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) – draft reviewed for release dependencies/assets
+- [ ] README reflects current licensing transition and no-auto-grant policy
 - [ ] No secrets committed (`.env`, keys, service-role)
 
 ## 6. Functionality Smoke Test (Prod)
@@ -71,6 +74,8 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 - [ ] Admin → Orders → "Sign-in link" generates link (no email sent)
 - [ ] Admin reconcile works (gateway-proven)
 - [ ] Download returns signed URL, access denied without entitlement
+- [ ] Contributor application submits only when authenticated; no PR/GitHub/registration auto-grants access
+- [ ] Admin can review/approve/reject contributor application; issuance creates auditable personal-use license/entitlement; revoke/suspend blocks download
 - [ ] PWA install works, service worker registers
 
 ## 7. SEO & Deployment

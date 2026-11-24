@@ -1,6 +1,6 @@
 # TERMS OF USE
 
-**Last Updated:** October 2026
+**Last Updated:** 2026-11-26 (Draft transition - requires qualified Indian software licensing lawyer review)
 
 These Terms of Use ("Terms") govern your access to and use of **NEURAL AURORA** (the "Software", "Website", and related services) operated by Amit Kumar (Techhackontime999) ("we", "us", "our").
 
@@ -8,12 +8,23 @@ By accessing or using NEURAL AURORA, you agree to be bound by these Terms. If yo
 
 ## 1. License & Usage Rights
 
-NEURAL AURORA is **source-available software**, governed by the [LICENSE](LICENSE). Your right to use depends on whether you qualify:
+NEURAL AURORA is under a **proprietary licensing transition**. Rights previously
+granted under `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md` are preserved to the
+extent they were validly granted. For new use not covered by preserved legacy
+rights or a separate written agreement, use is governed by [LICENSE](LICENSE)
+(draft) and applicable commercial/contributor policies.
 
-- **Contributors & Verified Students** – Free use as defined in the LICENSE.
-- **Others** – Commercial use requires a valid [Commercial License](COMMERCIAL-LICENSE.md).
+- **No auto-grant:** PRs, commits, GitHub accounts, stars, forks, registration,
+  or issue activity do not automatically grant licenses or product access.
+- **Approved Contributor Personal Use:** A free `APPROVED_CONTRIBUTOR_PERSONAL`
+  license may be issued only after application, evaluation, explicit admin
+  approval, and recorded issuance. Personal use only; no commercial/client/
+  organisation-wide use, no resale/redistribution/sublicensing/transfer, no
+  paid/enterprise entitlements.
+- **Commercial use:** Requires a valid [Commercial License](COMMERCIAL-LICENSE.md)
+  or written agreement.
 
-Evaluation/testing use is permitted locally without a commercial license.
+Evaluation/testing use is permitted only as allowed by the applicable license/policy.
 
 ## 2. Acceptable Use
 

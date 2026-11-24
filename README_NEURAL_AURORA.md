@@ -6,6 +6,17 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ---
 
+## Current Updates (2026-11-26, Draft)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| **Licensing transition** | Draft, legal review required | `LICENSE` is now a draft proprietary transition; legacy rights preserved in `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`. No auto-grant from PR/account/star/fork/registration. |
+| **Approved Contributor Personal Use** | Implemented (additive) | `APPROVED_CONTRIBUTOR_PERSONAL` grants require application, evaluation, explicit admin approval, and recorded issuance. Personal-use only; no commercial/client/org-wide use, no resale/redistribution/sublicensing/transfer, no paid/enterprise entitlements. |
+| **Contributor workflow** | Implemented | Authenticated application submission/listing via `/api/license?action=contributor-apply|my-contributor-applications`; admin review/issue via `/api/admin-license?resource=contributor-applications`. |
+| **Entitlement enforcement** | Implemented | Centralized server-side policy in `api/_lib/entitlement-auth.js`; download endpoint denies inactive/expired/out-of-scope contributor grants. Admin license suspend/revoke/reinstate/delete syncs entitlement state. |
+| **Legal/policy docs** | Drafted | Updated `LICENSE`, `CONTRIBUTING.md`, `README.md`, `COMMERCIAL-LICENSE.md`, `TERMS_OF_USE.md`, `docs/LICENSING-FAQ.md`; added `THIRD_PARTY_NOTICES.md`, `docs/LEGAL-POLICY-DRAFTS.md`. Qualified Indian software licensing lawyer review required before adoption. |
+| **Tests** | Added | `scripts/test-contributor-grants.mjs`; licensing/api-guards/build checks passed during implementation. |
+
 ## What's New in v3.0.0
 
 | Feature | Description |
@@ -22,7 +33,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 | **Gateway Refinements** | Skip button on the verification entry screen, auto-enter after 10s idle on the boot sequence, and the gateway now runs only on the home page (other routes skip it). |
 | **AI Automation & Support** | Admin AI Automation panel, Docs Config, support/donations, and a contributors section. |
 | **Unified Toasts & Cleanup** | A unified toast/confirm system replacing `window.alert`/`window.confirm`, plus dead-component cleanup. |
-| **Source-Available Licensing** | New legal suite: `LICENSE`, `COMMERCIAL-LICENSE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `TERMS_OF_USE.md`, `PRIVACY_POLICY.md`, `TRADEMARK.md`, and `docs/`. |
+| **Source-Available Licensing** | Legal suite added in v3.0.0; see **Current Updates** below for the draft proprietary/contributor-personal-use transition and legacy-rights preservation. |
 
 ## What's New in v2.3.0
 
@@ -483,16 +494,17 @@ All three platforms require these in your deployment dashboard:
 
 ---
 
-## License
+## License (Draft Transition)
 
-NEURAL AURORA is **source-available** software — not OSI-approved "Open source".
+**DRAFT — requires qualified Indian software licensing lawyer review before final adoption.**
 
-- ✅ **Free for Contributors** — anyone with **at least one merged Pull Request** into [Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA) may use, run, modify and self-host it for personal, educational or commercial use.
-- ✅ **Free for Verified Students** — students who meaningfully contribute may qualify for the same benefit.
-- ✅ **Free for Evaluation** — clone, read, modify and run locally for evaluation/testing.
-- ❌ **Commercial use by others** requires a valid [Commercial License](COMMERCIAL-LICENSE.md).
+- **Legacy rights preserved:** Rights already granted under [LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md) are not revoked by this update.
+- **Proprietary by default for new use:** Public source visibility does not grant commercial or unrestricted use rights except preserved legacy rights or a separate written agreement.
+- **No auto-grant:** PRs, commits, GitHub accounts, stars, forks, registration, or issue activity do not automatically grant licenses/access.
+- **Approved Contributor Personal Use:** `APPROVED_CONTRIBUTOR_PERSONAL` may be issued only after application, evaluation, explicit admin approval, and recorded issuance. Personal use only; no commercial/client/org-wide use, no resale/redistribution/sublicensing/transfer, no paid/enterprise entitlements.
+- **Commercial use:** Requires a valid [Commercial License](COMMERCIAL-LICENSE.md).
 
-See [LICENSE](LICENSE) and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For commercial licensing, email **amitkumarkh01012006@gmail.com**.
+See [LICENSE](LICENSE), [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md), and [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md). For commercial licensing, email **amitkumarkh01012006@gmail.com**.
 
 ---
 

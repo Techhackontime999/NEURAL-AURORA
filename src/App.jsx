@@ -237,6 +237,8 @@ function headForPath(pathname) {
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/forgot-password' ||
+    pathname === '/affiliate-login' ||
+    pathname === '/partner' ||
     pathname.startsWith('/admin/')
   ) {
     return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
@@ -422,9 +424,9 @@ function MoodMusicToggle() {
 
 function AppContent() {
   const location = useLocation()
-  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // Mithi is a portfolio companion: no admin, auth, or payment screens.
-  const showMithi = !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password')
+  const showMithi = !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
   // A failed lazy import after a deploy is a stale-cache problem, not a page
@@ -499,6 +501,8 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Partners sign in here, separately from the admin console. */}
+              <Route path="/affiliate-login" element={<Login variant="partner" />} />
               {/* Public application; approval still happens in /admin/affiliates. */}
               <Route path="/affiliate-apply" element={<AffiliateApply />} />
               {/* Signed-in resellers see their own earnings and referral links. */}

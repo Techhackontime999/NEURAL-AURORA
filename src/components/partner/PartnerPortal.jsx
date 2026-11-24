@@ -87,7 +87,7 @@ export default function PartnerPortal() {
     )
   }
 
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
+  if (!user) return <Navigate to="/affiliate-login" state={{ from: location }} replace />
 
   if (loading) {
     return (

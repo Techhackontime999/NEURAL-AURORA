@@ -14,6 +14,9 @@ const app = read('src/App.jsx')
 const footer = read('src/components/ui/footer-section.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const partner = read('src/components/partner/PartnerPortal.jsx')
+const login = read('src/components/admin/Login.jsx')
+const register = read('src/components/admin/Register.jsx')
+const forgot = read('src/components/admin/ForgotPassword.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 const pkg = JSON.parse(read('package.json'))
 
@@ -177,6 +180,44 @@ check(
     'affiliateApplyCta',
   ].every((key) => typeof en.store?.[key] === 'string') &&
     typeof en.footer?.affiliateApply === 'string'
+)
+// --- dedicated partner sign-in ----------------------------------------------
+check(
+  'login: partner route is separate from admin login',
+  app.includes('path="/affiliate-login"') &&
+    app.includes('<Login variant="partner" />') &&
+    app.includes("pathname === '/affiliate-login'") &&
+    app.includes("startsWith('/affiliate-login')")
+)
+check(
+  'login: partner variant has its own title, badge, accent and redirect',
+  login.includes("export default function Login({ variant = 'admin' })") &&
+    login.includes("const isPartner = variant === 'partner'") &&
+    login.includes("isPartner ? 'Partner Sign In' : 'Admin Access'") &&
+    login.includes('Affiliate / Reseller Portal') &&
+    login.includes("isPartner ? '#34d399' : 'var(--accent)'") &&
+    login.includes("(isPartner ? '/partner' : '/admin')")
+)
+check(
+  'login: admin screen is unchanged',
+  login.includes('Admin Access') &&
+    login.includes('Sign in to manage your portfolio') &&
+    app.includes('path="/login" element={<Login />}')
+)
+check(
+  'login: partner links point to partner-only auth screens',
+  partner.includes('to="/affiliate-login"') &&
+    apply.includes('to="/affiliate-login"') &&
+    login.includes('/forgot-password?for=partner') &&
+    login.includes('/register?for=partner')
+)
+check(
+  'auth: register and reset return to the partner login',
+  register.includes("new URLSearchParams(location.search).get('for') === 'partner'") &&
+    register.includes("const signInPath = isPartner ? '/affiliate-login' : '/login'") &&
+    register.includes("navigate(isPartner ? '/partner' : '/admin', { replace: true })") &&
+    forgot.includes("new URLSearchParams(location.search).get('for') === 'partner'") &&
+    forgot.includes("const signInPath = isPartner ? '/affiliate-login' : '/login'")
 )
 check(
   'package: application tests are part of the test chain',

@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { BrandLogo } from '../ui/BrandLogo'
 
 export default function Register() {
+  const location = useLocation()
+  const isPartner = new URLSearchParams(location.search).get('for') === 'partner'
+  const signInPath = isPartner ? '/affiliate-login' : '/login'
+  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
   // Credentials are always entered by the person registering. Nothing about
   // an administrator account is prefilled from the public browser bundle.
   const [email, setEmail] = useState('')
@@ -25,7 +29,7 @@ export default function Register() {
   }
 
   if (user) {
-    navigate('/admin', { replace: true })
+    navigate(isPartner ? '/partner' : '/admin', { replace: true })
     return null
   }
 
@@ -82,9 +86,9 @@ export default function Register() {
                 We sent a confirmation link to <strong className="text-cyan-400">{email}</strong>. Click it to activate your account, then sign in.
               </p>
               <Link
-                to="/login"
+                to={signInPath}
                 className="mt-6 inline-block rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: portalAccent }}
               >
                 Go to Sign In
               </Link>
@@ -99,7 +103,9 @@ export default function Register() {
                   Create Account
                 </h1>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Register to access the admin dashboard
+                  {isPartner
+                    ? 'Create the sign-in for your approved partner email'
+                    : 'Register to access the admin dashboard'}
                 </p>
               </div>
 
@@ -176,7 +182,7 @@ export default function Register() {
                   type="submit"
                   disabled={loading}
                   className="w-full rounded-lg px-4 py-2.5 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ background: 'var(--accent)' }}
+                  style={{ background: portalAccent }}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -191,7 +197,7 @@ export default function Register() {
 
               <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Already have an account?{' '}
-                <Link to="/login" className="text-cyan-400 hover:underline">
+                <Link to={signInPath} className="hover:underline" style={{ color: portalAccent }}>
                   Sign in
                 </Link>
               </p>

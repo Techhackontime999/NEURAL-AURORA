@@ -104,7 +104,7 @@ export default function AffiliateApply() {
                 {t('store.affiliateBrowse')}
               </Link>
               <Link
-                to="/partner"
+                to="/affiliate-login"
                 className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 px-6 text-xs font-semibold uppercase tracking-widest dark:border-white/10"
               >
                 {t('store.affiliateSignInButton')}

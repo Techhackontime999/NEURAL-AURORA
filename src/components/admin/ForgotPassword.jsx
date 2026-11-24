@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -8,6 +8,10 @@ import {
 } from '../../lib/rateLimit'
 
 export default function ForgotPassword() {
+  const location = useLocation()
+  const isPartner = new URLSearchParams(location.search).get('for') === 'partner'
+  const signInPath = isPartner ? '/affiliate-login' : '/login'
+  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -73,9 +77,9 @@ export default function ForgotPassword() {
                 If an account exists with that email, you will receive a password reset link shortly.
               </p>
               <Link
-                to="/login"
+                to={signInPath}
                 className="text-sm font-medium transition-colors"
-                style={{ color: 'var(--accent)' }}
+                style={{ color: portalAccent }}
               >
                 Back to Sign In
               </Link>
@@ -111,14 +115,14 @@ export default function ForgotPassword() {
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-lg px-4 py-2.5 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: portalAccent }}
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
 
               <p className="text-center">
                 <Link
-                  to="/login"
+                  to={signInPath}
                   className="text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
                 >

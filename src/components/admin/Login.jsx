@@ -9,7 +9,7 @@ import {
   recordLoginSuccess,
 } from '../../lib/rateLimit'
 
-function LoadingState() {
+function LoadingState({ accent }) {
   const shouldReduceMotion = useReducedMotion()
 
   return (
@@ -18,7 +18,7 @@ function LoadingState() {
         animate={shouldReduceMotion ? undefined : { rotate: 360 }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 1, repeat: Infinity, ease: 'linear' }}
         className="h-8 w-8 rounded-full border-2 border-t-transparent"
-        style={{ borderColor: 'var(--border-color)', borderTopColor: 'var(--accent)' }}
+        style={{ borderColor: 'var(--border-color)', borderTopColor: accent }}
       />
     </div>
   )
@@ -57,7 +57,9 @@ function InputField({ label, type, value, onChange, placeholder, autoComplete, d
   )
 }
 
-export default function Login() {
+export default function Login({ variant = 'admin' }) {
+  const isPartner = variant === 'partner'
+  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(() => {
@@ -76,7 +78,7 @@ export default function Login() {
   const location = useLocation()
   const shouldReduceMotion = useReducedMotion()
 
-  const from = location.state?.from?.pathname || '/admin'
+  const from = location.state?.from?.pathname || (isPartner ? '/partner' : '/admin')
 
   // Restore saved email if Remember Me was previously enabled
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function Login() {
   }, [lockoutSeconds])
 
   if (authLoading) {
-    return <LoadingState />
+    return <LoadingState accent={portalAccent} />
   }
 
   useEffect(() => {
@@ -186,7 +188,14 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[var(--accent-glow)]/8 via-[var(--bg-primary)] to-[var(--bg-primary)]" />
+      <div
+        className={isPartner
+          ? 'pointer-events-none absolute inset-0'
+          : 'pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[var(--accent-glow)]/8 via-[var(--bg-primary)] to-[var(--bg-primary)]'}
+        style={isPartner
+          ? { background: 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.10), transparent 70%)' }
+          : undefined}
+      />
 
       <motion.div
         initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 24 }}
@@ -213,11 +222,21 @@ export default function Login() {
             >
               <BrandLogo size="large" showWordmark />
             </motion.div>
+            {isPartner && (
+              <span
+                className="mb-4 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
+                style={{ borderColor: 'rgba(52, 211, 153, 0.35)', color: '#34d399', background: 'rgba(52, 211, 153, 0.08)' }}
+              >
+                Affiliate / Reseller Portal
+              </span>
+            )}
             <h1 className="mb-2 font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter leading-none" style={{ color: 'var(--text-primary)' }}>
-              Admin Access
+              {isPartner ? 'Partner Sign In' : 'Admin Access'}
             </h1>
             <p className="text-xs sm:text-sm max-w-[28ch]" style={{ color: 'var(--text-secondary)' }}>
-              Sign in to manage your portfolio
+              {isPartner
+                ? 'Sign in with the email on your approved partner account'
+                : 'Sign in to manage your portfolio'}
             </p>
           </div>
 
@@ -277,7 +296,7 @@ export default function Login() {
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Remember me</span>
               </label>
               <Link
-                to="/forgot-password"
+                to={isPartner ? '/forgot-password?for=partner' : '/forgot-password'}
                 className="text-xs transition-colors hover:underline"
                 style={{ color: 'var(--text-secondary)' }}
               >
@@ -290,7 +309,7 @@ export default function Login() {
               disabled={loading || isLockedOut}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
               className="relative w-full overflow-hidden rounded-xl px-4 py-3 text-sm font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ background: isLockedOut ? 'var(--border-color)' : 'var(--accent)' }}
+              style={{ background: isLockedOut ? 'var(--border-color)' : portalAccent }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -304,7 +323,7 @@ export default function Login() {
               ) : isLockedOut ? (
                 `Locked (${lockoutSeconds}s)`
               ) : (
-                'Sign In'
+                isPartner ? 'Partner Sign In' : 'Sign In'
               )}
             </motion.button>
 
@@ -317,10 +336,21 @@ export default function Login() {
             className="mt-6 text-center text-xs sm:text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium transition-colors hover:underline" style={{ color: 'var(--accent)' }}>
-              Register here
-            </Link>
+            {isPartner ? (
+              <>
+                Approved partner but no sign-in yet?{' '}
+                <Link to="/register?for=partner" className="font-medium transition-colors hover:underline" style={{ color: portalAccent }}>
+                  Create it with the same email
+                </Link>
+              </>
+            ) : (
+              <>
+                Don't have an account?{' '}
+                <Link to="/register" className="font-medium transition-colors hover:underline" style={{ color: portalAccent }}>
+                  Register here
+                </Link>
+              </>
+            )}
           </motion.p>
         </div>
       </motion.div>

@@ -72,7 +72,10 @@ export default function CouponField({
   }, [validationKey, disabled, code, itemsKey, email])
 
   const handleApply = async (event) => {
-    event.preventDefault()
+    // This control can be rendered inside a checkout form. Never let a submit
+    // (or an Enter keypress) bubble into that form and reload the page.
+    event?.preventDefault?.()
+    event?.stopPropagation?.()
     if (busy || disabled) return
 
     const nextCode = normaliseCouponCode(draft)
@@ -131,7 +134,7 @@ export default function CouponField({
           </span>
         </div>
       ) : (
-        <form onSubmit={handleApply} className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <label className="min-w-0 flex-1">
             <span className="sr-only">{t('store.couponLabel')}</span>
             <div className="flex items-center gap-2">
@@ -140,6 +143,9 @@ export default function CouponField({
                 type="text"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value.toUpperCase())}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleApply(event)
+                }}
                 placeholder={t('store.couponPlaceholder')}
                 autoComplete="off"
                 spellCheck="false"
@@ -150,13 +156,14 @@ export default function CouponField({
             </div>
           </label>
           <button
-            type="submit"
+            type="button"
+            onClick={handleApply}
             disabled={disabled || busy}
             className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-md border border-black/10 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-primary)] transition-colors hover:border-cyan-500/60 hover:text-cyan-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10"
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : t('store.couponApply')}
           </button>
-        </form>
+        </div>
       )}
 
       {error && (

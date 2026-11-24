@@ -533,6 +533,15 @@ check(
     couponField.includes('aria-invalid={Boolean(error)}')
 )
 check(
+  'coupon: apply never submits the surrounding checkout form',
+  !couponField.includes('<form') &&
+    couponField.includes('type="button"') &&
+    couponField.includes('onClick={handleApply}') &&
+    couponField.includes('event?.stopPropagation?.()') &&
+    couponField.includes("event.key === 'Enter'") &&
+    couponField.includes('handleApply(event)')
+)
+check(
   'coupon: both purchase surfaces send the code to checkout',
   cart.includes('<CouponField') &&
     detail.includes('<CouponField') &&

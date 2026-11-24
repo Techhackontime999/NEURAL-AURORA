@@ -17,6 +17,7 @@ const navLinks = [
   { label: 'nav.resume', href: '#resume' },
   { label: 'nav.contact', href: '#contact' },
   { label: 'nav.more', href: '/more', route: true },
+  { label: 'nav.becomePartner', href: '/affiliate-apply', route: true },
   { label: 'nav.support', href: '/support', route: true, highlight: true },
 ]
 

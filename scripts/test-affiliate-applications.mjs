@@ -12,6 +12,8 @@ const admin = read('src/components/admin/AdminAffiliates.jsx')
 const apply = read('src/components/partner/AffiliateApply.jsx')
 const app = read('src/App.jsx')
 const footer = read('src/components/ui/footer-section.jsx')
+const navbar = read('src/components/Navbar.jsx')
+const serviceNavbar = read('src/components/ServiceNavbar.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const partner = read('src/components/partner/PartnerPortal.jsx')
 const login = read('src/components/admin/Login.jsx')
@@ -139,8 +141,10 @@ check(
     apply.includes('disabled={busy}')
 )
 check(
-  'apply: discovery links exist in store, footer and partner dashboard',
-  products.includes('to="/affiliate-apply"') &&
+  'apply: discovery links exist in site nav, store nav, footer and partner dashboard',
+  navbar.includes("label: 'nav.becomePartner', href: '/affiliate-apply'") &&
+    serviceNavbar.includes("label: 'services.nav.becomePartner', href: '/affiliate-apply'") &&
+    products.includes('to="/affiliate-apply"') &&
     footer.includes("t('footer.affiliateApply')") &&
     partner.includes('to="/affiliate-apply"')
 )
@@ -179,7 +183,9 @@ check(
     'affiliateApplyDuplicate',
     'affiliateApplyCta',
   ].every((key) => typeof en.store?.[key] === 'string') &&
-    typeof en.footer?.affiliateApply === 'string'
+    typeof en.footer?.affiliateApply === 'string' &&
+    typeof en.nav?.becomePartner === 'string' &&
+    typeof en.services?.nav?.becomePartner === 'string'
 )
 // --- dedicated partner sign-in ----------------------------------------------
 check(

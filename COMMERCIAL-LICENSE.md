@@ -1,55 +1,67 @@
-# COMMERCIAL LICENSE AGREEMENT
+# COMMERCIAL LICENSE AGREEMENT (Draft)
 
-This Commercial License grants you the right to use **NEURAL AURORA** commercially, in accordance with the terms below.
+> **DRAFT — REQUIRES QUALIFIED INDIAN SOFTWARE LICENSING LAWYER REVIEW BEFORE
+> USE.** This document is not legal advice. It describes the intended commercial
+> licensing model for Neural Aurora.
 
-## Who Needs This?
+## Legacy Rights Preservation
 
-Anyone using NEURAL AURORA for **Commercial Use** who is **NOT** a verified Contributor (with at least one merged Pull Request) or an eligible Verified Student, as defined in the [LICENSE](LICENSE).
+This draft does **not** revoke rights already granted under
+`LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`. Where legacy rights were validly
+granted, they remain preserved to the extent applicable.
 
-## Grant of License
+## Who Needs a Commercial License?
 
-Subject to full payment of the agreed license fee, the Licensor (Amit Kumar - Techhackontime999) grants you a non-exclusive, perpetual, worldwide license to:
+Anyone who wants to use Neural Aurora for **Commercial Use** and does not already
+have applicable preserved legacy rights or a separate written authorization from
+the Licensor.
 
-- Use, deploy, modify, and run NEURAL AURORA in commercial environments
-- Use NEURAL AURORA for client work, agency projects, or internal business purposes
-- Integrate NEURAL AURORA into your own commercial offering, subject to the restrictions below
+**Commercial Use** includes production/business use, client work, agency work,
+SaaS/hosted services, internal business deployment, paid distribution, or embedding
+in a commercial offering.
 
-## License Options (Suggested Pricing)
+## Approved Contributor Personal-Use Grants Are Not Commercial Licenses
 
-| License Type | Scope | Notes |
-|--------------|-------|-------|
-| **Single Project License** | Use on 1 project/domain | Ideal for freelancers & individual clients |
-| **Agency License** | Use for multiple client projects | For agencies building for their clients |
-| **SaaS/White-Label License** | Use as part of a SaaS or rebranded product | Custom terms & pricing |
-| **Enterprise License** | Large-scale or multi-team use | Custom quote |
+`APPROVED_CONTRIBUTOR_PERSONAL` grants, if explicitly approved and issued by an
+admin, are **personal-use only**. They do **not** permit commercial/client
+deployment, organisation-wide use, redistribution, resale, sublicensing, or
+transfer. They do not replace commercial/enterprise licenses.
 
-Final pricing is agreed upon via email based on your exact use case.
+## Grant of License (Commercial)
 
-## Restrictions
+Subject to full payment and a signed/written agreement, the Licensor (Amit Kumar
+- Techhackontime999) may grant a non-exclusive, non-transferable (unless agreed),
+limited commercial license. Scope, seats, term, deployment, support, and
+restrictions will be defined in the applicable order/agreement.
 
-- You may not redistribute the source code as a standalone commercial product for resale without explicit written consent from the Licensor.
-- You may not remove or obscure copyright notices, license headers, or attribution.
-- This license does not grant trademark rights to the "NEURAL AURORA" name or logo (see [TRADEMARK.md](TRADEMARK.md)).
+## License Options (Indicative - Final Terms Require Legal Review)
+
+| License Type | Intended Scope | Notes |
+|---|---|---|
+| **Single Project License** | One project/domain/client deployment | Scope defined in agreement |
+| **Agency License** | Defined agency/client projects | Scope and seat limits defined in agreement |
+| **SaaS/White-Label License** | Hosted/rebranded/commercial product use | Custom terms required |
+| **Enterprise License** | Organisation-wide/multi-team use | Custom quote and agreement |
+
+## Restrictions (Unless Explicitly Granted in Writing)
+
+- No redistribution of source code as a standalone commercial product for resale.
+- No removal of copyright/license/attribution notices where required.
+- No trademark rights to "NEURAL AURORA" name/logo (see `TRADEMARK.md`).
+- No sublicensing/transfer except as expressly permitted.
 
 ## How to Purchase
 
-Email: **amitkumarkh01012006@gmail.com**
-
+Email: **amitkumarkh01012006@gmail.com**  
 Subject: `NEURAL AURORA COMMERCIAL LICENSE - [Your Name/Company]`
 
-Include the following details:
-- Your full name/company name
-- Email address
-- Intended use (client work / SaaS / agency / other)
-- Project/domain details (if applicable)
-- Estimated scale/users (if applicable)
-
-We will respond with a quote, invoice, and license agreement for signing.
+Include: name/company, intended use, project/domain, deployment scope, seat/user
+estimate, and timeline.
 
 ## Terms
 
-- The license becomes effective upon receipt of the agreed fee.
-- This agreement is governed by applicable laws. Any disputes shall be resolved amicably first.
-- THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. In no event shall the Licensor be liable for any damages arising from its use.
+- Effective only upon written agreement and payment as applicable.
+- Governed by applicable law; final terms require qualified Indian legal review.
+- Software provided "AS IS" to the maximum extent permitted by law.
 
-**Last Updated:** October 2026
+**Draft updated:** 2026-11-26

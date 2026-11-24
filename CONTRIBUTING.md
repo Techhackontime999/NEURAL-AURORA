@@ -71,13 +71,42 @@ docs(readme): update license section
 
 ---
 
-## Contributor Benefit
+## Contributor Access Policy (Draft - Legal Review Required)
 
-**Having at least one Pull Request merged** into the official repository makes you a **verified Contributor**.
+Contributions are welcome, but **no pull request, commit, GitHub account, star,
+fork, registration, or issue activity automatically grants any license or product
+access**.
 
-As a verified Contributor, you receive a **perpetual, royalty-free license** to use NEURAL AURORA for **personal, educational, or commercial** purposes under the terms of the [LICENSE](LICENSE) — **no commercial license purchase required**.
+### Approved Contributor Personal-Use Program
 
-**Verified Students** who meaningfully contribute may also qualify for the same benefit. Reach out to `amitkumarkh01012006@gmail.com` with proof if needed.
+The project may, at its sole discretion, grant an
+`APPROVED_CONTRIBUTOR_PERSONAL` license to explicitly approved contributors.
+
+This requires:
+
+1. An application submitted through the official channel.
+2. Maintainer/admin evaluation.
+3. Explicit admin approval recorded in the system.
+4. Explicit admin issuance recorded in the system.
+
+If issued, the grant is:
+
+- **Personal use only** for the named approved individual.
+- **Not** organisation/company-wide.
+- **Not** for commercial or client deployment.
+- **Not** redistributable, resellable, sublicensable, or transferable.
+- **Not** a paid/enterprise entitlement.
+- **Not** a transfer of IP ownership.
+
+All grants are auditable and may be suspended/revoked for misuse or policy
+violation.
+
+### Legacy Rights Preservation
+
+Previously granted rights under `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md` are not
+revoked by this policy update. Where legacy rights apply, they remain preserved
+to the extent validly granted. Final legal interpretation requires qualified
+Indian software licensing lawyer review.
 
 ---
 

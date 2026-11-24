@@ -1,30 +1,141 @@
-NEURAL AURORA SOURCE-AVAILABLE LICENSE
+NEURAL AURORA PROPRIETARY LICENSE (DRAFT)
+=========================================
+
+STATUS: DRAFT — REQUIRES QUALIFIED INDIAN SOFTWARE LICENSING LAWYER REVIEW
+BEFORE ADOPTION OR RELIANCE. This document is a repository draft for policy
+transition planning. It does not constitute legal advice.
+
+IMPORTANT LEGACY RIGHTS PRESERVATION
+------------------------------------
+This draft does NOT revoke, withdraw, limit, or retroactively modify any rights
+that were already granted to any person under the prior
+"NEURAL AURORA SOURCE-AVAILABLE LICENSE" dated 2026, as preserved in
+`LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`.
+
+If you previously received rights under that legacy license (including, where
+applicable, verified Contributor or Verified Student rights), those previously
+granted rights remain preserved to the extent they were validly granted. Any
+new proprietary/commercial restrictions in this draft are intended to apply
+prospectively to copies, versions, releases, and uses not already covered by
+those preserved legacy rights, subject to final legal review.
+
+This file does not make the public repository private. Public visibility of
+source code does not grant permission to use it beyond the applicable license.
 
 Copyright (c) 2026 Amit Kumar (Techhackontime999)
+All rights reserved except as expressly granted in writing.
 
 1. DEFINITIONS
-   "Software" means the NEURAL AURORA source code, assets, documentation, and related materials.
-   "Contributor" means any person whose Pull Request was merged into the official repository https://github.com/Techhackontime999/NEURAL-AURORA
-   "Commercial Use" means any use intended for or resulting in direct or indirect commercial advantage or monetary compensation, including but not limited to: running in production for business purposes, client projects, agency work, reselling, offering as SaaS, embedding in commercial products/services.
-   "Verified Student" means a student who has meaningfully contributed to the Software and can provide reasonable proof of student status upon request.
+--------------
+"Software" means the NEURAL AURORA source code, binaries, assets, designs,
+documentation, configuration, data models, APIs, and related materials.
 
-2. GRANT OF RIGHTS (FOR CONTRIBUTORS & VERIFIED STUDENTS)
-   A verified Contributor, or a verified Student, is granted a perpetual, worldwide, non-exclusive, royalty-free license to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software for any purpose, including commercial purposes, without payment to the Licensor.
+"Licensor" means Amit Kumar (Techhackontime999), the copyright holder, or an
+authorized successor/assignee.
 
-3. GRANT OF RIGHTS (FOR OTHERS)
-   You may view, clone, fork, and modify the Software solely for the purpose of evaluating or preparing contributions to the official repository.
-   Any other use, including Commercial Use, requires a separate Commercial License obtained from the copyright holder.
+"Commercial Use" includes any use intended for or resulting in direct or
+indirect commercial advantage, monetary compensation, business operations,
+client work, agency work, SaaS/hosted service, internal business deployment,
+paid distribution, or embedding in a commercial offering.
 
-4. DISTRIBUTION
-   If you redistribute modified versions of the Software, you must include this license text, preserve all copyright notices, and clearly state that your version is modified.
+"Approved Contributor" means a person who has applied, been evaluated, and been
+explicitly approved by an authorized administrator, with approval recorded in
+the project's official records/systems. A pull request, commit, issue, GitHub
+account, star, fork, registration, or repository visibility does not by itself
+create Approved Contributor status or grant any license.
 
-5. NO WARRANTY
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+"APPROVED_CONTRIBUTOR_PERSONAL License" means a limited, revocable,
+non-transferable, non-sublicensable, personal-use-only license grant issued
+after explicit admin approval and recorded issuance.
 
-6. LIMITATION OF LIABILITY
-   IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+2. DEFAULT: PROPRIETARY / ALL RIGHTS RESERVED
+---------------------------------------------
+Except for rights preserved under Section "IMPORTANT LEGACY RIGHTS
+PRESERVATION" or rights expressly granted in a separate written agreement signed
+or otherwise formally issued by the Licensor, the Software is proprietary. No
+license is granted by default.
 
-7. COMMERCIAL LICENSING
-   For Commercial Licenses, contact: amitkumarkh01012006@gmail.com
+You may not copy, modify, distribute, publish, sublicense, sell, rent, lease,
+host, provide as a service, create derivative works for external use, or use the
+Software for Commercial Use without an applicable written commercial license.
 
-This license is effective as of 2026.
+3. EVALUATION AND CONTRIBUTION SUBMISSIONS
+------------------------------------------
+Unless otherwise agreed in writing, viewing a public repository for evaluation
+or submitting a contribution proposal/patch does not grant commercial rights.
+Contributions may be accepted only under terms explicitly approved by the
+Licensor. The Licensor may require a Contributor License Agreement (CLA), DCO,
+or other written terms before accepting contributions.
+
+4. APPROVED CONTRIBUTOR PERSONAL-USE PROGRAM (DRAFT POLICY)
+-----------------------------------------------------------
+The Licensor may, at sole discretion, operate an Approved Contributor
+personal-use program. Eligibility requires:
+
+  a. Submission of an application through the official channel.
+  b. Evaluation of contribution/value by authorized maintainers/admins.
+  c. Explicit admin approval recorded in an auditable system.
+  d. Explicit license issuance recorded in an auditable system.
+
+APPROVED_CONTRIBUTOR_PERSONAL grants, when issued, are limited to:
+
+  - Personal, non-commercial use only.
+  - Use by the named approved individual only.
+  - Scope/term/product restrictions recorded in the grant.
+
+APPROVED_CONTRIBUTOR_PERSONAL grants DO NOT include:
+
+  - Organisation/company-wide use.
+  - Commercial or client deployment.
+  - SaaS/hosted service use for third parties.
+  - Resale, redistribution, sublicensing, assignment, or transfer.
+  - Paid/enterprise entitlements unless separately purchased.
+  - Any transfer of copyright, patent, trademark, or other IP ownership.
+
+The Licensor may suspend, revoke, or refuse renewal for misuse, policy
+violation, security risk, fraud, legal risk, or non-payment where applicable.
+Revocation does not create entitlement to refund except as required by law or
+separate written agreement.
+
+5. COMMERCIAL LICENSES
+----------------------
+Commercial use requires a valid commercial license or written agreement from the
+Licensor. Pricing, scope, seats, term, deployment limits, support, and
+enterprise entitlements are defined by the applicable commercial agreement/order.
+
+6. NO IMPLIED RIGHTS / NO OWNERSHIP TRANSFER
+--------------------------------------------
+Except for expressly granted licenses, all rights, title, and interest in and
+to the Software remain with the Licensor. No trademark rights are granted.
+Contributors do not receive equity, employment, compensation, royalties, or IP
+ownership by default unless explicitly agreed in a separate written agreement.
+
+7. THIRD-PARTY COMPONENTS
+-------------------------
+The Software may include or depend on third-party components under their own
+licenses. Those third-party licenses remain applicable to those components. See
+`THIRD_PARTY_NOTICES.md` for a draft inventory; it requires review.
+
+8. WARRANTY DISCLAIMER
+---------------------
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED
+"AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+9. LIMITATION OF LIABILITY
+--------------------------
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSOR SHALL NOT BE
+LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR
+PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL, OR BUSINESS
+OPPORTUNITY, ARISING OUT OF OR RELATED TO THE SOFTWARE OR THIS DRAFT.
+
+10. GOVERNING LAW / LEGAL REVIEW
+--------------------------------
+Governing law, venue, dispute resolution, tax/GST treatment, consumer terms,
+export compliance, and enforceability must be reviewed by a qualified Indian
+software licensing lawyer before this draft is adopted as a final license.
+
+11. CONTACT
+-----------
+Licensing/contact: amitkumarkh01012006@gmail.com
+
+Draft prepared: 2026-11-26. Not legal advice. Not final.

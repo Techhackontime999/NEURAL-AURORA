@@ -9,6 +9,7 @@
 const crypto = require('crypto')
 const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
 const { getServiceClient, requireAdmin } = require('./_lib/adminAuth')
+const { handleAdminContributor } = require('./_lib/admin-contributor-handler')
 const {
   generateLicenseKey,
   generateLicenseRef,
@@ -45,6 +46,10 @@ module.exports = async function handler(req, res) {
   const requestId = newRequestId()
 
   try {
+    const resource = String(req.query?.resource || req.body?.resource || '').trim().toLowerCase()
+    if (resource === 'contributor-applications' || resource === 'contributor_application') {
+      return await handleAdminContributor(req, res)
+    }
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('licenses')
@@ -105,7 +110,7 @@ module.exports = async function handler(req, res) {
 
     const { data: license, error: lookupError } = await supabase
       .from('licenses')
-      .select('id, license_ref, status, license_key, license_option_id, product_id, customer_email, user_id')
+      .select('id, license_ref, status, license_key, license_option_id, product_id, customer_email, user_id, entitlement_id')
       .eq('id', Number(id))
       .maybeSingle()
 
@@ -124,6 +129,14 @@ module.exports = async function handler(req, res) {
         actor_user_id: admin.id,
       })
       if (auditError) throw auditError
+
+      if (license.entitlement_id) {
+        const { error: entitlementSyncError } = await supabase
+          .from('entitlements')
+          .update({ status: 'revoked', revoked_at: new Date().toISOString() })
+          .eq('id', license.entitlement_id)
+        if (entitlementSyncError) throw entitlementSyncError
+      }
 
       const { error: deleteError } = await supabase
         .from('licenses')
@@ -175,6 +188,17 @@ module.exports = async function handler(req, res) {
       .maybeSingle()
 
     if (updateError) throw updateError
+
+    if (license.entitlement_id && ['suspend', 'revoke', 'reinstate'].includes(action)) {
+      const entitlementPatch = action === 'reinstate'
+        ? { status: 'active', revoked_at: null }
+        : { status: 'revoked', revoked_at: now }
+      const { error: entitlementSyncError } = await supabase
+        .from('entitlements')
+        .update(entitlementPatch)
+        .eq('id', license.entitlement_id)
+      if (entitlementSyncError) throw entitlementSyncError
+    }
 
     const { error: eventError } = await supabase.from('license_events').insert({
       license_id: license.id,

@@ -16,19 +16,30 @@
 
 ---
 
-## ⚖️ License & Usage Rights
+## ⚖️ License & Usage Rights (Draft Transition)
 
-NEURAL AURORA is **source-available** software. The source code is publicly visible, but general commercial usage is **not** free.
+**Status:** licensing/policy transition in progress. **DRAFT — requires qualified
+Indian software licensing lawyer review before final adoption.**
 
-- ✅ **Free for Contributors** – If you have **at least one Pull Request merged** into the official repo [Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA), you may use, run, modify, self-host this software for **personal, educational or commercial** use **without** purchasing a commercial license.
-- ✅ **Free for Verified Students** – Students who have meaningfully contributed to this project may qualify for the same benefit. Email proof to **amitkumarkh01012006@gmail.com**.
-- ✅ **Free for Evaluation** – You may clone, read, modify and run locally **strictly for evaluation/testing** purposes.
-- ❌ **Commercial Use by Others** – If you do **not** meet the above criteria, you **must** obtain a valid [Commercial License](COMMERCIAL-LICENSE.md) before using NEURAL AURORA in production, client work, agency projects, SaaS, white-label, or any revenue-generating context.
-- ✅ **Forking for Contribution** – You are encouraged to fork this repo and submit PRs to improve it.
+- **Legacy rights preserved:** Rights already granted under the prior
+  [NEURAL AURORA Source-Available License](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md)
+  are **not revoked** by this repository update. Where legacy rights were validly
+  granted, they remain preserved to the extent applicable.
+- **Proprietary by default for new use:** Except for preserved legacy rights or a
+  separate written agreement from the copyright holder, Neural Aurora is
+  proprietary. Public repository visibility does **not** make the code free to use
+  commercially or privately.
+- **No auto-grant:** PRs, commits, GitHub accounts, stars, forks, registration,
+  or issue activity do **not** automatically grant licenses or product access.
+- **Approved Contributor Personal Use:** The project may issue a free
+  `APPROVED_CONTRIBUTOR_PERSONAL` license only after application, evaluation,
+  explicit admin approval, and recorded issuance. It is personal-use only; no
+  commercial/client/organisation-wide deployment, no resale/redistribution/
+  sublicensing/transfer, and no paid/enterprise entitlements.
+- **Commercial use:** Requires a valid commercial license/purchase through
+  official channels. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
 
-> Read [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md) for a simple breakdown.
-
-**Legal Files:** [LICENSE](LICENSE) • [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) • [TERMS_OF_USE.md](TERMS_OF_USE.md) • [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
+**Legal Files:** [LICENSE](LICENSE) • [Legacy License (preserved)](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md) • [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) • [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md) • [Third-Party Notices](THIRD_PARTY_NOTICES.md) • [TERMS_OF_USE.md](TERMS_OF_USE.md) • [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
 
 ---
 
@@ -96,23 +107,35 @@ npm test         # Pricing, API, store, UI and route guards
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). **Having >=1 merged PR makes you eligible for the free contributor license.**
+See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are welcome, but **no PR,
+commit, GitHub account, star, fork, or registration auto-grants a license**.
+Approved contributors may apply for a free `APPROVED_CONTRIBUTOR_PERSONAL`
+license after evaluation, explicit admin approval, and recorded issuance
+(personal use only).
 
 ## 💼 Commercial Licensing
 
-Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email **amitkumarkh01012006@gmail.com** with subject `NEURAL AURORA COMMERCIAL LICENSE`.
+Need commercial, client, organisation-wide, or enterprise use? Purchase a valid
+commercial license through official channels. Read
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email
+**amitkumarkh01012006@gmail.com** with subject `NEURAL AURORA COMMERCIAL LICENSE`.
 
 ## 📚 Documentation
 
 - [Digital Store Setup](docs/DIGITAL-STORE.md)
 - [Mithi Companion](docs/mithi.md)
 - [Licensing FAQ](docs/LICENSING-FAQ.md)
+- [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md)
 - [Production Release Checklist](docs/PRODUCTION-RELEASE-CHECKLIST.md)
 
 ## 🔐 Legal
 
-- [LICENSE](LICENSE)
+- [LICENSE (Draft - Legal Review Required)](LICENSE)
+- [Legacy License (Preserved Rights)](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md)
 - [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md)
+- [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md)
 - [TERMS_OF_USE.md](TERMS_OF_USE.md)
 - [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

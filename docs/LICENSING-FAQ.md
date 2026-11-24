@@ -1,54 +1,55 @@
-# LICENSING FAQ
+# LICENSING FAQ (Draft)
 
-*Simple explanation in Hinglish + English*
+> **DRAFT — requires qualified Indian software licensing lawyer review.**
+> This FAQ is informational and not legal advice.
 
-## General Questions
+## Is Neural Aurora open source?
 
-**Q: Is NEURAL AURORA open source?**  
-A: **No.** NEURAL AURORA is **source-available**, not OSI-approved "open source". You can see, read, and fork the code, but commercial usage has restrictions.
+No. It is **proprietary/source-available in transition**. Source visibility does
+not grant commercial or unrestricted use rights.
 
-**Q: Can I look at the source code?**  
-A: Yes. The full source code is publicly available on GitHub.
+## Did this update revoke old rights?
 
-**Q: Can I fork it?**  
-A: Yes — forking is **encouraged** if you want to contribute improvements via Pull Requests.
+No. Rights already granted under
+`LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md` are intended to be preserved to the
+extent they were validly granted. Final interpretation requires legal review.
 
-## Free Usage
+## Can a merged PR, GitHub account, star, fork, or registration give me free access?
 
-**Q: When can I use NEURAL AURORA for free (including commercial)?**  
-A: You can use it **free for personal, educational, or commercial** purposes if you are a **verified Contributor** — meaning you have **at least one Pull Request merged** into the official repo: [`Techhackontime999/NEURAL-AURORA`](https://github.com/Techhackontime999/NEURAL-AURORA).
+No. **Nothing auto-grants access.** Approved contributors may apply for a free
+`APPROVED_CONTRIBUTOR_PERSONAL` license, but only after evaluation, explicit
+admin approval, and recorded issuance.
 
-**Q: Main free kaise ho sakta hu? / How do I become eligible for free commercial use?**  
-A: Bas ek meaningful PR bhejo aur jab wo **merged** ho jaye, tum automatically free license qualify karte ho.
+## What is APPROVED_CONTRIBUTOR_PERSONAL?
 
-**Q: I'm a student and I contributed — can I use it for free?**  
-A: Yes. **Verified students** who have meaningfully contributed qualify for the same free license. Email `amitkumarkh01012006@gmail.com` with proof (student ID/card/email) if you need confirmation.
+A limited, auditable, personal-use-only grant for explicitly approved
+contributors. It allows personal use by the named individual only. It does **not**
+allow organisation/company-wide use, commercial/client deployment, resale,
+redistribution, sublicensing, transfer, or paid/enterprise entitlements.
 
-**Q: Can I run it locally for testing/evaluation?**  
-A: Yes. **Evaluation and local testing** are completely free for everyone.
+## How do I get contributor personal-use access?
 
-## Commercial Usage
+Apply through the official application channel, complete the required
+attestations, and wait for admin review. Approval and issuance are explicit and
+recorded. There is no automatic entitlement.
 
-**Q: I haven't contributed. Can I use it commercially?**  
-A: **No, not without a license.** If you want to use NEURAL AURORA in production, for client work, agency projects, SaaS, white-label, or any revenue-generating use, you **must** buy a [Commercial License](../COMMERCIAL-LICENSE.md).
+## I need commercial/client/agency/SaaS use. What do I do?
 
-**Q: Client project me use karna hai bina contribute kiye — kya allowed hai?**  
-A: Nahi. Us case me **commercial license** lena hoga.
+Purchase an appropriate commercial license through official channels. See
+[COMMERCIAL-LICENSE.md](../COMMERCIAL-LICENSE.md) or email
+`amitkumarkh01012006@gmail.com`.
 
-**Q: How much does a commercial license cost?**  
-A: Depends on use case (Single Project / Agency / SaaS). Email `amitkumarkh01012006@gmail.com` with details and you'll get a quote.
+## Can I use it for evaluation?
 
-## Technical
+Evaluation/testing may be permitted as described by the applicable license and
+repository policies. Do not assume commercial or production rights.
 
-**Q: Will I get updates if I buy a commercial license?**  
-A: Commercial license terms are shared in the agreement. Generally, you can use the version you licensed. Reach out for clarification.
+## Where are the legal docs?
 
-**Q: Can I remove attribution?**  
-A: Copyright notices must remain as per the [LICENSE](../LICENSE). Removing them is not permitted.
+- [LICENSE (Draft)](../LICENSE)
+- [Legacy License (Preserved)](../LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md)
+- [Commercial License Draft](../COMMERCIAL-LICENSE.md)
+- [Legal/Policy Drafts](LEGAL-POLICY-DRAFTS.md)
+- [Third-Party Notices](../THIRD_PARTY_NOTICES.md)
 
-**Q: Can I rebrand and sell this as my own product?**  
-A: Not without explicit written permission. See [TRADEMARK.md](../TRADEMARK.md).
-
-## Still Confused?
-
-Email: **amitkumarkh01012006@gmail.com** with your question. We'll help you out.
+**Draft updated:** 2026-11-26

@@ -1488,7 +1488,7 @@ CREATE TABLE IF NOT EXISTS entitlements (
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   customer_email TEXT,
   source TEXT NOT NULL DEFAULT 'purchase'
-    CHECK (source IN ('purchase', 'free', 'gift', 'comp')),
+    CHECK (source IN ('purchase', 'free', 'gift', 'comp', 'approved_contributor_personal')),
   status TEXT NOT NULL DEFAULT 'active'
     CHECK (status IN ('active', 'revoked')),
   granted_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1505,15 +1505,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_per_item
   ON entitlements (product_id, order_item_id)
   WHERE order_item_id IS NOT NULL;
 
--- One free grant per product per customer email (case-insensitive).
-CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_free_email
-  ON entitlements (product_id, lower(customer_email))
+-- One non-purchase grant per product/email/source. Source-aware so
+-- approved contributor personal grants do not collide with other grants.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_nonpurchase_email_source
+  ON entitlements (product_id, lower(customer_email), source)
   WHERE order_item_id IS NULL AND customer_email IS NOT NULL;
 
--- One free grant per product per authenticated account when there is
--- no email on the row.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_free_user
-  ON entitlements (product_id, user_id)
+-- One non-purchase grant per product/user/source when no email is present.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_nonpurchase_user_source
+  ON entitlements (product_id, user_id, source)
   WHERE order_item_id IS NULL AND user_id IS NOT NULL AND customer_email IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_entitlements_product ON entitlements (product_id);
@@ -1977,8 +1977,8 @@ CREATE TABLE IF NOT EXISTS licenses (
   license_key TEXT NOT NULL UNIQUE,
   key_hash TEXT NOT NULL UNIQUE,
   product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  order_item_id BIGINT NOT NULL UNIQUE REFERENCES order_items(id) ON DELETE CASCADE,
+  order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
+  order_item_id BIGINT REFERENCES order_items(id) ON DELETE CASCADE,
   entitlement_id BIGINT REFERENCES entitlements(id) ON DELETE SET NULL,
   license_option_id BIGINT REFERENCES product_license_options(id) ON DELETE SET NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -1992,17 +1992,37 @@ CREATE TABLE IF NOT EXISTS licenses (
   issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   revoked_at TIMESTAMPTZ,
   revocation_reason TEXT DEFAULT '',
+  grant_type TEXT NOT NULL DEFAULT 'purchase'
+    CHECK (grant_type IN ('purchase', 'APPROVED_CONTRIBUTOR_PERSONAL')),
+  grant_source TEXT NOT NULL DEFAULT 'verified_payment'
+    CHECK (grant_source IN ('verified_payment', 'admin_grant')),
+  application_id BIGINT,
+  scope JSONB NOT NULL DEFAULT '{}'::jsonb,
+  approved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  issued_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT licenses_revocation_has_reason
-    CHECK (status <> 'revoked' OR (revoked_at IS NOT NULL AND length(trim(revocation_reason)) > 0))
+    CHECK (status <> 'revoked' OR (revoked_at IS NOT NULL AND length(trim(revocation_reason)) > 0)),
+  CONSTRAINT licenses_purchase_or_grant_shape
+    CHECK (
+      (grant_type = 'purchase' AND order_id IS NOT NULL AND order_item_id IS NOT NULL)
+      OR
+      (grant_type = 'APPROVED_CONTRIBUTOR_PERSONAL' AND application_id IS NOT NULL AND grant_source = 'admin_grant')
+    )
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_licenses_order_item_unique
+  ON licenses (order_item_id)
+  WHERE order_item_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_licenses_user ON licenses (user_id);
 CREATE INDEX IF NOT EXISTS idx_licenses_email ON licenses (lower(customer_email));
 CREATE INDEX IF NOT EXISTS idx_licenses_product ON licenses (product_id);
 CREATE INDEX IF NOT EXISTS idx_licenses_order ON licenses (order_id);
 CREATE INDEX IF NOT EXISTS idx_licenses_status ON licenses (status);
+CREATE INDEX IF NOT EXISTS idx_licenses_grant_type ON licenses (grant_type, status, issued_at DESC);
+CREATE INDEX IF NOT EXISTS idx_licenses_application ON licenses (application_id);
 
 ALTER TABLE licenses ENABLE ROW LEVEL SECURITY;
 
@@ -2036,7 +2056,10 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE licenses TO service_role;
 CREATE TABLE IF NOT EXISTS license_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   license_id BIGINT REFERENCES licenses(id) ON DELETE SET NULL,
-  action TEXT NOT NULL CHECK (action IN ('issued', 'suspended', 'revoked', 'reinstated', 'reissued', 'expired', 'deleted')),
+  action TEXT NOT NULL CHECK (action IN (
+    'issued', 'suspended', 'revoked', 'reinstated', 'reissued', 'expired', 'deleted',
+    'application_approved', 'grant_issued'
+  )),
   reason TEXT DEFAULT '',
   actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -2342,5 +2365,155 @@ CREATE POLICY "Admin can manage affiliate applications"
   USING (is_admin()) WITH CHECK (is_admin());
 
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS affiliate_code_snapshot TEXT NOT NULL DEFAULT '';
+
+-- ------------------------------------------------------------
+-- APPROVED CONTRIBUTOR PERSONAL-USE APPLICATIONS AND GRANTS
+-- Additive. No auto-grant. Explicit admin review/approval/issuance only.
+-- Personal-use only; no commercial/org/client deployment, resale,
+-- redistribution, sublicensing/transfer, or IP ownership transfer.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS contributor_applications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  application_ref TEXT NOT NULL UNIQUE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  email TEXT NOT NULL CHECK (email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  full_name TEXT NOT NULL CHECK (length(trim(full_name)) BETWEEN 1 AND 120),
+  github_profile TEXT NOT NULL DEFAULT '',
+  contribution_summary TEXT NOT NULL CHECK (length(trim(contribution_summary)) BETWEEN 10 AND 4000),
+  intended_use TEXT NOT NULL DEFAULT '',
+  personal_use_attestation BOOLEAN NOT NULL DEFAULT FALSE,
+  no_commercial_use_attestation BOOLEAN NOT NULL DEFAULT FALSE,
+  no_redistribution_attestation BOOLEAN NOT NULL DEFAULT FALSE,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'withdrawn')),
+  review_notes TEXT NOT NULL DEFAULT '',
+  reviewed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ,
+  issued_license_id BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT contributor_applications_reviewed_has_actor
+    CHECK (status = 'pending' OR (reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL)),
+  CONSTRAINT contributor_applications_approved_timestamp
+    CHECK (status <> 'approved' OR approved_at IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contributor_applications_status
+  ON contributor_applications (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contributor_applications_user
+  ON contributor_applications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contributor_applications_email
+  ON contributor_applications (lower(email), created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_contributor_applications_pending_email
+  ON contributor_applications (lower(email))
+  WHERE status IN ('pending', 'under_review');
+
+ALTER TABLE contributor_applications ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE contributor_applications FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON TABLE contributor_applications TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE contributor_applications TO service_role;
+
+CREATE OR REPLACE FUNCTION public.force_contributor_application_pending()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  NEW.status := 'pending';
+  NEW.review_notes := '';
+  NEW.reviewed_by := NULL;
+  NEW.reviewed_at := NULL;
+  NEW.approved_at := NULL;
+  NEW.issued_license_id := NULL;
+  NEW.user_id := auth.uid();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS contributor_applications_force_pending ON contributor_applications;
+CREATE TRIGGER contributor_applications_force_pending
+  BEFORE INSERT ON contributor_applications
+  FOR EACH ROW EXECUTE FUNCTION public.force_contributor_application_pending();
+
+DROP POLICY IF EXISTS "Users can submit contributor applications" ON contributor_applications;
+CREATE POLICY "Users can submit contributor applications"
+  ON contributor_applications FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND status = 'pending'
+    AND issued_license_id IS NULL
+  );
+
+DROP POLICY IF EXISTS "Users can read own contributor applications" ON contributor_applications;
+CREATE POLICY "Users can read own contributor applications"
+  ON contributor_applications FOR SELECT TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_admin()
+  );
+
+DROP POLICY IF EXISTS "Admin can manage contributor applications" ON contributor_applications;
+CREATE POLICY "Admin can manage contributor applications"
+  ON contributor_applications FOR ALL TO authenticated
+  USING (is_admin())
+  WITH CHECK (is_admin());
+
+CREATE TABLE IF NOT EXISTS contributor_application_events (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  application_id BIGINT NOT NULL REFERENCES contributor_applications(id) ON DELETE CASCADE,
+  action TEXT NOT NULL CHECK (action IN (
+    'submitted', 'under_review', 'approved', 'rejected', 'withdrawn',
+    'license_issued', 'license_suspended', 'license_revoked', 'license_reinstated', 'note'
+  )),
+  old_status TEXT,
+  new_status TEXT,
+  reason TEXT NOT NULL DEFAULT '',
+  actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contributor_application_events_app
+  ON contributor_application_events (application_id, created_at DESC);
+
+ALTER TABLE contributor_application_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE contributor_application_events FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE contributor_application_events TO authenticated;
+GRANT SELECT, INSERT ON TABLE contributor_application_events TO service_role;
+
+DROP POLICY IF EXISTS "Admin can read contributor application events" ON contributor_application_events;
+CREATE POLICY "Admin can read contributor application events"
+  ON contributor_application_events FOR SELECT TO authenticated
+  USING (is_admin());
+
+DROP POLICY IF EXISTS "Users can read own contributor application events" ON contributor_application_events;
+CREATE POLICY "Users can read own contributor application events"
+  ON contributor_application_events FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM contributor_applications a
+      WHERE a.id = application_id AND a.user_id = auth.uid()
+    )
+  );
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'contributor_applications_issued_license_fk'
+  ) THEN
+    ALTER TABLE contributor_applications
+      ADD CONSTRAINT contributor_applications_issued_license_fk
+      FOREIGN KEY (issued_license_id) REFERENCES licenses(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'licenses_application_fk'
+  ) THEN
+    ALTER TABLE licenses
+      ADD CONSTRAINT licenses_application_fk
+      FOREIGN KEY (application_id) REFERENCES contributor_applications(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 NOTIFY pgrst, 'reload schema';

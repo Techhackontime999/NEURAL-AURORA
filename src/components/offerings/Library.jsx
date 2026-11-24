@@ -23,6 +23,7 @@ import { getDownloadUrl } from '../../lib/checkout'
 import { formatPrice, getMyLibrary } from '../../lib/products'
 import { downloadLicenseDocument, getMyLicenses } from '../../lib/licenses'
 import { downloadOrderReceipt, getMyPaidOrders } from '../../lib/receipts'
+import ContributorApplicationPanel from './ContributorApplicationPanel'
 import StoreShell from './StoreShell'
 
 /** Supabase's default minimum; the project may require a longer one. */
@@ -964,6 +965,8 @@ export default function Library() {
           </div>
         </section>
       )}
+
+      <ContributorApplicationPanel user={user} />
     </StoreShell>
   )
 }

@@ -20,6 +20,7 @@ const navItems = [
   { path: '/admin/services', label: 'Services', icon: '⊞' },
   { path: '/admin/products', label: 'Products', icon: '◈' },
   { path: '/admin/licences', label: 'Licences', icon: '⚿' },
+  { path: '/admin/contributor-applications', label: 'Contributor Apps', icon: '◎' },
   { path: '/admin/orders', label: 'Orders', icon: '₹' },
   { path: '/admin/coupons', label: 'Coupons', icon: '%' },
   { path: '/admin/affiliates', label: 'Affiliate Partners', icon: '↗' },

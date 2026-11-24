@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
 const { newRequestId, envPresence, logError, SUPABASE_ENV_NAMES } = require('./_lib/diag')
+const { authorizeEntitlementDownload } = require('./_lib/entitlement-auth')
 
 const PRIVATE_BUCKET = 'digital-products'
 const SIGNED_URL_TTL_SECONDS = 600 // 10 minutes
@@ -157,6 +158,18 @@ module.exports = async function handler(req, res) {
         product: product.slug,
       })
       return res.status(403).json({ error: 'You do not have access to this product.' })
+    }
+
+    const access = await authorizeEntitlementDownload(supabase, entitlement)
+    if (!access.ok) {
+      if (access.status >= 500) {
+        console.error('[download] Entitlement authorization failed:', {
+          user: user.id,
+          product: product.slug,
+          entitlement_id: entitlement.id,
+        })
+      }
+      return res.status(access.status).json({ error: access.error })
     }
 
     // --- 4. Confirm the file belongs to this product ----------------------

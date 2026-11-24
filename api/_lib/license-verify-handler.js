@@ -89,9 +89,10 @@ module.exports = async function verifyLicense(req, res) {
 
     if (!matched) return res.status(200).json({ valid: false })
 
+    const expired = license.expires_at ? new Date(license.expires_at).getTime() <= Date.now() : false
     return res.status(200).json({
-      valid: license.status === 'active',
-      status: license.status,
+      valid: license.status === 'active' && !expired,
+      status: expired && license.status === 'active' ? 'expired' : license.status,
       license_type: license.license_type,
       expires_at: license.expires_at || null,
       product_slug: rawSlug,

@@ -1,4 +1,4 @@
-# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v3.0.0 — Aurora Commerce Release</sup>
+# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v3.0.0 base — next release docs updated 2026-11-26</sup>
 
 **A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
 

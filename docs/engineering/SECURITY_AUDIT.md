@@ -1,4 +1,4 @@
-# NEURAL AURORA — SECURITY AUDIT
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# NEURAL AURORA — SECURITY AUDIT
 
 - **Generated:** 2026-11-22 · **Scope:** repository source at `ede2435` plus uncommitted batch-11 source · **No production access.**
 - **Label key:** Verified = confirmed in source/local execution · Requires production access = live grants/settings unknown · Suspected = needs live confirmation.

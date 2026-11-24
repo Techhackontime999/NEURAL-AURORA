@@ -1,4 +1,4 @@
-# NEURAL AURORA — DESIGN SYSTEM AUDIT (Taste skill)
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# NEURAL AURORA — DESIGN SYSTEM AUDIT (Taste skill)
 
 - **Generated:** 2026-11-21 · **Method:** applied the installed `design-taste-frontend` (tasteskill 2.5) house rules to existing source. **No browser inspection yet** — visual conclusions are source-based and labelled accordingly.
 - **Site kind (Taste):** the product is a developer/software studio portfolio + first-party digital store → `software` / `site-kind: software`. Effects and WebGL are permitted on this kind, but only purposefully.

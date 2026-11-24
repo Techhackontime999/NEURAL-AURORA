@@ -1,4 +1,4 @@
-# Staging migration runbook — 2026-11-21
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# Staging migration runbook — 2026-11-21
 
 **Scope:** staging only. This runbook documents how to apply and verify, in
 order:

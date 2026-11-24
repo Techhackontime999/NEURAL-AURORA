@@ -1,6 +1,6 @@
 # TRADEMARK POLICY
 
-**Last Updated:** October 2026
+**Last Updated:** 2026-11-26
 
 ## Ownership
 

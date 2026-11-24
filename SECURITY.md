@@ -31,7 +31,7 @@ This policy covers:
 - The web app (`src/`, `api/`)
 - Serverless functions (`api/*`)
 - Supabase schema/RLS logic
-- Authentication, authorization & digital store flows
+- Authentication, authorization, digital store, and contributor grant flows
 - Build/deployment configuration
 
 Out of scope:

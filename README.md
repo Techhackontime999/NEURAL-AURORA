@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**v3.0.0** — *A living neural network suspended in an aurora field*
+**v3.0.0 base** — *Next release docs updated 2026-11-26 (draft licensing/contributor-grant transition in progress)*
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
@@ -10,7 +10,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-2-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-**Source-Available Software** • Not OSI-Approved "Open Source"
+**Proprietary Transition (Draft)** • Legacy rights preserved • Legal review required
 
 </div>
 

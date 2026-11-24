@@ -1,4 +1,4 @@
-# NEURAL AURORA — DIGITAL STORE ROADMAP
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# NEURAL AURORA — DIGITAL STORE ROADMAP
 
 - **Generated:** 2026-11-22 · **Status:** source-verified through batch 12; licensing/commerce implementation complete; store, product, 404 and library screens browser-verified with mocked Supabase fixtures at 1440/1024/768/390/320; no production DB, Razorpay or live payment E2E performed.
 

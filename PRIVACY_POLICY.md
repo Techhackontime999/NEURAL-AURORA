@@ -1,6 +1,6 @@
 # PRIVACY POLICY
 
-**Last Updated:** October 2026
+**Last Updated:** 2026-11-26 (Draft transition update)
 
 This Privacy Policy explains how **NEURAL AURORA** ("we", "us", "our") collects, uses, and protects your information when you use our website/software and digital store.
 
@@ -10,6 +10,7 @@ This Privacy Policy explains how **NEURAL AURORA** ("we", "us", "our") collects,
 - **Checkout details** – Email address and optional phone number (collected at purchase). Phone numbers are normalized to digits-only international form and used only to help deliver sign-in links (WhatsApp shortcut). They are never used for authentication.
 - **Contact/Reviews** – Name, email, message, rating (if submitted via forms)
 - **Authentication** – Email address when signing in (via Supabase Auth)
+- **Contributor applications** – Full name, email, GitHub profile (optional), contribution summary, intended use, and required policy attestations when applying for an `APPROVED_CONTRIBUTOR_PERSONAL` grant. Admin review decisions, reasons, audit events, and issued license/grant records are stored for security, compliance, and auditability.
 
 ### Automatically collected
 - **Technical data** – IP address, browser/user agent, device info, request logs (standard server/function logs)
@@ -22,6 +23,7 @@ This Privacy Policy explains how **NEURAL AURORA** ("we", "us", "our") collects,
 
 We use collected information to:
 - Process orders and deliver purchased digital products
+- Process contributor applications, admin review decisions, and approved personal-use grant issuance/revocation
 - Verify access to entitlements and prevent abuse
 - Provide authentication and account access
 - Respond to inquiries, messages, and support requests

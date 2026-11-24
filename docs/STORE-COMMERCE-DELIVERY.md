@@ -1,4 +1,4 @@
-# Store Commerce Delivery Report
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# Store Commerce Delivery Report
 
 Status: implementation complete on `feat/premium-store-commerce`; awaiting live integration verification.
 

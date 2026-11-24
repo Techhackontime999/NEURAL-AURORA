@@ -1,4 +1,4 @@
-# NEURAL AURORA DIGITAL COMMERCE - PRODUCTION READINESS AUDIT REPORT
+> **Historical snapshot:** This document reflects an earlier audit/delivery point in time. For current release status, see README.md, docs/DIGITAL-STORE.md, docs/PRODUCTION-RELEASE-CHECKLIST.md, and docs/LEGAL-POLICY-DRAFTS.md.\n\n# NEURAL AURORA DIGITAL COMMERCE - PRODUCTION READINESS AUDIT REPORT
 
 Generated: Sun Oct 18 2026
 

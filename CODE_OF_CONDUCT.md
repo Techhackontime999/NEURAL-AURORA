@@ -51,4 +51,4 @@ Maintainers will follow these guidelines in determining consequences:
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
 
-**Last Updated:** October 2026
+**Last Updated:** 2026-11-26

@@ -5,6 +5,7 @@ import { FileText, Download, Heart, ShoppingBag } from 'lucide-react'
 import { formatPrice } from '../../lib/products'
 import { useStore } from '../../context/StoreContext'
 import { useToast } from '../../context/ToastContext'
+import ShareMenu from './ShareMenu'
 
 /**
  * Catalogue card. Clicking anywhere on the card opens the product page;
@@ -94,13 +95,20 @@ export default function ProductCard({ product, index = 0 }) {
           )}
         </div>
 
+        <ShareMenu
+          slug={product.slug}
+          title={product.title}
+          description={product.short_description}
+          className="absolute right-[60px] top-3 z-10 bg-white/90 text-black/60 shadow-sm backdrop-blur dark:bg-black/70 dark:text-white/70"
+        />
+
         <button
           type="button"
           onClick={handleWishlist}
           aria-label={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
           aria-pressed={saved}
           title={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
-          className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-black/60 shadow-sm backdrop-blur transition-colors hover:text-rose-500 dark:bg-black/70 dark:text-white/70"
+          className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-black/60 shadow-sm backdrop-blur transition-colors hover:text-rose-500 dark:bg-black/70 dark:text-white/70"
         >
           <Heart
             className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : ''}`}

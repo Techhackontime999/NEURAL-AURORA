@@ -41,6 +41,7 @@ import StoreShell from './StoreShell'
 import CouponField from './CouponField'
 import ProductRail from './ProductRail'
 import ProductPreview from './ProductPreview'
+import ShareMenu from './ShareMenu'
 import ImageLightbox from '../ui/ImageLightbox'
 import DocumentHead from '../ui/DocumentHead'
 import { SITE_NAME, SITE_ORIGIN, toAbsoluteUrl, toPlainText } from '../../lib/documentHead'
@@ -638,19 +639,26 @@ export default function ProductDetail() {
                 {product.format || t('store.digitalProduct')}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleWishlist}
-              aria-label={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
-              aria-pressed={saved}
-              title={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/10 transition-colors hover:border-rose-500/60 hover:text-rose-500 dark:border-white/10"
-            >
-              <Heart
-                className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : ''}`}
-                aria-hidden="true"
+            <div className="flex shrink-0 items-center gap-2">
+              <ShareMenu
+                slug={product.slug}
+                title={product.title}
+                description={product.short_description}
               />
-            </button>
+              <button
+                type="button"
+                onClick={handleWishlist}
+                aria-label={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
+                aria-pressed={saved}
+                title={saved ? t('store.removeFromWishlist') : t('store.saveToWishlist')}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 transition-colors hover:border-rose-500/60 hover:text-rose-500 dark:border-white/10"
+              >
+                <Heart
+                  className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : ''}`}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 flex items-baseline gap-2">

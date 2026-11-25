@@ -92,7 +92,7 @@ export function ToastProvider({ children }) {
       {children}
 
       {/* Toast Notification Container */}
-      <div className="fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full px-4 sm:px-0">
+      <div className="fixed top-5 right-5 z-[200003] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full px-4 sm:px-0">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -138,7 +138,7 @@ export function ToastProvider({ children }) {
       {/* Confirm Dialog Modal */}
       <AnimatePresence>
         {confirmState.isOpen && (
-          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[200004] flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}

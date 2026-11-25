@@ -11,6 +11,7 @@ const read = (file) => fs.readFileSync(file, 'utf8')
 const card = read('src/components/offerings/ProductCard.jsx')
 const detail = read('src/components/offerings/ProductDetail.jsx')
 const menu = read('src/components/offerings/ShareMenu.jsx')
+const toast = read('src/context/ToastContext.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -88,12 +89,21 @@ check('share menu closes on Escape and outside interaction',
   menu.includes('pointerdown') &&
   menu.includes('resize') &&
   menu.includes('scroll'))
-check('mobile users get a bottom sheet with a scrim and safe-area padding',
+check('mobile users get a bottom sheet with safe-area padding',
   menu.includes('MOBILE_QUERY') &&
-  menu.includes('share-scrim') &&
   menu.includes('max-h-[88svh]') &&
-  menu.includes('env(safe-area-inset-bottom)') &&
+  menu.includes('env(safe-area-inset-bottom)'))
+check('background blur is rendered above the neural aurora overlay',
+  menu.includes('data-share-scrim') &&
+  menu.includes('z-[200001]') &&
+  menu.includes('z-[200002]') &&
+  menu.includes('backdrop-blur-[6px]') &&
+  menu.includes('backdrop-blur-[10px]') &&
+  menu.includes('glass-panel-strong') &&
+  menu.includes('aria-modal="true"') &&
   menu.includes("body.style.overflow = 'hidden'"))
+check('share toasts also render above the aurora overlay',
+  toast.includes('z-[200003]') && toast.includes('z-[200004]'))
 check('share menu animates and respects reduced motion',
   menu.includes('AnimatePresence') &&
   menu.includes('motion.div') &&

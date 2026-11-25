@@ -20,6 +20,10 @@ const PANEL_WIDTH = 320
 const PANEL_HEIGHT = 480
 const MOBILE_QUERY = '(max-width: 640px)'
 
+// The site-wide neural cursor/canvas overlay sits at z-index 200000. Share
+// surfaces must live above it, otherwise the aurora draws over the scrim and
+// the backdrop blur never appears to work.
+
 export default function ShareMenu({ slug, title, description = '', image = '', className = '' }) {
   const { t } = useTranslation()
   const { toast } = useToast()
@@ -133,13 +137,13 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
   }, [open, isMobile])
 
   useEffect(() => {
-    if (!open || !isMobile) return undefined
+    if (!open) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [open, isMobile])
+  }, [open])
 
   useEffect(
     () => () => {
@@ -230,22 +234,23 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
           <AnimatePresence>
             {open && (
               <>
-                {isMobile && (
-                  <motion.div
-                    key="share-scrim"
-                    {...scrimMotion}
-                    className="fixed inset-0 z-[99989] bg-black/50 backdrop-blur-[2px]"
-                    aria-hidden="true"
-                    onClick={close}
-                  />
-                )}
+                <motion.div
+                  key="share-scrim"
+                  {...scrimMotion}
+                  data-share-scrim
+                  className={`fixed inset-0 z-[200001] backdrop-saturate-150 ${
+                    isMobile ? 'bg-black/55 backdrop-blur-[10px]' : 'bg-black/20 backdrop-blur-[6px]'
+                  }`}
+                  aria-hidden="true"
+                  onClick={close}
+                />
 
                 <motion.div
                   key="share-panel"
                   ref={panelRef}
                   {...panelMotion}
                   role="dialog"
-                  aria-modal={isMobile ? 'true' : undefined}
+                  aria-modal="true"
                   aria-label={t('store.shareProduct')}
                   style={
                     isMobile
@@ -259,8 +264,8 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
                   }
                   className={
                     isMobile
-                      ? 'glass-panel fixed inset-x-0 bottom-0 z-[99990] max-h-[88svh] overflow-y-auto rounded-t-2xl border-t px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl'
-                      : 'glass-panel z-[99990] overflow-hidden rounded-2xl border shadow-[0_24px_70px_-20px_rgba(0,0,0,0.45)]'
+                      ? 'glass-panel-strong fixed inset-x-0 bottom-0 z-[200002] max-h-[88svh] overflow-y-auto rounded-t-2xl border-t px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl'
+                      : 'glass-panel-strong z-[200002] overflow-hidden rounded-2xl border shadow-[0_24px_70px_-20px_rgba(0,0,0,0.45)]'
                   }
                 >
                   {isMobile && (

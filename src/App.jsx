@@ -31,6 +31,12 @@ import { isChunkLoadError, recoverFromChunkError } from './lib/chunkRecovery'
 import DocumentHead from './components/ui/DocumentHead'
 import FloatingNav from './components/ui/floating-nav'
 import { SITE_NAME } from './lib/documentHead'
+import AuthCallback from './components/admin/AuthCallback'
+import {
+  AUTH_CALLBACK_PATH,
+  callbackPathFromLocation,
+  hasAuthCallbackParams,
+} from './lib/authCallback'
 
 // Route-level code splitting: only the app shell, navigation and overlays stay
 // in the entry chunk. Pages and the WebGL background load on demand.
@@ -56,6 +62,7 @@ const LegalPage = lazy(() => import('./components/legal/LegalPage'))
 const Login = lazy(() => import('./components/admin/Login'))
 const Register = lazy(() => import('./components/admin/Register'))
 const ForgotPassword = lazy(() => import('./components/admin/ForgotPassword'))
+const ResetPassword = lazy(() => import('./components/admin/ResetPassword'))
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'))
 const PartnerPortal = lazy(() => import('./components/partner/PartnerPortal'))
 const AffiliateApply = lazy(() => import('./components/partner/AffiliateApply'))
@@ -247,6 +254,8 @@ function headForPath(pathname) {
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/forgot-password' ||
+    pathname === AUTH_CALLBACK_PATH ||
+    pathname === '/reset-password' ||
     pathname === '/affiliate-login' ||
     pathname === '/contributor-login' ||
     pathname === '/partner' ||
@@ -437,16 +446,19 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const { cartCount, wishlistCount } = useStore()
-  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/contributor-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  // Supabase email links may land on / with tokens in the hash. Treat that as
+  // an auth screen before the home gateway ever mounts.
+  const isAuthCallbackLocation = location.pathname === AUTH_CALLBACK_PATH || hasAuthCallbackParams(location)
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/reset-password') || location.pathname.startsWith(AUTH_CALLBACK_PATH) || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/contributor-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // An embed is a guest in another site's page: no cursor, companion, music or
   // site chrome should travel with it.
   const isEmbedRoute = location.pathname.startsWith('/embed/')
   // Mithi is a portfolio companion: no admin, auth, payment or embed screens.
-  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login') && !location.pathname.startsWith('/contributor-login')
-  const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
+  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/reset-password') && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/affiliate-login') && !location.pathname.startsWith('/contributor-login')
+  const [loaderDone, setLoaderDone] = useState(isAuthRoute || isAuthCallbackLocation || location.pathname !== '/')
   // The top navigation stays untouched. This is a mobile-only quick bar for
-  // the pages people reach most; admin and embeds keep their own chrome.
-  const showFloatingNav = loaderDone && !isEmbedRoute && !location.pathname.startsWith('/admin')
+  // the pages people reach most; admin, embeds and auth handoffs keep their own chrome.
+  const showFloatingNav = loaderDone && !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/reset-password')
 
   // A failed lazy import after a deploy is a stale-cache problem, not a page
   // bug. Recover once automatically; real render errors keep the manual UI.
@@ -455,11 +467,16 @@ function AppContent() {
   }, [])
 
   useEffect(() => {
-    // If user navigates away from home, skip the full verification loader.
-    if (location.pathname !== '/') {
+    // If user navigates away from home, or opens an email link, skip the
+    // gateway immediately. The acknowledgement screen owns that moment.
+    if (location.pathname !== '/' || isAuthCallbackLocation) {
       setLoaderDone(true)
     }
-  }, [location.pathname])
+  }, [location.pathname, isAuthCallbackLocation])
+
+  if (isAuthCallbackLocation && location.pathname !== AUTH_CALLBACK_PATH) {
+    return <Navigate to={callbackPathFromLocation(location)} replace />
+  }
 
   return (
     <>
@@ -535,6 +552,9 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Supabase email links land here: acknowledge, then continue. */}
+              <Route path={AUTH_CALLBACK_PATH} element={<AuthCallback />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               {/* Partners sign in here, separately from the admin console. */}
               <Route path="/affiliate-login" element={<Login variant="partner" />} />
               {/* Public application; approval still happens in /admin/affiliates. */}

@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabase'
+import { storeAuthIntent } from './authCallback'
 import { openCheckoutModal } from './razorpay'
 import { normalisePhone } from './phone'
 
@@ -259,6 +260,7 @@ export async function requestFreeDownload({ product, email, user }) {
   if (!product?.slug) throw new Error('Missing product.')
 
   if (!user) {
+    storeAuthIntent('library')
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/library` },

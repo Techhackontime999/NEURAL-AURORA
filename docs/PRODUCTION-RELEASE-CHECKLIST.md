@@ -33,7 +33,7 @@ Use this before releasing NEURAL AURORA to production (self-hosted/Vercel).
 - [ ] **Migrations applied** – all digital-store migrations up to date (or schema up-to-date), including `20261126000000_create_contributor_applications_and_personal_grants.sql` if approved contributor personal-use grants are enabled
 - [ ] **Storage bucket `digital-products`** – created as **Private**
 - [ ] **URL Configuration → Site URL** = `https://your-domain.com/`
-- [ ] **Redirect URLs** include `https://your-domain.com/**` and `http://localhost:5173/**`
+- [ ] **Redirect URLs** include `https://your-domain.com/**` and `http://localhost:5173/**` (confirm/reset links target `https://your-domain.com/auth/callback`, which acknowledges the action before continuing)
 - [ ] **Auth → Email → Secure password change** = **OFF** (critical for in-app password set)
 - [ ] **Auth → Email Templates → Password changed notification** – disabled (recommended)
 - [ ] **Custom SMTP configured** (recommended for resilience) or rely on admin "Sign-in link" + password flow

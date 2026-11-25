@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { getDownloadUrl } from '../../lib/checkout'
+import { storeAuthIntent } from '../../lib/authCallback'
 import { formatPrice, getMyLibrary } from '../../lib/products'
 import { downloadLicenseDocument, getMyLicenses } from '../../lib/licenses'
 import { downloadOrderReceipt, getMyPaidOrders } from '../../lib/receipts'
@@ -174,6 +175,7 @@ export default function Library() {
     setSending(true)
     setError(null)
     try {
+      storeAuthIntent('library')
       const resp = await fetch('/api/customer-signin-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

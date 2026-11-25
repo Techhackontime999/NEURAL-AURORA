@@ -714,7 +714,9 @@ password), and the admin "Sign-in link" covers even that without the mailer.
       This is what the sign-in/magic link uses: the app asks for
       `window.location.origin + '/library'`, but Supabase silently falls back to
       the `Site URL` when the requested URL is not allow-listed — which is why a
-      deployed store can email a `http://localhost:…` link.
+      deployed store can email a `http://localhost:…` link. New confirm/reset
+      links ask for `/auth/callback`; any older link that still lands on `/`
+      is detected and forwarded there before the home gateway mounts.
 - [ ] **Custom SMTP configured** (Authentication → Emails → SMTP Settings).
       Supabase's built-in provider sends only **2 auth emails per hour** per
       project — shared by sign-up confirmations, magic links and password

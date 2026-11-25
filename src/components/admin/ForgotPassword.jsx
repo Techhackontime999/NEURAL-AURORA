@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import { authRedirectUrl, storeAuthIntent } from '../../lib/authCallback'
 import {
   checkPasswordResetRateLimit,
   recordPasswordResetAttempt,
@@ -15,6 +16,7 @@ export default function ForgotPassword() {
   const authSignInPath = isContributor ? '/contributor-login' : signInPath
   const partnerAccent = isPartner ? '#34d399' : 'var(--accent)'
   const portalAccent = isContributor ? '#38bdf8' : partnerAccent
+  const intent = isContributor ? 'contributor' : isPartner ? 'partner' : 'admin'
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -32,7 +34,10 @@ export default function ForgotPassword() {
     setError('')
     setLoading(true)
     try {
-      await resetPassword(email)
+      storeAuthIntent(intent)
+      await resetPassword(email, {
+        redirectTo: authRedirectUrl(intent, { next: '/reset-password' }),
+      })
       recordPasswordResetAttempt()
       setSent(true)
     } catch (err) {

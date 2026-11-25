@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import { authRedirectUrl, storeAuthIntent } from '../../lib/authCallback'
 import { BrandLogo } from '../ui/BrandLogo'
 
 export default function Register() {
@@ -12,6 +13,7 @@ export default function Register() {
   const authSignInPath = isContributor ? '/contributor-login' : signInPath
   const partnerAccent = isPartner ? '#34d399' : 'var(--accent)'
   const portalAccent = isContributor ? '#38bdf8' : partnerAccent
+  const intent = isContributor ? 'contributor' : isPartner ? 'partner' : 'admin'
   // Credentials are always entered by the person registering. Nothing about
   // an administrator account is prefilled from the public browser bundle.
   const [email, setEmail] = useState('')
@@ -55,7 +57,10 @@ export default function Register() {
 
     setLoading(true)
     try {
-      await signUp(email, password)
+      storeAuthIntent(intent)
+      await signUp(email, password, {
+        emailRedirectTo: authRedirectUrl(intent),
+      })
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Failed to create account')

@@ -108,6 +108,7 @@ export function AuthProvider({ children }) {
       password,
       options: {
         data: options?.data || {},
+        ...(options?.emailRedirectTo ? { emailRedirectTo: options.emailRedirectTo } : {}),
       },
     })
     if (error) throw error
@@ -119,9 +120,9 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
-  async function resetPassword(email) {
+  async function resetPassword(email, options) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: options?.redirectTo || `${window.location.origin}/auth/callback?next=/reset-password`,
     })
     if (error) throw error
   }

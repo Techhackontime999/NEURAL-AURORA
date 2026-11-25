@@ -384,6 +384,7 @@ export default function ProductDetail() {
   const productUrl = `${SITE_ORIGIN}/offerings/products/${product.slug}`
   const productDescription = toPlainText(product.short_description || product.description)
   const productImage = toAbsoluteUrl(product.cover_image_url)
+  const productOgImage = `${SITE_ORIGIN}/api/product-image/${encodeURIComponent(product.slug)}`
   const productPrice = (Number(product.price_paise) || 0) / 100
   const productJsonLd = {
     '@context': 'https://schema.org',
@@ -409,7 +410,8 @@ export default function ProductDetail() {
         title={`${product.title} — Digital Store | ${SITE_NAME}`}
         description={productDescription}
         path={`/offerings/products/${product.slug}`}
-        image={productImage}
+        image={productOgImage}
+        imageAlt={`${product.title} product preview`}
         type="product"
         jsonLd={productJsonLd}
       />

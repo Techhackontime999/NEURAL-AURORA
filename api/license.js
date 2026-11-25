@@ -4,6 +4,8 @@
 //   /api/license-verify   -> /api/license?action=verify
 //   /api/license-document -> /api/license?action=document
 //   /api/order-receipt    -> /api/license?action=receipt
+//   /api/product-image/:slug -> /api/license?action=og-image&slug=:slug
+// Crawler rewrite on product URLs -> /api/license?action=product-preview&slug=:slug
 // Contributor endpoints (authenticated):
 //   /api/license?action=contributor-apply
 //   /api/license?action=my-contributor-applications
@@ -11,6 +13,8 @@
 const verifyLicense = require('./_lib/license-verify-handler')
 const licenseDocument = require('./_lib/license-document-handler')
 const orderReceipt = require('./_lib/order-receipt-handler')
+const productPreview = require('./_lib/product-preview-handler')
+const ogImage = require('./_lib/og-image-handler')
 const { submitApplication, listMyApplications } = require('./_lib/contributor-application-handler')
 
 function requestedAction(req) {
@@ -30,6 +34,10 @@ module.exports = async function handler(req, res) {
       return licenseDocument(req, res)
     case 'receipt':
       return orderReceipt(req, res)
+    case 'product-preview':
+      return productPreview(req, res)
+    case 'og-image':
+      return ogImage(req, res)
     case 'contributor-apply':
       return submitApplication(req, res)
     case 'my-contributor-applications':

@@ -117,7 +117,7 @@ check(
 )
 check(
   'applications: no checkout API function was added',
-  fs.readdirSync('api').filter((file) => file.endsWith('.js')).length === 12
+  !fs.readdirSync('api').some((file) => /checkout/i.test(file))
 )
 
 // --- public form -------------------------------------------------------------

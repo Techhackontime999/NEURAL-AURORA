@@ -14,6 +14,32 @@
       "destination": "/api/license?action=receipt"
     },
     {
+      "source": "/api/product-image/:slug",
+      "destination": "/api/license?action=og-image&slug=:slug"
+    },
+    {
+      "source": "/offerings/products/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "([Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Ww]hatsApp|[Tt]elegram[Bb]ot|[Ll]inkedIn[Bb]ot|[Ss]lackbot|[Dd]iscordbot|[Aa]pplebot|[Gg]ooglebot|[Bb]ingbot|[Ss]kypeUriPreview|[Ii]framely|[Ee]mbedly|[Qq]uora Link Preview|[Pp]interest|[Rr]edditbot|[Vv]kShare|[Dd]uckDuckBot|[Yy]andexBot|[Bb]aiduspider)"
+        }
+      ],
+      "destination": "/api/license?action=product-preview&slug=:slug"
+    },
+    {
+      "source": "/offerings/products/:slug/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "([Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Ww]hatsApp|[Tt]elegram[Bb]ot|[Ll]inkedIn[Bb]ot|[Ss]lackbot|[Dd]iscordbot|[Aa]pplebot|[Gg]ooglebot|[Bb]ingbot|[Ss]kypeUriPreview|[Ii]framely|[Ee]mbedly|[Qq]uora Link Preview|[Pp]interest|[Rr]edditbot|[Vv]kShare|[Dd]uckDuckBot|[Yy]andexBot|[Bb]aiduspider)"
+        }
+      ],
+      "destination": "/api/license?action=product-preview&slug=:slug"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

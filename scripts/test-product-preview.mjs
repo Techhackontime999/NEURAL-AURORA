@@ -137,17 +137,17 @@ check('crawler rewrite covers social and chat bots',
       (condition) =>
         condition.type === 'header' &&
         condition.key === 'user-agent' &&
-        condition.value.includes('[Ww]hatsApp') &&
-        condition.value.includes('[Ff]acebookexternalhit') &&
-        condition.value.includes('[Tt]elegram[Bb]ot') &&
-        condition.value.includes('[Ll]inkedIn[Bb]ot')
+        condition.value?.re?.includes('[Ww]hatsApp') &&
+        condition.value?.re?.includes('[Ff]acebookexternalhit') &&
+        condition.value?.re?.includes('[Tt]elegram[Bb]ot') &&
+        condition.value?.re?.includes('[Ll]inkedIn[Bb]ot')
     )
   )
 )
 check('shared crawler pattern matches the routing rule',
   preview.CRAWLER_UA_PATTERN.includes('[Ww]hatsApp') &&
   vercel.rewrites.some((rule) =>
-    rule.has?.some((condition) => condition.value === preview.CRAWLER_UA_PATTERN)
+    rule.has?.some((condition) => condition.value?.re === preview.CRAWLER_UA_PATTERN)
   )
 )
 

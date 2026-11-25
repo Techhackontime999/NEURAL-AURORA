@@ -3,7 +3,7 @@ const readme = `# NEURAL AURORA — The Synaptic Portfolio
 
 <div align="center">
 
-**v3.0.0 base** — *Next release docs updated 2026-11-26 (draft licensing/contributor-grant transition in progress)*
+**v3.1.0** — *Released 2026-11-26 (draft licensing transition, commerce, partner, and contributor-grant updates)*
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)

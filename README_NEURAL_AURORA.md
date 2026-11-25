@@ -1,4 +1,4 @@
-# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v3.0.0 base — next release docs updated 2026-11-26</sup>
+# NEURAL AURORA — The Synaptic Portfolio <br> <sup>v3.1.0 — released 2026-11-26</sup>
 
 **A living neural network suspended in an aurora field.** Your work isn't "displayed"—it's *fired* across synaptic pathways. Every project glows, pulses, and connects in real-time.
 
@@ -6,16 +6,29 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 
 ---
 
-## Current Updates (2026-11-26, Draft)
+## v3.1.0 Release Notes (2026-11-26)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| **Licensing transition** | Draft, legal review required | `LICENSE` is now a draft proprietary transition; legacy rights preserved in `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`. No auto-grant from PR/account/star/fork/registration. |
+| **Licensing transition** | Draft, legal review required | `LICENSE` is a draft proprietary transition; legacy rights preserved in `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`. No auto-grant from PR/account/star/fork/registration. |
 | **Approved Contributor Personal Use** | Implemented (additive) | `APPROVED_CONTRIBUTOR_PERSONAL` grants require application, evaluation, explicit admin approval, and recorded issuance. Personal-use only; no commercial/client/org-wide use, no resale/redistribution/sublicensing/transfer, no paid/enterprise entitlements. |
 | **Contributor workflow** | Implemented | Authenticated application submission/listing via `/api/license?action=contributor-apply|my-contributor-applications`; admin review/issue via `/api/admin-license?resource=contributor-applications`. |
 | **Entitlement enforcement** | Implemented | Centralized server-side policy in `api/_lib/entitlement-auth.js`; download endpoint denies inactive/expired/out-of-scope contributor grants. Admin license suspend/revoke/reinstate/delete syncs entitlement state. |
-| **Legal/policy docs** | Drafted | Updated `LICENSE`, `CONTRIBUTING.md`, `README.md`, `COMMERCIAL-LICENSE.md`, `TERMS_OF_USE.md`, `docs/LICENSING-FAQ.md`; added `THIRD_PARTY_NOTICES.md`, `docs/LEGAL-POLICY-DRAFTS.md`. Qualified Indian software licensing lawyer review required before adoption. |
-| **Tests** | Added | `scripts/test-contributor-grants.mjs`; licensing/api-guards/build checks passed during implementation. |
+| **Digital store / ecommerce** | Updated | Verified-payment fulfilment, entitlement-gated downloads, purchase library, admin product/order/payment workflows, coupons, and checkout/order handling remain active and improved. |
+| **Partner / affiliate system** | Implemented | Affiliate partner applications, dedicated affiliate sign-in, partner CTA/navigation, and commission/ledger workflows integrated with the store. |
+| **Legal/policy/docs** | Updated (draft) | Updated legal/policy docs, READMEs, support copy, locales, and README generators for the licensing transition. Qualified Indian software licensing lawyer review required before adoption. |
+| **Tests** | Added/updated | Contributor-grant policy tests added; licensing/API guard checks and build passed during release preparation. |
+
+## What's New in v3.1.0
+
+| Feature | Description |
+|---------|-------------|
+| **Proprietary Licensing Transition (Draft)** | Draft `LICENSE` transition with preserved legacy rights in `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`. No auto-grant from PRs, accounts, stars, forks, commits, or registration. Legal review required before adoption. |
+| **Approved Contributor Personal-Use Grants** | Contributor application/evaluation workflow with explicit admin approval and recorded issuance. `APPROVED_CONTRIBUTOR_PERSONAL` grants are personal-use only, auditable, and revocable/suspendable. |
+| **Centralized Entitlement Enforcement** | Server-side fail-closed entitlement authorization for protected downloads; admin license state changes sync entitlement status. |
+| **Digital Store / Ecommerce Updates** | Continued improvements to verified-payment fulfilment, entitlements, purchase library, coupons, admin order/payment/product workflows, and checkout handling. |
+| **Partner / Affiliate System** | Affiliate partner applications, dedicated affiliate sign-in, partner CTA/navigation, and commission/ledger workflows. |
+| **Docs, Policy, and Support Copy Refresh** | Updated READMEs, legal/policy drafts, licensing FAQ, support/defaults/locales, and README generators for the current transition. |
 
 ## What's New in v3.0.0
 
@@ -33,7 +46,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 | **Gateway Refinements** | Skip button on the verification entry screen, auto-enter after 10s idle on the boot sequence, and the gateway now runs only on the home page (other routes skip it). |
 | **AI Automation & Support** | Admin AI Automation panel, Docs Config, support/donations, and a contributors section. |
 | **Unified Toasts & Cleanup** | A unified toast/confirm system replacing `window.alert`/`window.confirm`, plus dead-component cleanup. |
-| **Source-Available Licensing** | Legal suite added in v3.0.0; see **Current Updates** below for the draft proprietary/contributor-personal-use transition and legacy-rights preservation. |
+| **Source-Available Licensing** | Legal suite added in v3.0.0; see **v3.1.0 Release Notes** above for the draft proprietary/contributor-personal-use transition and legacy-rights preservation. |
 
 ## What's New in v2.3.0
 
@@ -509,6 +522,23 @@ See [LICENSE](LICENSE), [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md), and 
 ---
 
 ## Changelog
+
+### v3.1.0 (Licensing, Commerce & Partner Release)
+
+**Added**
+- Draft proprietary licensing transition with preserved legacy rights (`LICENSE`, `LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md`) and legal/policy draft docs; qualified Indian software licensing lawyer review required before adoption
+- `APPROVED_CONTRIBUTOR_PERSONAL` contributor application, admin review, explicit approval, recorded issuance, and auditable lifecycle workflow
+- Centralized server-side fail-closed entitlement authorization for protected downloads; admin suspend/revoke/reinstate/delete sync entitlement state
+- Affiliate/partner system: partner applications, dedicated affiliate sign-in, partner CTA/navigation, and commission/ledger workflows
+- Contributor grant policy tests (`scripts/test-contributor-grants.mjs`)
+
+**Changed**
+- Digital store/ecommerce workflows updated across products, orders, payments, coupons, checkout/order handling, and entitlement-gated access
+- READMEs, legal/policy docs, licensing FAQ, support defaults, locale support copy, and README generator scripts refreshed for the current transition
+
+**Fixed / Secured**
+- Protected download access now enforces active entitlement/license/scope checks for approved contributor personal-use grants
+- Stale “source-available/free-for-contributors/merged PR” messaging removed from support defaults, admin payment defaults, locales, and README generators
 
 ### v3.0.0 (Aurora Commerce Release)
 

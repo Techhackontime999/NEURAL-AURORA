@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { getPublishedProducts } from '../../lib/products'
 import { useToast } from '../../context/ToastContext'
 
 const inputStyle = {
@@ -11,6 +12,7 @@ const inputStyle = {
 export default function ContributorApplicationPanel({ user }) {
   const { toast } = useToast()
   const [apps, setApps] = useState([])
+  const [eligibleProducts, setEligibleProducts] = useState([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
@@ -18,6 +20,7 @@ export default function ContributorApplicationPanel({ user }) {
     github_profile: '',
     contribution_summary: '',
     intended_use: '',
+    requested_product_id: '',
     personal_use_attestation: false,
     no_commercial_use_attestation: false,
     no_redistribution_attestation: false,
@@ -49,6 +52,14 @@ export default function ContributorApplicationPanel({ user }) {
 
   useEffect(() => { load() }, [user?.id])
 
+  useEffect(() => {
+    let active = true
+    getPublishedProducts({ contributorOnly: true, limit: 100 })
+      .then((items) => { if (active) setEligibleProducts(items) })
+      .catch(() => { if (active) setEligibleProducts([]) })
+    return () => { active = false }
+  }, [])
+
   if (!user) return null
 
   const hasActive = apps.some((a) => ['pending', 'under_review', 'approved'].includes(a.status))
@@ -66,7 +77,7 @@ export default function ContributorApplicationPanel({ user }) {
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body?.error || 'Could not submit application.')
       toast.success(body?.message || 'Application submitted.')
-      setForm((f) => ({ ...f, contribution_summary: '', intended_use: '' }))
+      setForm((f) => ({ ...f, contribution_summary: '', intended_use: '', requested_product_id: '' }))
       await load()
     } catch (err) {
       toast.error(err.message)
@@ -84,7 +95,8 @@ export default function ContributorApplicationPanel({ user }) {
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
           Approved contributors may apply for a free <code>APPROVED_CONTRIBUTOR_PERSONAL</code> license. This is personal-use only:
           no commercial/client deployment, no organisation-wide use, no resale/redistribution/sublicensing/transfer, and no paid/enterprise entitlements.
-          Submitting an application or having a GitHub account/PR does not auto-grant access.
+          Only products marked as contributor products are eligible, and submitting an application or having a GitHub account/PR does not auto-grant access.
+          An administrator reviews each application and issues the product license explicitly.
         </p>
       </div>
 
@@ -94,6 +106,7 @@ export default function ContributorApplicationPanel({ user }) {
             <div key={a.id} className="rounded-lg border px-3 py-2 text-[11px]" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
               <span style={{ color: 'var(--text-primary)' }}>{a.application_ref}</span>
               <span style={{ color: 'var(--text-tertiary)' }}> · {a.status}</span>
+              {a.products?.title ? <span style={{ color: 'var(--text-tertiary)' }}> · {a.products.title}</span> : null}
               {a.review_notes ? <span style={{ color: 'var(--text-tertiary)' }}> · {a.review_notes}</span> : null}
             </div>
           ))}
@@ -116,7 +129,24 @@ export default function ContributorApplicationPanel({ user }) {
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">Contribution summary</span>
             <textarea required minLength={10} value={form.contribution_summary} onChange={(e) => setForm({ ...form, contribution_summary: e.target.value })} rows={4} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={inputStyle} />
           </label>
-          <label className="block">
+          <label className="block sm:col-span-2">
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">Product you would like to use (optional)</span>
+            <select
+              value={form.requested_product_id}
+              onChange={(e) => setForm({ ...form, requested_product_id: e.target.value })}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              style={inputStyle}
+            >
+              <option value="">No specific product — general application</option>
+              {eligibleProducts.map((product) => (
+                <option key={product.id} value={product.id}>{product.title}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[10px] text-[var(--text-tertiary)]">
+              Only contributor products appear here. An approved application still needs an explicit license grant.
+            </span>
+          </label>
+          <label className="block sm:col-span-2">
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">Intended personal use (optional)</span>
             <input value={form.intended_use} onChange={(e) => setForm({ ...form, intended_use: e.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={inputStyle} />
           </label>

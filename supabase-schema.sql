@@ -1203,6 +1203,8 @@ CREATE TABLE IF NOT EXISTS products (
   status TEXT NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft', 'published', 'archived')),
   featured BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Opt-in: only these products may receive an approved contributor grant.
+  contributor_access BOOLEAN NOT NULL DEFAULT FALSE,
   cover_image_url TEXT DEFAULT '',
   gallery_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
   includes JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -1230,6 +1232,7 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE INDEX IF NOT EXISTS idx_products_status ON products (status);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products (category_slug);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products (featured) WHERE featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_contributor_access ON products (contributor_access) WHERE contributor_access = TRUE;
 CREATE INDEX IF NOT EXISTS idx_products_published_at ON products (published_at DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS idx_products_price ON products (price_paise);
 CREATE INDEX IF NOT EXISTS idx_products_tags ON products USING GIN (tags);
@@ -2381,6 +2384,8 @@ CREATE TABLE IF NOT EXISTS contributor_applications (
   github_profile TEXT NOT NULL DEFAULT '',
   contribution_summary TEXT NOT NULL CHECK (length(trim(contribution_summary)) BETWEEN 10 AND 4000),
   intended_use TEXT NOT NULL DEFAULT '',
+  -- Optional requested product; contributor access must be enabled on it.
+  requested_product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
   personal_use_attestation BOOLEAN NOT NULL DEFAULT FALSE,
   no_commercial_use_attestation BOOLEAN NOT NULL DEFAULT FALSE,
   no_redistribution_attestation BOOLEAN NOT NULL DEFAULT FALSE,
@@ -2405,6 +2410,9 @@ CREATE INDEX IF NOT EXISTS idx_contributor_applications_user
   ON contributor_applications (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contributor_applications_email
   ON contributor_applications (lower(email), created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contributor_applications_requested_product
+  ON contributor_applications (requested_product_id)
+  WHERE requested_product_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contributor_applications_pending_email
   ON contributor_applications (lower(email))
   WHERE status IN ('pending', 'under_review');

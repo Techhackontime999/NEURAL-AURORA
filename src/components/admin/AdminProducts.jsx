@@ -38,6 +38,7 @@ const emptyForm = {
   currency: 'INR',
   status: 'draft',
   featured: false,
+  contributor_access: false,
   cover_image_url: '',
   gallery_urls: [],
   includesText: '',
@@ -140,6 +141,9 @@ export default function AdminProducts() {
       currency: form.currency,
       status: form.status,
       featured: Boolean(form.featured),
+      // Off by default: contributor access is never an accidental side effect
+      // of leaving a checkbox from an earlier product version.
+      contributor_access: Boolean(form.contributor_access),
       cover_image_url: form.cover_image_url,
       gallery_urls: (Array.isArray(form.gallery_urls) ? form.gallery_urls : []).filter(
         (url) => typeof url === 'string' && url
@@ -348,6 +352,13 @@ export default function AdminProducts() {
     { key: 'release_notes', label: 'Release notes', type: 'textarea' },
     { key: 'status', label: 'Status', type: 'status' },
     { key: 'featured', label: 'Featured', type: 'checkbox' },
+    {
+      key: 'contributor_access',
+      label: 'Contributor product — free for approved contributors',
+      type: 'checkbox',
+      hint:
+        'Only products with this option enabled can be requested or licensed under APPROVED_CONTRIBUTOR_PERSONAL. Leave it off for paid-only products. Approval is always admin-only.',
+    },
   ]
 
   function renderField(field, value, setValue) {
@@ -381,16 +392,23 @@ export default function AdminProducts() {
 
     if (field.type === 'checkbox') {
       return (
-        <div key={field.key} className="flex items-center gap-2 pt-5">
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => setValue(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {field.label}
-          </span>
+        <div key={field.key} className={field.hint ? 'sm:col-span-2 pt-5' : 'flex items-center gap-2 pt-5'}>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={Boolean(value)}
+              onChange={(e) => setValue(e.target.checked)}
+              className="rounded"
+            />
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {field.label}
+            </span>
+          </label>
+          {field.hint && (
+            <p className="mt-1 text-[10px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+              {field.hint}
+            </p>
+          )}
         </div>
       )
     }
@@ -659,6 +677,14 @@ export default function AdminProducts() {
                         style={{ color: '#06b6d4', background: 'var(--input-bg)' }}
                       >
                         Featured
+                      </span>
+                    )}
+                    {product.contributor_access && (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                        style={{ color: '#a78bfa', background: 'var(--input-bg)' }}
+                      >
+                        Contributor
                       </span>
                     )}
                   </div>

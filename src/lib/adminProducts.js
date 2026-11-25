@@ -88,6 +88,7 @@ function normaliseProduct(payload) {
     'currency',
     'status',
     'featured',
+    'contributor_access',
     'cover_image_url',
     'gallery_urls',
     'includes',

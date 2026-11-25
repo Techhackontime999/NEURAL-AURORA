@@ -459,6 +459,14 @@ export default function ProductDetail() {
                   {t('store.featured')}
                 </span>
               )}
+              {product.contributor_access && (
+                <Link
+                  to="/contributor-apply"
+                  className="rounded-full bg-violet-500/10 px-3 py-1.5 text-[11px] font-medium text-violet-400 transition-colors hover:bg-violet-500/20"
+                >
+                  {t('store.contributorAccess')}
+                </Link>
+              )}
             </div>
           </div>
 
@@ -659,6 +667,20 @@ export default function ProductDetail() {
               </span>
             )}
           </div>
+
+          {product.contributor_access && (
+            <div className="mt-3 rounded-lg border border-violet-400/20 bg-violet-400/5 px-3 py-2.5">
+              <p className="text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                {t('store.contributorNote')}
+              </p>
+              <Link
+                to="/contributor-apply"
+                className="mt-1.5 inline-flex min-h-9 items-center text-[11px] font-medium text-violet-400 hover:underline"
+              >
+                {t('store.contributorApply')} →
+              </Link>
+            </div>
+          )}
 
           <div className="mt-3 space-y-2 text-[11px] text-[var(--text-secondary)]">
             {product.version && (

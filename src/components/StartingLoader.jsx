@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion, MotionConfig } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { RefreshCw, Search } from 'lucide-react'
 import { generateQuestion } from '../lib/gemini'
 import { useAutoTraverse } from '../context/AutoTraverseContext'
@@ -46,7 +47,7 @@ const IDLE_SKIP_MS = 30_000
 // The gateway is intentionally grouped: verification challenges stay separate
 // from content exploration so a first-time visitor sees a short list, not 22
 // equally weighted choices. Every id keeps its own test id for regression tests.
-const GATEWAY_FILTERS = ['all', 'verify', 'explore', 'exit']
+const GATEWAY_FILTERS = ['all', 'verify', 'explore', 'access', 'exit']
 const GATEWAY_VERIFY_IDS = [
   'voice',
   'quiz',
@@ -58,7 +59,16 @@ const GATEWAY_VERIFY_IDS = [
   'pattern',
   'youtube',
 ]
-const GATEWAY_EXIT_IDS = ['skip']
+const GATEWAY_ACCESS_IDS = ['becomePartner', 'partnerSignIn', 'becomeContributor', 'myLibrary']
+
+// Real product routes behind the gateway cards. Navigation leaves the loader:
+// AppContent marks verification complete as soon as the pathname changes.
+const ACCESS_GATEWAY_OPTIONS = [
+  { id: 'becomePartner', emoji: '🤝', titleKey: 'becomePartner', descKey: 'becomePartnerDesc', accent: '52,211,153', to: '/affiliate-apply' },
+  { id: 'partnerSignIn', emoji: '🔐', titleKey: 'partnerSignIn', descKey: 'partnerSignInDesc', accent: '96,165,250', to: '/affiliate-login' },
+  { id: 'becomeContributor', emoji: '🧩', titleKey: 'becomeContributor', descKey: 'becomeContributorDesc', accent: '167,139,250', to: '/contributor-apply' },
+  { id: 'myLibrary', emoji: '📚', titleKey: 'myLibrary', descKey: 'libraryDesc', accent: '0,240,255', to: '/library' },
+]
 
 const EXPLORE_GATEWAY_OPTIONS = [
   { id: 'store', emoji: '🛍️', titleKey: 'digitalStore', descKey: 'storeDesc', accent: '0,240,255', section: 'store' },
@@ -78,6 +88,7 @@ const EXPLORE_GATEWAY_OPTIONS = [
 
 function gatewayGroupFor(id) {
   if (GATEWAY_VERIFY_IDS.includes(id)) return 'verify'
+  if (GATEWAY_ACCESS_IDS.includes(id)) return 'access'
   if (GATEWAY_EXIT_IDS.includes(id)) return 'exit'
   return 'explore'
 }
@@ -561,8 +572,10 @@ function ImpressScreen({ onDone, title, skillsCount, projectsCount, servicesCoun
   )
 }
 
-function VerificationOption({ testId, emoji, title, description, accent = '0,240,255', onClick }) {
+function VerificationOption({ testId, emoji, title, description, accent = '0,240,255', group = 'explore', to, onClick }) {
   const shouldReduceMotion = useReducedMotion()
+  const navigate = useNavigate()
+  const handleClick = to ? () => navigate(to) : onClick
   const idleBackground = `linear-gradient(135deg, rgba(${accent},0.05), rgba(184,41,221,0.05))`
   const hoverBackground = `linear-gradient(135deg, rgba(${accent},0.12), rgba(184,41,221,0.12))`
 
@@ -571,8 +584,8 @@ function VerificationOption({ testId, emoji, title, description, accent = '0,240
       type="button"
       data-testid={testId}
       data-gateway-item={testId?.replace('verification-option-', '')}
-      data-gateway-group="explore"
-      onClick={onClick}
+      data-gateway-group={group}
+      onClick={handleClick}
       whileHover={shouldReduceMotion ? undefined : { scale: 1.02, y: -1 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -2906,7 +2919,7 @@ export default function StartingLoader({ onComplete }) {
     youtube: `${t('loader.cards.channelStream')} ${t('loader.cards.browseVideos')}`,
     skip: `${t('loader.cards.skipVibes')} ${t('loader.cards.directEntry')}`,
     ...Object.fromEntries(
-      EXPLORE_GATEWAY_OPTIONS.map((option) => [
+      [...EXPLORE_GATEWAY_OPTIONS, ...ACCESS_GATEWAY_OPTIONS].map((option) => [
         option.id,
         `${t(`loader.cards.${option.titleKey}`)} ${t(`loader.cards.${option.descKey}`)}`,
       ]),
@@ -2916,6 +2929,7 @@ export default function StartingLoader({ onComplete }) {
   const availableGatewayIds = useMemo(() => [
     ...GATEWAY_VERIFY_IDS.filter((id) => id !== 'youtube' || ytChannelId),
     ...EXPLORE_GATEWAY_OPTIONS.map((option) => option.id),
+    ...ACCESS_GATEWAY_OPTIONS.map((option) => option.id),
   ], [ytChannelId])
 
   const normalizedGatewayQuery = gatewayQuery.trim().toLowerCase()
@@ -3714,6 +3728,19 @@ className="group w-full rounded-xl border p-3 sm:p-4"
                   accent="148,163,184"
                   onClick={() => handleExploreOption('resume')}
                 />
+
+                {ACCESS_GATEWAY_OPTIONS.map((option) => (
+                  <VerificationOption
+                    key={option.id}
+                    testId={`verification-option-${option.id}`}
+                    emoji={option.emoji}
+                    title={t(`loader.cards.${option.titleKey}`)}
+                    description={t(`loader.cards.${option.descKey}`)}
+                    accent={option.accent}
+                    group="access"
+                    to={option.to}
+                  />
+                ))}
 
                 <motion.button
                   data-testid="gateway-skip"

@@ -45,7 +45,7 @@ async function listApplications(req, res, supabase) {
   let query = supabase
     .from('contributor_applications')
     .select(
-      'id, application_ref, user_id, email, full_name, github_profile, contribution_summary, intended_use, status, review_notes, reviewed_by, reviewed_at, approved_at, issued_license_id, created_at, updated_at'
+      'id, application_ref, user_id, email, full_name, github_profile, contribution_summary, intended_use, status, review_notes, reviewed_by, reviewed_at, approved_at, issued_license_id, requested_product_id, products (title, slug), created_at, updated_at'
     )
     .order('created_at', { ascending: false })
     .limit(200)
@@ -55,7 +55,7 @@ async function listApplications(req, res, supabase) {
 
   const rows = (data || []).filter((row) => {
     if (!search) return true
-    return [row.application_ref, row.email, row.full_name, row.github_profile, row.status]
+    return [row.application_ref, row.email, row.full_name, row.github_profile, row.status, row.products?.title, row.products?.slug]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(search))
   })
@@ -153,7 +153,7 @@ async function issueContributorLicense(req, res, supabase, admin) {
 
   const { data: app, error: appError } = await supabase
     .from('contributor_applications')
-    .select('id, application_ref, status, email, user_id, full_name, issued_license_id')
+    .select('id, application_ref, status, email, user_id, full_name, issued_license_id, requested_product_id')
     .eq('id', id)
     .maybeSingle()
   if (appError) throw appError
@@ -167,11 +167,16 @@ async function issueContributorLicense(req, res, supabase, admin) {
 
   const { data: product, error: productError } = await supabase
     .from('products')
-    .select('id, title, slug, status')
+    .select('id, title, slug, status, contributor_access')
     .eq('id', productId)
     .maybeSingle()
   if (productError) throw productError
   if (!product) return res.status(404).json({ error: 'Product not found.' })
+  if (product.contributor_access !== true || product.status === 'archived') {
+    return res.status(409).json({
+      error: 'This product is not enabled for contributor access. Enable it on the product form first.',
+    })
+  }
 
   // Idempotency: if an active/pending contributor grant already exists for same product+email+source, refuse.
   const { data: existingEntitlement, error: entitlementLookupError } = await supabase
@@ -299,7 +304,11 @@ async function handleAdminContributor(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
     const action = cleanText(req.body?.action, 40).toLowerCase()
-    if (action === 'review') return await reviewApplication(req, res, supabase, admin)
+    // The review UI sends the review action directly (under_review/approve/reject);
+    // keep the older generic "review" envelope working too.
+    if (action === 'review' || ['under_review', 'approve', 'reject'].includes(action)) {
+      return await reviewApplication(req, res, supabase, admin)
+    }
     if (action === 'issue') return await issueContributorLicense(req, res, supabase, admin)
     return res.status(400).json({ error: 'Invalid action.' })
   } catch (err) {

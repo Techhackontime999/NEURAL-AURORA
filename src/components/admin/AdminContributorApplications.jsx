@@ -50,7 +50,10 @@ export default function AdminContributorApplications() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
-    getAllProducts().then(setProducts).catch(() => {})
+    // Only products explicitly enabled for contributor access may be licensed.
+    getAllProducts()
+      .then((rows) => setProducts(rows.filter((p) => p.contributor_access && p.status !== 'archived')))
+      .catch(() => {})
   }, [])
 
   const setDraft = (id, patch) => setDrafts((d) => ({ ...d, [id]: { ...d[id], ...patch } }))
@@ -128,7 +131,11 @@ export default function AdminContributorApplications() {
 
       <div className="space-y-3">
         {applications.map((app) => {
-          const draft = drafts[app.id] || {}
+          const requestedEligible = products.some((p) => p.id === app.requested_product_id)
+          const draft = {
+            product_id: requestedEligible ? String(app.requested_product_id) : '',
+            ...drafts[app.id],
+          }
           return (
             <div key={app.id} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -147,6 +154,12 @@ export default function AdminContributorApplications() {
 
               <p className="mt-2 text-xs whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{app.contribution_summary}</p>
               {app.intended_use ? <p className="mt-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Intended use: {app.intended_use}</p> : null}
+              <p className="mt-1 text-[11px]" style={{ color: requestedEligible ? '#a78bfa' : 'var(--text-tertiary)' }}>
+                Requested product: {app.products?.title || 'General (no product selected)'}
+                {app.requested_product_id && !requestedEligible
+                  ? ' — no longer contributor-eligible; choose another product below.'
+                  : ''}
+              </p>
               {app.review_notes ? <p className="mt-1 text-[11px]" style={{ color: '#f59e0b' }}>Review note: {app.review_notes}</p> : null}
               {app.issued_license_id ? <p className="mt-1 text-[11px]" style={{ color: '#10b981' }}>Issued license ID: {app.issued_license_id}</p> : null}
 
@@ -161,6 +174,9 @@ export default function AdminContributorApplications() {
                     <option value="">Select product…</option>
                     {products.map((p) => <option key={p.id} value={p.id}>{p.title} ({p.slug})</option>)}
                   </select>
+                  <span className="mt-1 block text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    Only products marked as contributor products can be selected here.
+                  </span>
                 </label>
                 <label className="block">
                   <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Optional expiry (ISO date)</span>

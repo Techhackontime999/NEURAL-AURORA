@@ -57,6 +57,7 @@ const ForgotPassword = lazy(() => import('./components/admin/ForgotPassword'))
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'))
 const PartnerPortal = lazy(() => import('./components/partner/PartnerPortal'))
 const AffiliateApply = lazy(() => import('./components/partner/AffiliateApply'))
+const ContributorApply = lazy(() => import('./components/offerings/ContributorApply'))
 
 function RouteFallback() {
   return (
@@ -187,6 +188,10 @@ const ROUTE_HEADS = {
   '/affiliate-apply': {
     title: `Become a Partner — ${SITE_NAME}`,
     description: 'Apply to sell NEURAL AURORA digital products and earn commission on referred orders.',
+  },
+  '/contributor-apply': {
+    title: `Become a Contributor — ${SITE_NAME}`,
+    description: 'Apply for a free personal-use contributor license on selected digital products.',
   },
   '/blog': {
     title: `Journal — ${SITE_NAME}`,
@@ -505,6 +510,8 @@ function AppContent() {
               <Route path="/affiliate-login" element={<Login variant="partner" />} />
               {/* Public application; approval still happens in /admin/affiliates. */}
               <Route path="/affiliate-apply" element={<AffiliateApply />} />
+              {/* Contributor personal-use applications; licenses are admin-issued. */}
+              <Route path="/contributor-apply" element={<ContributorApply />} />
               {/* Signed-in resellers see their own earnings and referral links. */}
               <Route path="/partner" element={<PartnerPortal />} />
               <Route

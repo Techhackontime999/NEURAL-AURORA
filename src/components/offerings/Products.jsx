@@ -26,6 +26,7 @@ const EMPTY_FILTERS = {
   format: '',
   freeOnly: false,
   featured: false,
+  contributorOnly: false,
   sort: 'featured',
 }
 
@@ -54,6 +55,7 @@ const URL_KEYS = {
   format: 'format',
   freeOnly: 'free',
   featured: 'featured',
+  contributorOnly: 'contributor',
   sort: 'sort',
 }
 
@@ -72,6 +74,7 @@ function filtersFromParams(params) {
     format: normaliseFormatFilter(params.get(URL_KEYS.format)),
     freeOnly: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.freeOnly))),
     featured: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.featured))),
+    contributorOnly: ['1', 'true'].includes(safeToken(params.get(URL_KEYS.contributorOnly))),
     sort: Object.hasOwn(PRODUCT_SORTS, sort) ? sort : EMPTY_FILTERS.sort,
   }
 }
@@ -83,6 +86,7 @@ function paramsFromFilters(filters) {
   if (filters.format) params.set(URL_KEYS.format, filters.format)
   if (filters.freeOnly) params.set(URL_KEYS.freeOnly, '1')
   if (filters.featured) params.set(URL_KEYS.featured, '1')
+  if (filters.contributorOnly) params.set(URL_KEYS.contributorOnly, '1')
   if (filters.sort !== EMPTY_FILTERS.sort) params.set(URL_KEYS.sort, filters.sort)
   return params
 }
@@ -94,6 +98,7 @@ function sameFilters(a, b) {
     a.format === b.format &&
     a.freeOnly === b.freeOnly &&
     a.featured === b.featured &&
+    a.contributorOnly === b.contributorOnly &&
     a.sort === b.sort
   )
 }
@@ -332,7 +337,8 @@ export default function Products() {
     filters.category !== '' ||
     filters.format !== '' ||
     filters.freeOnly === true ||
-    filters.featured === true
+    filters.featured === true ||
+    filters.contributorOnly === true
 
   const handleLoadMore = () => {
     if (loading || refreshing || loadingMore || !hasMore) return
@@ -525,6 +531,12 @@ export default function Products() {
             active={filters.featured === true}
             onClick={() => set({ featured: !filters.featured })}
             label={t('store.featuredOnly')}
+          />
+
+          <CategoryChip
+            active={filters.contributorOnly === true}
+            onClick={() => set({ contributorOnly: !filters.contributorOnly })}
+            label={t('store.contributorOnly')}
           />
 
           {formatOptions.length > 1 && (

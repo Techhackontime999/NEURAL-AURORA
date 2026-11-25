@@ -27,6 +27,31 @@ function cleanText(value, max) {
   return String(value || '').trim().slice(0, max)
 }
 
+/**
+ * Contributor access is opt-in per product. An applicant may name a product,
+ * but only a published, contributor-eligible product can be requested. This is
+ * validated server-side because a browser can send any id it likes.
+ */
+async function resolveRequestedProduct(supabase, rawId) {
+  if (rawId === undefined || rawId === null || rawId === '') return { productId: null, error: null }
+
+  const productId = Number(rawId)
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return { productId: null, error: 'Choose a valid contributor product.' }
+  }
+
+  const { data: product, error } = await supabase
+    .from('products')
+    .select('id, title, status, contributor_access')
+    .eq('id', productId)
+    .maybeSingle()
+  if (error) return { productId: null, error: 'Could not verify that product right now.', lookupError: error }
+  if (!product || product.status !== 'published' || product.contributor_access !== true) {
+    return { productId: null, error: 'That product is not available under contributor access.' }
+  }
+  return { productId: product.id, error: null }
+}
+
 async function submitApplication(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -56,6 +81,17 @@ async function submitApplication(req, res) {
     return res.status(400).json({
       error: 'You must confirm personal-use-only, no commercial/client deployment, and no redistribution/transfer terms.',
     })
+  }
+
+  const { productId, error: productError, lookupError } = await resolveRequestedProduct(
+    supabase,
+    req.body?.requested_product_id ?? req.body?.product_id
+  )
+  if (productError) {
+    if (lookupError) {
+      logError('contributor-application', requestId, { stage: 'product-lookup', message: lookupError.message })
+    }
+    return res.status(400).json({ error: productError })
   }
 
   const email = String(user.email).trim().toLowerCase()
@@ -89,6 +125,7 @@ async function submitApplication(req, res) {
     github_profile: githubProfile,
     contribution_summary: contributionSummary,
     intended_use: intendedUse,
+    requested_product_id: productId,
     personal_use_attestation: true,
     no_commercial_use_attestation: true,
     no_redistribution_attestation: true,
@@ -141,7 +178,7 @@ async function listMyApplications(req, res) {
   const { data, error } = await supabase
     .from('contributor_applications')
     .select(
-      'id, application_ref, status, created_at, updated_at, reviewed_at, approved_at, review_notes, issued_license_id'
+      'id, application_ref, status, created_at, updated_at, reviewed_at, approved_at, review_notes, issued_license_id, requested_product_id, products (title, slug)'
     )
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

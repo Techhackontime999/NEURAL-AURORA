@@ -33,6 +33,7 @@ export const PRODUCT_SORTS = {
  * @param {string}  [options.sort]    Key of PRODUCT_SORTS.
  * @param {boolean} [options.freeOnly]
  * @param {boolean} [options.featuredOnly]
+ * @param {boolean} [options.contributorOnly] Products opted into contributor access.
  * @param {number}  [options.limit]   Page size; request `limit + 1` to detect more.
  * @param {number}  [options.offset]  0-based row offset for "load more".
  */
@@ -43,6 +44,7 @@ export async function getPublishedProducts({
   sort = 'featured',
   freeOnly = false,
   featuredOnly = false,
+  contributorOnly = false,
   limit,
   offset = 0,
 } = {}) {
@@ -53,6 +55,7 @@ export async function getPublishedProducts({
   if (formatFilter) query = query.ilike('format', formatFilter)
   if (freeOnly) query = query.eq('price_paise', 0)
   if (featuredOnly) query = query.eq('featured', true)
+  if (contributorOnly) query = query.eq('contributor_access', true)
 
   const searchExpression = buildProductSearchExpression(search)
   if (searchExpression) query = query.or(searchExpression)

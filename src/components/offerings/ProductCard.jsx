@@ -80,6 +80,11 @@ export default function ProductCard({ product, index = 0 }) {
                 {t('store.featured')}
               </span>
             )}
+            {product.contributor_access && (
+              <span className="rounded-full bg-violet-500/90 text-white text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1">
+                {t('store.contributorAccess')}
+              </span>
+            )}
           </div>
 
           {pictureCount > 1 && (

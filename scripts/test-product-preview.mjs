@@ -93,6 +93,12 @@ check('OG SVG is 1200x630 and escapes dynamic copy',
   svg.includes('Aurora Kit') &&
   !svg.includes('<script>')
 )
+check('OG card uses a product-first store layout',
+  svg.includes('PRODUCT PREVIEW') &&
+  svg.includes('INSTANT ACCESS') &&
+  svg.includes('x="86" y="86" width="428" height="428"') &&
+  svg.includes('x="590" y="248"')
+)
 check('long copy is wrapped and truncated', (() => {
   const lines = preview.wrapText('one two three four five six seven eight nine ten', 12, 2)
   return lines.length === 2 && lines[1].endsWith('…')

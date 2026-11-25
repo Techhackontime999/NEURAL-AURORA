@@ -211,48 +211,49 @@ function lineSpans(lines, x, dy) {
 
 /** 1200x630 social card, rendered by sharp in the image endpoint. */
 function buildOgSvg(product, coverDataUrl = '') {
-  const title = product?.title ? truncate(product.title, 78) : `${SITE_NAME} Digital Products`
-  const description = metaDescription(product)
-  const price = product ? formatPrice(product) || 'DIGITAL PRODUCT' : 'STARTERS · TEMPLATES · TOOLS'
-  const titleLines = wrapText(title, 25, 3)
-  const descriptionLines = wrapText(description, 54, 2)
-  const priceWidth = Math.min(360, Math.max(190, price.length * 15 + 56))
+  const title = product?.title ? truncate(product.title, 72) : 'Neural Aurora Digital Store'
+  const price = product ? formatPrice(product) || 'DIGITAL PRODUCT' : 'DIGITAL PRODUCTS'
+  const titleLines = wrapText(title, 24, 3)
+  const priceWidth = Math.min(520, Math.max(250, price.length * 27 + 60))
   const cover = coverDataUrl
     ? `<g clip-path="url(#coverClip)">
-         <image x="760" y="120" width="360" height="360" preserveAspectRatio="xMidYMid slice" href="${coverDataUrl}" xlink:href="${coverDataUrl}" />
-       </g>
-       <rect x="760" y="120" width="360" height="360" rx="44" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2" />`
-    : `<circle cx="940" cy="300" r="150" fill="none" stroke="#00e5ff" stroke-opacity="0.45" stroke-width="3" />
-       <circle cx="940" cy="300" r="96" fill="none" stroke="#b829dd" stroke-opacity="0.6" stroke-width="3" />
-       <circle cx="940" cy="300" r="42" fill="#00e5ff" fill-opacity="0.12" />
-       <text x="940" y="318" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="700" fill="#ffffff">NA</text>`
+         <image x="86" y="86" width="428" height="428" preserveAspectRatio="xMidYMid slice" href="${coverDataUrl}" xlink:href="${coverDataUrl}" />
+       </g>`
+    : `<circle cx="300" cy="286" r="158" fill="none" stroke="#06b6d4" stroke-opacity="0.55" stroke-width="4" />
+       <circle cx="300" cy="286" r="104" fill="none" stroke="#7c3aed" stroke-opacity="0.55" stroke-width="4" />
+       <circle cx="300" cy="286" r="46" fill="#06b6d4" fill-opacity="0.14" />
+       <text x="300" y="302" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="700" fill="#0b1b2b">NA</text>`
 
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${OG_WIDTH}" height="${OG_HEIGHT}" viewBox="0 0 ${OG_WIDTH} ${OG_HEIGHT}">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#050c16" />
-<stop offset="0.52" stop-color="#102f4b" />
-<stop offset="1" stop-color="#371b56" />
+<stop offset="0" stop-color="#f8fbff" />
+<stop offset="1" stop-color="#eef3f9" />
 </linearGradient>
-<radialGradient id="glow" cx="0.82" cy="0.18" r="0.72">
-<stop offset="0" stop-color="#00e5ff" stop-opacity="0.32" />
-<stop offset="1" stop-color="#00e5ff" stop-opacity="0" />
-</radialGradient>
-<clipPath id="coverClip"><rect x="760" y="120" width="360" height="360" rx="44" /></clipPath>
+<linearGradient id="aurora" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#06b6d4" />
+<stop offset="1" stop-color="#7c3aed" />
+</linearGradient>
+<clipPath id="coverClip"><rect x="86" y="86" width="428" height="428" rx="34" /></clipPath>
 </defs>
 <rect width="1200" height="630" fill="url(#bg)" />
-<rect width="1200" height="630" fill="url(#glow)" />
-<circle cx="1120" cy="590" r="230" fill="#b829dd" fill-opacity="0.12" />
-<text x="80" y="82" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" letter-spacing="5" fill="#00e5ff">${SITE_NAME}</text>
-<text x="80" y="110" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="4" fill="#9db6ca">DIGITAL STORE</text>
-<text x="80" y="210" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="700" fill="#ffffff">${lineSpans(titleLines, 80, 58)}</text>
-<text x="80" y="400" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#b9cede">${lineSpans(descriptionLines, 80, 32)}</text>
-<g>
-<rect x="80" y="485" width="${priceWidth}" height="52" rx="26" fill="#ffffff" fill-opacity="0.1" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" />
-<text x="108" y="519" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#ffffff">${escapeXml(price)}</text>
-</g>
+<circle cx="1130" cy="70" r="250" fill="url(#aurora)" fill-opacity="0.16" />
+<circle cx="1060" cy="610" r="230" fill="#7c3aed" fill-opacity="0.08" />
+<rect x="72" y="72" width="462" height="494" rx="42" fill="#dce6f2" />
+<rect x="64" y="64" width="462" height="494" rx="42" fill="#ffffff" stroke="#dce6f2" stroke-width="2" />
 ${cover}
-<text x="80" y="590" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="2" fill="#7f9bb0">NEURAL-AURORA.VERCEL.APP</text>
+<rect x="86" y="532" width="154" height="8" rx="4" fill="url(#aurora)" />
+<text x="86" y="566" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="3" fill="#64748b">PRODUCT PREVIEW</text>
+<rect x="590" y="112" width="8" height="56" rx="4" fill="url(#aurora)" />
+<text x="618" y="136" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" letter-spacing="4" fill="#0b1b2b">NEURAL AURORA</text>
+<text x="618" y="162" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="3" fill="#64748b">DIGITAL STORE</text>
+<text x="590" y="248" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700" fill="#0b1b2b">${lineSpans(titleLines, 590, 56)}</text>
+<text x="590" y="398" font-family="Arial, Helvetica, sans-serif" font-size="20" letter-spacing="2" fill="#64748b">DIGITAL PRODUCT · INSTANT ACCESS</text>
+<g>
+<rect x="590" y="430" width="${priceWidth}" height="76" rx="20" fill="#0b1b2b" />
+<text x="618" y="480" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700" fill="#ffffff">${escapeXml(price)}</text>
+</g>
+<text x="590" y="562" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="2" fill="#8494a6">NEURAL-AURORA.VERCEL.APP</text>
 </svg>`
 }
 

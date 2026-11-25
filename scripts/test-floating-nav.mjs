@@ -10,6 +10,7 @@ const nav = read('src/components/ui/floating-nav.tsx')
 const rail = read('src/components/ui/nav-scroller.tsx')
 const css = read('src/index.css')
 const settingsPage = read('src/components/Settings.jsx')
+const library = read('src/components/offerings/Library.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const mithi = read('src/components/mithi/MithiWidget.jsx')
 const navbar = read('src/components/Navbar.jsx')
@@ -55,6 +56,8 @@ check('floating nav: mobile only with safe-area padding', nav.includes('md:hidde
 check('floating nav: sits below the mobile menu and share overlays', nav.includes('z-30') && !nav.includes('z-[20000'))
 check('floating nav: exposes active route and badge counts to assistive tech', nav.includes('aria-current={active ? \'page\' : undefined}') && nav.includes('aria-label={`${t(item.labelKey)}${badge ? ` (${badge})` : \'\'}`}'))
 check('floating nav: honours reduced motion and cleans up resize listeners', nav.includes('useReducedMotion') && nav.includes('observer?.disconnect()') && nav.includes("window.removeEventListener('resize', updateIndicator)"))
+check('bottom nav: account opens library sign-in, never admin login', nav.includes("profileHref = '/library'") && app.includes('profileHref="/library"') && !app.includes("user ? '/library' : '/login'") && !nav.includes("profileHref = '/login'"))
+check('library: guest state is the customer sign-in screen', library.includes('if (!user)') && library.includes("t('store.signInTitle')") && library.includes('handlePasswordSignIn'))
 
 // --- Upper navigation rail ---------------------------------------------------
 check('upper nav: shared rail is swipeable, masked and mobile only', rail.includes('overflow-x-auto') && rail.includes('no-scrollbar') && rail.includes('nav-scroller') && rail.includes('md:hidden'))

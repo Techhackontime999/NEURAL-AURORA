@@ -45,9 +45,11 @@ const isSearchIntent = (search: string) => {
  * Mobile-only commerce bar. Home, shop, search, saved, cart and account are
  * the destinations people use most on storefronts; partner and settings links
  * stay in the upper scrollable rail and the account page so nothing is lost.
+ * Account always opens the library, whose guest state is the customer sign-in —
+ * the admin login is never a commerce destination.
  */
 export default function FloatingNav({
-  profileHref = '/login',
+  profileHref = '/library',
   cartCount = 0,
   wishlistCount = 0,
   items: itemsProp,

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { StoreProvider, useStore } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
@@ -435,7 +435,6 @@ function MoodMusicToggle() {
 
 function AppContent() {
   const location = useLocation()
-  const { user } = useAuth()
   const { cartCount, wishlistCount } = useStore()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // An embed is a guest in another site's page: no cursor, companion, music or
@@ -471,7 +470,7 @@ function AppContent() {
       {!isEmbedRoute && <PwaStatus />}
       {showFloatingNav && (
         <FloatingNav
-          profileHref={user ? '/library' : '/login'}
+          profileHref="/library"
           cartCount={cartCount}
           wishlistCount={wishlistCount}
         />

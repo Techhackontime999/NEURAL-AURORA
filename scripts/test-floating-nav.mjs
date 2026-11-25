@@ -8,6 +8,7 @@ const read = (file) => fs.readFileSync(file, 'utf8')
 
 const nav = read('src/components/ui/floating-nav.tsx')
 const rail = read('src/components/ui/nav-scroller.tsx')
+const css = read('src/index.css')
 const settingsPage = read('src/components/Settings.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const mithi = read('src/components/mithi/MithiWidget.jsx')
@@ -60,10 +61,13 @@ check('upper nav: shared rail is swipeable, masked and mobile only', rail.includ
 check('upper nav: active link scrolls into view', rail.includes('scrollIntoView') && rail.includes("inline: 'center'") && rail.includes('prefers-reduced-motion'))
 check('upper nav: every chrome navbar exposes the rail', [navbar, serviceNavbar, moreNavbar, supportNavbar, blogNavbar].every((src) => src.includes('<NavScroller')))
 check('upper nav: primary tabs and account shortcuts are all reachable', [navbar, serviceNavbar].every((src) => ['/offerings/products', '/library', '/wishlist', '/cart', '/settings'].every((to) => src.includes(`'${to}'`))))
+check('hamburger menu: all chrome menus scroll vertically', [navbar, serviceNavbar, moreNavbar, supportNavbar, blogNavbar].every((src) => src.includes('mobile-menu-scroll') && src.includes('overflow-y-auto') && src.includes('overscroll-y-contain')))
+check('hamburger menu: scroll region clears fixed top chrome and keeps safe-area bottom', [navbar, serviceNavbar, moreNavbar, supportNavbar, blogNavbar].every((src) => src.includes('min-h-full') && src.includes('pt-32') && src.includes('env(safe-area-inset-bottom)')))
+check('hamburger menu: thin scroll affordance is defined once', css.includes('.mobile-menu-scroll') && css.includes('overscroll-behavior-y: contain') && css.includes('scrollbar-color'))
 
 // --- Integration: nothing from the existing chrome is lost ------------------
 check('top navigation remains mounted on the home page', app.includes('<Navbar />'))
-check('top navigation still owns its full-screen mobile menu', navbar.includes('role="dialog"') && navbar.includes('z-40 md:hidden'))
+check('top navigation still owns its full-screen mobile menu', navbar.includes('role="dialog"') && navbar.includes('z-40') && navbar.includes('md:hidden'))
 check('app mounts the bottom bar outside embeds and admin', app.includes('<FloatingNav') && app.includes("!isEmbedRoute && !location.pathname.startsWith('/admin')"))
 check('app reserves space so page content is never hidden', app.includes('pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0'))
 check('app feeds live store counts into the bottom bar', app.includes('cartCount={cartCount}') && app.includes('wishlistCount={wishlistCount}'))

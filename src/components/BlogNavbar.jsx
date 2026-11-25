@@ -130,10 +130,10 @@ export default function BlogNavbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 md:hidden bg-[var(--bg-primary)]/95"
+            className="mobile-menu-scroll fixed inset-0 z-40 overflow-y-auto overscroll-y-contain bg-[var(--bg-primary)]/95 md:hidden"
             style={{ backdropFilter: 'blur(40px)' }}
           >
-            <div className="flex flex-col items-center justify-center h-full gap-8">
+            <div className="flex min-h-full flex-col items-center justify-center gap-8 px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-32">
               <motion.button
                 custom={0}
                 variants={staggerItem}

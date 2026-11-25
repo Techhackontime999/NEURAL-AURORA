@@ -319,6 +319,29 @@
     mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
   }
 
+  /* The three-bar menu holds every route, so it must scroll on short screens
+     without passing the gesture to the page behind it. */
+  .mobile-menu-scroll {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-glow) transparent;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--accent-glow);
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   /*
    * Mithi needs a far more solid surface than the site-wide glass panels:
    * chat bubbles and text were hard to read over busy backgrounds. This is

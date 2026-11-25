@@ -3,14 +3,20 @@
 import fs from 'node:fs'
 import {
   nativeSharePayload,
+  normaliseAffiliateCode,
+  productEmbedSnippet,
+  productEmbedUrl,
   productShareLinks,
   productShareUrl,
 } from '../src/lib/productShare.js'
 
 const read = (file) => fs.readFileSync(file, 'utf8')
+const app = read('src/App.jsx')
 const card = read('src/components/offerings/ProductCard.jsx')
 const detail = read('src/components/offerings/ProductDetail.jsx')
+const embed = read('src/components/offerings/ProductEmbed.jsx')
 const menu = read('src/components/offerings/ShareMenu.jsx')
+const partner = read('src/components/partner/PartnerPortal.jsx')
 const toast = read('src/context/ToastContext.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 
@@ -39,6 +45,32 @@ check('share URL does not carry session or referral noise', !url.includes('?') &
 check('native share payload carries title, text and URL', (() => {
   const payload = nativeSharePayload({ slug: 'nextjs-starter', title: 'Next.js Starter' })
   return payload.url === url && payload.title.includes('Next.js Starter') && Boolean(payload.text)
+})())
+
+check('personal embed has no referral code',
+  productEmbedUrl('nextjs-starter') === 'https://neural-aurora.vercel.app/embed/products/nextjs-starter')
+check('partner embed carries a normalised code',
+  productEmbedUrl('nextjs-starter', 'partner-12') === 'https://neural-aurora.vercel.app/embed/products/nextjs-starter?aff=PARTNER-12' &&
+  normaliseAffiliateCode(' bad code! ') === '')
+check('embed snippet is copy-pasteable and safe', (() => {
+  const snippet = productEmbedSnippet({
+    slug: 'nextjs-starter',
+    title: 'Next.js Starter',
+    affiliateCode: 'PARTNER-12',
+  })
+  return snippet.startsWith('<iframe src="https://neural-aurora.vercel.app/embed/products/nextjs-starter?aff=PARTNER-12"') &&
+    snippet.includes('title="Next.js Starter — NEURAL AURORA"') &&
+    snippet.includes('loading="lazy"') &&
+    snippet.includes('referrerpolicy="strict-origin-when-cross-origin"') &&
+    !snippet.includes('<script')
+})())
+check('hostile embed input cannot inject markup', (() => {
+  const snippet = productEmbedSnippet({
+    slug: 'nextjs-starter',
+    title: '"><script>alert(1)</script>',
+    affiliateCode: 'BAD CODE!',
+  })
+  return !snippet.includes('<script>') && snippet.includes('&lt;script&gt;') && !snippet.includes('?aff=')
 })())
 
 check('share menu covers personal channels', ['x', 'linkedin', 'facebook', 'whatsapp', 'telegram', 'email'].every((id) =>
@@ -109,6 +141,25 @@ check('share menu animates and respects reduced motion',
   menu.includes('motion.div') &&
   menu.includes('useReducedMotion'))
 check('share copy has accessible feedback', menu.includes('shareCopied') && menu.includes('shareCopyFailed'))
+check('share sheet offers personal and partner embeds',
+  menu.includes('shareEmbedTitle') &&
+  menu.includes('shareEmbedPersonal') &&
+  menu.includes('shareEmbedPartner') &&
+  menu.includes('productEmbedSnippet') &&
+  menu.includes('normaliseAffiliateCode') &&
+  menu.includes('textarea:not([disabled])'))
+check('embed route is chrome-free and carries the referral forward',
+  app.includes("path=\"/embed/products/:slug\"") &&
+  app.includes('isEmbedRoute') &&
+  embed.includes('getProductBySlug') &&
+  embed.includes('applyAffiliateCode(referral)') &&
+  embed.includes('AFFILIATE_QUERY_KEY') &&
+  embed.includes('target="_blank"'))
+check('partner dashboard copies embeds with its own code',
+  partner.includes('getPublishedProducts') &&
+  partner.includes('productEmbedSnippet') &&
+  partner.includes('affiliateCode: affiliate.code') &&
+  partner.includes('store.affiliateEmbedCopied'))
 check('English share copy exists', [
   'shareProduct',
   'shareCopyLink',
@@ -121,6 +172,26 @@ check('English share copy exists', [
   'sharePreviewHint',
   'shareChannels',
   'shareHint',
+  'shareEmbedTitle',
+  'shareEmbedPersonal',
+  'shareEmbedPartner',
+  'shareEmbedCode',
+  'shareEmbedCodeHint',
+  'shareEmbedPersonalHint',
+  'shareEmbedPartnerHint',
+  'shareEmbedLabel',
+  'shareEmbedCopy',
+  'shareEmbedCopied',
+  'embedViewProduct',
+  'embedPowered',
+  'embedReferred',
+  'embedLoading',
+  'embedUnavailable',
+  'embedLoadFailed',
+  'affiliateEmbedTitle',
+  'affiliateEmbedSubtitle',
+  'affiliateEmbedCopied',
+  'affiliateEmbedEmpty',
   'channelX',
   'channelLinkedIn',
   'channelFacebook',

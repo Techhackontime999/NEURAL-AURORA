@@ -10,6 +10,7 @@ const routes = [
   { path: '/offerings' },
   { path: '/offerings/products' },
   { path: '/offerings/products/:slug' },
+  { path: '/embed/products/:slug' },
   { path: '/offerings/:serviceId' },
   { path: '/services' },
   { path: '/services/*' },
@@ -23,6 +24,7 @@ const cases = [
   ['/offerings/products', '/offerings/products'],
   ['/offerings/products/', '/offerings/products'],
   ['/offerings/products/nextjs-starter', '/offerings/products/:slug'],
+  ['/embed/products/nextjs-starter', '/embed/products/:slug'],
   // A real service id must still reach the service-detail page, and a slug
   // that happens to be a product name must not leak into service detail.
   ['/offerings/custom-web-dev', '/offerings/:serviceId'],

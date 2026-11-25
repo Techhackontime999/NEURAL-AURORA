@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, Copy, ExternalLink, Loader2, Tag } from 'lucide-react'
+import { Check, Code2, Copy, ExternalLink, Loader2, Tag } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { supabase } from '../../lib/supabase'
 import { bpsToPercent } from '../../lib/adminAffiliates'
+import { getPublishedProducts } from '../../lib/products'
+import { productEmbedSnippet } from '../../lib/productShare'
+import { supabase } from '../../lib/supabase'
 
 const statusLabelKey = {
   pending: 'store.affiliateStatusPending',
@@ -30,6 +32,7 @@ export default function PartnerPortal() {
   const location = useLocation()
   const [affiliate, setAffiliate] = useState(null)
   const [commissions, setCommissions] = useState([])
+  const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState('')
 
@@ -54,8 +57,14 @@ export default function PartnerPortal() {
           .limit(200)
         if (commissionError) throw commissionError
         setCommissions(rows || [])
+        try {
+          setProducts(await getPublishedProducts({ limit: 12 }))
+        } catch {
+          setProducts([])
+        }
       } else {
         setCommissions([])
+        setProducts([])
       }
     } catch (err) {
       toast.error(err.message)
@@ -117,11 +126,16 @@ export default function PartnerPortal() {
   }
 
   const storeLink = `${window.location.origin}/offerings/products?aff=${encodeURIComponent(affiliate.code)}`
-  const copy = async (url, key) => {
+  const embedFor = (product) => productEmbedSnippet({
+    slug: product.slug,
+    title: product.title,
+    affiliateCode: affiliate.code,
+  })
+  const copy = async (value, key, messageKey = 'store.affiliateCopied') => {
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(value)
       setCopied(key)
-      toast.success(t('store.affiliateCopied'))
+      toast.success(t(messageKey))
     } catch {
       toast.error(t('store.affiliateCopyFailed'))
     }
@@ -184,6 +198,61 @@ export default function PartnerPortal() {
             {copied === 'store' ? t('store.affiliateCopied') : t('store.affiliateCopy')}
           </button>
         </div>
+      </div>
+
+      <div className="glass-panel rounded-xl p-5">
+        <div className="flex items-center gap-2">
+          <Code2 className="h-4 w-4 text-cyan-500" aria-hidden="true" />
+          <h2 className="text-sm font-semibold">{t('store.affiliateEmbedTitle')}</h2>
+        </div>
+        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+          {t('store.affiliateEmbedSubtitle')}
+        </p>
+        {products.length === 0 ? (
+          <p className="py-8 text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            {t('store.affiliateEmbedEmpty')}
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {products.map((product) => {
+              const snippet = embedFor(product)
+              const key = `embed:${product.slug}`
+              return (
+                <div key={product.id || product.slug} className="rounded-xl border p-3" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-semibold">{product.title}</p>
+                    <span className="shrink-0 font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {product.slug}
+                    </span>
+                  </div>
+                  <textarea
+                    readOnly
+                    rows={3}
+                    value={snippet}
+                    aria-label={t('store.shareEmbedLabel')}
+                    onFocus={(event) => event.target.select()}
+                    onClick={(event) => event.target.select()}
+                    className="mt-2 w-full resize-none rounded-lg border border-black/10 bg-black/[0.02] p-2 font-mono text-[10px] leading-relaxed outline-none dark:border-white/10 dark:bg-white/[0.03]"
+                    style={{ color: 'var(--text-secondary)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copy(snippet, key, 'store.affiliateEmbedCopied')}
+                    className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[10px] font-semibold uppercase tracking-widest hover:text-cyan-500"
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    {copied === key ? (
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    ) : (
+                      <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    {copied === key ? t('store.affiliateEmbedCopied') : t('store.shareEmbedCopy')}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className="glass-panel rounded-xl p-5">

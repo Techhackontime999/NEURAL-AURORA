@@ -2,10 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRight, Check, FileText, Link2, Share2, Smartphone } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, Code2, FileText, Link2, Share2, Smartphone } from 'lucide-react'
+import { useStore } from '../../context/StoreContext'
 import { useToast } from '../../context/ToastContext'
 import { SITE_NAME, toAbsoluteUrl } from '../../lib/documentHead'
-import { nativeSharePayload, productShareLinks, productShareUrl } from '../../lib/productShare'
+import {
+  nativeSharePayload,
+  normaliseAffiliateCode,
+  productEmbedSnippet,
+  productShareLinks,
+  productShareUrl,
+} from '../../lib/productShare'
 
 const CHANNEL_STYLES = {
   x: { background: '#0f172a', color: '#ffffff' },
@@ -17,7 +24,7 @@ const CHANNEL_STYLES = {
 }
 
 const PANEL_WIDTH = 320
-const PANEL_HEIGHT = 480
+const PANEL_HEIGHT = 560
 const MOBILE_QUERY = '(max-width: 640px)'
 
 // The site-wide neural cursor/canvas overlay sits at z-index 200000. Share
@@ -27,9 +34,14 @@ const MOBILE_QUERY = '(max-width: 640px)'
 export default function ShareMenu({ slug, title, description = '', image = '', className = '' }) {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { affiliateCode } = useStore()
   const reduceMotion = Boolean(useReducedMotion())
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [embedOpen, setEmbedOpen] = useState(false)
+  const [partnerEmbed, setPartnerEmbed] = useState(false)
+  const [embedCode, setEmbedCode] = useState('')
+  const [embedCopied, setEmbedCopied] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [previewFailed, setPreviewFailed] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
@@ -48,6 +60,12 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
     }
   })()
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  const validEmbedCode = normaliseAffiliateCode(embedCode)
+  const embedSnippet = productEmbedSnippet({
+    slug,
+    title,
+    affiliateCode: partnerEmbed ? validEmbedCode : '',
+  })
 
   const close = () => setOpen(false)
 
@@ -79,6 +97,10 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
     }
 
     setCopied(false)
+    setEmbedCopied(false)
+    setEmbedOpen(false)
+    setPartnerEmbed(false)
+    setEmbedCode(affiliateCode || '')
     setOpen(true)
   }
 
@@ -101,7 +123,7 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
       if (event.key !== 'Tab' || !panelRef.current) return
       const focusable = [
         ...panelRef.current.querySelectorAll(
-          'a[href], button:not([disabled]), input:not([disabled])'
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled])'
         ),
       ]
       if (!focusable.length) return
@@ -152,29 +174,45 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
     []
   )
 
+  async function copyValue(value) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+      return
+    }
+
+    // Older browsers and insecure preview origins still get a working copy
+    // action instead of a dead control.
+    const field = document.createElement('textarea')
+    field.value = value
+    field.setAttribute('readonly', '')
+    field.style.position = 'fixed'
+    field.style.opacity = '0'
+    document.body.appendChild(field)
+    field.select()
+    const ok = document.execCommand('copy')
+    field.remove()
+    if (!ok) throw new Error('copy blocked')
+  }
+
   async function copyLink() {
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url)
-      } else {
-        // Older browsers and insecure preview origins still get a working
-        // copy action instead of a dead control.
-        const field = document.createElement('textarea')
-        field.value = url
-        field.setAttribute('readonly', '')
-        field.style.position = 'fixed'
-        field.style.opacity = '0'
-        document.body.appendChild(field)
-        field.select()
-        const ok = document.execCommand('copy')
-        field.remove()
-        if (!ok) throw new Error('copy blocked')
-      }
-
+      await copyValue(url)
       setCopied(true)
       toast.success(t('store.shareCopied'))
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
       copyTimerRef.current = setTimeout(() => setCopied(false), 2200)
+    } catch {
+      toast.error(t('store.shareCopyFailed'))
+    }
+  }
+
+  async function copyEmbed() {
+    try {
+      await copyValue(embedSnippet)
+      setEmbedCopied(true)
+      toast.success(t('store.shareEmbedCopied'))
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = setTimeout(() => setEmbedCopied(false), 2200)
     } catch {
       toast.error(t('store.shareCopyFailed'))
     }
@@ -265,7 +303,7 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
                   className={
                     isMobile
                       ? 'glass-panel-strong fixed inset-x-0 bottom-0 z-[200002] max-h-[88svh] overflow-y-auto rounded-t-2xl border-t px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl'
-                      : 'glass-panel-strong z-[200002] overflow-hidden rounded-2xl border shadow-[0_24px_70px_-20px_rgba(0,0,0,0.45)]'
+                      : 'glass-panel-strong z-[200002] max-h-[calc(100vh-24px)] overflow-y-auto rounded-2xl border shadow-[0_24px_70px_-20px_rgba(0,0,0,0.45)]'
                   }
                 >
                   {isMobile && (
@@ -326,6 +364,108 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
                         </span>
                       </button>
                     </div>
+                  </div>
+
+                  <div className={isMobile ? 'pb-4' : 'px-4 pb-3'}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmbedOpen((current) => !current)
+                        setEmbedCopied(false)
+                      }}
+                      aria-expanded={embedOpen}
+                      className="flex min-h-11 w-full items-center justify-between rounded-xl border border-black/10 px-3 text-xs text-[var(--text-primary)] transition-all hover:border-cyan-400/50 hover:bg-cyan-400/5 active:scale-[0.99] dark:border-white/10"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Code2 className="h-4 w-4 text-cyan-500" aria-hidden="true" />
+                        {t('store.shareEmbedTitle')}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform ${embedOpen ? 'rotate-180' : ''}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {embedOpen && (
+                      <div className="mt-2 rounded-xl border border-black/10 bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+                        <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/5">
+                          {[
+                            { id: false, label: t('store.shareEmbedPersonal') },
+                            { id: true, label: t('store.shareEmbedPartner') },
+                          ].map((option) => (
+                            <button
+                              key={String(option.id)}
+                              type="button"
+                              aria-pressed={partnerEmbed === option.id}
+                              onClick={() => {
+                                setPartnerEmbed(option.id)
+                                setEmbedCopied(false)
+                                if (option.id && !embedCode) setEmbedCode(affiliateCode || '')
+                              }}
+                              className={`min-h-8 rounded-md text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                                partnerEmbed === option.id
+                                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {partnerEmbed && (
+                          <label className="mt-3 block">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                              {t('store.shareEmbedCode')}
+                            </span>
+                            <input
+                              value={embedCode}
+                              onChange={(event) => {
+                                setEmbedCode(event.target.value)
+                                setEmbedCopied(false)
+                              }}
+                              maxLength={24}
+                              autoComplete="off"
+                              placeholder={t('store.shareEmbedCodePlaceholder')}
+                              className="mt-1.5 min-h-10 w-full rounded-lg border border-black/10 bg-transparent px-3 font-mono text-xs uppercase tracking-widest outline-none focus:border-cyan-500 dark:border-white/10"
+                            />
+                          </label>
+                        )}
+
+                        <textarea
+                          readOnly
+                          rows={3}
+                          value={embedSnippet}
+                          aria-label={t('store.shareEmbedLabel')}
+                          onFocus={(event) => event.target.select()}
+                          onClick={(event) => event.target.select()}
+                          className="mt-3 w-full resize-none rounded-lg border border-black/10 bg-white/50 p-2 font-mono text-[10px] leading-relaxed text-[var(--text-secondary)] outline-none dark:border-white/10 dark:bg-black/20"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={copyEmbed}
+                          className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-black/90 text-[10px] font-semibold uppercase tracking-widest text-white transition-all hover:bg-black active:scale-[0.99] dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                        >
+                          {embedCopied ? (
+                            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          ) : (
+                            <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                          <span aria-live="polite">
+                            {embedCopied ? t('store.shareCopiedShort') : t('store.shareEmbedCopy')}
+                          </span>
+                        </button>
+
+                        <p className="mt-2 text-[10px] leading-relaxed text-[var(--text-tertiary)]">
+                          {partnerEmbed && !validEmbedCode
+                            ? t('store.shareEmbedCodeHint')
+                            : partnerEmbed
+                              ? t('store.shareEmbedPartnerHint')
+                              : t('store.shareEmbedPersonalHint')}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {canNativeShare && (

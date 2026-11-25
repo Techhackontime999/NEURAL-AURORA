@@ -1,13 +1,64 @@
 import { SITE_NAME, SITE_ORIGIN } from './documentHead.js'
 
 // Share URLs always use the public canonical origin. Local preview hosts,
-// session query strings and referral codes are deliberately excluded.
+// session query strings and referral codes are deliberately excluded. Embeds are
+// the one place a partner code is allowed, because the iframe owns the referral.
+export const AFFILIATE_QUERY_KEY = 'aff'
+
 export function productSharePath(slug) {
   return `/offerings/products/${encodeURIComponent(String(slug || '').trim())}`
 }
 
 export function productShareUrl(slug) {
   return `${SITE_ORIGIN}${productSharePath(slug)}`
+}
+
+/** Mirrors the store's affiliate normaliser so an embed never leaks junk. */
+export function normaliseAffiliateCode(value) {
+  const code = String(value || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .toUpperCase()
+    .slice(0, 24)
+  return /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code) ? code : ''
+}
+
+export function productEmbedPath(slug) {
+  return `/embed/products/${encodeURIComponent(String(slug || '').trim())}`
+}
+
+export function productEmbedUrl(slug, affiliateCode = '') {
+  const code = normaliseAffiliateCode(affiliateCode)
+  const query = code ? `?${AFFILIATE_QUERY_KEY}=${encodeURIComponent(code)}` : ''
+  return `${SITE_ORIGIN}${productEmbedPath(slug)}${query}`
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+export function productEmbedSnippet({
+  slug,
+  title = '',
+  affiliateCode = '',
+  width = 420,
+  height = 320,
+} = {}) {
+  const parsedWidth = Number(width)
+  const parsedHeight = Number(height)
+  const safeWidth = Number.isFinite(parsedWidth)
+    ? Math.max(280, Math.min(720, Math.trunc(parsedWidth)))
+    : 420
+  const safeHeight = Number.isFinite(parsedHeight)
+    ? Math.max(220, Math.min(600, Math.trunc(parsedHeight)))
+    : 320
+  const label = escapeHtmlAttribute(`${title || SITE_NAME} — ${SITE_NAME}`)
+
+  return `<iframe src="${productEmbedUrl(slug, affiliateCode)}" title="${label}" width="${safeWidth}" height="${safeHeight}" style="max-width:100%;border:0;border-radius:16px;" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
 }
 
 function compactDescription(value) {

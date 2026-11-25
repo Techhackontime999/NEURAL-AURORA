@@ -42,6 +42,7 @@ const Service = lazy(() => import('./components/Service'))
 const ServiceDetail = lazy(() => import('./components/ServiceDetail'))
 const Products = lazy(() => import('./components/offerings/Products'))
 const ProductDetail = lazy(() => import('./components/offerings/ProductDetail'))
+const ProductEmbed = lazy(() => import('./components/offerings/ProductEmbed'))
 const Library = lazy(() => import('./components/offerings/Library'))
 const PurchaseSuccess = lazy(() => import('./components/offerings/PurchaseSuccess'))
 const Cart = lazy(() => import('./components/offerings/Cart'))
@@ -219,6 +220,8 @@ const NOT_FOUND_HEAD = {
 }
 
 function headForPath(pathname) {
+  // Embeds live inside third-party pages; they never need their own index entry.
+  if (pathname.startsWith('/embed/')) return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
   if (pathname.startsWith('/offerings/products/')) return null
   if (pathname === '/offerings/products') return ROUTE_HEADS['/offerings/products']
   if (pathname.startsWith('/offerings/')) {
@@ -430,8 +433,11 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
-  // Mithi is a portfolio companion: no admin, auth, or payment screens.
-  const showMithi = !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login')
+  // An embed is a guest in another site's page: no cursor, companion, music or
+  // site chrome should travel with it.
+  const isEmbedRoute = location.pathname.startsWith('/embed/')
+  // Mithi is a portfolio companion: no admin, auth, payment or embed screens.
+  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
 
   // A failed lazy import after a deploy is a stale-cache problem, not a page
@@ -449,12 +455,12 @@ function AppContent() {
 
   return (
     <>
-      <ScrollProgress />
-      <AutoTraverseEffect />
-      {loaderDone && <MoodMusicToggle />}
-      <NeuralCursor />
+      {!isEmbedRoute && <ScrollProgress />}
+      {!isEmbedRoute && <AutoTraverseEffect />}
+      {loaderDone && !isEmbedRoute && <MoodMusicToggle />}
+      {!isEmbedRoute && <NeuralCursor />}
       {loaderDone && showMithi && <MithiWidget />}
-      <PwaStatus />
+      {!isEmbedRoute && <PwaStatus />}
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
         {loaderDone && (
@@ -482,6 +488,8 @@ function AppContent() {
                   so "products" never opens the generic service-detail page. */}
               <Route path="/offerings/products" element={<Products />} />
               <Route path="/offerings/products/:slug" element={<ProductDetail />} />
+              {/* Compact, chrome-free card for embeds on third-party sites. */}
+              <Route path="/embed/products/:slug" element={<ProductEmbed />} />
               <Route path="/offerings/:serviceId" element={<ServiceDetail />} />
               {/* Customer purchase library and post-payment status screen. */}
               <Route path="/library" element={<Library />} />

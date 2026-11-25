@@ -147,6 +147,8 @@ check('share sheet offers personal and partner embeds',
   menu.includes('shareEmbedPartner') &&
   menu.includes('productEmbedSnippet') &&
   menu.includes('normaliseAffiliateCode') &&
+  menu.includes('shareEmbedPartnerSteps') &&
+  menu.includes('to="/partner"') &&
   menu.includes('textarea:not([disabled])'))
 check('embed route is chrome-free and carries the referral forward',
   app.includes("path=\"/embed/products/:slug\"") &&
@@ -176,6 +178,9 @@ check('English share copy exists', [
   'shareEmbedPersonal',
   'shareEmbedPartner',
   'shareEmbedCode',
+  'shareEmbedCodePlaceholder',
+  'shareEmbedPartnerSteps',
+  'shareEmbedOpenDashboard',
   'shareEmbedCodeHint',
   'shareEmbedPersonalHint',
   'shareEmbedPartnerHint',

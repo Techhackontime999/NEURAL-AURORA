@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRight, Check, ChevronDown, Code2, FileText, Link2, Share2, Smartphone } from 'lucide-react'
@@ -414,22 +415,35 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
                         </div>
 
                         {partnerEmbed && (
-                          <label className="mt-3 block">
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-                              {t('store.shareEmbedCode')}
-                            </span>
-                            <input
-                              value={embedCode}
-                              onChange={(event) => {
-                                setEmbedCode(event.target.value)
-                                setEmbedCopied(false)
-                              }}
-                              maxLength={24}
-                              autoComplete="off"
-                              placeholder={t('store.shareEmbedCodePlaceholder')}
-                              className="mt-1.5 min-h-10 w-full rounded-lg border border-black/10 bg-transparent px-3 font-mono text-xs uppercase tracking-widest outline-none focus:border-cyan-500 dark:border-white/10"
-                            />
-                          </label>
+                          <div className="mt-3">
+                            <p className="text-[10px] leading-relaxed text-[var(--text-secondary)]">
+                              {t('store.shareEmbedPartnerSteps')}
+                            </p>
+                            <Link
+                              to="/partner"
+                              onClick={close}
+                              className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-500 hover:underline"
+                            >
+                              {t('store.shareEmbedOpenDashboard')}
+                              <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+                            </Link>
+                            <label className="mt-3 block">
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                                {t('store.shareEmbedCode')}
+                              </span>
+                              <input
+                                value={embedCode}
+                                onChange={(event) => {
+                                  setEmbedCode(event.target.value)
+                                  setEmbedCopied(false)
+                                }}
+                                maxLength={24}
+                                autoComplete="off"
+                                placeholder={t('store.shareEmbedCodePlaceholder')}
+                                className="mt-1.5 min-h-10 w-full rounded-lg border border-black/10 bg-transparent px-3 font-mono text-xs uppercase tracking-widest outline-none focus:border-cyan-500 dark:border-white/10"
+                              />
+                            </label>
+                          </div>
                         )}
 
                         <textarea
@@ -461,7 +475,7 @@ export default function ShareMenu({ slug, title, description = '', image = '', c
                           {partnerEmbed && !validEmbedCode
                             ? t('store.shareEmbedCodeHint')
                             : partnerEmbed
-                              ? t('store.shareEmbedPartnerHint')
+                              ? t('store.shareEmbedPartnerHint', { code: validEmbedCode })
                               : t('store.shareEmbedPersonalHint')}
                         </p>
                       </div>

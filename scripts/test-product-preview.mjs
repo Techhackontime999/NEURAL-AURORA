@@ -69,6 +69,10 @@ check('preview HTML carries product-specific Open Graph tags',
   card.includes('og:type" content="product"') &&
   card.includes('og:url" content="https://neural-aurora.vercel.app/offerings/products/aurora-kit"')
 )
+check('preview description carries the price like a store listing',
+  preview.metaDescription(product).endsWith('₹1,999') &&
+  card.includes('og:description" content="A production-ready starter with billing and auth. · ₹1,999"')
+)
 check('preview HTML advertises a valid PNG image', (() => {
   const image = `${preview.SITE_ORIGIN}/api/product-image/aurora-kit`
   return (
@@ -154,13 +158,15 @@ check('shared crawler pattern matches the routing rule',
 check('product preview endpoint is cacheable HTML',
   previewHandler.includes('text/html; charset=utf-8') &&
   previewHandler.includes('s-maxage=3600') &&
+  previewHandler.includes('Vercel-CDN-Cache-Control') &&
   previewHandler.includes('buildPreviewHtml')
 )
 check('OG image endpoint renders PNG with sharp',
   imageHandler.includes("require('sharp')") &&
   imageHandler.includes("res.setHeader('Content-Type', 'image/png')") &&
   imageHandler.includes('buildOgSvg') &&
-  imageHandler.includes('s-maxage=3600')
+  imageHandler.includes('s-maxage=3600') &&
+  imageHandler.includes('Vercel-CDN-Cache-Control')
 )
 
 const imageMetadata = await sharp('public/og-image.png').metadata()

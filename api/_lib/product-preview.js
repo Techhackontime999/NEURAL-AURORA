@@ -115,10 +115,12 @@ function metaTitle(product) {
 }
 
 function metaDescription(product) {
-  return truncate(
+  const description = truncate(
     product?.short_description || product?.description || 'First-party digital products, starters and templates.',
-    170
+    135
   )
+  const price = product ? formatPrice(product) : ''
+  return price ? `${description} · ${price}` : description
 }
 
 function imageAlt(product) {

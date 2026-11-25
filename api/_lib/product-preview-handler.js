@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', CACHE_CONTROL)
+  res.setHeader('Vercel-CDN-Cache-Control', CACHE_CONTROL)
   res.setHeader('X-Content-Type-Options', 'nosniff')
   return res.status(slug && !product ? 404 : 200).send(buildPreviewHtml(product, slug))
 }

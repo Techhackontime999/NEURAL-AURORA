@@ -61,6 +61,7 @@ module.exports = async function handler(req, res) {
 
   res.setHeader('Content-Type', 'image/png')
   res.setHeader('Cache-Control', CACHE_CONTROL)
+  res.setHeader('Vercel-CDN-Cache-Control', CACHE_CONTROL)
   res.setHeader('X-Content-Type-Options', 'nosniff')
 
   if (req.method === 'HEAD') {

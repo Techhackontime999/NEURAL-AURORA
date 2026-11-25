@@ -249,7 +249,7 @@
   "support": {
     "eyebrow": "Поддержка",
     "heroSubtitle": "Source-Available и бесплатно для контрибьюторов",
-    "heroDescription": "NEURAL AURORA — это программа с открытым доступом к коду (source-available). Ваш вклад поддерживает её, финансирует новые функции и помогает конкурировать с платными аналогами — оставаясь бесплатным для контрибьюторов, студентов и оценки.",
+    "heroDescription": "NEURAL AURORA is in a draft proprietary licensing transition. Contributions keep the project alive and fund new features. Legacy rights are preserved where validly granted; approved contributor personal-use grants require explicit admin review and recorded issuance.",
     "floatingButton": "Поддержать",
     "sponsorPlaceholder": "Расскажите о своём проекте или идеях спонсорства...",
     "nav": {

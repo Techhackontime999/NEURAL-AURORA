@@ -3,7 +3,7 @@ const readme = `# NEURAL AURORA — The Synaptic Portfolio
 
 <div align="center">
 
-**v3.0.0** — *A living neural network suspended in an aurora field*
+**v3.0.0 base** — *Next release docs updated 2026-11-26 (draft licensing/contributor-grant transition in progress)*
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
@@ -11,25 +11,42 @@ const readme = `# NEURAL AURORA — The Synaptic Portfolio
 [![Supabase](https://img.shields.io/badge/Supabase-2-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-**Source-Available Software** • Not OSI-Approved "Open Source"
+**Proprietary Transition (Draft)** • Legacy rights preserved • Legal review required
 
 </div>
 
 ---
 
-## ⚖️ License & Usage Rights
+## ⚖️ License & Usage Rights (Draft Transition)
 
-NEURAL AURORA is **source-available** software. The source code is publicly visible, but general commercial usage is **not** free.
+**Status:** licensing/policy transition in progress. **DRAFT — requires qualified
+Indian software licensing lawyer review before final adoption.**
 
-- ✅ **Free for Contributors** – If you have **at least one Pull Request merged** into the official repo [Techhackontime999/NEURAL-AURORA](https://github.com/Techhackontime999/NEURAL-AURORA), you may use, run, modify, self-host this software for **personal, educational or commercial** use **without** purchasing a commercial license.
-- ✅ **Free for Verified Students** – Students who have meaningfully contributed to this project may qualify for the same benefit. Email proof to **amitkumarkh01012006@gmail.com**.
-- ✅ **Free for Evaluation** – You may clone, read, modify and run locally **strictly for evaluation/testing** purposes.
-- ❌ **Commercial Use by Others** – If you do **not** meet the above criteria, you **must** obtain a valid [Commercial License](COMMERCIAL-LICENSE.md) before using NEURAL AURORA in production, client work, agency projects, SaaS, white-label, or any revenue-generating context.
-- ✅ **Forking for Contribution** – You are encouraged to fork this repo and submit PRs to improve it.
+- **Legacy rights preserved:** Rights already granted under the prior
+  [NEURAL AURORA Source-Available License](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md)
+  are **not revoked** by this repository update. Where legacy rights were validly
+  granted, they remain preserved to the extent applicable.
+- **Proprietary by default for new use:** Except for preserved legacy rights or a
+  separate written agreement from the copyright holder, Neural Aurora is
+  proprietary. Public repository visibility does **not** make the code free to use
+  commercially or privately.
+- **No auto-grant:** PRs, commits, GitHub accounts, stars, forks, registration,
+  or issue activity do **not** automatically grant licenses or product access.
+- **Approved Contributor Personal Use:** The project may issue a free
+  \`APPROVED_CONTRIBUTOR_PERSONAL\` license only after application, evaluation,
+  explicit admin approval, and recorded issuance. It is personal-use only; no
+  commercial/client/organisation-wide deployment, no resale/redistribution/
+  sublicensing/transfer, and no paid/enterprise entitlements.
+- **Commercial use:** Requires a valid commercial license/purchase through
+  official channels. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
 
-> Read [docs/LICENSING-FAQ.md](docs/LICENSING-FAQ.md) for a simple breakdown.
+**Legal Files:** [LICENSE](LICENSE) • [Legacy License (preserved)](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md) • [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) • [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md) • [Third-Party Notices](THIRD_PARTY_NOTICES.md) • [TERMS_OF_USE.md](TERMS_OF_USE.md) • [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
 
-**Legal Files:** [LICENSE](LICENSE) • [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) • [TERMS_OF_USE.md](TERMS_OF_USE.md) • [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
+---
+
+## 🧭 Product direction
+
+Neural Aurora is evolving from a single-owner portfolio into a **Personal Digital Platform** — one identity, one professional presence, one first-party store and one growth system, configured per person. The architecture, personas, journeys and phased roadmap are documented in [docs/PRODUCT-VISION-ARCHITECTURE.md](docs/PRODUCT-VISION-ARCHITECTURE.md). This is a plan only; existing features and routes are preserved.
 
 ---
 
@@ -46,6 +63,7 @@ NEURAL AURORA is **source-available** software. The source code is publicly visi
 - **Auto-Traverse Tour** – Interactive site walkthrough
 - **3D Aurora Background** – React Three Fiber powered immersive UI
 - **Reviews, Blog, Case Studies & Services**
+- **Mithi 🦜** – Floating parrot companion with a grounded AI assistant and an admin-configured docs launcher
 
 ---
 
@@ -71,7 +89,12 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## ⚙️ Environment Variables
 
-See \`.env.example\` for full list. Key ones include \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_ANON_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\`, \`RAZORPAY_*\`, \`RAZORPAY_WEBHOOK_SECRET\`.
+See \`.env.example\` for the authoritative list. Key ones include \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_ANON_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\`, \`RAZORPAY_*\`, \`RAZORPAY_WEBHOOK_SECRET\`.
+
+All AI features run server-side. Set one server-only provider key:
+\`OPENROUTER_API_KEY\` (recommended), \`AI_API_KEY\`/\`OPENAI_API_KEY\`, or
+\`GEMINI_API_KEY\` — never a \`VITE_\` prefix. Without one, AI features show an
+honest unconfigured state and the docs button keeps working.
 
 ## 🧪 Scripts
 
@@ -80,27 +103,40 @@ npm run dev      # Dev server
 npm run build    # Production build
 npm run preview  # Preview build
 npm run check    # Routes + i18n + SQL lint
-npm test         # Pricing + API guard tests
+npm test         # Pricing, API, store, UI and route guards
 \`\`\`
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). **Having >=1 merged PR makes you eligible for the free contributor license.**
+See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are welcome, but **no PR,
+commit, GitHub account, star, fork, or registration auto-grants a license**.
+Approved contributors may apply for a free \`APPROVED_CONTRIBUTOR_PERSONAL\`
+license after evaluation, explicit admin approval, and recorded issuance
+(personal use only).
 
 ## 💼 Commercial Licensing
 
-Need to use this commercially without contributing? Read [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email **amitkumarkh01012006@gmail.com** with subject \`NEURAL AURORA COMMERCIAL LICENSE\`.
+Need commercial, client, organisation-wide, or enterprise use? Purchase a valid
+commercial license through official channels. Read
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) or email
+**amitkumarkh01012006@gmail.com** with subject \`NEURAL AURORA COMMERCIAL LICENSE\`.
 
 ## 📚 Documentation
 
 - [Digital Store Setup](docs/DIGITAL-STORE.md)
+- [Mithi Companion](docs/mithi.md)
 - [Licensing FAQ](docs/LICENSING-FAQ.md)
+- [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md)
 - [Production Release Checklist](docs/PRODUCTION-RELEASE-CHECKLIST.md)
 
 ## 🔐 Legal
 
-- [LICENSE](LICENSE)
+- [LICENSE (Draft - Legal Review Required)](LICENSE)
+- [Legacy License (Preserved Rights)](LICENSE.LEGACY-2026-SOURCE-AVAILABLE.md)
 - [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md)
+- [Legal/Policy Drafts](docs/LEGAL-POLICY-DRAFTS.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md)
 - [TERMS_OF_USE.md](TERMS_OF_USE.md)
 - [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

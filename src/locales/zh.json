@@ -249,7 +249,7 @@
   "support": {
     "eyebrow": "支持",
     "heroSubtitle": "源码可用且对贡献者免费",
-    "heroDescription": "NEURAL AURORA 是一款源码可用（source-available）软件。您的贡献让它保持活力、资助新功能，并帮助我们与付费替代品竞争——同时对贡献者、学生和评估用途保持免费。",
+    "heroDescription": "NEURAL AURORA is in a draft proprietary licensing transition. Contributions keep the project alive and fund new features. Legacy rights are preserved where validly granted; approved contributor personal-use grants require explicit admin review and recorded issuance.",
     "floatingButton": "支持",
     "sponsorPlaceholder": "告诉我您的项目或赞助想法...",
     "nav": {

@@ -29,11 +29,11 @@ const defaultSettings = {
     { title: 'Co-Creator Status', desc: 'Direct influence on roadmap & private community access.', min: 4999 },
   ],
   hero_title: 'NEURAL AURORA',
-  hero_subtitle: 'Source-Available & Free for Contributors',
-  hero_description: 'NEURAL AURORA is source-available software. Contributions keep it alive, fund new features, and help us compete with paid alternatives — while keeping it free for contributors, students, and evaluation.',
+  hero_subtitle: 'Support the Project',
+  hero_description: 'NEURAL AURORA is in a draft proprietary licensing transition. Contributions keep the project alive, fund new features, and support ongoing development. Legacy rights preserved where validly granted; approved contributor personal-use grants require explicit admin review and issuance.',
   faqs: [
     { q: 'Where does my money go?', a: '100% of contributions go toward development costs — hosting, API subscriptions, domain renewal, and compensating contributors who add features to NEURAL AURORA. Every rupee is transparently accounted for.' },
-    { q: 'Is NEURAL AURORA really free?', a: 'It is free for contributors, verified students, and evaluation. Running it commercially requires a Commercial License — contributions help sustain development and keep it free for those who qualify.' },
+    { q: 'Is NEURAL AURORA free to use?', a: 'Not by default for new commercial use. Legacy rights granted under the prior license are preserved where validly granted. Approved contributors may apply for a free APPROVED_CONTRIBUTOR_PERSONAL license after evaluation, explicit admin approval, and recorded issuance (personal use only). Commercial use requires a valid commercial license.' },
     { q: 'Can I request a specific feature?', a: 'Absolutely! Contributors at ₹999 and above can vote on the roadmap. Higher tiers get direct input on what gets built next.' },
     { q: 'What if I want a custom enterprise plan?', a: 'For custom enterprise needs, check out the Services page. This support page is purely for sustaining the project.' },
     { q: 'Is my payment secure?', a: 'All payments are processed securely through Razorpay, a PCI-DSS compliant payment gateway. We never store your card or UPI details.' },
@@ -501,8 +501,8 @@ export default function Support() {
             {[
               {
                 icon: Heart,
-                title: 'Free for Contributors',
-                desc: 'Merged contributors get full commercial rights at no cost. Your contribution keeps NEURAL AURORA alive, funds new features, and helps us compete with paid alternatives.',
+                title: 'Contributor Access',
+                desc: 'Approved contributors can apply for a free personal-use license after explicit admin review and recorded issuance. Contributions help keep NEURAL AURORA alive and improving.',
               },
               {
                 icon: Zap,
@@ -511,8 +511,8 @@ export default function Support() {
               },
               {
                 icon: Rocket,
-                title: 'Compete with Paid',
-                desc: 'The free-for-contributors version is our competitor. Your support helps us build features that rival enterprise solutions, proving source-available can win.',
+                title: 'Build Sustainably',
+                desc: 'Your support helps fund development, security, and infrastructure while the project transitions to a clear, legally reviewed licensing model.',
               },
             ].map((item, i) => (
               <motion.div

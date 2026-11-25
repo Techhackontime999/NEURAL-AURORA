@@ -249,7 +249,7 @@
   "support": {
     "eyebrow": "후원",
     "heroSubtitle": "소스 이용 가능 및 기여자에게 무료",
-    "heroDescription": "NEURAL AURORA는 소스 이용 가능(source-available) 소프트웨어입니다. 여러분의 기여는 이 프로젝트를 살아 있게 하고 새 기능에 자금을 제공하며 유료 대안과 경쟁하는 데 도움을 줍니다 — 기여자, 학생, 평가 목적에는 무료로 유지됩니다.",
+    "heroDescription": "NEURAL AURORA is in a draft proprietary licensing transition. Contributions keep the project alive and fund new features. Legacy rights are preserved where validly granted; approved contributor personal-use grants require explicit admin review and recorded issuance.",
     "floatingButton": "후원",
     "sponsorPlaceholder": "프로젝트나 후원 아이디어에 대해 알려주세요...",
     "nav": {

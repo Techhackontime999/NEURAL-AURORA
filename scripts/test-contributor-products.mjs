@@ -18,6 +18,10 @@ const productCard = read('src/components/offerings/ProductCard.jsx')
 const productDetail = read('src/components/offerings/ProductDetail.jsx')
 const loader = read('src/components/StartingLoader.jsx')
 const app = read('src/App.jsx')
+const contributorApply = read('src/components/offerings/ContributorApply.jsx')
+const login = read('src/components/admin/Login.jsx')
+const register = read('src/components/admin/Register.jsx')
+const forgot = read('src/components/admin/ForgotPassword.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 
 let passed = 0
@@ -87,6 +91,25 @@ check('gateway has partner and contributor access options',
   en.loader.gateway.filters.access === 'Access')
 check('contributor application route is registered',
   app.includes("path=\"/contributor-apply\"") && app.includes('ContributorApply'))
+check('contributor sign-in CTA avoids the portfolio admin login',
+  contributorApply.includes('to="/contributor-login"') && !contributorApply.includes('to="/login"'))
+check('contributor login route is separate from admin and partner',
+  app.includes('path="/contributor-login"') &&
+  app.includes('<Login variant="contributor" />') &&
+  app.includes("pathname === '/contributor-login'") &&
+  app.includes("startsWith('/contributor-login')"))
+check('contributor login variant has its own title, badge, accent and redirect',
+  login.includes("const isContributor = variant === 'contributor'") &&
+  login.includes("isContributor ? 'Contributor Sign In' : portalTitle") &&
+  login.includes('Contributor Access') &&
+  login.includes("const portalAccent = isContributor ? '#38bdf8' : partnerAccent") &&
+  login.includes("isContributor ? '/contributor-apply' : portalHome"))
+check('contributor reset and register stay in the contributor auth flow',
+  login.includes('/forgot-password?for=contributor') &&
+  login.includes('/register?for=contributor') &&
+  register.includes("const authSignInPath = isContributor ? '/contributor-login' : signInPath") &&
+  register.includes("navigate('/contributor-apply', { replace: true })") &&
+  forgot.includes("const authSignInPath = isContributor ? '/contributor-login' : signInPath"))
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

@@ -10,8 +10,11 @@ import {
 export default function ForgotPassword() {
   const location = useLocation()
   const isPartner = new URLSearchParams(location.search).get('for') === 'partner'
+  const isContributor = new URLSearchParams(location.search).get('for') === 'contributor'
   const signInPath = isPartner ? '/affiliate-login' : '/login'
-  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const authSignInPath = isContributor ? '/contributor-login' : signInPath
+  const partnerAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const portalAccent = isContributor ? '#38bdf8' : partnerAccent
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -77,7 +80,7 @@ export default function ForgotPassword() {
                 If an account exists with that email, you will receive a password reset link shortly.
               </p>
               <Link
-                to={signInPath}
+                to={authSignInPath}
                 className="text-sm font-medium transition-colors"
                 style={{ color: portalAccent }}
               >
@@ -122,7 +125,7 @@ export default function ForgotPassword() {
 
               <p className="text-center">
                 <Link
-                  to={signInPath}
+                  to={authSignInPath}
                   className="text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
                 >

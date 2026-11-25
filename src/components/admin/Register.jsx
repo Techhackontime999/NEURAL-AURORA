@@ -7,8 +7,11 @@ import { BrandLogo } from '../ui/BrandLogo'
 export default function Register() {
   const location = useLocation()
   const isPartner = new URLSearchParams(location.search).get('for') === 'partner'
+  const isContributor = new URLSearchParams(location.search).get('for') === 'contributor'
   const signInPath = isPartner ? '/affiliate-login' : '/login'
-  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const authSignInPath = isContributor ? '/contributor-login' : signInPath
+  const partnerAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const portalAccent = isContributor ? '#38bdf8' : partnerAccent
   // Credentials are always entered by the person registering. Nothing about
   // an administrator account is prefilled from the public browser bundle.
   const [email, setEmail] = useState('')
@@ -29,6 +32,10 @@ export default function Register() {
   }
 
   if (user) {
+    if (isContributor) {
+      navigate('/contributor-apply', { replace: true })
+      return null
+    }
     navigate(isPartner ? '/partner' : '/admin', { replace: true })
     return null
   }
@@ -86,7 +93,7 @@ export default function Register() {
                 We sent a confirmation link to <strong className="text-cyan-400">{email}</strong>. Click it to activate your account, then sign in.
               </p>
               <Link
-                to={signInPath}
+                to={authSignInPath}
                 className="mt-6 inline-block rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
                 style={{ background: portalAccent }}
               >
@@ -103,9 +110,11 @@ export default function Register() {
                   Create Account
                 </h1>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {isPartner
-                    ? 'Create the sign-in for your approved partner email'
-                    : 'Register to access the admin dashboard'}
+                  {isContributor
+                    ? 'Create the sign-in for your contributor application'
+                    : isPartner
+                      ? 'Create the sign-in for your approved partner email'
+                      : 'Register to access the admin dashboard'}
                 </p>
               </div>
 
@@ -197,7 +206,7 @@ export default function Register() {
 
               <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Already have an account?{' '}
-                <Link to={signInPath} className="hover:underline" style={{ color: portalAccent }}>
+                <Link to={authSignInPath} className="hover:underline" style={{ color: portalAccent }}>
                   Sign in
                 </Link>
               </p>

@@ -248,6 +248,7 @@ function headForPath(pathname) {
     pathname === '/register' ||
     pathname === '/forgot-password' ||
     pathname === '/affiliate-login' ||
+    pathname === '/contributor-login' ||
     pathname === '/partner' ||
     pathname === '/settings' ||
     pathname.startsWith('/admin/')
@@ -436,12 +437,12 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const { cartCount, wishlistCount } = useStore()
-  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/contributor-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // An embed is a guest in another site's page: no cursor, companion, music or
   // site chrome should travel with it.
   const isEmbedRoute = location.pathname.startsWith('/embed/')
   // Mithi is a portfolio companion: no admin, auth, payment or embed screens.
-  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login')
+  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login') && !location.pathname.startsWith('/contributor-login')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
   // The top navigation stays untouched. This is a mobile-only quick bar for
   // the pages people reach most; admin and embeds keep their own chrome.
@@ -538,6 +539,8 @@ function AppContent() {
               <Route path="/affiliate-login" element={<Login variant="partner" />} />
               {/* Public application; approval still happens in /admin/affiliates. */}
               <Route path="/affiliate-apply" element={<AffiliateApply />} />
+              {/* Contributors sign in here, separately from the portfolio admin console. */}
+              <Route path="/contributor-login" element={<Login variant="contributor" />} />
               {/* Contributor personal-use applications; licenses are admin-issued. */}
               <Route path="/contributor-apply" element={<ContributorApply />} />
               {/* Signed-in resellers see their own earnings and referral links. */}

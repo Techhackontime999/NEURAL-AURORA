@@ -6,7 +6,6 @@ import {
   Handshake,
   Library,
   LifeBuoy,
-  LogIn,
   ShieldCheck,
 } from 'lucide-react'
 import ServiceNavbar from './ServiceNavbar'
@@ -80,17 +79,22 @@ export default function Settings() {
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 {t('settings.account')}
               </h2>
-              <span className="ml-auto text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
+              {/* Both states open the customer library; its guest view is the
+                  library sign-in, never the portfolio admin console. */}
+              <Link
+                to="/library"
+                className="ml-auto text-[10px] uppercase tracking-widest text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-glow)]"
+              >
                 {user ? t('settings.signedIn') : t('settings.signIn')}
-              </span>
+              </Link>
             </div>
             <p className="px-5 pb-2 text-xs text-[var(--text-secondary)]">
               {t('settings.accountBody')}
             </p>
             <div className="divide-y divide-[var(--border-color)]">
               <SettingLink
-                to={user ? '/library' : '/login'}
-                icon={user ? Library : LogIn}
+                to="/library"
+                icon={Library}
                 title={t('settings.library')}
                 description={t('settings.libraryBody')}
               />

@@ -59,7 +59,11 @@ function InputField({ label, type, value, onChange, placeholder, autoComplete, d
 
 export default function Login({ variant = 'admin' }) {
   const isPartner = variant === 'partner'
-  const portalAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const isContributor = variant === 'contributor'
+  const partnerAccent = isPartner ? '#34d399' : 'var(--accent)'
+  const portalAccent = isContributor ? '#38bdf8' : partnerAccent
+  const portalTitle = isPartner ? 'Partner Sign In' : 'Admin Access'
+  const portalHome = (isPartner ? '/partner' : '/admin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(() => {
@@ -78,7 +82,7 @@ export default function Login({ variant = 'admin' }) {
   const location = useLocation()
   const shouldReduceMotion = useReducedMotion()
 
-  const from = location.state?.from?.pathname || (isPartner ? '/partner' : '/admin')
+  const from = location.state?.from?.pathname || (isContributor ? '/contributor-apply' : portalHome)
 
   // Restore saved email if Remember Me was previously enabled
   useEffect(() => {
@@ -189,12 +193,14 @@ export default function Login({ variant = 'admin' }) {
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       <div
-        className={isPartner
+        className={isPartner || isContributor
           ? 'pointer-events-none absolute inset-0'
           : 'pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[var(--accent-glow)]/8 via-[var(--bg-primary)] to-[var(--bg-primary)]'}
         style={isPartner
           ? { background: 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.10), transparent 70%)' }
-          : undefined}
+          : isContributor
+            ? { background: 'radial-gradient(ellipse at center, rgba(56, 189, 248, 0.10), transparent 70%)' }
+            : undefined}
       />
 
       <motion.div
@@ -222,21 +228,30 @@ export default function Login({ variant = 'admin' }) {
             >
               <BrandLogo size="large" showWordmark />
             </motion.div>
-            {isPartner && (
+            {isContributor ? (
+              <span
+                className="mb-4 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
+                style={{ borderColor: 'rgba(56, 189, 248, 0.35)', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.08)' }}
+              >
+                Contributor Access
+              </span>
+            ) : isPartner ? (
               <span
                 className="mb-4 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
                 style={{ borderColor: 'rgba(52, 211, 153, 0.35)', color: '#34d399', background: 'rgba(52, 211, 153, 0.08)' }}
               >
                 Affiliate / Reseller Portal
               </span>
-            )}
+            ) : null}
             <h1 className="mb-2 font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter leading-none" style={{ color: 'var(--text-primary)' }}>
-              {isPartner ? 'Partner Sign In' : 'Admin Access'}
+              {isContributor ? 'Contributor Sign In' : portalTitle}
             </h1>
             <p className="text-xs sm:text-sm max-w-[28ch]" style={{ color: 'var(--text-secondary)' }}>
-              {isPartner
-                ? 'Sign in with the email on your approved partner account'
-                : 'Sign in to manage your portfolio'}
+              {isContributor
+                ? 'Sign in with the email on your contributor application'
+                : isPartner
+                  ? 'Sign in with the email on your approved partner account'
+                  : 'Sign in to manage your portfolio'}
             </p>
           </div>
 
@@ -296,7 +311,7 @@ export default function Login({ variant = 'admin' }) {
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Remember me</span>
               </label>
               <Link
-                to={isPartner ? '/forgot-password?for=partner' : '/forgot-password'}
+                to={isContributor ? '/forgot-password?for=contributor' : isPartner ? '/forgot-password?for=partner' : '/forgot-password'}
                 className="text-xs transition-colors hover:underline"
                 style={{ color: 'var(--text-secondary)' }}
               >
@@ -323,7 +338,7 @@ export default function Login({ variant = 'admin' }) {
               ) : isLockedOut ? (
                 `Locked (${lockoutSeconds}s)`
               ) : (
-                isPartner ? 'Partner Sign In' : 'Sign In'
+                isContributor ? 'Contributor Sign In' : isPartner ? 'Partner Sign In' : 'Sign In'
               )}
             </motion.button>
 
@@ -336,7 +351,14 @@ export default function Login({ variant = 'admin' }) {
             className="mt-6 text-center text-xs sm:text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
-            {isPartner ? (
+            {isContributor ? (
+              <>
+                No contributor sign-in yet?{' '}
+                <Link to="/register?for=contributor" className="font-medium transition-colors hover:underline" style={{ color: portalAccent }}>
+                  Create it with the same email
+                </Link>
+              </>
+            ) : isPartner ? (
               <>
                 Approved partner but no sign-in yet?{' '}
                 <Link to="/register?for=partner" className="font-medium transition-colors hover:underline" style={{ color: portalAccent }}>

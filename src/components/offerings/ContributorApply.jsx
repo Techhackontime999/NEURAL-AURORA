@@ -128,7 +128,7 @@ export default function ContributorApply() {
                 {t('contributor.signInBody')}
               </p>
               <Link
-                to="/login"
+                to="/contributor-login"
                 state={{ from: { pathname: '/contributor-apply' } }}
                 className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-black/90 px-5 text-xs font-semibold uppercase tracking-widest text-white transition-opacity hover:opacity-90 dark:bg-white/90 dark:text-black"
               >

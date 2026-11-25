@@ -8,11 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "npm run check:routes && npm run check:i18n && npm run check:sql",
+    "check": "npm run check:routes && npm run check:i18n && npm run check:sql && npm run typecheck",
     "check:routes": "node scripts/check-routes.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:sql": "node scripts/check-sql.mjs",
-    "test": "npm run test:order-pricing && npm run test:coupons && npm run test:affiliates && npm run test:affiliate-applications && npm run test:api-guards && npm run test:store-ux && npm run test:store-errors && npm run test:product-query && npm run test:document-head && npm run test:admin-products && npm run test:licensing && npm run test:document-policy && npm run test:pdf-bundle && npm run test:ui-controls && npm run test:contributor-grants && npm run test:contributor-products && npm run test:product-share && npm run test:product-preview",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:order-pricing && npm run test:coupons && npm run test:affiliates && npm run test:affiliate-applications && npm run test:api-guards && npm run test:store-ux && npm run test:store-errors && npm run test:product-query && npm run test:document-head && npm run test:admin-products && npm run test:licensing && npm run test:document-policy && npm run test:pdf-bundle && npm run test:ui-controls && npm run test:contributor-grants && npm run test:contributor-products && npm run test:product-share && npm run test:product-preview && npm run test:floating-nav",
     "test:order-pricing": "node scripts/test-order-pricing.mjs",
     "test:coupons": "node scripts/test-coupons.mjs",
     "test:affiliates": "node scripts/test-affiliates.mjs",
@@ -31,6 +32,7 @@
     "test:contributor-products": "node scripts/test-contributor-products.mjs",
     "test:product-share": "node scripts/test-product-share.mjs",
     "test:product-preview": "node scripts/test-product-preview.mjs",
+    "test:floating-nav": "node scripts/test-floating-nav.mjs",
     "generate:og": "node scripts/generate-og-image.cjs"
   },
   "dependencies": {
@@ -64,6 +66,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^1.3.0"
   }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { StoreProvider } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
@@ -29,6 +29,7 @@ import { useMood } from './context/MoodContext'
 import { clearRuntimeCaches } from './lib/pwaCaches'
 import { isChunkLoadError, recoverFromChunkError } from './lib/chunkRecovery'
 import DocumentHead from './components/ui/DocumentHead'
+import FloatingNav from './components/ui/floating-nav'
 import { SITE_NAME } from './lib/documentHead'
 
 // Route-level code splitting: only the app shell, navigation and overlays stay
@@ -59,6 +60,7 @@ const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'))
 const PartnerPortal = lazy(() => import('./components/partner/PartnerPortal'))
 const AffiliateApply = lazy(() => import('./components/partner/AffiliateApply'))
 const ContributorApply = lazy(() => import('./components/offerings/ContributorApply'))
+const Settings = lazy(() => import('./components/Settings'))
 
 function RouteFallback() {
   return (
@@ -247,6 +249,7 @@ function headForPath(pathname) {
     pathname === '/forgot-password' ||
     pathname === '/affiliate-login' ||
     pathname === '/partner' ||
+    pathname === '/settings' ||
     pathname.startsWith('/admin/')
   ) {
     return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
@@ -432,6 +435,7 @@ function MoodMusicToggle() {
 
 function AppContent() {
   const location = useLocation()
+  const { user } = useAuth()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // An embed is a guest in another site's page: no cursor, companion, music or
   // site chrome should travel with it.
@@ -439,6 +443,9 @@ function AppContent() {
   // Mithi is a portfolio companion: no admin, auth, payment or embed screens.
   const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/affiliate-login')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || location.pathname !== '/')
+  // The top navigation stays untouched. This is a mobile-only quick bar for
+  // the pages people reach most; admin and embeds keep their own chrome.
+  const showFloatingNav = loaderDone && !isEmbedRoute && !location.pathname.startsWith('/admin')
 
   // A failed lazy import after a deploy is a stale-cache problem, not a page
   // bug. Recover once automatically; real render errors keep the manual UI.
@@ -461,11 +468,22 @@ function AppContent() {
       {!isEmbedRoute && <NeuralCursor />}
       {loaderDone && showMithi && <MithiWidget />}
       {!isEmbedRoute && <PwaStatus />}
+      {showFloatingNav && (
+        <FloatingNav
+          profileHref={user ? '/partner' : '/login'}
+          partnerHref="/affiliate-apply"
+        />
+      )}
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}
       <AnimatePresence>
         {loaderDone && (
           <motion.div
             animate={{ opacity: 1 }}
+            className={
+              showFloatingNav
+                ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0'
+                : undefined
+            }
           >
             {/* Last line of defence: a stray render error or a failed lazy
                 chunk (3D scene offline, expired route chunk) must degrade to a
@@ -509,6 +527,7 @@ function AppContent() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/privacy" element={<LegalPage doc="privacy" />} />
               <Route path="/terms" element={<LegalPage doc="terms" />} />
               <Route path="/login" element={<Login />} />

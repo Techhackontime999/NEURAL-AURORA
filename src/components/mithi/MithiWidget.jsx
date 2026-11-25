@@ -186,7 +186,7 @@ export default function MithiWidget() {
 
   return createPortal(
     <>
-      <div className="pointer-events-none fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[9999] flex flex-col items-end gap-3 sm:inset-x-auto sm:right-5">
+      <div className="pointer-events-none fixed inset-x-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[9999] flex flex-col items-end gap-3 md:bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-5">
         <div className="pointer-events-auto flex w-full flex-col items-end gap-3" ref={panelRef}>
           <AnimatePresence mode="wait">
             {open && (

@@ -139,6 +139,7 @@ export default function Products() {
   const firstLoad = useRef(true)
   const productsRef = useRef([])
   const requestIdRef = useRef(0)
+  const searchInputRef = useRef(null)
 
   // Database labels keep their original casing for display, while the URL and
   // query use one normalised value. This keeps a stored "PDF" and a shared
@@ -239,6 +240,9 @@ export default function Products() {
         const next = paramsFromFilters(filters)
         const referral = current.get(AFFILIATE_QUERY_KEY)
         if (referral) next.set(AFFILIATE_QUERY_KEY, referral)
+        // The mobile bottom nav opens the catalogue with ?focus=search. Keep
+        // that hint through filter syncs so the input can take focus once.
+        if (current.get('focus') === 'search') next.set('focus', 'search')
         return next.toString() === current.toString() ? current : next
       },
       { replace: true }
@@ -254,6 +258,12 @@ export default function Products() {
     const fromUrl = filtersFromParams(searchParams)
     setFilters((current) => (sameFilters(current, fromUrl) ? current : fromUrl))
     setSearchInput(fromUrl.search)
+  }, [searchParams])
+
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'search') return undefined
+    const timer = window.setTimeout(() => searchInputRef.current?.focus(), 120)
+    return () => window.clearTimeout(timer)
   }, [searchParams])
 
   // --- catalogue -------------------------------------------------------------
@@ -461,6 +471,7 @@ export default function Products() {
                 aria-hidden="true"
               />
               <input
+                ref={searchInputRef}
                 id="store-search"
                 type="search"
                 value={searchInput}

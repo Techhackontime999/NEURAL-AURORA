@@ -951,5 +951,36 @@
     "switchToDark": "Switch to dark mode",
     "switchToLight": "Switch to light mode",
     "searchPlaceholder": "Search..."
+  },
+  "bottomNav": {
+    "label": "Mobile quick navigation",
+    "home": "Home",
+    "search": "Search",
+    "alerts": "Alerts",
+    "profile": "Profile",
+    "saved": "Saved",
+    "partner": "Partner",
+    "settings": "Settings"
+  },
+  "settings": {
+    "eyebrow": "Preferences",
+    "title": "Settings",
+    "subtitle": "Language, appearance, and account shortcuts for this device.",
+    "appearance": "Appearance & language",
+    "appearanceBody": "Switch theme or language without leaving this page.",
+    "account": "Account",
+    "accountBody": "Your purchases, saved products and partner tools.",
+    "signedIn": "Signed in",
+    "signIn": "Sign in",
+    "library": "Library",
+    "libraryBody": "Downloads and licence status",
+    "saved": "Saved products",
+    "savedBody": "Your wishlist",
+    "partner": "Partner tools",
+    "partnerBody": "Referral links and earnings",
+    "contributor": "Contributor access",
+    "contributorBody": "Personal-use application",
+    "support": "Support",
+    "supportBody": "Order help and contact"
   }
 }

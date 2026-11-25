@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Lock, Shield, ExternalLink } from 'lucide-react'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
+import NavScroller from './ui/nav-scroller'
 import { getCrmUrl } from '../lib/crm-config'
 import { getDocsUrl } from '../lib/docs-config'
 import LanguageSwitcher from './LanguageSwitcher';
@@ -19,6 +20,18 @@ const navLinks = [
   { label: 'nav.more', href: '/more', route: true },
   { label: 'nav.becomePartner', href: '/affiliate-apply', route: true },
   { label: 'nav.support', href: '/support', route: true, highlight: true },
+]
+
+// Small screens keep every primary destination in a horizontal rail instead
+// of hiding them behind the menu. Extra account actions remain in the menu.
+const mobileNavLinks = [
+  { label: 'common.home', href: '/', route: true, end: true },
+  ...navLinks,
+  { label: 'nav.store', href: '/offerings/products', route: true },
+  { label: 'nav.library', href: '/library', route: true },
+  { label: 'nav.wishlist', href: '/wishlist', route: true },
+  { label: 'nav.cart', href: '/cart', route: true },
+  { label: 'nav.settings', href: '/settings', route: true },
 ]
 
 const staggerItem = {
@@ -207,6 +220,15 @@ export default function Navbar() {
     }
   }
 
+  const isMobileLinkActive = (link) => {
+    if (!link.route) return location.hash === link.href
+    if (link.end || link.href === '/') return location.pathname === link.href
+    return (
+      location.pathname === link.href ||
+      location.pathname.startsWith(`${link.href}/`)
+    )
+  }
+
   return (
     <>
       <motion.nav
@@ -344,6 +366,20 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+        {!open && (
+          <NavScroller
+            label={t('nav.quickLinks')}
+            links={mobileNavLinks.map((link) => ({
+              key: link.href,
+              label: t(link.label),
+              active: isMobileLinkActive(link),
+            }))}
+            onSelect={(link) => {
+              const target = mobileNavLinks.find((item) => item.href === link.key)
+              if (target) handleClick(target.href, target.route)
+            }}
+          />
+        )}
       </motion.nav>
 
       <AnimatePresence>

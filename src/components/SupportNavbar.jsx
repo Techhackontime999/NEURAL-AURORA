@@ -1,16 +1,23 @@
 import { useState } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import LanguageSwitcher from './LanguageSwitcher'
 import { BrandLogo } from './ui/BrandLogo'
+import NavScroller from './ui/nav-scroller'
 
 const navLinks = [
   { key: 'contribute', href: '#donate' },
   { key: 'whySupport', href: '#why' },
   { key: 'faq', href: '#faq' },
   { key: 'contact', href: '#contact' },
+]
+
+const mobileNavLinks = [
+  { key: 'home', label: 'common.home', href: '/', route: true, end: true },
+  ...navLinks.map((link) => ({ ...link, label: `support.nav.${link.key}` })),
+  { key: 'settings', label: 'nav.settings', href: '/settings', route: true },
 ]
 
 const staggerItem = {
@@ -27,16 +34,31 @@ export default function SupportNavbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 80)
   })
 
-  const handleClick = (href) => {
+  const handleClick = (href, isRoute) => {
     setOpen(false)
+    if (isRoute) {
+      navigate(href)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     const el = document.querySelector(href)
     if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const isMobileLinkActive = (link) => {
+    if (!link.route) return location.hash === link.href
+    if (link.end || link.href === '/') return location.pathname === link.href
+    return (
+      location.pathname === link.href ||
+      location.pathname.startsWith(`${link.href}/`)
+    )
   }
 
   return (
@@ -96,6 +118,20 @@ export default function SupportNavbar() {
             </button>
           </div>
         </div>
+        {!open && (
+          <NavScroller
+            label={t('nav.quickLinks')}
+            links={mobileNavLinks.map((link) => ({
+              key: link.href,
+              label: t(link.label),
+              active: isMobileLinkActive(link),
+            }))}
+            onSelect={(link) => {
+              const target = mobileNavLinks.find((item) => item.href === link.key)
+              if (target) handleClick(target.href, target.route)
+            }}
+          />
+        )}
       </motion.nav>
 
       <AnimatePresence>

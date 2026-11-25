@@ -5,13 +5,12 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import {
-  Bell,
-  Bookmark,
+  Heart,
   Home,
   Search,
-  Settings,
+  ShoppingBag,
+  Store,
   UserRound,
-  UsersRound,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -22,26 +21,39 @@ type NavItem = {
   icon: LucideIcon
   matchPath?: string
   end?: boolean
+  badge?: number
+  badgeTone?: 'rose' | 'cyan'
+  activeWhen?: (pathname: string, search: string) => boolean
 }
 
 type FloatingNavProps = {
   profileHref?: string
-  partnerHref?: string
+  cartCount?: number
+  wishlistCount?: number
   items?: NavItem[]
 }
 
+const isStorePath = (pathname: string) =>
+  pathname === '/offerings/products' || pathname.startsWith('/offerings/products/')
+
+const isSearchIntent = (search: string) => {
+  const params = new URLSearchParams(search)
+  return params.get('focus') === 'search' || Boolean(params.get('q'))
+}
+
 /**
- * Mobile-only quick navigation. It sits above page content but below the
- * existing top nav's full-screen menu (z-40), share sheets (z-200001+) and
- * toasts (z-200003+), so nothing from the current chrome is displaced.
+ * Mobile-only commerce bar. Home, shop, search, saved, cart and account are
+ * the destinations people use most on storefronts; partner and settings links
+ * stay in the upper scrollable rail and the account page so nothing is lost.
  */
 export default function FloatingNav({
   profileHref = '/login',
-  partnerHref = '/affiliate-apply',
+  cartCount = 0,
+  wishlistCount = 0,
   items: itemsProp,
 }: FloatingNavProps) {
   const { t } = useTranslation()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const shouldReduceMotion = useReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([])
@@ -52,28 +64,53 @@ export default function FloatingNav({
     return [
       { id: 'home', labelKey: 'bottomNav.home', to: '/', icon: Home, end: true },
       {
+        id: 'shop',
+        labelKey: 'bottomNav.shop',
+        to: '/offerings/products',
+        icon: Store,
+        activeWhen: (path, query) => isStorePath(path) && !isSearchIntent(query),
+      },
+      {
         id: 'search',
         labelKey: 'bottomNav.search',
         to: '/offerings/products?focus=search',
-        matchPath: '/offerings/products',
         icon: Search,
+        activeWhen: (path, query) => isStorePath(path) && isSearchIntent(query),
       },
-      { id: 'alerts', labelKey: 'bottomNav.alerts', to: '/library', icon: Bell },
-      { id: 'profile', labelKey: 'bottomNav.profile', to: profileHref, icon: UserRound },
-      { id: 'saved', labelKey: 'bottomNav.saved', to: '/wishlist', icon: Bookmark },
-      { id: 'partner', labelKey: 'bottomNav.partner', to: partnerHref, icon: UsersRound },
-      { id: 'settings', labelKey: 'bottomNav.settings', to: '/settings', icon: Settings },
+      {
+        id: 'saved',
+        labelKey: 'bottomNav.saved',
+        to: '/wishlist',
+        icon: Heart,
+        badge: wishlistCount,
+        badgeTone: 'rose',
+      },
+      {
+        id: 'cart',
+        labelKey: 'bottomNav.cart',
+        to: '/cart',
+        icon: ShoppingBag,
+        badge: cartCount,
+        badgeTone: 'cyan',
+      },
+      {
+        id: 'account',
+        labelKey: 'bottomNav.account',
+        to: profileHref,
+        icon: UserRound,
+      },
     ]
-  }, [itemsProp, partnerHref, profileHref])
+  }, [cartCount, itemsProp, profileHref, wishlistCount])
 
   const activeIndex = useMemo(() => {
     const index = items.findIndex((item) => {
+      if (item.activeWhen) return item.activeWhen(pathname, search)
       const path = item.matchPath ?? item.to.split('?')[0]
       if (item.end || path === '/') return pathname === path
       return pathname === path || pathname.startsWith(`${path}/`)
     })
     return index === -1 ? 0 : index
-  }, [items, pathname])
+  }, [items, pathname, search])
 
   // Measure in layout so the pill never flashes at the wrong position. Only
   // translate the indicator afterwards; width is applied directly, never tweened.
@@ -101,10 +138,7 @@ export default function FloatingNav({
     }
   }, [activeIndex, items])
 
-  const handleClick = (
-    event: MouseEvent<HTMLAnchorElement>,
-    item: NavItem,
-  ) => {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>, item: NavItem) => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -129,7 +163,7 @@ export default function FloatingNav({
       <div className="px-3 pb-[calc(0.625rem+env(safe-area-inset-bottom))]">
         <div
           ref={containerRef}
-          className="pointer-events-auto grid grid-cols-7 items-center rounded-[1.4rem] border border-[var(--border-color)] bg-[var(--glass-bg)] px-1 py-1 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.55)] backdrop-blur-xl"
+          className="pointer-events-auto relative grid grid-cols-6 items-center rounded-[1.4rem] border border-[var(--border-color)] bg-[var(--glass-bg]] px-1 py-1 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.55)] backdrop-blur-xl"
           style={{
             boxShadow:
               '0 18px 50px -24px rgba(15,23,42,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
@@ -147,9 +181,9 @@ export default function FloatingNav({
             }
           />
           {items.map((item, index) => {
-            const path = item.matchPath ?? item.to.split('?')[0]
             const active = index === activeIndex
             const Icon = item.icon
+            const badge = item.badge ?? 0
             return (
               <Link
                 key={item.id}
@@ -157,15 +191,27 @@ export default function FloatingNav({
                   linkRefs.current[index] = node
                 }}
                 to={item.to}
+                aria-label={`${t(item.labelKey)}${badge ? ` (${badge})` : ''}`}
                 aria-current={active ? 'page' : undefined}
                 onClick={(event) => handleClick(event, item)}
                 className="relative z-10 flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 text-[var(--text-tertiary)] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[var(--accent-glow)] active:scale-[0.97]"
               >
-                <Icon
-                  size={18}
-                  strokeWidth={1.8}
-                  style={{ color: active ? 'var(--accent-glow)' : undefined }}
-                />
+                <span className="relative flex items-center justify-center">
+                  <Icon
+                    size={18}
+                    strokeWidth={1.8}
+                    style={{ color: active ? 'var(--accent-glow)' : undefined }}
+                  />
+                  {badge > 0 && (
+                    <span
+                      className={`absolute -right-2.5 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold leading-none text-white ${
+                        item.badgeTone === 'cyan' ? 'bg-cyan-500' : 'bg-rose-500'
+                      }`}
+                    >
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </span>
                 <span
                   className="max-w-full truncate text-[9px] font-medium leading-none tracking-tight"
                   style={{ color: active ? 'var(--accent-glow)' : undefined }}

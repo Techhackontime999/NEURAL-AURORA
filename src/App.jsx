@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-do
 import { motion, AnimatePresence, useScroll, useSpring, MotionConfig, useTransform } from 'framer-motion'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
-import { StoreProvider } from './context/StoreContext'
+import { StoreProvider, useStore } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
 import { MoodProvider } from './context/MoodContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
@@ -436,6 +436,7 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const { user } = useAuth()
+  const { cartCount, wishlistCount } = useStore()
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
   // An embed is a guest in another site's page: no cursor, companion, music or
   // site chrome should travel with it.
@@ -470,8 +471,9 @@ function AppContent() {
       {!isEmbedRoute && <PwaStatus />}
       {showFloatingNav && (
         <FloatingNav
-          profileHref={user ? '/partner' : '/login'}
-          partnerHref="/affiliate-apply"
+          profileHref={user ? '/library' : '/login'}
+          cartCount={cartCount}
+          wishlistCount={wishlistCount}
         />
       )}
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}

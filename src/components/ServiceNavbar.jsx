@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Heart, ShoppingBag } from 'lucide-react'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
+import NavScroller from './ui/nav-scroller'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useStore } from '../context/StoreContext'
 
@@ -17,6 +18,16 @@ const navLinks = [
   { label: 'services.nav.pricing', href: '#pricing' },
   { label: 'services.nav.faq', href: '#faq' },
   { label: 'services.nav.contact', href: '#contact' },
+]
+
+// Mobile shoppers get every destination as a swipeable rail; cart and saved
+// counts stay visible as icons in the top pill.
+const mobileNavLinks = [
+  { label: 'common.home', href: '/', route: true, end: true },
+  ...navLinks,
+  { label: 'services.nav.wishlist', href: '/wishlist', route: true },
+  { label: 'services.nav.cart', href: '/cart', route: true },
+  { label: 'nav.settings', href: '/settings', route: true },
 ]
 
 const staggerItem = {
@@ -64,6 +75,15 @@ export default function ServiceNavbar() {
         if (target) target.scrollIntoView({ behavior: 'smooth' })
       })
     })
+  }
+
+  const isMobileLinkActive = (link) => {
+    if (!link.route) return location.hash === link.href
+    if (link.end || link.href === '/') return location.pathname === link.href
+    return (
+      location.pathname === link.href ||
+      location.pathname.startsWith(`${link.href}/`)
+    )
   }
 
   return (
@@ -152,6 +172,20 @@ export default function ServiceNavbar() {
             </button>
           </div>
         </div>
+        {!open && (
+          <NavScroller
+            label={t('nav.quickLinks')}
+            links={mobileNavLinks.map((link) => ({
+              key: link.href,
+              label: t(link.label),
+              active: isMobileLinkActive(link),
+            }))}
+            onSelect={(link) => {
+              const target = mobileNavLinks.find((item) => item.href === link.key)
+              if (target) handleClick(target.href, target.route)
+            }}
+          />
+        )}
       </motion.nav>
 
       <AnimatePresence>

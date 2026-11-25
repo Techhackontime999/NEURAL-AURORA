@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
 import LanguageSwitcher from './LanguageSwitcher'
+import NavScroller from './ui/nav-scroller'
 
 const staggerItem = {
   hidden: { opacity: 0, y: 20 },
@@ -29,6 +30,21 @@ export default function BlogNavbar() {
   })
 
   const isPost = location.pathname.startsWith('/blog/') && location.pathname !== '/blog'
+
+  const mobileNavLinks = [
+    { key: 'home', label: 'common.home', href: '/', end: true },
+    { key: 'more', label: 'nav.more', href: '/more' },
+    ...(isPost
+      ? [{ key: 'all-posts', label: 'blog.allPosts', href: '/blog' }]
+      : []),
+    { key: 'settings', label: 'nav.settings', href: '/settings' },
+  ]
+
+  const isMobileLinkActive = (link) =>
+    link.end || link.href === '/'
+      ? location.pathname === link.href
+      : location.pathname === link.href ||
+        location.pathname.startsWith(`${link.href}/`)
 
   return (
     <>
@@ -91,6 +107,21 @@ export default function BlogNavbar() {
             </button>
           </div>
         </div>
+        {!open && (
+          <NavScroller
+            label={t('nav.quickLinks')}
+            links={mobileNavLinks.map((link) => ({
+              key: link.href,
+              label: t(link.label),
+              active: isMobileLinkActive(link),
+            }))}
+            onSelect={(link) => {
+              setOpen(false)
+              navigate(link.key)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+          />
+        )}
       </motion.nav>
 
       <AnimatePresence>

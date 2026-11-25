@@ -13,7 +13,13 @@
     "admin": "Admin Dashboard",
     "crm": "CRM Dashboard",
     "getStarted": "Get Started",
-    "menu": "Menu"
+    "menu": "Menu",
+    "store": "Store",
+    "library": "Library",
+    "wishlist": "Wishlist",
+    "cart": "Cart",
+    "settings": "Settings",
+    "quickLinks": "Quick navigation"
   },
   "common": {
     "home": "Home",
@@ -953,14 +959,13 @@
     "searchPlaceholder": "Search..."
   },
   "bottomNav": {
-    "label": "Mobile quick navigation",
+    "label": "Mobile shopping navigation",
     "home": "Home",
+    "shop": "Shop",
     "search": "Search",
-    "alerts": "Alerts",
-    "profile": "Profile",
     "saved": "Saved",
-    "partner": "Partner",
-    "settings": "Settings"
+    "cart": "Cart",
+    "account": "Account"
   },
   "settings": {
     "eyebrow": "Preferences",

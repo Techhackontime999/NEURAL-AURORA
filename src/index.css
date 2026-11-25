@@ -303,6 +303,22 @@
     box-shadow: var(--glass-inner), 0 25px 70px -15px rgba(0,0,0,0.5);
   }
 
+  /* Mobile navigation rails stay swipeable without a visible scrollbar. The
+     soft edge mask is the affordance: links continue past the viewport. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-scroller {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  }
+
   /*
    * Mithi needs a far more solid surface than the site-wide glass panels:
    * chat bubbles and text were hard to read over busy backgrounds. This is

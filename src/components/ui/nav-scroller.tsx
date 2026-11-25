@@ -50,7 +50,7 @@ export default function NavScroller({ links, onSelect, label }: NavScrollerProps
             type="button"
             aria-current={link.active ? 'page' : undefined}
             onClick={() => onSelect(link)}
-            className={`min-h-9 shrink-0 whitespace-nowrap rounded-full px-3 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+            className={`min-h-11 shrink-0 whitespace-nowrap rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
               link.active
                 ? 'bg-[var(--accent-glow)]/12 text-[var(--accent-glow)]'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'

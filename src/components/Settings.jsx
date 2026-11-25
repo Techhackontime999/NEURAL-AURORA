@@ -83,7 +83,7 @@ export default function Settings() {
                   library sign-in, never the portfolio admin console. */}
               <Link
                 to="/library"
-                className="ml-auto text-[10px] uppercase tracking-widest text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-glow)]"
+                className="-mr-2 ml-auto inline-flex min-h-11 items-center px-2 text-[11px] uppercase tracking-widest text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-glow)]"
               >
                 {user ? t('settings.signedIn') : t('settings.signIn')}
               </Link>

@@ -23,6 +23,12 @@ const loader = read('src/components/StartingLoader.jsx')
 const en = JSON.parse(read('src/locales/en.json'))
 const videoDefaults = read('src/lib/videoHeroDefaults.js')
 const signatureForm = read('src/components/admin/AdminDocumentSignature.jsx')
+const navScroller = read('src/components/ui/nav-scroller.tsx')
+const themeToggle = read('src/components/ui/curtain-theme-toggle.jsx')
+const library = read('src/components/offerings/Library.jsx')
+const settings = read('src/components/Settings.jsx')
+const products = read('src/components/offerings/Products.jsx')
+const contributor = read('src/components/offerings/ContributorApply.jsx')
 
 let passed = 0
 let failed = 0
@@ -138,6 +144,20 @@ check('loader: explore controls stay usable on touch screens',
   loader.includes('inline-flex h-9 w-9 shrink-0 items-center justify-center') &&
   loader.includes("phase === 'explore' ? 'hidden sm:flex' : 'flex'")
 )
+
+// --- Touch comfort and measured spacing -------------------------------------
+check('touch: upper mobile nav links are 44px and readable', navScroller.includes('min-h-11 shrink-0 whitespace-nowrap') && navScroller.includes('text-[11px] font-semibold'))
+check('touch: theme toggle is a 44px target', themeToggle.includes('buttonSize   = 44'))
+check('touch: library sign-in tabs, fields and submit are 44px', library.includes('min-h-11 flex-1 rounded-lg') && library.includes('mt-1 min-h-11 w-full rounded-lg') && library.includes('mt-4 min-h-11 w-full rounded-lg'))
+check('touch: library secondary actions carry padded hit areas', library.includes('-mx-2 mt-4 inline-flex min-h-11 items-center px-2') && library.includes('-mx-2 inline-flex min-h-11 items-center gap-1.5 px-2'))
+check('spacing: library helper copy is readable, not microcopy', library.includes('max-w-[38ch] text-[11px] leading-relaxed') && !library.includes('mt-4 text-[10px] leading-relaxed'))
+check('touch: settings sign-in link has a real hit area', settings.includes('-mr-2 ml-auto inline-flex min-h-11 items-center px-2'))
+check('spacing: catalogue breathes above the rail and footer', products.includes('flex min-h-[100svh] flex-col pb-12 pt-12 md:pb-16 md:pt-14'))
+check('spacing: contributor content opens with a measured gap', contributor.includes('wrap space-y-14 pb-24 pt-14 md:space-y-16 md:pt-16'))
+check('touch: gateway filters and search are 44px high', loader.includes('inline-flex min-h-11 items-center justify-center rounded-full border px-3 py-1.5 text-[10px] font-mono') && loader.includes('min-h-11 w-full rounded-full border border-white/[0.08]'))
+check('contrast: gateway guidance and filter labels are not faint microcopy', loader.includes('text-white/60 font-mono text-center max-w-[28ch]') && loader.includes('text-white/60 hover:border-white/20 hover:text-white'))
+check('touch: store data chip is 44px on phones and visible on focus', products.includes('inline-flex min-h-11 items-center gap-1.5 rounded-full border') && products.includes('focus-visible:opacity-100 sm:min-h-9'))
+check('a11y: outline-none utilities restore a concrete focus ring', css.includes('outline: 2px solid #22d3ee') && css.includes('.focus\\:outline-none:focus {') && css.includes('box-shadow: 0 0 0 2px var(--accent-glow, #22d3ee)'))
 
 // --- Stale lazy-chunk recovery ----------------------------------------------
 const { isChunkLoadError, recoverFromChunkError } = await import('../src/lib/chunkRecovery.js')

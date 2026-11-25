@@ -3272,7 +3272,7 @@ export default function StartingLoader({ onComplete }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="text-white/30 font-mono text-center max-w-[28ch]"
+                className="text-white/60 font-mono text-center max-w-[28ch]"
                 style={{ fontSize: 'clamp(0.625rem, 2vw, 0.75rem)' }}
               >{t('loader.proveIdentity')}</motion.p>
 
@@ -3288,10 +3288,10 @@ export default function StartingLoader({ onComplete }) {
                       aria-selected={gatewayFilter === filter}
                       aria-pressed={gatewayFilter === filter}
                       onClick={() => setGatewayFilter(filter)}
-                      className={`rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                      className={`inline-flex min-h-11 items-center justify-center rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
                         gatewayFilter === filter
                           ? 'border-cyan-400/50 bg-cyan-400/10 text-white'
-                          : 'border-white/[0.07] bg-white/[0.02] text-white/40 hover:border-white/20 hover:text-white/80'
+                          : 'border-white/[0.07] bg-white/[0.02] text-white/60 hover:border-white/20 hover:text-white'
                       }`}
                     >
                       {t(`loader.gateway.filters.${filter}`)}
@@ -3307,7 +3307,7 @@ export default function StartingLoader({ onComplete }) {
                     value={gatewayQuery}
                     onChange={(event) => setGatewayQuery(event.target.value)}
                     placeholder={t('loader.gateway.searchPlaceholder')}
-                    className="w-full rounded-full border border-white/[0.08] bg-white/[0.02] py-1.5 pl-8 pr-3 text-[11px] font-mono text-white/80 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+                    className="min-h-11 w-full rounded-full border border-white/[0.08] bg-white/[0.02] py-1.5 pl-8 pr-3 text-[11px] font-mono text-white/80 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
                   />
                 </label>
               </div>

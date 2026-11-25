@@ -388,7 +388,7 @@ export default function Products() {
       <section
         id="catalogue"
         aria-labelledby="catalogue-heading"
-        className="flex min-h-[100svh] flex-col pt-10"
+        className="flex min-h-[100svh] flex-col pb-12 pt-12 md:pb-16 md:pt-14"
       >
         <div className="wrap flex flex-1 flex-col">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -403,7 +403,7 @@ export default function Products() {
             data-testid="store-data-status"
             onClick={() => setReloadToken((n) => n + 1)}
             title={t('store.retry')}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80 ${
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80 focus-visible:opacity-100 sm:min-h-9 ${
               isSupabaseConfigured
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
                 : 'border-amber-500/30 bg-amber-500/5 text-amber-500'

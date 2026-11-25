@@ -193,8 +193,8 @@ check(
 )
 check(
   'catalogue: section grows with listed products',
-  products.includes('className="flex min-h-[100svh] flex-col pt-10"') &&
-    !products.includes('className="flex h-[100svh] flex-col pt-10"') &&
+  products.includes('className="flex min-h-[100svh] flex-col pb-12 pt-12 md:pb-16 md:pt-14"') &&
+    !products.includes('className="flex h-[100svh] flex-col') &&
     products.includes('data-testid="store-catalogue-footer"')
 )
 check(

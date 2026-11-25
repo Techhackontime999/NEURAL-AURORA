@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+/* Tailwind's focus:outline-none utilities are used across the app. Keep a
+   visible ring in the same rules so keyboard focus never disappears. */
+.focus\:outline-none:focus {
+  box-shadow: 0 0 0 2px var(--accent-glow, #22d3ee);
+}
+
+.focus-visible\:outline-none:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-glow, #22d3ee);
+}
+
 @layer utilities {
   .animate-float {
     animation: float 6s ease-in-out infinite;
@@ -240,12 +250,14 @@
      keyboard focus stays obvious. */
   .focus\:outline-none:focus,
   .focus-visible\:outline-none:focus-visible {
-    outline: 2px solid var(--accent-glow);
+    outline: 2px solid #22d3ee;
+    outline-color: var(--accent-glow, #22d3ee);
     outline-offset: 2px;
   }
 
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-    outline: 2px solid var(--accent-glow);
+    outline: 2px solid #22d3ee;
+    outline-color: var(--accent-glow, #22d3ee);
     outline-offset: 2px;
   }
 

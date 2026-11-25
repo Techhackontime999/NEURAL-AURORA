@@ -42,7 +42,7 @@ export default function ContributorApply() {
       subtitle={t('contributor.subtitle')}
       action={{ to: '/offerings/products', label: t('contributor.browseStore') }}
     >
-      <section className="wrap space-y-14 pb-24">
+      <section className="wrap space-y-14 pb-24 pt-14 md:space-y-16 md:pt-16">
         <div className="glass-panel rounded-xl p-5 md:p-7">
           <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">
             {t('contributor.howTitle')}

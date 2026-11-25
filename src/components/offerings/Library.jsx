@@ -338,7 +338,7 @@ export default function Library() {
               <p className="mt-2 text-xs text-[var(--text-secondary)]">
                 {t('store.magicLinkSentBody')}
               </p>
-              <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+              <p className="mx-auto mt-4 max-w-[34ch] text-[11px] leading-relaxed text-black/45 dark:text-white/45">
                 {t('store.magicLinkSentSupport')}
               </p>
               <button
@@ -348,13 +348,13 @@ export default function Library() {
                   setError(null)
                   setEmail('')
                 }}
-                className="mt-4 text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"
+                className="-mx-2 mt-4 inline-flex min-h-11 items-center px-2 text-[11px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"
               >
                 {t('store.useDifferentEmail')}
               </button>
             </div>
           ) : (
-            <div className="glass-panel rounded-xl p-6 text-center">
+            <div className="glass-panel rounded-xl p-6 text-center sm:p-8">
               <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40">
                 <LibraryIcon className="h-5 w-5" aria-hidden="true" />
               </div>
@@ -383,7 +383,7 @@ export default function Library() {
                       setSignInMode(entry.key)
                       setError(null)
                     }}
-                    className={`flex-1 rounded-lg px-3 py-2 text-[10px] uppercase tracking-widest transition-colors ${
+                    className={`min-h-11 flex-1 rounded-lg px-3 py-2 text-[11px] uppercase tracking-widest transition-colors ${
                       signInMode === entry.key
                         ? 'bg-black/90 text-white dark:bg-white/90 dark:text-black'
                         : 'bg-black/5 text-black/50 hover:text-black/80 dark:bg-white/5 dark:text-white/50 dark:hover:text-white/80'
@@ -409,7 +409,7 @@ export default function Library() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t('store.emailPlaceholder')}
                     autoComplete="email"
-                    className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                    className="mt-1 min-h-11 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
                   />
                 </label>
 
@@ -425,7 +425,7 @@ export default function Library() {
                       onChange={(e) => setPasswordValue(e.target.value)}
                       placeholder={t('store.passwordPlaceholder')}
                       autoComplete="current-password"
-                      className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                      className="mt-1 min-h-11 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
                     />
                   </label>
                 )}
@@ -433,7 +433,7 @@ export default function Library() {
                 <button
                   type="submit"
                   disabled={signInMode === 'password' ? signingIn : sending}
-                  className="mt-4 w-full rounded-lg bg-black/90 py-3 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                  className="mt-4 min-h-11 w-full rounded-lg bg-black/90 py-3 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
                 >
                   {(signInMode === 'password' ? signingIn : sending)
                     ? t('store.working')
@@ -449,17 +449,17 @@ export default function Library() {
                 </p>
               )}
 
-              <p className="mt-4 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+              <p className="mx-auto mt-4 max-w-[38ch] text-[11px] leading-relaxed text-black/45 dark:text-white/45">
                 {signInMode === 'password' ? t('store.passwordSignInNote') : t('store.signInNote')}
               </p>
 
-              <p className="mt-2 text-[10px] leading-relaxed text-black/40 dark:text-white/35">
+              <p className="mx-auto mt-2 max-w-[38ch] text-[11px] leading-relaxed text-black/45 dark:text-white/45">
                 {t('store.signInSupport')}
               </p>
 
               <Link
                 to="/offerings/products"
-                className="mt-4 inline-block text-[10px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"
+                className="-mx-2 mt-4 inline-flex min-h-11 items-center px-2 text-[11px] uppercase tracking-widest text-cyan-500 hover:text-cyan-400"
               >
                 {t('store.browseStore')}
               </Link>
@@ -484,7 +484,7 @@ export default function Library() {
         <button
           type="button"
           onClick={() => signOut()}
-          className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-black/40 transition-colors hover:text-black/80 dark:text-white/40 dark:hover:text-white/80"
+          className="-mx-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[11px] uppercase tracking-widest text-black/45 transition-colors hover:text-black/80 dark:text-white/45 dark:hover:text-white/80"
         >
           <LogOut className="h-3 w-3" aria-hidden="true" />
           {t('store.signOut')}
@@ -522,7 +522,7 @@ export default function Library() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder={t('store.newPasswordPlaceholder', { min: MIN_PASSWORD_LENGTH })}
                   autoComplete="new-password"
-                  className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                  className="mt-1 min-h-11 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
                 />
               </label>
               <label className="block">
@@ -536,7 +536,7 @@ export default function Library() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder={t('store.confirmPasswordPlaceholder')}
                   autoComplete="new-password"
-                  className="mt-1 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+                  className="mt-1 min-h-11 w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2.5 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
                 />
               </label>
             </div>
@@ -545,7 +545,7 @@ export default function Library() {
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="rounded-lg bg-black/90 px-4 py-2.5 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
+                className="min-h-11 rounded-lg bg-black/90 px-4 py-2.5 text-[11px] uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-white/90 dark:text-black dark:hover:bg-white"
               >
                 {savingPassword ? t('store.working') : t('store.savePassword')}
               </button>
@@ -557,7 +557,7 @@ export default function Library() {
                   setNewPassword('')
                   setConfirmPassword('')
                 }}
-                className="text-[10px] uppercase tracking-widest text-black/40 transition-colors hover:text-black/80 dark:text-white/40 dark:hover:text-white/80"
+                className="-mx-2 inline-flex min-h-11 items-center px-2 text-[11px] uppercase tracking-widest text-black/45 transition-colors hover:text-black/80 dark:text-white/45 dark:hover:text-white/80"
               >
                 {t('store.passwordCancel')}
               </button>
@@ -580,7 +580,7 @@ export default function Library() {
                 setShowPasswordPanel(true)
                 setPasswordError(null)
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-black/5 px-3 py-2 text-[10px] uppercase tracking-widest text-black/60 transition-colors hover:text-black/90 dark:bg-white/5 dark:text-white/60 dark:hover:text-white/90"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-black/5 px-3 py-2 text-[11px] uppercase tracking-widest text-black/60 transition-colors hover:text-black/90 dark:bg-white/5 dark:text-white/60 dark:hover:text-white/90"
             >
               <KeyRound className="h-3 w-3" aria-hidden="true" />
               {hasPassword ? t('store.changePasswordCta') : t('store.setPasswordCta')}
@@ -608,7 +608,7 @@ export default function Library() {
               onChange={(e) => setLibraryQuery(e.target.value)}
               placeholder={t('store.librarySearchPlaceholder')}
               aria-label={t('store.librarySearchPlaceholder')}
-              className="w-full rounded-lg border border-black/10 bg-black/5 py-2.5 pl-9 pr-3 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
+              className="min-h-11 w-full rounded-lg border border-black/10 bg-black/5 py-2.5 pl-9 pr-3 text-sm text-black/80 placeholder:text-black/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:placeholder:text-white/30"
             />
           </div>
           <div className="flex items-center justify-between gap-3">

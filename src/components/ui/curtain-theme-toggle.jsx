@@ -39,7 +39,7 @@ export function ThemeToggle({
   appBarProps,
   defaultTheme = "light",
   barHeight: explicitBarHeight,
-  buttonSize   = 36,
+  buttonSize   = 44,
   duration     = 550,
   onThemeChange,
   children,

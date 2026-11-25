@@ -644,6 +644,7 @@ export default function ProductDetail() {
                 slug={product.slug}
                 title={product.title}
                 description={product.short_description}
+                image={productImage}
               />
               <button
                 type="button"

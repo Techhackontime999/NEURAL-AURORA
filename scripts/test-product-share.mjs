@@ -43,6 +43,9 @@ check('native share payload carries title, text and URL', (() => {
 check('share menu covers personal channels', ['x', 'linkedin', 'facebook', 'whatsapp', 'telegram', 'email'].every((id) =>
   links.some((link) => link.id === id)
 ))
+check('channel labels are compact for a share sheet', links.every((link) =>
+  link.labelKey.startsWith('store.channel')
+))
 check('every channel link carries the product URL', links.every((link) =>
   link.href.includes(encodeURIComponent(url)) || link.href.includes(url)
 ))
@@ -51,32 +54,69 @@ check('external channel links use a safe opener', links.filter((link) => link.ex
 ) && menu.includes('noopener noreferrer'))
 check('email share uses a mailto link', links.find((link) => link.id === 'email')?.href.startsWith('mailto:'))
 
-check('every catalogue card exposes the share control', card.includes('<ShareMenu') && card.includes('slug={product.slug}'))
-check('product detail exposes the share control', detail.includes('<ShareMenu') && detail.includes('slug={product.slug}'))
+check('every catalogue card exposes the share control with a preview image',
+  card.includes('<ShareMenu') &&
+  card.includes('slug={product.slug}') &&
+  card.includes('image={cover}'))
+check('product detail exposes the share control with a preview image',
+  detail.includes('<ShareMenu') &&
+  detail.includes('slug={product.slug}') &&
+  detail.includes('image={productImage}'))
+
+check('share menu renders a product link preview',
+  menu.includes('previewImage') &&
+  menu.includes('shareLinkLabel') &&
+  menu.includes('sharePreviewHint') &&
+  menu.includes('line-clamp-2'))
+check('share menu has a selectable canonical link field',
+  menu.includes('readOnly') &&
+  menu.includes('event.target.select()') &&
+  menu.includes('data-share-initial-focus'))
 check('share menu supports native sharing and clipboard fallback',
   menu.includes('navigator.share') &&
   menu.includes('navigator.clipboard') &&
   menu.includes("execCommand('copy')"))
-check('share menu is keyboard accessible',
-  menu.includes('aria-haspopup="menu"') &&
+check('share menu uses a dialog with focus trapping',
+  menu.includes('aria-haspopup="dialog"') &&
   menu.includes('aria-expanded={open}') &&
-  menu.includes('role="menu"') &&
-  menu.includes("event.key !== 'Escape'"))
-check('share menu closes on outside interaction', menu.includes('pointerdown') && menu.includes('resize') && menu.includes('scroll'))
+  menu.includes('role="dialog"') &&
+  menu.includes("event.key !== 'Tab'") &&
+  menu.includes('first.focus()') &&
+  menu.includes('last.focus()'))
+check('share menu closes on Escape and outside interaction',
+  menu.includes("event.key === 'Escape'") &&
+  menu.includes('pointerdown') &&
+  menu.includes('resize') &&
+  menu.includes('scroll'))
+check('mobile users get a bottom sheet with a scrim and safe-area padding',
+  menu.includes('MOBILE_QUERY') &&
+  menu.includes('share-scrim') &&
+  menu.includes('max-h-[88svh]') &&
+  menu.includes('env(safe-area-inset-bottom)') &&
+  menu.includes("body.style.overflow = 'hidden'"))
+check('share menu animates and respects reduced motion',
+  menu.includes('AnimatePresence') &&
+  menu.includes('motion.div') &&
+  menu.includes('useReducedMotion'))
 check('share copy has accessible feedback', menu.includes('shareCopied') && menu.includes('shareCopyFailed'))
 check('English share copy exists', [
   'shareProduct',
   'shareCopyLink',
+  'shareCopiedShort',
   'shareCopied',
   'shareCopyFailed',
   'shareFailed',
   'shareWithDevice',
-  'shareOnX',
-  'shareOnLinkedIn',
-  'shareOnFacebook',
-  'shareOnWhatsApp',
-  'shareOnTelegram',
-  'shareByEmail',
+  'shareLinkLabel',
+  'sharePreviewHint',
+  'shareChannels',
+  'shareHint',
+  'channelX',
+  'channelLinkedIn',
+  'channelFacebook',
+  'channelWhatsApp',
+  'channelTelegram',
+  'channelEmail',
 ].every((key) => typeof en.store[key] === 'string' && en.store[key].length > 0))
 
 console.log(`\n${passed} passed, ${failed} failed`)

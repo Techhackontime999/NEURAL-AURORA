@@ -99,6 +99,7 @@ export default function ProductCard({ product, index = 0 }) {
           slug={product.slug}
           title={product.title}
           description={product.short_description}
+          image={cover}
           className="absolute right-[60px] top-3 z-10 bg-white/90 text-black/60 shadow-sm backdrop-blur dark:bg-black/70 dark:text-white/70"
         />
 

@@ -90,16 +90,30 @@ export default function BookAppointment() {
   const meeting = booking?.meeting || (selectedType ? { provider: selectedType.meeting_provider, url: selectedType.meeting_url, label: selectedType.location_label } : null)
   const accessLink = booking?.id && booking?.access_token ? `${window.location.origin}/book-appointment?booking=${booking.id}&token=${booking.access_token}` : (booking?.id && searchParams.get('token') ? `${window.location.origin}/book-appointment?booking=${booking.id}&token=${searchParams.get('token')}` : '')
 
+  const minNoticeHours = Math.max(0, Number(settings.min_notice_hours) || 0)
+  const maxDaysAhead = Math.max(0, Number(settings.max_days_ahead) || 0)
+  const minDateStr = (() => { const d = new Date(); if (minNoticeHours > 0) d.setHours(d.getHours() + minNoticeHours); return d.toISOString().slice(0, 10) })()
+  const maxDateStr = maxDaysAhead > 0 ? (() => { const d = new Date(); d.setDate(d.getDate() + maxDaysAhead); return d.toISOString().slice(0, 10) })() : ''
+
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
-  function canContinueTime() { return !!selectedType && !!form.preferred_date && !!form.preferred_time }
-  function canContinueDetails() { return !!form.customer_name.trim() && !!form.customer_email.trim() }
+  function canContinueTime() {
+    if (!selectedType || !form.preferred_date || !form.preferred_time) return false
+    if (minDateStr && form.preferred_date < minDateStr) return false
+    if (maxDateStr && form.preferred_date > maxDateStr) return false
+    return true
+  }
+  function canContinueDetails() {
+    if (!form.customer_name.trim() || !form.customer_email.trim()) return false
+    if (settings.require_phone && !form.customer_phone.trim()) return false
+    return true
+  }
 
   async function submitBooking() {
     setError('')
     if (!selectedType) return setError('Please select an appointment type.')
     if (!canContinueTime()) return setError('Please choose a date and time.')
-    if (!canContinueDetails()) return setError('Name and email are required.')
+    if (!canContinueDetails()) return setError(settings.require_phone ? 'Name, email, and phone are required.' : 'Name and email are required.')
     setSubmitting(true)
     try {
       const res = await fetch('/api/book-appointment', {
@@ -259,7 +273,7 @@ export default function BookAppointment() {
                     <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Choose your preferred slot. We’ll confirm the meeting details after booking.</p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Preferred date"><input type="date" value={form.preferred_date} onChange={e => update('preferred_date', e.target.value)} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="Preferred date"><input type="date" min={minDateStr} max={maxDateStr || undefined} value={form.preferred_date} onChange={e => update('preferred_date', e.target.value)} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Preferred time"><input type="time" value={form.preferred_time} onChange={e => update('preferred_time', e.target.value)} className={inputCls} style={inputStyle} /></Field>
                   </div>
                   {settings.timezone_note && <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}><Calendar size={13} /> {settings.timezone_note}</p>}
@@ -280,7 +294,7 @@ export default function BookAppointment() {
                     <Field label="Full name"><input value={form.customer_name} onChange={e => update('customer_name', e.target.value)} className={inputCls} style={inputStyle} placeholder="Your name" /></Field>
                     <Field label="Email"><input type="email" value={form.customer_email} onChange={e => update('customer_email', e.target.value)} className={inputCls} style={inputStyle} placeholder="you@example.com" /></Field>
                   </div>
-                  <Field label="Phone (optional)"><input value={form.customer_phone} onChange={e => update('customer_phone', e.target.value)} className={inputCls} style={inputStyle} placeholder="+91..." /></Field>
+                  <Field label={settings.require_phone ? 'Phone number' : 'Phone (optional)'}><input value={form.customer_phone} onChange={e => update('customer_phone', e.target.value)} className={inputCls} style={inputStyle} placeholder="+91..." required={!!settings.require_phone} /></Field>
                   <Field label="Notes (optional)"><textarea value={form.notes} onChange={e => update('notes', e.target.value)} rows={4} className={`${inputCls} resize-y`} style={inputStyle} placeholder="What would you like to discuss?" /></Field>
                   {error && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
                   <div className="flex justify-between pt-2">
@@ -298,7 +312,7 @@ export default function BookAppointment() {
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400"><CheckCircle2 size={20} /></div>
                       <div>
-                        <h3 className="font-display text-2xl font-semibold text-emerald-300">Booking {booking.payment_status === 'paid' ? 'confirmed' : 'received'}</h3>
+                        <h3 className="font-display text-2xl font-semibold text-emerald-300">Booking {booking.status === 'confirmed' || booking.payment_status === 'paid' ? 'confirmed' : 'received'}</h3>
                         <p className="mt-1 text-sm text-emerald-100/80">{booking.message || settings.confirmation_message || 'Your appointment request has been received.'}</p>
                       </div>
                     </div>

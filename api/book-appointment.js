@@ -167,6 +167,25 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: 'Appointment type not found.' })
     }
 
+    if (appointmentSettings.require_phone && !customerPhone) {
+      return res.status(400).json({ error: 'Phone number is required.' })
+    }
+    const minNoticeHours = Math.max(0, Number(appointmentSettings.min_notice_hours) || 0)
+    const maxDaysAhead = Math.max(0, Number(appointmentSettings.max_days_ahead) || 0)
+    const preferredAt = new Date(`${preferredDate}T${preferredTime.length === 5 ? `${preferredTime}:00` : preferredTime}`)
+    if (Number.isNaN(preferredAt.getTime())) {
+      return res.status(400).json({ error: 'Valid preferred date and time are required.' })
+    }
+    if (minNoticeHours > 0 && preferredAt.getTime() < Date.now() + minNoticeHours * 60 * 60 * 1000) {
+      return res.status(400).json({ error: `Please choose a time at least ${minNoticeHours} hour(s) from now.` })
+    }
+    if (maxDaysAhead > 0) {
+      const maxDate = new Date(); maxDate.setHours(23, 59, 59, 999); maxDate.setDate(maxDate.getDate() + maxDaysAhead)
+      if (preferredAt.getTime() > maxDate.getTime()) {
+        return res.status(400).json({ error: `Please choose a date within ${maxDaysAhead} days.` })
+      }
+    }
+
     const pricePaise = Math.max(0, Number(typeRow.price_paise) || 0)
     const isPaid = pricePaise > 0
     const currency = sanitizeText(typeRow.currency || 'INR', 10).toUpperCase() || 'INR'
@@ -193,7 +212,7 @@ module.exports = async function handler(req, res) {
       meeting_url_snapshot: meetingUrl,
       location_label_snapshot: locationLabel,
       access_token: accessToken,
-      status: 'pending',
+      status: (!isPaid && appointmentSettings.auto_confirm_free) ? 'confirmed' : 'pending',
       payment_status: isPaid ? 'pending' : 'not_required',
       admin_note: '',
     }

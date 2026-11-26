@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { usePublicSiteSettings } from '../../lib/usePortfolioData'
@@ -18,35 +19,71 @@ export default function FloatingWhatsApp() {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const { data: publicSettings = {} } = usePublicSiteSettings()
+  const [showHint, setShowHint] = useState(false)
   const whatsappNumber = normalizeWhatsAppNumber(publicSettings?.whatsapp_number)
   const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : ''
+
+  useEffect(() => {
+    if (!whatsappLink) return undefined
+    setShowHint(true)
+    const timer = setTimeout(() => setShowHint(false), 4200)
+    return () => clearTimeout(timer)
+  }, [whatsappLink])
 
   return (
     <AnimatePresence>
       {whatsappLink && (
-        <motion.a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 16, scale: 0.9 }}
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={shouldReduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.95 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="group fixed left-4 sm:left-5 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-6 z-[9990] inline-flex items-center gap-0 sm:gap-3 rounded-full bg-[#25D366] text-white shadow-[0_12px_30px_-10px_rgba(37,211,102,0.75)] hover:bg-[#20bd5a] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          aria-label={t('contact.whatsappSupport', 'WhatsApp Support')}
-          title={t('contact.whatsappSupport', 'WhatsApp Support')}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed left-4 sm:left-5 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-6 z-[9990]"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-full">
-            <WhatsAppIcon className="w-7 h-7" />
-          </span>
-          <span className="hidden sm:block max-w-0 overflow-hidden whitespace-nowrap pr-0 text-sm font-medium opacity-0 transition-all duration-300 group-hover:max-w-[10rem] group-hover:pr-5 group-hover:opacity-100">
-            {t('contact.whatsappSupport', 'WhatsApp Support')}
-          </span>
-          <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 opacity-60" />
-            <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-white/90" />
-          </span>
-        </motion.a>
+          <AnimatePresence>
+            {showHint && (
+              <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6, scale: 0.96 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute bottom-full left-0 mb-3 w-max max-w-[min(15rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#111827]/90 px-3.5 py-2.5 text-left shadow-[0_18px_40px_-20px_rgba(0,0,0,0.65)] backdrop-blur-xl"
+              >
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-300/90">
+                  {t('contact.whatsappSupport', 'WhatsApp Support')}
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-white/70">
+                  {t('contact.whatsappSupportHint', 'Chat directly on WhatsApp for quick support.')}
+                </p>
+                <span className="absolute -bottom-1.5 left-6 h-3 w-3 rotate-45 border-b border-r border-white/10 bg-[#111827]/90" aria-hidden="true" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={shouldReduceMotion ? undefined : { y: -2, scale: 1.01 }}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+            className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full border border-emerald-300/20 bg-[#111827]/80 p-1.5 pr-1.5 sm:pr-4 text-white shadow-[0_16px_40px_-18px_rgba(16,185,129,0.55)] backdrop-blur-xl transition-colors hover:bg-[#111827]/92 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            aria-label={t('contact.whatsappSupport', 'WhatsApp Support')}
+            title={t('contact.whatsappSupport', 'WhatsApp Support')}
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-cyan-400/5 opacity-80" aria-hidden="true" />
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#25D366] to-[#16a34a] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_20px_-10px_rgba(37,211,102,0.9)]">
+              <WhatsAppIcon className="w-5 h-5" />
+            </span>
+            <span className="relative hidden sm:flex flex-col items-start leading-none pr-1">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-emerald-300/80">WhatsApp</span>
+              <span className="mt-1 text-sm font-medium text-white/92">{t('contact.whatsappSupport', 'Support')}</span>
+            </span>
+            <span className="absolute right-1 top-1 flex h-2.5 w-2.5 sm:right-2 sm:top-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300/70 opacity-60" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_0_2px_rgba(17,24,39,0.9)]" />
+            </span>
+          </motion.a>
+        </motion.div>
       )}
     </AnimatePresence>
   )

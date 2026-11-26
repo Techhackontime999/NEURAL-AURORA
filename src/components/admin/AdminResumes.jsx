@@ -119,11 +119,19 @@ export default function AdminResumes() {
     if (updates.length) await Promise.all(updates)
   }
 
+  function ensureResumeId(form) {
+    const explicit = form.resume_id?.trim()
+    if (explicit) return explicit
+    const base = (form.label || 'resume').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'resume'
+    return `${base}-${Date.now().toString(36)}`
+  }
+
   async function handleSave(id) {
     try {
       const { id: _id, created_at, updated_at, ...payload } = editForm
       if (!payload.label?.trim()) return toast.error('Role/label is required')
       if (!payload.file_url?.trim()) return toast.error('Resume file is required')
+      payload.resume_id = ensureResumeId(payload)
       await updateResume(id, payload)
       if (payload.is_default) await syncDefault(items, id)
       setEditingId(null)
@@ -139,8 +147,9 @@ export default function AdminResumes() {
     if (!newForm.label.trim()) return toast.error('Role/label is required')
     if (!newForm.file_url.trim()) return toast.error('Resume file is required')
     try {
-      const created = await createResume(newForm)
-      if (newForm.is_default) await syncDefault(items, created.id)
+      const payload = { ...newForm, resume_id: ensureResumeId(newForm) }
+      const created = await createResume(payload)
+      if (payload.is_default) await syncDefault(items, created.id)
       setShowNew(false)
       setNewForm(emptyForm)
       toast.success('Resume created')

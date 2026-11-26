@@ -72,7 +72,10 @@
     "selectRole": "Select resume by role",
     "downloadSelected": "Download Selected Resume",
     "generalRole": "General",
-    "empty": "No resume available right now."
+    "empty": "No resume available right now.",
+    "default": "Default",
+    "selectedHint": "This resume will be downloaded when you click the button below.",
+    "viewSelected": "View selected resume"
   },
   "contact": {
     "eyebrow": "Conectar",

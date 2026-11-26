@@ -829,32 +829,50 @@ function ResumeCard({ resumes = [], fallbackUrl }) {
             {fallbackOptions.length > 1 ? t('resume.selectRole', 'Select resume by role') : t('loader.explore.resume.ready')}
           </p>
         </div>
-        <a
-          href={selected.file_url}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
-        >{t('loader.explore.resume.download')} ↓</a>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={selected.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-white/[0.12] px-3 py-2 text-[11px] font-mono text-white/65 hover:text-white hover:border-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+          >
+            {t('resume.viewSelected', 'View')}
+          </a>
+          <a
+            href={selected.file_url}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+          >{t('loader.explore.resume.download')} ↓</a>
+        </div>
       </div>
       {fallbackOptions.length > 1 && (
-        <select
-          value={selected?.id ?? ''}
-          onChange={(e) => {
-            const next = fallbackOptions.find((r) => String(r.id) === e.target.value)
-            setSelectedId(next?.id ?? null)
-          }}
-          className="min-h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/80 outline-none focus:ring-1 focus:ring-cyan-400/50"
-          aria-label={t('resume.selectRole', 'Select resume by role')}
-        >
-          {fallbackOptions.map((resume) => (
-            <option key={resume.id} value={resume.id} className="bg-[#101018]">
-              {resume.label || t('resume.generalRole', 'General')}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('resume.selectRole', 'Select resume by role')}>
+          {fallbackOptions.map((resume) => {
+            const active = selected?.id === resume.id
+            return (
+              <button
+                key={resume.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setSelectedId(resume.id)}
+                className={`min-h-11 rounded-full border px-3 py-1.5 text-[11px] font-mono transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                  active
+                    ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-100'
+                    : 'border-white/[0.08] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white/85'
+                }`}
+              >
+                {resume.label || t('resume.generalRole', 'General')}
+              </button>
+            )
+          })}
+        </div>
       )}
-      {selected?.description && <p className="text-white/35 text-[11px]">{selected.description}</p>}
+      <p className="text-white/35 text-[11px]">
+        {selected?.description || selected?.file_name || t('resume.selectedHint', 'This resume will be downloaded when you click the button below.')}
+      </p>
     </div>
   )
 }

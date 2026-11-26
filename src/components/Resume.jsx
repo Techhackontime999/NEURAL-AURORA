@@ -99,56 +99,79 @@ export default function Resume() {
             </motion.p>
 
             {resumeOptions.length > 1 && (
-              <motion.div variants={childVariants} className="space-y-3">
-                <label htmlFor="resume-role-select" className="block text-xs uppercase tracking-widest text-black/40 dark:text-white/35">
+              <motion.div variants={childVariants} className="space-y-4">
+                <p className="text-xs uppercase tracking-widest text-black/40 dark:text-white/35">
                   {t('resume.selectRole', 'Select resume by role')}
-                </label>
-                <select
-                  id="resume-role-select"
-                  value={selectedResume?.id ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    const next = resumeOptions.find((r) => String(r.id) === value)
-                    setSelectedId(next?.id ?? null)
-                  }}
-                  className="min-h-11 w-full max-w-md mx-auto rounded-xl border border-black/10 bg-white/70 px-4 py-2 text-sm text-black/80 outline-none transition-colors focus:border-cyan-500/50 dark:border-white/10 dark:bg-black/20 dark:text-white/85"
-                >
-                  {resumeOptions.map((resume) => (
-                    <option key={resume.id} value={resume.id}>
-                      {resume.label || t('resume.generalRole', 'General')}
-                    </option>
-                  ))}
-                </select>
-                {selectedResume?.description && (
-                  <p className="text-xs text-black/45 dark:text-white/35">{selectedResume.description}</p>
-                )}
+                </p>
+                <div className="flex flex-wrap justify-center gap-2.5" role="radiogroup" aria-label={t('resume.selectRole', 'Select resume by role')}>
+                  {resumeOptions.map((resume) => {
+                    const active = selectedResume?.id === resume.id
+                    return (
+                      <button
+                        key={resume.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setSelectedId(resume.id)}
+                        className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
+                          active
+                            ? 'border-cyan-400/60 bg-cyan-400/10 text-black dark:text-white shadow-[0_0_0_1px_rgba(34,211,238,0.15)]'
+                            : 'border-black/10 bg-black/[0.02] text-black/65 hover:border-black/20 hover:text-black dark:border-white/10 dark:bg-white/[0.03] dark:text-white/65 dark:hover:border-white/25 dark:hover:text-white'
+                        }`}
+                      >
+                        <span className="font-medium">{resume.label || t('resume.generalRole', 'General')}</span>
+                        {resume.is_default && (
+                          <span className={`ml-2 text-[10px] uppercase tracking-wider ${active ? 'text-cyan-600 dark:text-cyan-300' : 'text-black/35 dark:text-white/35'}`}>
+                            {t('resume.default', 'Default')}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="mx-auto max-w-xl rounded-2xl border border-black/8 bg-black/[0.02] px-4 py-3 text-left dark:border-white/8 dark:bg-white/[0.02]">
+                  <p className="text-sm font-medium text-black/80 dark:text-white/85">{selectedResume?.label || t('resume.generalRole', 'General')}</p>
+                  <p className="mt-1 text-xs text-black/45 dark:text-white/40">
+                    {selectedResume?.description || t('resume.selectedHint', 'This resume will be downloaded when you click the button below.')}
+                  </p>
+                </div>
               </motion.div>
             )}
 
-            <motion.div variants={childVariants}>
+            <motion.div variants={childVariants} className="flex flex-col items-center gap-3">
               {selectedResume?.file_url ? (
-                <MagneticButton
-                  as="a"
-                  href={selectedResume.file_url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/70 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  {resumeOptions.length > 1
-                    ? t('resume.downloadSelected', 'Download Selected Resume')
-                    : t('resume.downloadPdf')}
-                </MagneticButton>
+                <>
+                  <MagneticButton
+                    as="a"
+                    href={selectedResume.file_url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/70 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {resumeOptions.length > 1
+                      ? t('resume.downloadSelected', 'Download Selected Resume')
+                      : t('resume.downloadPdf')}
+                  </MagneticButton>
+                  <a
+                    href={selectedResume.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-black/45 underline-offset-4 hover:underline dark:text-white/40"
+                  >
+                    {t('resume.viewSelected', 'View selected resume')}
+                  </a>
+                </>
               ) : (
                 <p className="text-sm text-black/45 dark:text-white/35">{t('resume.empty', 'No resume available right now.')}</p>
               )}
             </motion.div>
 
             <motion.p variants={childVariants} className="text-xs text-black/30 dark:text-white/20">
-              {selectedResume?.file_name || t('resume.pdfFormat')}
+              {selectedResume?.file_name || selectedResume?.label || t('resume.pdfFormat')}
             </motion.p>
           </div>
 

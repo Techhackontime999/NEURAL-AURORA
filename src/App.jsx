@@ -262,7 +262,7 @@ function headForPath(pathname) {
     pathname === '/contributor-login' ||
     pathname === '/partner' ||
     pathname === '/settings' ||
-    pathname.startsWith('/admin/')
+    pathname.startsWith('/admin')
   ) {
     return { title: `${SITE_NAME}`, robots: PRIVATE_ROBOTS }
   }

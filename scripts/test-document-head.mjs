@@ -64,6 +64,7 @@ check('shell: static head tags are marked as managed', (html.match(/data-na-head
 check('app: a route head manager is mounted', app.includes('<RouteHead />') && app.includes('function RouteHead()'))
 check('app: product detail is excluded from static head', app.includes("pathname.startsWith('/offerings/products/')"))
 check('app: private routes are noindex', app.includes("const PRIVATE_ROBOTS = 'noindex, nofollow'"))
+check('app: exact /admin is private, not a 404 head', app.includes("pathname.startsWith('/admin')") && !app.includes("pathname.startsWith('/admin/')"))
 
 check('product: Product JSON-LD is emitted', detail.includes("'@type': 'Product'") && detail.includes('priceCurrency'))
 check('product: JSON-LD has availability and canonical URL', detail.includes('availability') && detail.includes('productUrl'))

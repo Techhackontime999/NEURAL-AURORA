@@ -60,6 +60,7 @@ const GATEWAY_VERIFY_IDS = [
   'youtube',
 ]
 const GATEWAY_ACCESS_IDS = ['becomePartner', 'partnerSignIn', 'becomeContributor', 'myLibrary']
+const GATEWAY_EXIT_IDS = ['skip']
 
 // Real product routes behind the gateway cards. Navigation leaves the loader:
 // AppContent marks verification complete as soon as the pathname changes.
@@ -2938,9 +2939,7 @@ export default function StartingLoader({ onComplete }) {
     if (!normalizedGatewayQuery) return true
     return (gatewayLabels[id] || id).toLowerCase().includes(normalizedGatewayQuery)
   }, [gatewayFilter, normalizedGatewayQuery, gatewayLabels])
-  const visibleGatewayCount = (gatewayFilter === 'exit'
-    ? [...availableGatewayIds, 'skip']
-    : availableGatewayIds).filter(isGatewayVisible).length
+  const visibleGatewayCount = [...availableGatewayIds, 'skip'].filter(isGatewayVisible).length
 
   // The gateway cards are a mix of bespoke challenge buttons and shared
   // exploration options. Tagging each button with an id lets one effect apply

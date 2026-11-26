@@ -106,7 +106,7 @@ export default function StoreShell({ eyebrow, title, subtitle, action, children 
     <div className="relative min-h-screen overflow-hidden">
       <ServiceNavbar />
 
-      <main className="wrap relative z-10 pb-0 pt-0">
+      <main className={`wrap relative z-10 pb-0 ${title ? 'pt-0' : 'pt-24 sm:pt-28'}`}>
         {title && (
           <motion.section
             initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}

@@ -1,0 +1,4 @@
+# AdSense seller authorization. Replace YOUR_NUMERIC_ID with the numeric
+# publisher ID from AdSense -> Account -> Settings -> Account information
+# (your ca-pub-... ID without the "ca-" prefix), then commit the change.
+google.com, pub-YOUR_NUMERIC_ID, DIRECT, f08c47fec0942fa0

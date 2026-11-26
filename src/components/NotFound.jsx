@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, LifeBuoy } from 'lucide-react'
+import { ArrowLeft, Mail } from 'lucide-react'
 
 /** A real 404: unknown URLs stay where they are instead of silently becoming home. */
 export default function NotFound() {
@@ -28,14 +28,14 @@ export default function NotFound() {
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             Back to home
           </Link>
-          <Link
-            to="/support"
+          <a
+            href="/#contact"
             className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
             style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
           >
-            <LifeBuoy aria-hidden="true" className="h-4 w-4" />
-            Get support
-          </Link>
+            <Mail aria-hidden="true" className="h-4 w-4" />
+            Contact us
+          </a>
         </div>
       </div>
     </main>

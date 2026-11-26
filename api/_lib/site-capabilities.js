@@ -21,7 +21,7 @@ const SITE_ACTIONS = [
   { id: 'services', label: 'View services', path: '/offerings', hint: 'Services and collaboration.' },
   { id: 'blog', label: 'Read the blog', path: '/blog', hint: 'Articles and write-ups.' },
   { id: 'more', label: 'More about the work', path: '/more', hint: 'Certificates, experience, gallery.' },
-  { id: 'support', label: 'Get support', path: '/support', hint: 'Contact and support.' },
+  { id: 'contact', label: 'Contact us', path: '/#contact', hint: 'Get in touch or ask for help with an order.' },
   { id: 'library', label: 'My purchases', path: '/library', hint: 'Past purchases and downloads.' },
 ]
 

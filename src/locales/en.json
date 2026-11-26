@@ -59,7 +59,7 @@
       "projects": "Case studies",
       "library": "Your purchases",
       "more": "Gallery & more",
-      "support": "Get help",
+      "support": "Support the project",
       "contact": "Say hello"
     }
   },
@@ -996,7 +996,7 @@
     "partnerBody": "Referral links and earnings",
     "contributor": "Contributor access",
     "contributorBody": "Personal-use application",
-    "support": "Support",
+    "support": "Contact",
     "supportBody": "Order help and contact"
   }
 }

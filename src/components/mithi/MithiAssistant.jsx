@@ -206,6 +206,7 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
               const path = def?.path || action.path
               if (!path) return null
               const isExternal = /^https?:\/\//.test(path)
+              const [routePath, hash] = path.split('#')
               return (
                 <button
                   key={action.id}
@@ -214,6 +215,10 @@ export default function MithiAssistant({ status, statusReason, onCheckStatus, on
                     trackMithiEvent('mithi_action_clicked')
                     if (isExternal) {
                       window.open(path, '_blank', 'noopener,noreferrer')
+                    } else if (hash) {
+                      // React Router does not scroll to hash targets itself.
+                      navigate(routePath || '/')
+                      setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' }), 120)
                     } else {
                       navigate(path)
                     }

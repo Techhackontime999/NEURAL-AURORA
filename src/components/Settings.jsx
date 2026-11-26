@@ -5,7 +5,7 @@ import {
   ChevronRight,
   Handshake,
   Library,
-  LifeBuoy,
+  Mail,
   ShieldCheck,
 } from 'lucide-react'
 import ServiceNavbar from './ServiceNavbar'
@@ -14,10 +14,13 @@ import { ThemeToggle } from './ui/curtain-theme-toggle'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useAuth } from '../context/AuthContext'
 
-function SettingLink({ to, icon: Icon, title, description }) {
+function SettingLink({ to, href, icon: Icon, title, description }) {
+  // Section anchors use a plain link so the browser jumps to the target after
+  // returning to the home page; routes stay client-side through react-router.
+  const Tag = href ? 'a' : Link
   return (
-    <Link
-      to={to}
+    <Tag
+      {...(href ? { href } : { to })}
       className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--hover-bg)]"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-color)] text-[var(--accent-glow)]">
@@ -33,7 +36,7 @@ function SettingLink({ to, icon: Icon, title, description }) {
         aria-hidden="true"
         className="shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5"
       />
-    </Link>
+    </Tag>
   )
 }
 
@@ -117,8 +120,8 @@ export default function Settings() {
                 description={t('settings.contributorBody')}
               />
               <SettingLink
-                to="/support"
-                icon={LifeBuoy}
+                href="/#contact"
+                icon={Mail}
                 title={t('settings.support')}
                 description={t('settings.supportBody')}
               />

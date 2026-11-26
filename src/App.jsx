@@ -211,7 +211,7 @@ const ROUTE_HEADS = {
   },
   '/support': {
     title: `Support — ${SITE_NAME}`,
-    description: 'Get help with an order, download or digital product.',
+    description: 'Contribute to NEURAL AURORA and help fund features, hosting and ongoing development.',
   },
   '/privacy': {
     title: `Privacy Policy — ${SITE_NAME}`,
@@ -452,15 +452,19 @@ function AppContent() {
   // an auth screen before the home gateway ever mounts.
   const isAuthCallbackLocation = location.pathname === AUTH_CALLBACK_PATH || hasAuthCallbackParams(location)
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/forgot-password') || location.pathname.startsWith('/reset-password') || location.pathname.startsWith(AUTH_CALLBACK_PATH) || location.pathname.startsWith('/affiliate-login') || location.pathname.startsWith('/contributor-login') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/support')
+  const isAdminRoute = location.pathname.startsWith('/admin')
   // An embed is a guest in another site's page: no cursor, companion, music or
   // site chrome should travel with it.
   const isEmbedRoute = location.pathname.startsWith('/embed/')
   // Mithi is a portfolio companion: no admin, auth, payment or embed screens.
-  const showMithi = !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/reset-password') && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/affiliate-login') && !location.pathname.startsWith('/contributor-login')
+  const showMithi = !isEmbedRoute && !isAdminRoute && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/forgot-password') && !location.pathname.startsWith('/reset-password') && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/affiliate-login') && !location.pathname.startsWith('/contributor-login')
   const [loaderDone, setLoaderDone] = useState(isAuthRoute || isAuthCallbackLocation || location.pathname !== '/')
   // The top navigation stays untouched. This is a mobile-only quick bar for
   // the pages people reach most; admin, embeds and auth handoffs keep their own chrome.
-  const showFloatingNav = loaderDone && !isEmbedRoute && !location.pathname.startsWith('/admin') && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/reset-password')
+  const showFloatingNav = loaderDone && !isEmbedRoute && !isAdminRoute && !location.pathname.startsWith(AUTH_CALLBACK_PATH) && !location.pathname.startsWith('/reset-password')
+  // Admin screens have their own navigation and support links; the public
+  // WhatsApp launcher should never overlay the dashboard.
+  const showFloatingWhatsApp = loaderDone && !isEmbedRoute && !isAdminRoute
 
   // A failed lazy import after a deploy is a stale-cache problem, not a page
   // bug. Recover once automatically; real render errors keep the manual UI.

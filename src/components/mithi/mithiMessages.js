@@ -68,7 +68,7 @@ export const ROUTE_NOTES = [
   {
     test: /^\/support/,
     messages: [
-      'Support page. Koi sawaal ho toh seedha poochh lo. 🤝',
+      'Contribution page. Project ko support karna hai toh yahin se kar sakte ho. 💛',
     ],
   },
 ]

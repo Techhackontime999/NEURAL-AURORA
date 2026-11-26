@@ -80,7 +80,8 @@ check('search destination focuses the catalogue search field', products.includes
 // --- Settings destination ----------------------------------------------------
 check('settings: route exists and is private', app.includes("path=\"/settings\"") && app.includes("pathname === '/settings'"))
 check('settings: keeps shared top navigation and footer', settingsPage.includes('<ServiceNavbar />') && settingsPage.includes('<Footer />'))
-check('settings: account links stay inside the app', ['/library', '/wishlist', '/partner', '/contributor-apply', '/support'].every((to) => settingsPage.includes(`to="${to}"`) || settingsPage.includes(`'${to}'`)))
+check('settings: account links stay inside the app', ['/library', '/wishlist', '/partner', '/contributor-apply'].every((to) => settingsPage.includes(`to="${to}"`) || settingsPage.includes(`'${to}'`)))
+check('settings: help shortcut opens the contact section, not the contribution page', settingsPage.includes('href="/#contact"') && !settingsPage.includes("to=\"/support\""))
 check('settings: sign-in badge and library shortcut both open the customer library', (settingsPage.match(/to="\/library"/g) || []).length >= 2 && !settingsPage.includes('/login') && !settingsPage.includes("user ? '/library' : '/login'"))
 
 // --- Project setup -----------------------------------------------------------

@@ -52,10 +52,10 @@ export const SITE_ACTIONS = [
     hint: 'Certificates, achievements, experience and gallery.',
   },
   {
-    id: 'support',
-    label: 'Get support',
-    path: '/support',
-    hint: 'Contact and support options.',
+    id: 'contact',
+    label: 'Contact us',
+    path: '/#contact',
+    hint: 'Get in touch or ask for help with an order.',
   },
   {
     id: 'library',

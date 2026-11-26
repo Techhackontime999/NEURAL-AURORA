@@ -902,7 +902,7 @@ module.exports = async function handler(req, res) {
           provider_order_id: order.id,
           db_error: linkError.message,
         })
-        return res.status(500).json({ error: 'Could not finalise your order. Please contact support with your reference.' })
+        return res.status(500).json({ error: 'Could not finalise your order. Please contact us with your reference.' })
       }
     }
 

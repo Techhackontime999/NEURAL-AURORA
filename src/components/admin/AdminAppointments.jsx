@@ -29,6 +29,9 @@ const emptyType = {
   duration_minutes: 30,
   price_rupees: 0,
   currency: 'INR',
+  meeting_provider: 'custom',
+  meeting_url: '',
+  location_label: 'Online meeting',
   is_active: true,
   display_order: 0,
 }
@@ -108,6 +111,9 @@ export default function AdminAppointments() {
       duration_minutes: t.duration_minutes || 30,
       price_rupees: toRupees(t.price_paise),
       currency: t.currency || 'INR',
+      meeting_provider: t.meeting_provider || 'custom',
+      meeting_url: t.meeting_url || '',
+      location_label: t.location_label || 'Online meeting',
       is_active: t.is_active !== false,
       display_order: t.display_order ?? 0,
     })
@@ -131,6 +137,9 @@ export default function AdminAppointments() {
       duration_minutes: Math.max(5, Number(typeForm.duration_minutes) || 30),
       price_paise: toPaise(typeForm.price_rupees),
       currency: (typeForm.currency || 'INR').toUpperCase(),
+      meeting_provider: typeForm.meeting_provider || 'custom',
+      meeting_url: typeForm.meeting_url.trim(),
+      location_label: typeForm.location_label.trim() || 'Online meeting',
       is_active: !!typeForm.is_active,
       display_order: Number(typeForm.display_order) || 0,
     }
@@ -182,6 +191,19 @@ export default function AdminAppointments() {
       toast.success('Note saved')
     } catch (err) {
       toast.error(err.message || 'Failed to save note')
+    }
+  }
+
+  async function saveMeeting(booking, meeting_url_snapshot, location_label_snapshot) {
+    try {
+      const updated = await updateAppointment(booking.id, {
+        meeting_url_snapshot: meeting_url_snapshot.trim(),
+        location_label_snapshot: location_label_snapshot.trim() || booking.location_label_snapshot || 'Online meeting',
+      })
+      setAppointments(prev => prev.map(a => a.id === booking.id ? updated : a))
+      toast.success('Meeting details saved')
+    } catch (err) {
+      toast.error(err.message || 'Failed to save meeting details')
     }
   }
 
@@ -247,6 +269,23 @@ export default function AdminAppointments() {
           <label className="flex items-center gap-2 text-sm md:mt-7" style={{ color: 'var(--text-primary)' }}>
             <input type="checkbox" checked={!!typeForm.is_active} onChange={e => setTypeForm(f => ({ ...f, is_active: e.target.checked }))} /> Active
           </label>
+          <Field label="Meeting provider">
+            <select value={typeForm.meeting_provider} onChange={e => setTypeForm(f => ({ ...f, meeting_provider: e.target.value }))} className="input" style={input}>
+              <option value="custom">Custom link</option>
+              <option value="google_meet">Google Meet</option>
+              <option value="zoom">Zoom</option>
+              <option value="microsoft_teams">Microsoft Teams</option>
+              <option value="phone">Phone call</option>
+              <option value="in_person">In person</option>
+            </select>
+          </Field>
+          <Field label="Location / platform label"><input value={typeForm.location_label} onChange={e => setTypeForm(f => ({ ...f, location_label: e.target.value }))} className="input" style={input} placeholder="Online meeting / Zoom / Office" /></Field>
+          <div className="md:col-span-2">
+            <Field label="Meeting URL / join link">
+              <input value={typeForm.meeting_url} onChange={e => setTypeForm(f => ({ ...f, meeting_url: e.target.value }))} className="input" style={input} placeholder="https://meet.google.com/... or https://zoom.us/j/..." />
+            </Field>
+            <p className="mt-1 text-[11px]" style={muted}>This link is shown to the visitor after booking (and in booking access). You can also update per booking below.</p>
+          </div>
           <div className="md:col-span-2">
             <Field label="Description"><textarea value={typeForm.description} onChange={e => setTypeForm(f => ({ ...f, description: e.target.value }))} rows={2} className="input resize-y" style={input} /></Field>
           </div>
@@ -285,7 +324,7 @@ export default function AdminAppointments() {
         </div>
         <div className="space-y-3">
           {appointments.length === 0 && <p className="text-sm" style={muted}>No bookings yet.</p>}
-          {appointments.map(b => <BookingRow key={b.id} booking={b} onStatus={setBookingStatus} onDelete={removeBooking} onSaveNote={saveAdminNote} inputStyle={input} muted={muted} />)}
+          {appointments.map(b => <BookingRow key={b.id} booking={b} onStatus={setBookingStatus} onDelete={removeBooking} onSaveNote={saveAdminNote} onSaveMeeting={saveMeeting} inputStyle={input} muted={muted} />)}
         </div>
       </section>
     </div>
@@ -301,10 +340,14 @@ function Field({ label, children }) {
   )
 }
 
-function BookingRow({ booking: b, onStatus, onDelete, onSaveNote, inputStyle, muted }) {
+function BookingRow({ booking: b, onStatus, onDelete, onSaveNote, onSaveMeeting, inputStyle, muted }) {
   const [note, setNote] = useState(b.admin_note || '')
+  const [meetingUrl, setMeetingUrl] = useState(b.meeting_url_snapshot || '')
+  const [locationLabel, setLocationLabel] = useState(b.location_label_snapshot || 'Online meeting')
   useEffect(() => { setNote(b.admin_note || '') }, [b.admin_note])
+  useEffect(() => { setMeetingUrl(b.meeting_url_snapshot || ''); setLocationLabel(b.location_label_snapshot || 'Online meeting') }, [b.meeting_url_snapshot, b.location_label_snapshot])
   const statusColor = { pending: '#f59e0b', confirmed: '#10b981', completed: '#06b6d4', cancelled: '#ef4444' }[b.status] || 'var(--text-secondary)'
+  const accessLink = b.access_token ? `${window.location.origin}/book-appointment?booking=${b.id}&token=${b.access_token}` : ''
   return (
     <div className="rounded-lg border p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
       <div className="flex flex-col lg:flex-row lg:items-start gap-3">
@@ -318,6 +361,7 @@ function BookingRow({ booking: b, onStatus, onDelete, onSaveNote, inputStyle, mu
           <p className="text-xs" style={muted}><strong style={{ color: 'var(--text-primary)' }}>{b.type_name_snapshot || 'Appointment'}</strong> · {fmtDateTime(b.preferred_date, b.preferred_time)} · {formatPrice(b.price_paise_snapshot, b.currency)}</p>
           {b.notes && <p className="text-xs whitespace-pre-wrap" style={muted}>Note: {b.notes}</p>}
           {b.razorpay_payment_id && <p className="text-[11px]" style={muted}>Payment: {b.razorpay_payment_id}</p>}
+          {accessLink && <p className="text-[11px] break-all" style={muted}>Access link: <a href={accessLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{accessLink}</a></p>}
         </div>
         <div className="flex flex-wrap gap-2">
           {['pending', 'confirmed', 'completed', 'cancelled'].map(s => (
@@ -325,6 +369,11 @@ function BookingRow({ booking: b, onStatus, onDelete, onSaveNote, inputStyle, mu
           ))}
           <button onClick={() => onDelete(b)} className="rounded-md px-2.5 py-1.5 text-[11px] text-red-400" style={{ background: 'rgba(239,68,68,0.08)' }}>Delete</button>
         </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+        <input value={locationLabel} onChange={e => setLocationLabel(e.target.value)} placeholder="Location / platform" className="input !py-2 text-xs" style={inputStyle} />
+        <input value={meetingUrl} onChange={e => setMeetingUrl(e.target.value)} placeholder="Meeting URL (Zoom/Meet/Teams/custom)" className="input !py-2 text-xs" style={inputStyle} />
+        <button onClick={() => onSaveMeeting(b, meetingUrl, locationLabel)} className="rounded-md px-3 py-2 text-xs" style={{ background: 'var(--hover-bg)', color: 'var(--text-primary)' }}>Save meeting</button>
       </div>
       <div className="flex gap-2">
         <input value={note} onChange={e => setNote(e.target.value)} placeholder="Admin note..." className="input flex-1 !py-2 text-xs" style={inputStyle} />

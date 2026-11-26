@@ -18,6 +18,46 @@ function sanitizeText(value, max = 500) {
   return String(value || '').trim().slice(0, max)
 }
 
+async function handleGet(req, res, requestId, supabase) {
+  const source = req.method === 'GET' ? (req.query || {}) : (req.body || {})
+  const bookingId = String(source.booking_id || '').trim()
+  const token = String(source.token || source.access_token || '').trim()
+  if (!bookingId || !token) return res.status(400).json({ error: 'Booking ID and access token are required.' })
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('id, type_name_snapshot, duration_minutes_snapshot, price_paise_snapshot, currency, customer_name, customer_email, preferred_date, preferred_time, timezone, status, payment_status, meeting_provider_snapshot, meeting_url_snapshot, location_label_snapshot, access_token, created_at')
+    .eq('id', bookingId)
+    .eq('access_token', token)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return res.status(404).json({ error: 'Booking not found.' })
+
+  return res.status(200).json({
+    ok: true,
+    booking: {
+      id: data.id,
+      type_name: data.type_name_snapshot,
+      duration_minutes: data.duration_minutes_snapshot,
+      price_paise: data.price_paise_snapshot,
+      currency: data.currency,
+      customer_name: data.customer_name,
+      customer_email: data.customer_email,
+      preferred_date: data.preferred_date,
+      preferred_time: data.preferred_time,
+      timezone: data.timezone,
+      status: data.status,
+      payment_status: data.payment_status,
+      meeting: {
+        provider: data.meeting_provider_snapshot,
+        url: data.meeting_url_snapshot,
+        label: data.location_label_snapshot,
+      },
+      created_at: data.created_at,
+    },
+  })
+}
+
 async function handleVerify(req, res, requestId, supabase) {
   const { booking_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {}
   if (!booking_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -74,7 +114,7 @@ async function handleVerify(req, res, requestId, supabase) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
@@ -87,7 +127,11 @@ module.exports = async function handler(req, res) {
     }
 
     const body = req.body || {}
-    const action = sanitizeText(body.action || (body.razorpay_signature ? 'verify' : 'create'), 30).toLowerCase()
+    const queryAction = String(req.query?.action || '').toLowerCase()
+    const action = sanitizeText(body.action || queryAction || (body.razorpay_signature ? 'verify' : (req.method === 'GET' ? 'get' : 'create')), 30).toLowerCase()
+    if (action === 'get') {
+      return await handleGet(req, res, requestId, supabase)
+    }
     if (action === 'verify') {
       return await handleVerify(req, res, requestId, supabase)
     }
@@ -127,6 +171,11 @@ module.exports = async function handler(req, res) {
     const isPaid = pricePaise > 0
     const currency = sanitizeText(typeRow.currency || 'INR', 10).toUpperCase() || 'INR'
 
+    const accessToken = crypto.randomBytes(24).toString('hex')
+    const meetingProvider = sanitizeText(typeRow.meeting_provider || 'custom', 40) || 'custom'
+    const meetingUrl = sanitizeText(typeRow.meeting_url || '', 1000)
+    const locationLabel = sanitizeText(typeRow.location_label || 'Online meeting', 120) || 'Online meeting'
+
     const appointmentRecord = {
       appointment_type_id: typeRow.id,
       type_name_snapshot: typeRow.name || '',
@@ -140,6 +189,10 @@ module.exports = async function handler(req, res) {
       preferred_time: preferredTime,
       timezone,
       notes,
+      meeting_provider_snapshot: meetingProvider,
+      meeting_url_snapshot: meetingUrl,
+      location_label_snapshot: locationLabel,
+      access_token: accessToken,
       status: 'pending',
       payment_status: isPaid ? 'pending' : 'not_required',
       admin_note: '',
@@ -157,9 +210,11 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         booking_id: inserted.id,
+        access_token: accessToken,
         paid: false,
         status: inserted.status,
         payment_status: inserted.payment_status,
+        meeting: { provider: meetingProvider, url: meetingUrl, label: locationLabel },
         message: appointmentSettings.confirmation_message || 'Your appointment request has been received.',
       })
     }
@@ -206,6 +261,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       booking_id: inserted.id,
+      access_token: accessToken,
       paid: true,
       key: keyId,
       order: {
@@ -220,6 +276,7 @@ module.exports = async function handler(req, res) {
         price_paise: pricePaise,
         currency,
       },
+      meeting: { provider: meetingProvider, url: meetingUrl, label: locationLabel },
       customer: { name: customerName, email: customerEmail, phone: customerPhone },
       message: appointmentSettings.confirmation_message || 'Payment received. We will confirm your appointment shortly.',
     })

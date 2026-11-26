@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ToastContext = createContext(null)
@@ -14,8 +14,12 @@ export function ToastProvider({ children }) {
     confirmText: 'Confirm',
     cancelText: 'Cancel',
     danger: true,
+    requireText: null,
+    inputValue: '',
     resolve: null,
   })
+
+  const confirmInputRef = useRef(null)
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
@@ -52,6 +56,7 @@ export function ToastProvider({ children }) {
           confirmText: 'Confirm',
           cancelText: 'Cancel',
           danger: true,
+          requireText: null,
         }
       } else {
         config = {
@@ -60,12 +65,16 @@ export function ToastProvider({ children }) {
           confirmText: options?.confirmText || 'Confirm',
           cancelText: options?.cancelText || 'Cancel',
           danger: options?.danger !== false,
+          requireText: typeof options?.requireText === 'string' && options.requireText
+            ? options.requireText
+            : null,
         }
       }
 
       setConfirmState({
         isOpen: true,
         ...config,
+        inputValue: '',
         resolve: (result) => {
           setConfirmState((prev) => ({ ...prev, isOpen: false, resolve: null }))
           resolve(result)
@@ -74,11 +83,17 @@ export function ToastProvider({ children }) {
     })
   }, [])
 
-  // Handle ESC key for confirm dialog
+  // Handle ESC and Enter-to-confirm for the confirm dialog
   useEffect(() => {
     function handleKeyDown(e) {
-      if (e.key === 'Escape' && confirmState.isOpen && confirmState.resolve) {
-        confirmState.resolve(false)
+      if (!confirmState.isOpen || !confirmState.resolve) return
+      if (e.key === 'Escape') confirmState.resolve(false)
+      if (
+        e.key === 'Enter' &&
+        confirmState.requireText &&
+        confirmState.inputValue === confirmState.requireText
+      ) {
+        confirmState.resolve(true)
       }
     }
     if (confirmState.isOpen) {
@@ -86,6 +101,12 @@ export function ToastProvider({ children }) {
     }
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [confirmState])
+
+  useEffect(() => {
+    if (!confirmState.isOpen || !confirmState.requireText) return undefined
+    const frame = requestAnimationFrame(() => confirmInputRef.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [confirmState.isOpen, confirmState.requireText])
 
   return (
     <ToastContext.Provider value={{ toast, confirm }}>
@@ -179,6 +200,22 @@ export function ToastProvider({ children }) {
                   <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
                     {confirmState.message}
                   </p>
+                  {confirmState.requireText && (
+                    <div className="mt-4">
+                      <label htmlFor="confirm-required-text" className="block text-xs font-medium text-zinc-300">
+                        Type <span className="font-mono text-white">{confirmState.requireText}</span> to confirm
+                      </label>
+                      <input
+                        id="confirm-required-text"
+                        ref={confirmInputRef}
+                        type="text"
+                        value={confirmState.inputValue}
+                        onChange={(event) => setConfirmState((prev) => ({ ...prev, inputValue: event.target.value }))}
+                        autoComplete="off"
+                        className="mt-2 h-11 w-full rounded-lg border border-white/10 bg-black/30 px-3 text-sm text-white outline-none transition-colors focus:border-rose-400/60"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -193,7 +230,8 @@ export function ToastProvider({ children }) {
                 <button
                   type="button"
                   onClick={() => confirmState.resolve?.(true)}
-                  className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all ${
+                  disabled={Boolean(confirmState.requireText) && confirmState.inputValue !== confirmState.requireText}
+                  className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                     confirmState.danger
                       ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/40'
                       : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/40'

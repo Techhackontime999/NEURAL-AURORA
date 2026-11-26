@@ -504,18 +504,28 @@ export async function clearTestData(table) {
 export async function getAllProfiles() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, email, full_name, role, created_at')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
 }
 
 export async function updateProfileRole(userId, role) {
-  const { error } = await supabase
+  if (!['admin', 'viewer'].includes(role)) {
+    throw new Error(`Unsupported role: ${role}`)
+  }
+  // Ask for the row back so a policy-blocked or missing-profile update is not
+  // reported to the admin as a successful role change.
+  const { data, error } = await supabase
     .from('profiles')
     .update({ role })
     .eq('id', userId)
+    .select('id, role')
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error('No profile was updated. Check that the account still exists and that you have admin access.')
+  }
+  return data[0]
 }
 
 export async function uploadImage(file, bucket = 'portfolio-images') {

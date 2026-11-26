@@ -21,6 +21,7 @@ import ReviewForm from './components/ReviewForm'
 import { Footer } from './components/ui/footer-section'
 import { AdminRoute } from './components/admin/ProtectedRoute'
 import PwaStatus from './components/ui/PwaStatus'
+import FloatingWhatsApp from './components/ui/FloatingWhatsApp'
 import NotFound from './components/NotFound'
 import RenderErrorBoundary from './lib/RenderErrorBoundary'
 import { NeuralCursor } from './components/ui/neural-cursor'
@@ -485,6 +486,7 @@ function AppContent() {
       {loaderDone && !isEmbedRoute && <MoodMusicToggle />}
       {!isEmbedRoute && <NeuralCursor />}
       {loaderDone && showMithi && <MithiWidget />}
+      {loaderDone && !isEmbedRoute && <FloatingWhatsApp />}
       {!isEmbedRoute && <PwaStatus />}
       {showFloatingNav && (
         <FloatingNav

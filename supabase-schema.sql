@@ -276,8 +276,8 @@ CREATE OR REPLACE VIEW public_site_settings AS
 SELECT
   id, site_name, site_description, theme, maintenance_mode,
   crm_url, youtube_channel_id, docs_url, video_hero, store_hero,
-  appearance, payment_settings, document_signature, whatsapp_number,
-  created_at, updated_at
+  appearance, payment_settings, document_signature,
+  created_at, updated_at, whatsapp_number
 FROM admin_settings
 WHERE id = 1;
 ALTER VIEW public_site_settings SET (security_barrier = true);

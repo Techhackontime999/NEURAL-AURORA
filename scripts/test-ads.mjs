@@ -117,7 +117,8 @@ check('seo: catch-all rewrite remains last',
 check('seo: robots still advertises the sitemap', robots.includes('Sitemap: https://neural-aurora.vercel.app/sitemap.xml'))
 check('ads: ads.txt declares the AdSense DIRECT seller', (() => {
   const adsTxt = fs.existsSync('public/ads.txt') ? read('public/ads.txt') : ''
-  return /google\.com,\s*pub-\S+,\s*DIRECT,\s*f08c47fec0942fa0/.test(adsTxt)
+  const match = adsTxt.match(/google\.com,\s*pub-(\d{8,}),\s*DIRECT,\s*f08c47fec0942fa0/)
+  return Boolean(match) && match[1] === getAdSenseClient().replace('ca-pub-', '')
 })())
 check('seo: shared API dispatches the sitemap action', license.includes("case 'sitemap':"))
 check('seo: stale static sitemap was removed', !fs.existsSync('public/sitemap.xml'))

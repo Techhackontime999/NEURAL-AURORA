@@ -24,11 +24,17 @@ const DEFAULT_SETTINGS = {
   subheading: 'Schedule a call or consultation',
   description: 'Choose a service, pick your preferred time, and we’ll confirm your appointment.',
   confirmation_message: 'Your appointment request has been received. We will contact you soon to confirm.',
-  timezone_note: 'Times are shown in your local timezone unless noted otherwise.',
+  cancellation_message: 'Your appointment has been cancelled.',
+  reschedule_message: 'Your appointment has been rescheduled.',
+  timezone: 'Asia/Kolkata',
+  timezone_note: 'Slot times follow your selected timezone.',
   auto_confirm_free: false,
   require_phone: false,
   min_notice_hours: 0,
   max_days_ahead: 60,
+  allow_reschedule: true,
+  allow_cancel: true,
+  manage_cutoff_hours: 2,
   booking_instructions: '',
   default_meeting_provider: 'custom',
   availability: DEFAULT_AVAILABILITY,
@@ -41,6 +47,12 @@ const emptyType = {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+const TIMEZONES = [
+  'Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Tokyo',
+  'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago',
+  'America/Los_Angeles', 'Australia/Sydney', 'UTC',
+]
 
 const PROVIDERS = [
   { value: 'custom', label: 'Custom link' },
@@ -273,7 +285,7 @@ export default function AdminAppointments() {
 
       {tab === 'slots' && (
         <section className="rounded-xl border p-4 md:p-6 space-y-5" style={card}>
-          <SectionHead title="Slot Manager" desc="View slot allocation by date and appointment type. Block or unblock slots for maintenance, breaks, or manual control." muted={muted} />
+          <SectionHead title="Slot Manager" desc={`View slot allocation by date and appointment type in ${settings.timezone || 'Asia/Kolkata'}. Block or unblock slots for maintenance, breaks, or manual control.`} muted={muted} />
           <div className="grid gap-4 md:grid-cols-[220px_1fr_auto]">
             <Field label="Date"><input type="date" value={smDate} onChange={e => setSmDate(e.target.value)} className="input" style={input} /></Field>
             <Field label="Appointment type">
@@ -341,6 +353,15 @@ export default function AdminAppointments() {
           <Field label="Description"><textarea value={settings.description} onChange={e => setSettings(s => ({ ...s, description: e.target.value }))} rows={3} className="input resize-y" style={input} /></Field>
           <Field label="Confirmation message"><textarea value={settings.confirmation_message} onChange={e => setSettings(s => ({ ...s, confirmation_message: e.target.value }))} rows={2} className="input resize-y" style={input} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Reschedule message"><input value={settings.reschedule_message || ''} onChange={e => setSettings(s => ({ ...s, reschedule_message: e.target.value }))} className="input" style={input} /></Field>
+            <Field label="Cancellation message"><input value={settings.cancellation_message || ''} onChange={e => setSettings(s => ({ ...s, cancellation_message: e.target.value }))} className="input" style={input} /></Field>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Organiser timezone (IANA)">
+              <input list="appointment-timezones" value={settings.timezone || 'Asia/Kolkata'} onChange={e => setSettings(s => ({ ...s, timezone: e.target.value.trim() }))} className="input" style={input} placeholder="Asia/Kolkata" />
+              <datalist id="appointment-timezones">{TIMEZONES.map(zone => <option key={zone} value={zone} />)}</datalist>
+              <p className="mt-1 text-[11px]" style={muted}>Availability times are interpreted in this timezone. Use a full IANA name, e.g. Asia/Kolkata or America/New_York.</p>
+            </Field>
             <Field label="Timezone note"><input value={settings.timezone_note} onChange={e => setSettings(s => ({ ...s, timezone_note: e.target.value }))} className="input" style={input} /></Field>
             <Field label="Default meeting provider">
               <select value={settings.default_meeting_provider || 'custom'} onChange={e => setSettings(s => ({ ...s, default_meeting_provider: e.target.value }))} className="input" style={input}>
@@ -354,7 +375,13 @@ export default function AdminAppointments() {
             <div className="space-y-3 md:pt-7">
               <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}><input type="checkbox" checked={!!settings.auto_confirm_free} onChange={e => setSettings(s => ({ ...s, auto_confirm_free: e.target.checked }))} /> Auto-confirm free bookings</label>
               <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}><input type="checkbox" checked={!!settings.require_phone} onChange={e => setSettings(s => ({ ...s, require_phone: e.target.checked }))} /> Require phone number</label>
+              <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}><input type="checkbox" checked={settings.allow_reschedule !== false} onChange={e => setSettings(s => ({ ...s, allow_reschedule: e.target.checked }))} /> Allow invitee rescheduling</label>
+              <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}><input type="checkbox" checked={settings.allow_cancel !== false} onChange={e => setSettings(s => ({ ...s, allow_cancel: e.target.checked }))} /> Allow invitee cancellation</label>
             </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="Manage cut-off (hours)"><input type="number" min="0" value={settings.manage_cutoff_hours ?? 2} onChange={e => setSettings(s => ({ ...s, manage_cutoff_hours: Math.max(0, Number(e.target.value || 0)) }))} className="input" style={input} /></Field>
+            <p className="text-xs md:col-span-2 md:self-end" style={muted}>Invitees can reschedule or cancel from their access link until this many hours before the meeting. Existing links stay valid after a change.</p>
           </div>
           <div className="rounded-xl border p-4 space-y-4" style={{ borderColor: 'var(--border-color)', background: 'var(--glass-bg)' }}>
             <div>

@@ -482,6 +482,9 @@ function AppContent() {
 
   return (
     <>
+      {loaderDone && !isEmbedRoute && (
+        <a className="skip-link" href="#main-content">Skip to content</a>
+      )}
       {!isEmbedRoute && <ScrollProgress />}
       {!isEmbedRoute && <AutoTraverseEffect />}
       {loaderDone && !isEmbedRoute && <MoodMusicToggle />}
@@ -500,6 +503,8 @@ function AppContent() {
       <AnimatePresence>
         {loaderDone && (
           <motion.div
+            id="main-content"
+            tabIndex={-1}
             animate={{ opacity: 1 }}
             className={
               showFloatingNav

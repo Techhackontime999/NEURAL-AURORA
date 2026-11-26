@@ -105,7 +105,7 @@ export default function Hero() {
           animate="visible"
           className="grid gap-12 sm:gap-14 md:gap-20 md:grid-cols-2 items-center"
         >
-          <div className="space-y-6 sm:space-y-8 text-center md:text-left">
+          <div className="relative z-20 space-y-6 sm:space-y-8 text-center md:text-left">
             <motion.div variants={itemVariants}>
               <span className="eyebrow">{personalInfo.title}</span>
             </motion.div>
@@ -231,7 +231,7 @@ export default function Hero() {
 
           <motion.div
             variants={itemVariants}
-            className="relative block order-first md:order-none"
+            className="relative z-10 block order-first md:order-none"
           >
             <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] md:aspect-auto md:h-[480px] mx-auto rounded-[2rem] overflow-hidden bg-[var(--bg-secondary)] border border-black/10 dark:border-white/[0.06]">
               <Spotlight

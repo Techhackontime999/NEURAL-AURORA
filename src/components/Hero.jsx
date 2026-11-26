@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
+import { Calendar } from 'lucide-react'
 import { usePersonalInfo, usePublicSiteSettings, useResumes, useSocialLinks } from '../lib/usePortfolioData'
 import { SplineScene } from './ui/splite'
 import { Spotlight } from './ui/spotlight'
@@ -67,6 +69,7 @@ export default function Hero() {
   const { t } = useTranslation()
   const whatsappNumber = String(publicSettings?.whatsapp_number || '').replace(/[^\d]/g, '')
   const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : ''
+  const appointmentEnabled = publicSettings?.appointment_settings?.enabled !== false
   const [resumeOpen, setResumeOpen] = useState(false)
   const resumeMenuRef = useRef(null)
 
@@ -137,6 +140,21 @@ export default function Hero() {
             </motion.div>
 
             <motion.div variants={itemVariants} className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 pt-2">
+              {appointmentEnabled && (
+                <MagneticButton
+                  as={Link}
+                  to="/book-appointment"
+                  className="group inline-flex items-center gap-3 px-6 py-3 rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] text-sm font-medium text-cyan-700 dark:text-cyan-200 hover:bg-cyan-500/[0.16] hover:border-cyan-500/40 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                >
+                  <Calendar className="w-4 h-4" aria-hidden="true" />
+                  {t('hero.bookAppointment', 'Book an Appointment')}
+                  <span className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </span>
+                </MagneticButton>
+              )}
               <MagneticButton
                 as="a"
                 href="#projects"

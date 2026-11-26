@@ -22,6 +22,7 @@ const admin = read('src/components/admin/AdminAdPlacements.jsx')
 const layout = read('src/components/admin/AdminLayout.jsx')
 const dashboard = read('src/components/admin/AdminDashboard.jsx')
 const video = read('src/components/ui/AdVideoPlayer.jsx')
+const css = read('src/index.css')
 const schema = read('supabase-schema.sql')
 const vercel = JSON.parse(read('vercel.json'))
 const robots = read('public/robots.txt')
@@ -73,6 +74,8 @@ check('ads: session frequency caps protect the experience',
 check('ads: impressions and clicks are tracked without blocking',
   ads.includes('markAdImpression') && ads.includes('markAdClick') && ads.includes('record_ad_event'))
 check('ads: only visible units count as impressions', slot.includes('IntersectionObserver'))
+check('ads: unfilled units collapse instead of leaving blank boxes',
+  css.includes("ins.adsbygoogle[data-ad-status='unfilled']") && css.includes("aside:has(> ins.adsbygoogle[data-ad-status='unfilled'])"))
 check('ads: every unit is labelled for readers', slot.includes('aria-label={label}'))
 check('ads: external links are rel=sponsored', slot.includes("'sponsored noopener noreferrer'"))
 

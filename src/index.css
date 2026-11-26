@@ -482,6 +482,16 @@
   }
 }
 
+/* AdSense marks units it could not fill. Collapse the whole labelled box so
+   an empty ad never leaves a blank card in the layout. */
+ins.adsbygoogle[data-ad-status='unfilled'] {
+  display: none !important;
+}
+
+aside:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
+  display: none !important;
+}
+
 @layer utilities {
   .perspective-1000 {
     perspective: 1000px;

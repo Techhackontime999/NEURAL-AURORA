@@ -190,6 +190,33 @@ const handler = async function handler(req, res) {
         console.error('[Razorpay Webhook] Digital fulfilment failed:', fulfilErr.message)
         return res.status(500).json({ error: 'Failed to process payment' })
       }
+
+      // --- Appointment booking confirmation --------------------------------
+      // Paid appointments create a pending appointment with razorpay_order_id.
+      // Confirm it here as a reliable backup to client-side verification.
+      try {
+        const appointmentId = notes.appointment_id
+        const razorpayOrderId = payment.order_id || order.id || null
+        const isAppointment = notes.item_type === 'appointment' || Boolean(appointmentId)
+        if (isAppointment && razorpayOrderId) {
+          let query = supabase
+            .from('appointments')
+            .update({
+              payment_status: 'paid',
+              status: 'confirmed',
+              razorpay_payment_id: payment.id || null,
+              paid_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('razorpay_order_id', razorpayOrderId)
+            .neq('payment_status', 'paid')
+          if (appointmentId) query = query.eq('id', appointmentId)
+          const { error: apptErr } = await query
+          if (apptErr) console.error('[Razorpay Webhook] Appointment confirmation failed:', apptErr.message)
+        }
+      } catch (apptErr) {
+        console.error('[Razorpay Webhook] Appointment confirmation exception:', apptErr.message)
+      }
     } catch (dbErr) {
       console.error('[Razorpay Webhook] Database exception:', dbErr)
       return res.status(500).json({ error: 'Internal database error' })
@@ -202,6 +229,26 @@ const handler = async function handler(req, res) {
     const failurePayment = payload?.payload?.payment?.entity || {}
     const failureOrder = payload?.payload?.order?.entity || {}
     await recordDigitalFailure({ payment: failurePayment, order: failureOrder, event })
+
+    try {
+      const notes = failurePayment.notes || failureOrder.notes || {}
+      const razorpayOrderId = failurePayment.order_id || failureOrder.id || null
+      const isAppointment = notes.item_type === 'appointment' || Boolean(notes.appointment_id)
+      if (isAppointment && razorpayOrderId) {
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+          await supabase
+            .from('appointments')
+            .update({ payment_status: 'failed', updated_at: new Date().toISOString() })
+            .eq('razorpay_order_id', razorpayOrderId)
+            .neq('payment_status', 'paid')
+        }
+      }
+    } catch (apptErr) {
+      console.error('[Razorpay Webhook] Appointment failure update exception:', apptErr.message)
+    }
   }
 
   return res.status(200).json({ status: 'ok', received: true })

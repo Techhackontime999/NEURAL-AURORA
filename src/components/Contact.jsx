@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { Calendar } from 'lucide-react'
 import { usePublicSiteSettings, useSocialLinks } from '../lib/usePortfolioData'
 import { submitContactMessage } from '../lib/supabase'
 
@@ -22,6 +24,7 @@ export default function Contact() {
   const { data: publicSettings = {} } = usePublicSiteSettings()
   const whatsappNumber = normalizeWhatsAppNumber(publicSettings?.whatsapp_number)
   const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : ''
+  const appointmentEnabled = publicSettings?.appointment_settings?.enabled !== false
   const [form, setForm] = useState({ name: '', email: '', message: '', hp_field: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
@@ -130,6 +133,31 @@ export default function Contact() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                 </span>
               </motion.a>
+            )}
+
+            {appointmentEnabled && (
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 20 } },
+                }}
+              >
+                <Link
+                  to="/book-appointment"
+                  className="group flex items-center gap-4 rounded-[1.5rem] border border-cyan-500/20 bg-cyan-500/[0.06] p-5 transition-colors hover:bg-cyan-500/[0.1] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-500">
+                    <Calendar className="w-6 h-6" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-black/80 dark:text-white/85">Book an Appointment</p>
+                    <p className="text-xs text-black/45 dark:text-white/40">Schedule a free or paid consultation at your preferred time.</p>
+                  </div>
+                  <span className="shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                  </span>
+                </Link>
+              </motion.div>
             )}
           </div>
 

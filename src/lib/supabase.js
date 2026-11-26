@@ -405,7 +405,7 @@ export async function getPublicSettings() {
   const { data, error } = await supabase
     .from('public_site_settings')
     .select(
-      'id, site_name, site_description, theme, maintenance_mode, crm_url, youtube_channel_id, docs_url, video_hero, store_hero, appearance, payment_settings, document_signature, whatsapp_number'
+      'id, site_name, site_description, theme, maintenance_mode, crm_url, youtube_channel_id, docs_url, video_hero, store_hero, appearance, payment_settings, document_signature, whatsapp_number, appointment_settings'
     )
     .eq('id', 1)
     .maybeSingle()
@@ -829,6 +829,70 @@ export async function updateResume(id, data) {
 export async function deleteResume(id) {
   const { error } = await supabase
     .from('resumes')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getAppointmentTypes() {
+  const { data, error } = await supabase
+    .from('appointment_types')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createAppointmentType(data) {
+  const { data: newItem, error } = await supabase
+    .from('appointment_types')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateAppointmentType(id, data) {
+  const { error } = await supabase
+    .from('appointment_types')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAppointmentType(id) {
+  const { error } = await supabase
+    .from('appointment_types')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getAppointments() {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function updateAppointment(id, data) {
+  const { data: updated, error } = await supabase
+    .from('appointments')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return updated
+}
+
+export async function deleteAppointment(id) {
+  const { error } = await supabase
+    .from('appointments')
     .delete()
     .eq('id', id)
   if (error) throw error

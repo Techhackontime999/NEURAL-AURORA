@@ -16,6 +16,7 @@ import {
   getAchievements,
   getGallery,
   getResumes,
+  getAppointmentTypes,
   getPublicSettings,
   isSupabaseConfigured,
 } from './supabase'
@@ -325,6 +326,13 @@ export function useGallery() {
 
 export function useResumes() {
   return usePortfolioResource('resumes', getResumes, [])
+}
+
+export function useAppointmentTypes() {
+  return usePortfolioResource('appointmentTypes', async () => {
+    if (!isSupabaseConfigured) return []
+    return getAppointmentTypes()
+  }, [])
 }
 
 /**

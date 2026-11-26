@@ -59,6 +59,7 @@ const Blog = lazy(() => import('./components/Blog'))
 const BlogPost = lazy(() => import('./components/BlogPost'))
 const CaseStudyDetail = lazy(() => import('./components/CaseStudyDetail'))
 const Support = lazy(() => import('./components/Support'))
+const BookAppointment = lazy(() => import('./components/BookAppointment'))
 const LegalPage = lazy(() => import('./components/legal/LegalPage'))
 const Login = lazy(() => import('./components/admin/Login'))
 const Register = lazy(() => import('./components/admin/Register'))
@@ -548,6 +549,7 @@ function AppContent() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/book-appointment" element={<BookAppointment />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/privacy" element={<LegalPage doc="privacy" />} />
               <Route path="/terms" element={<LegalPage doc="terms" />} />

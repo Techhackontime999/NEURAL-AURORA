@@ -27,6 +27,7 @@ const navItems = [
   { path: '/admin/affiliates', label: 'Affiliate Partners', icon: '↗' },
   { path: '/admin/social-links', label: 'Social Links', icon: '⊛' },
   { path: '/admin/whatsapp-config', label: 'WhatsApp Support', icon: '💬' },
+  { path: '/admin/appointments', label: 'Appointments', icon: '📅' },
   { path: '/admin/reviews', label: 'Reviews', icon: '★' },
   { path: '/admin/messages', label: 'Messages', icon: '✉' },
   { path: '/admin/payments', label: 'Payments', icon: '₹' },

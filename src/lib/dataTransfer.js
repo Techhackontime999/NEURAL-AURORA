@@ -37,6 +37,8 @@ export const DATA_TABLES = [
   { table: 'contact_messages', label: 'Contact Messages', uniqueKey: null, importable: true },
   { table: 'dev_ads', label: 'Dev Ads', uniqueKey: null, importable: true },
   { table: 'payments', label: 'Payments', uniqueKey: 'razorpay_payment_id', importable: true },
+  { table: 'appointment_types', label: 'Appointment Types', uniqueKey: 'type_id', importable: true },
+  { table: 'appointments', label: 'Appointments', uniqueKey: null, importable: true },
   { table: 'admin_settings', label: 'Admin Settings', uniqueKey: 'id', singleRow: true, importable: true },
   // Export only — writes are server-side / owned by auth.
   { table: 'profiles', label: 'User Profiles', uniqueKey: null, importable: false },

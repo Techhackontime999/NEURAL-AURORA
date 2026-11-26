@@ -68,7 +68,11 @@
     "titleResume": "indir",
     "subtitle": "Deneyimimin, projelerimin ve teknik uzmanlığımın kapsamlı bir özeti. Düzenli olarak güncellenir.",
     "downloadPdf": "PDF İndir",
-    "pdfFormat": "PDF formatı . 2,4 MB"
+    "pdfFormat": "PDF formatı . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "İletişim",

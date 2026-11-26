@@ -17,6 +17,7 @@ import { getDocsUrl, setDocsUrl as saveDocsUrl } from '../lib/docs-config'
 import { getPublishedProducts, formatPrice } from '../lib/products'
 import {
   usePersonalInfo,
+  useResumes,
   useReviews,
   useCertificates,
   useAchievements,
@@ -796,22 +797,64 @@ function ReviewCards({ items, isLoading, error }) {
   )
 }
 
-function ResumeCard({ url }) {
+function ResumeCard({ resumes = [], fallbackUrl }) {
   const { t } = useTranslation()
+  const fallbackOptions = useMemo(() => {
+    const options = (resumes || []).filter((r) => r?.file_url)
+    if (options.length) return options
+    return fallbackUrl ? [{ id: 'legacy', label: t('resume.generalRole', 'General'), file_url: fallbackUrl, file_name: 'resume.pdf' }] : []
+  }, [resumes, fallbackUrl, t])
+  const [selectedId, setSelectedId] = useState(() => (fallbackOptions.find((r) => r.is_default) || fallbackOptions[0])?.id ?? null)
 
-  if (!url) return <ContentState status="empty" emptyKey="loader.explore.resume.empty" />
+  useEffect(() => {
+    if (!fallbackOptions.length) {
+      if (selectedId !== null) setSelectedId(null)
+      return
+    }
+    if (!fallbackOptions.some((r) => r.id === selectedId)) {
+      setSelectedId((fallbackOptions.find((r) => r.is_default) || fallbackOptions[0])?.id ?? null)
+    }
+  }, [fallbackOptions, selectedId])
+
+  if (!fallbackOptions.length) return <ContentState status="empty" emptyKey="loader.explore.resume.empty" />
+
+  const selected = fallbackOptions.find((r) => r.id === selectedId) || fallbackOptions[0]
 
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-white/85 text-sm font-medium">{t('loader.cards.resume')}</p>
-        <p className="text-white/35 text-[11px] mt-1">{t('loader.explore.resume.ready')}</p>
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-white/85 text-sm font-medium">{t('loader.cards.resume')}</p>
+          <p className="text-white/35 text-[11px] mt-1">
+            {fallbackOptions.length > 1 ? t('resume.selectRole', 'Select resume by role') : t('loader.explore.resume.ready')}
+          </p>
+        </div>
+        <a
+          href={selected.file_url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+        >{t('loader.explore.resume.download')} ↓</a>
       </div>
-      <a
-        href={url}
-        download
-        className="shrink-0 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-[11px] font-mono text-cyan-200 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
-      >{t('loader.explore.resume.download')} ↓</a>
+      {fallbackOptions.length > 1 && (
+        <select
+          value={selected?.id ?? ''}
+          onChange={(e) => {
+            const next = fallbackOptions.find((r) => String(r.id) === e.target.value)
+            setSelectedId(next?.id ?? null)
+          }}
+          className="min-h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/80 outline-none focus:ring-1 focus:ring-cyan-400/50"
+          aria-label={t('resume.selectRole', 'Select resume by role')}
+        >
+          {fallbackOptions.map((resume) => (
+            <option key={resume.id} value={resume.id} className="bg-[#101018]">
+              {resume.label || t('resume.generalRole', 'General')}
+            </option>
+          ))}
+        </select>
+      )}
+      {selected?.description && <p className="text-white/35 text-[11px]">{selected.description}</p>}
     </div>
   )
 }
@@ -846,7 +889,10 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
   const { data: experienceItems = [], isLoading: experienceLoading, error: experienceError } = useExperience()
   const { data: educationItems = [], isLoading: educationLoading, error: educationError } = useEducation()
   const { data: personal = personalInfo, error: personalError } = usePersonalInfo()
-  const resumeUrl = personal?.resume
+  const { data: resumeItems = [], isLoading: resumesLoading, error: resumesError } = useResumes()
+  const resumeOptions = (resumeItems || []).filter((r) => r?.file_url)
+  const resumeFallbackUrl = personal?.resume
+  const resumeCount = resumeOptions.length || (resumeFallbackUrl ? 1 : 0)
 
   useEffect(() => {
     let cancelled = false
@@ -878,7 +924,7 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
     { id: 'certificates', icon: '📜', label: t('loader.cards.certificates'), descKey: 'certificatesDesc', count: certificates.length, status: sectionStatus(certificatesLoading, certificatesError, certificates.length), error: certificatesError, resourceKey: 'certificates', href: '/more/certificates' },
     { id: 'achievements', icon: '🏆', label: t('loader.cards.achievements'), descKey: 'achievementsDesc', count: achievements.length, status: sectionStatus(achievementsLoading, achievementsError, achievements.length), error: achievementsError, resourceKey: 'achievements', href: '/more/achievements' },
     { id: 'reviews', icon: '⭐', label: t('loader.cards.reviews'), descKey: 'reviewsDesc', count: reviews.length, status: sectionStatus(reviewsLoading, reviewsError, reviews.length), error: reviewsError, resourceKey: 'reviews', href: '/#reviews' },
-    { id: 'resume', icon: '📄', label: t('loader.cards.resume'), descKey: 'resumeDesc', count: resumeUrl ? 1 : 0, status: resumeUrl ? 'ready' : 'empty', error: personalError, resourceKey: 'personalInfo', href: '/#resume' },
+    { id: 'resume', icon: '📄', label: t('loader.cards.resume'), descKey: 'resumeDesc', count: resumeCount, status: sectionStatus(resumesLoading, resumesError || personalError, resumeCount), error: resumesError || personalError, resourceKey: 'resumes', href: '/#resume' },
   ]
 
   const activeIndex = Math.max(0, sections.findIndex((item) => item.id === active))
@@ -933,7 +979,7 @@ function ExploreGallery({ initialSection = 'store', onBack, onComplete }) {
       case 'certificates': return <CertificateCards items={certificates} isLoading={certificatesLoading} error={certificatesError} />
       case 'achievements': return <AchievementCards items={achievements} isLoading={achievementsLoading} error={achievementsError} />
       case 'reviews': return <ReviewCards items={reviews} isLoading={reviewsLoading} error={reviewsError} />
-      case 'resume': return <ResumeCard url={resumeUrl} />
+      case 'resume': return <ResumeCard resumes={resumeItems} fallbackUrl={resumeFallbackUrl} />
       default: return null
     }
   }

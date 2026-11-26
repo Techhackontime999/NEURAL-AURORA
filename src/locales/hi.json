@@ -68,7 +68,11 @@
     "titleResume": "रिज़्यूमे",
     "subtitle": "मेरे अनुभव, प्रोजेक्ट और तकनीकी विशेषज्ञता का व्यापक अवलोकन। नवीनतम कार्य को दर्शाने के लिए नियमित रूप से अपडेट किया जाता है।",
     "downloadPdf": "PDF डाउनलोड करें",
-    "pdfFormat": "PDF प्रारूप . 2.4 MB"
+    "pdfFormat": "PDF प्रारूप . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "जुड़ें",

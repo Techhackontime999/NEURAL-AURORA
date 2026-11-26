@@ -68,7 +68,11 @@
     "titleResume": "CV",
     "subtitle": "Een uitgebreid overzicht van mijn ervaring, projecten en technische expertise. Wordt regelmatig bijgewerkt.",
     "downloadPdf": "PDF downloaden",
-    "pdfFormat": "PDF-formaat . 2,4 MB"
+    "pdfFormat": "PDF-formaat . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Contact",

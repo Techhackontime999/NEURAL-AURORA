@@ -68,7 +68,11 @@
     "titleResume": "sơ yếu lý lịch",
     "subtitle": "Tổng quan toàn diện về kinh nghiệm, dự án và chuyên môn kỹ thuật của tôi. Được cập nhật thường xuyên.",
     "downloadPdf": "Tải PDF",
-    "pdfFormat": "Định dạng PDF . 2,4 MB"
+    "pdfFormat": "Định dạng PDF . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Liên hệ",

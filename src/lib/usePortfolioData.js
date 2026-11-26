@@ -15,6 +15,7 @@ import {
   getCertificates,
   getAchievements,
   getGallery,
+  getResumes,
   getPublicSettings,
   isSupabaseConfigured,
 } from './supabase'
@@ -320,6 +321,10 @@ export function useAchievements() {
 
 export function useGallery() {
   return usePortfolioResource('gallery', getGallery, staticGalleryItems)
+}
+
+export function useResumes() {
+  return usePortfolioResource('resumes', getResumes, [])
 }
 
 /**

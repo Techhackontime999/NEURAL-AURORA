@@ -68,7 +68,11 @@
     "titleResume": "เรซูเม่ของฉัน",
     "subtitle": "สรุปประสบการณ์ โปรเจกต์ และความเชี่ยวชาญทางเทคนิคอย่างครบถ้วน อัปเดตเป็นประจำ",
     "downloadPdf": "ดาวน์โหลด PDF",
-    "pdfFormat": "รูปแบบ PDF . 2.4 MB"
+    "pdfFormat": "รูปแบบ PDF . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "ติดต่อ",

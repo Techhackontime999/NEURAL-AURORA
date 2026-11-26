@@ -68,7 +68,11 @@
     "titleResume": "CV",
     "subtitle": "En heltäckande sammanfattning av min erfarenhet, mina projekt och min tekniska expertis. Uppdateras regelbundet.",
     "downloadPdf": "Ladda ner PDF",
-    "pdfFormat": "PDF-format . 2,4 MB"
+    "pdfFormat": "PDF-format . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Kontakt",

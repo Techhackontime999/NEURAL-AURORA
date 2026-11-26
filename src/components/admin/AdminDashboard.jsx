@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AdminLayout from './AdminLayout'
 import AdminOverview from './AdminOverview'
 import AdminPersonalInfo from './AdminPersonalInfo'
+import AdminResumes from './AdminResumes'
 import AdminSkills from './AdminSkills'
 import AdminProjects from './AdminProjects'
 import AdminEducation from './AdminEducation'
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
       <Routes>
         <Route index element={<AdminOverview />} />
         <Route path="personal-info" element={<AdminPersonalInfo />} />
+      <Route path="resumes" element={<AdminResumes />} />
         <Route path="skills" element={<AdminSkills />} />
         <Route path="projects" element={<AdminProjects />} />
         <Route path="education" element={<AdminEducation />} />

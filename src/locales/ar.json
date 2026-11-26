@@ -68,7 +68,11 @@
     "titleResume": "سيرتي الذاتية",
     "subtitle": "نظرة شاملة على خبرتي ومشاريعي وخبرتي التقنية. يتم تحديثها بانتظام لعكس أحدث أعمالي.",
     "downloadPdf": "تحميل PDF",
-    "pdfFormat": "صيغة PDF . 2.4 MB"
+    "pdfFormat": "صيغة PDF . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "تواصل",

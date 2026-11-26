@@ -8,6 +8,7 @@ import { setTheme } from '../../lib/useSiteAppearance'
 const navItems = [
   { path: '/admin', label: 'Overview', icon: '◈' },
   { path: '/admin/personal-info', label: 'Personal Info', icon: '◎' },
+  { path: '/admin/resumes', label: 'Resumes', icon: '▤' },
   { path: '/admin/skills', label: 'Skills', icon: '◆' },
   { path: '/admin/projects', label: 'Projects', icon: '⊞' },
   { path: '/admin/education', label: 'Education', icon: '◇' },

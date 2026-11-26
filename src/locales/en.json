@@ -120,7 +120,11 @@
     "titleResume": "Resume",
     "subtitle": "A comprehensive overview of my experience, projects, and technical expertise. Updated regularly to reflect my latest work.",
     "downloadPdf": "Download PDF",
-    "pdfFormat": "PDF format . 2.4 MB"
+    "pdfFormat": "PDF format . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Connect",

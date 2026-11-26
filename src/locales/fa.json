@@ -68,7 +68,11 @@
     "titleResume": "رزومه من",
     "subtitle": "خلاصه‌ای جامع از تجربه‌ها، پروژه‌ها و تخصص فنی من. به‌طور منظم به‌روزرسانی می‌شود.",
     "downloadPdf": "دانلود PDF",
-    "pdfFormat": "فرمت PDF . ۲.۴ مگابایت"
+    "pdfFormat": "فرمت PDF . ۲.۴ مگابایت",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "تماس",

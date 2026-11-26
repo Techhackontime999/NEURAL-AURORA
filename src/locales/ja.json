@@ -68,7 +68,11 @@
     "titleResume": "ダウンロード",
     "subtitle": "経験、プロジェクト、技術的専門性の包括的な概要。最新の活動を反映するために定期的に更新されます。",
     "downloadPdf": "PDFをダウンロード",
-    "pdfFormat": "PDF形式 . 2.4MB"
+    "pdfFormat": "PDF形式 . 2.4MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "コンタクト",

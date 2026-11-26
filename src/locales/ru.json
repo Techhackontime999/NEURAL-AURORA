@@ -68,7 +68,11 @@
     "titleResume": "резюме",
     "subtitle": "Обзор моего опыта, проектов и технической экспертизы. Регулярно обновляется.",
     "downloadPdf": "Скачать PDF",
-    "pdfFormat": "Формат PDF . 2,4 МБ"
+    "pdfFormat": "Формат PDF . 2,4 МБ",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Контакты",

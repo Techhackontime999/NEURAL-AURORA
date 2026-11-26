@@ -1,6 +1,7 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { usePersonalInfo } from '../lib/usePortfolioData'
+import { usePersonalInfo, useResumes } from '../lib/usePortfolioData'
 import MagneticButton from './ui/magnetic-button'
 
 const containerVariants = {
@@ -34,6 +35,43 @@ function ParallaxBlur({ className, color, scrollOffset }) {
 export default function Resume() {
   const { t } = useTranslation()
   const { data: personalInfo } = usePersonalInfo()
+  const { data: resumes = [] } = useResumes()
+
+  const resumeOptions = useMemo(() => {
+    const active = (resumes || []).filter((r) => r?.file_url)
+    if (active.length > 0) return active
+    if (personalInfo?.resume) {
+      return [{
+        id: 'legacy',
+        resume_id: 'general',
+        label: t('resume.generalRole', 'General'),
+        file_url: personalInfo.resume,
+        file_name: 'resume.pdf',
+        description: '',
+        is_default: true,
+      }]
+    }
+    return []
+  }, [resumes, personalInfo?.resume, t])
+
+  const defaultResumeId = useMemo(() => {
+    const preferred = resumeOptions.find((r) => r.is_default) || resumeOptions[0]
+    return preferred?.id ?? null
+  }, [resumeOptions])
+
+  const [selectedId, setSelectedId] = useState(defaultResumeId)
+
+  useEffect(() => {
+    if (!resumeOptions.length) {
+      if (selectedId !== null) setSelectedId(null)
+      return
+    }
+    if (!resumeOptions.some((r) => r.id === selectedId)) {
+      setSelectedId(defaultResumeId)
+    }
+  }, [resumeOptions, selectedId, defaultResumeId])
+
+  const selectedResume = resumeOptions.find((r) => r.id === selectedId) || resumeOptions[0] || null
 
   return (
     <section id="resume" className="relative z-10 py-32 md:py-40">
@@ -47,7 +85,7 @@ export default function Resume() {
         >
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-          <div className="relative z-10 max-w-xl mx-auto space-y-8">
+          <div className="relative z-10 max-w-2xl mx-auto space-y-8">
             <motion.span variants={childVariants} className="eyebrow">
               {t('resume.eyebrow')}
             </motion.span>
@@ -60,22 +98,57 @@ export default function Resume() {
               {t('resume.subtitle')}
             </motion.p>
 
+            {resumeOptions.length > 1 && (
+              <motion.div variants={childVariants} className="space-y-3">
+                <label htmlFor="resume-role-select" className="block text-xs uppercase tracking-widest text-black/40 dark:text-white/35">
+                  {t('resume.selectRole', 'Select resume by role')}
+                </label>
+                <select
+                  id="resume-role-select"
+                  value={selectedResume?.id ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const next = resumeOptions.find((r) => String(r.id) === value)
+                    setSelectedId(next?.id ?? null)
+                  }}
+                  className="min-h-11 w-full max-w-md mx-auto rounded-xl border border-black/10 bg-white/70 px-4 py-2 text-sm text-black/80 outline-none transition-colors focus:border-cyan-500/50 dark:border-white/10 dark:bg-black/20 dark:text-white/85"
+                >
+                  {resumeOptions.map((resume) => (
+                    <option key={resume.id} value={resume.id}>
+                      {resume.label || t('resume.generalRole', 'General')}
+                    </option>
+                  ))}
+                </select>
+                {selectedResume?.description && (
+                  <p className="text-xs text-black/45 dark:text-white/35">{selectedResume.description}</p>
+                )}
+              </motion.div>
+            )}
+
             <motion.div variants={childVariants}>
-              <MagneticButton
-                as="a"
-                href={personalInfo.resume}
-                download
-                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/70 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                {t('resume.downloadPdf')}
-              </MagneticButton>
+              {selectedResume?.file_url ? (
+                <MagneticButton
+                  as="a"
+                  href={selectedResume.file_url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/70 dark:text-white/80 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {resumeOptions.length > 1
+                    ? t('resume.downloadSelected', 'Download Selected Resume')
+                    : t('resume.downloadPdf')}
+                </MagneticButton>
+              ) : (
+                <p className="text-sm text-black/45 dark:text-white/35">{t('resume.empty', 'No resume available right now.')}</p>
+              )}
             </motion.div>
 
             <motion.p variants={childVariants} className="text-xs text-black/30 dark:text-white/20">
-              {t('resume.pdfFormat')}
+              {selectedResume?.file_name || t('resume.pdfFormat')}
             </motion.p>
           </div>
 

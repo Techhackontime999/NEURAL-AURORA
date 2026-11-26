@@ -68,7 +68,11 @@
     "titleResume": "Currículum",
     "subtitle": "Una visión completa de mi experiencia, proyectos y conocimientos técnicos. Actualizado regularmente para reflejar mi trabajo más reciente.",
     "downloadPdf": "Descargar PDF",
-    "pdfFormat": "Formato PDF . 2.4 MB"
+    "pdfFormat": "Formato PDF . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Conectar",

@@ -68,7 +68,11 @@
     "titleResume": "میرا ریزیومے",
     "subtitle": "میرے تجربے، پراجیکٹس اور تکنیکی مہارت کا جامع خلاصہ۔ باقاعدگی سے اپ ڈیٹ ہوتا ہے۔",
     "downloadPdf": "PDF ڈاؤن لوڈ",
-    "pdfFormat": "PDF فارمیٹ . 2.4 MB"
+    "pdfFormat": "PDF فارمیٹ . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "رابطہ",

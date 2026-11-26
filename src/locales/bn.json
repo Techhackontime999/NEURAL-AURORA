@@ -68,7 +68,11 @@
     "titleResume": "আমার বায়োডেটা",
     "subtitle": "আমার অভিজ্ঞতা, প্রকল্প ও প্রযুক্তিগত দক্ষতার পূর্ণাঙ্গ সারসংক্ষেপ। নিয়মিত আপডেট হয়।",
     "downloadPdf": "PDF ডাউনলোড",
-    "pdfFormat": "PDF ফরম্যাট . 2.4 MB"
+    "pdfFormat": "PDF ফরম্যাট . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "যোগাযোগ",

@@ -68,7 +68,11 @@
     "titleResume": "את קורות החיים שלי",
     "subtitle": "סיכום מקיף של הניסיון, הפרויקטים והמומחיות הטכנית שלי. מתעדכן באופן קבוע.",
     "downloadPdf": "הורד PDF",
-    "pdfFormat": "כקובץ PDF. 2.4 MB"
+    "pdfFormat": "כקובץ PDF. 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "יצירת קשר",

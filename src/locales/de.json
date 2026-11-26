@@ -68,7 +68,11 @@
     "titleResume": "herunterladen",
     "subtitle": "Ein umfassender Überblick über meine Erfahrung, Projekte und technische Expertise. Wird regelmäßig aktualisiert.",
     "downloadPdf": "PDF herunterladen",
-    "pdfFormat": "PDF-Format . 2,4 MB"
+    "pdfFormat": "PDF-Format . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Kontakt",

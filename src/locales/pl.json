@@ -68,7 +68,11 @@
     "titleResume": "CV",
     "subtitle": "Kompleksowe podsumowanie mojego doświadczenia, projektów i ekspertyzy technicznej. Aktualizowane regularnie.",
     "downloadPdf": "Pobierz PDF",
-    "pdfFormat": "Format PDF . 2,4 MB"
+    "pdfFormat": "Format PDF . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Kontakt",

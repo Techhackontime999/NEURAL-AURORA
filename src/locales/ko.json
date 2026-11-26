@@ -68,7 +68,11 @@
     "titleResume": "다운로드",
     "subtitle": "경험, 프로젝트, 기술 전문성에 대한 포괄적인 개요입니다. 최신 작업을 반영하도록 정기적으로 업데이트됩니다.",
     "downloadPdf": "PDF 다운로드",
-    "pdfFormat": "PDF 형식 . 2.4 MB"
+    "pdfFormat": "PDF 형식 . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "연락",

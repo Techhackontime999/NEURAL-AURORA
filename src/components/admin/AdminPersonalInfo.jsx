@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { getPersonalInfo, updatePersonalInfo, uploadImage } from '../../lib/supabase'
 import { useToast } from '../../context/ToastContext'
 import ImageUpload from '../ui/ImageUpload'
@@ -126,12 +127,15 @@ export default function AdminPersonalInfo() {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              Resume
+              Resume (legacy fallback)
             </label>
             <ResumeUpload
               value={form.resume || ''}
               onChange={(url) => setForm({ ...form, resume: url })}
             />
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              For multiple resumes by job role, use the <Link to="/admin/resumes" className="underline">Resumes</Link> admin page.
+            </p>
           </div>
 
           <div>

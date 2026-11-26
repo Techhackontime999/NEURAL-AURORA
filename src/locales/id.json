@@ -68,7 +68,11 @@
     "titleResume": "Resume Saya",
     "subtitle": "Ringkasan komprehensif pengalaman, proyek, dan keahlian teknis saya. Diperbarui secara rutin.",
     "downloadPdf": "Unduh PDF",
-    "pdfFormat": "Format PDF . 2,4 MB"
+    "pdfFormat": "Format PDF . 2,4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Kontak",

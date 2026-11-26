@@ -68,7 +68,11 @@
     "titleResume": "简历",
     "subtitle": "我的经验、项目和技术专长的全面概览。会定期更新以及时反映我的最新工作。",
     "downloadPdf": "下载 PDF",
-    "pdfFormat": "PDF 格式 . 2.4 MB"
+    "pdfFormat": "PDF 格式 . 2.4 MB",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "联系",

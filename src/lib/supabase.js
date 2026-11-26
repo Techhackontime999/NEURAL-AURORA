@@ -798,6 +798,42 @@ export async function deleteGalleryItem(id) {
   if (error) throw error
 }
 
+export async function getResumes() {
+  const { data, error } = await supabase
+    .from('resumes')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createResume(data) {
+  const { data: newItem, error } = await supabase
+    .from('resumes')
+    .insert([data])
+    .select()
+    .single()
+  if (error) throw error
+  return newItem
+}
+
+export async function updateResume(id, data) {
+  const { error } = await supabase
+    .from('resumes')
+    .update(data)
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteResume(id) {
+  const { error } = await supabase
+    .from('resumes')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function getPayments() {
   const { data, error } = await supabase
     .from('payments')

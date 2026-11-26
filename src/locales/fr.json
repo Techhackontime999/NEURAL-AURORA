@@ -68,7 +68,11 @@
     "titleResume": "mon CV",
     "subtitle": "Un aperçu complet de mon expérience, de mes projets et de mon expertise technique. Mis à jour régulièrement.",
     "downloadPdf": "Télécharger le PDF",
-    "pdfFormat": "Format PDF . 2,4 Mo"
+    "pdfFormat": "Format PDF . 2,4 Mo",
+    "selectRole": "Select resume by role",
+    "downloadSelected": "Download Selected Resume",
+    "generalRole": "General",
+    "empty": "No resume available right now."
   },
   "contact": {
     "eyebrow": "Contact",

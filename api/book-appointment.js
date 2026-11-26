@@ -18,6 +18,61 @@ function sanitizeText(value, max = 500) {
   return String(value || '').trim().slice(0, max)
 }
 
+async function handleVerify(req, res, requestId, supabase) {
+  const { booking_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {}
+  if (!booking_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ error: 'Missing payment verification fields.' })
+  }
+
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim()
+  if (!keySecret) {
+    logError('book-appointment', requestId, { stage: 'missing-key-secret' })
+    return res.status(503).json({ error: 'Payment verification is not configured.' })
+  }
+
+  const expected = crypto.createHmac('sha256', keySecret).update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex')
+  const sigBuf = Buffer.from(String(razorpay_signature))
+  const expBuf = Buffer.from(expected)
+  const valid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf)
+  if (!valid) {
+    logError('book-appointment', requestId, { stage: 'invalid-signature', booking_id })
+    return res.status(400).json({ error: 'Invalid payment signature.' })
+  }
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from('appointments')
+    .select('id, razorpay_order_id, payment_status, status')
+    .eq('id', booking_id)
+    .maybeSingle()
+  if (fetchErr) throw fetchErr
+  if (!booking) return res.status(404).json({ error: 'Booking not found.' })
+  if (String(booking.razorpay_order_id || '') !== String(razorpay_order_id)) {
+    return res.status(400).json({ error: 'Order mismatch.' })
+  }
+
+  if (booking.payment_status === 'paid') {
+    return res.status(200).json({ ok: true, booking_id: booking.id, payment_status: 'paid', status: booking.status })
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('appointments')
+    .update({
+      payment_status: 'paid',
+      status: booking.status === 'cancelled' ? 'cancelled' : 'confirmed',
+      razorpay_payment_id: String(razorpay_payment_id),
+      paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', booking_id)
+    .eq('razorpay_order_id', razorpay_order_id)
+    .select('id, status, payment_status')
+    .single()
+  if (updateErr) throw updateErr
+
+  log('book-appointment', requestId, { stage: 'verified', booking_id, razorpay_payment_id })
+  return res.status(200).json({ ok: true, booking_id: updated.id, payment_status: updated.payment_status, status: updated.status })
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -32,6 +87,11 @@ module.exports = async function handler(req, res) {
     }
 
     const body = req.body || {}
+    const action = sanitizeText(body.action || (body.razorpay_signature ? 'verify' : 'create'), 30).toLowerCase()
+    if (action === 'verify') {
+      return await handleVerify(req, res, requestId, supabase)
+    }
+
     const appointmentTypeId = sanitizeText(body.appointment_type_id, 120)
     const customerName = sanitizeText(body.customer_name, 120)
     const customerEmail = sanitizeText(body.customer_email, 200).toLowerCase()

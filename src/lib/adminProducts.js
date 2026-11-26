@@ -503,8 +503,8 @@ export async function reconcilePayment(paymentId) {
  */
 export async function createAccessLink({ orderRef, email } = {}) {
   return postAdminJson(
-    '/api/admin-access-link',
-    orderRef ? { order_ref: orderRef } : { email }
+    '/api/admin-reconcile-order',
+    { action: 'access-link', ...(orderRef ? { order_ref: orderRef } : { email }) }
   )
 }
 

@@ -88,10 +88,11 @@ export default function BookAppointment() {
         key: data.key,
       })
 
-      const verifyRes = await fetch('/api/verify-appointment-payment', {
+      const verifyRes = await fetch('/api/book-appointment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'verify',
           booking_id: data.booking_id,
           razorpay_order_id: paymentResponse.razorpay_order_id,
           razorpay_payment_id: paymentResponse.razorpay_payment_id,

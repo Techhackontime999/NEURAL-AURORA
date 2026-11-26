@@ -7,6 +7,7 @@ import { sanitizeHtml } from '../lib/utils'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
+import AdSlot from './ads/AdSlot'
 
 export default function CaseStudyDetail() {
   const { t } = useTranslation()
@@ -90,6 +91,8 @@ export default function CaseStudyDetail() {
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(study.content) }}
             />
           </div>
+
+          <AdSlot slot="article_footer" className="mx-auto mt-10 max-w-3xl" />
 
           <div className="mt-8 pt-8 border-t border-black/10 dark:border-white/10">
             <Link

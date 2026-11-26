@@ -7,6 +7,7 @@ import { useBlogPosts } from '../lib/usePortfolioData'
 import BlogNavbar from './BlogNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
+import AdSlot from './ads/AdSlot'
 
 export default function Blog() {
   const { t } = useTranslation()
@@ -108,6 +109,8 @@ export default function Blog() {
             ))}
           </div>
         )}
+
+        <AdSlot slot="blog_listing" className="mx-auto mt-12 max-w-3xl" />
       </main>
 
       <Footer />

@@ -7,6 +7,7 @@ import { ThemeToggle } from './ui/curtain-theme-toggle'
 import { BrandLogo } from './ui/BrandLogo'
 import LanguageSwitcher from './LanguageSwitcher'
 import NavScroller from './ui/nav-scroller'
+import SearchTrigger from './search/SearchTrigger'
 
 const staggerItem = {
   hidden: { opacity: 0, y: 20 },
@@ -37,6 +38,7 @@ export default function BlogNavbar() {
     ...(isPost
       ? [{ key: 'all-posts', label: 'blog.allPosts', href: '/blog' }]
       : []),
+    { key: 'search', label: 'Search', href: '/search', route: true },
     { key: 'settings', label: 'nav.settings', href: '/settings' },
   ]
 
@@ -83,6 +85,7 @@ export default function BlogNavbar() {
                 </button>
               )}
             </div>
+            <SearchTrigger compact />
             <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button

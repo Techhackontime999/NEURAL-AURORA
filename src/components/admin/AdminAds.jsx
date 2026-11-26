@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { getAdVideos, addAdVideo, updateAdVideo, deleteAdVideo } from '../../lib/supabase'
 import useBulkSelect from '../../lib/useBulkSelect'
 import { useToast } from '../../context/ToastContext'
 import BulkActionsBar from '../ui/BulkActionsBar'
+import SearchBar from '../ui/SearchBar'
 
 const AD_TYPES = [
   { value: 'google', label: 'Google AdSense', desc: 'Auto-served by Google' },
@@ -33,7 +34,13 @@ export default function AdminAds() {
   const [showNew, setShowNew] = useState(false)
   const [newForm, setNewForm] = useState({ ...defaultForm })
   const [urlError, setUrlError] = useState('')
-  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(ads)
+  const [search, setSearch] = useState('')
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return ads
+    return ads.filter((ad) => [ad.title, ad.ad_type, ad.video_url].some((value) => String(value || '').toLowerCase().includes(term)))
+  }, [ads, search])
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete } = useBulkSelect(filtered, { availableIds: filtered })
 
   useEffect(() => { load() }, [])
 
@@ -232,13 +239,18 @@ export default function AdminAds() {
         </div>
       )}
 
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search ads…" className="w-full sm:w-72" />
+        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{filtered.length} ad(s)</span>
+      </div>
+
       <BulkActionsBar selectedCount={selectedIds.size} onDelete={handleBulkDeleteWrapper} onClear={clearSelection} />
 
       <div
         className="rounded-xl border overflow-hidden"
         style={{ borderColor: 'var(--border-color)' }}
       >
-        {allSelected !== undefined && ads.length > 0 && (
+        {allSelected !== undefined && filtered.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b text-[11px] font-medium uppercase tracking-wider"
             style={{ borderColor: 'var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-tertiary)' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -247,12 +259,12 @@ export default function AdminAds() {
             </label>
           </div>
         )}
-        {ads.map((ad, i) => (
+        {filtered.map((ad, i) => (
           <div
             key={ad.id}
             className="flex items-center gap-4 px-4 py-3"
             style={{
-              borderBottom: i < ads.length - 1 ? '1px solid var(--border-color)' : 'none',
+              borderBottom: i < filtered.length - 1 ? '1px solid var(--border-color)' : 'none',
               background: selectedIds.has(ad.id) ? 'color-mix(in srgb, var(--accent) 8%, var(--card-bg))' : 'var(--card-bg)',
               borderLeft: selectedIds.has(ad.id) ? '3px solid var(--accent)' : '3px solid transparent',
             }}
@@ -359,8 +371,8 @@ export default function AdminAds() {
             )}
           </div>
         ))}
-        {ads.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No ads yet.</p>
+        {filtered.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>{ads.length ? 'No ads match your search.' : 'No ads yet.'}</p>
         )}
       </div>
     </div>

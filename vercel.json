@@ -44,6 +44,10 @@
       "destination": "/api/license?action=product-preview&slug=:slug"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/license?action=sitemap"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

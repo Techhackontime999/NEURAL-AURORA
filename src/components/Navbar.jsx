@@ -8,6 +8,7 @@ import NavScroller from './ui/nav-scroller'
 import { getCrmUrl } from '../lib/crm-config'
 import { getDocsUrl } from '../lib/docs-config'
 import LanguageSwitcher from './LanguageSwitcher';
+import SearchTrigger from './search/SearchTrigger'
 import { useTranslation } from 'react-i18next'
 
 const navLinks = [
@@ -28,6 +29,7 @@ const mobileNavLinks = [
   { label: 'common.home', href: '/', route: true, end: true },
   ...navLinks,
   { label: 'nav.store', href: '/offerings/products', route: true },
+  { label: 'Search', href: '/search', route: true },
   { label: 'nav.library', href: '/library', route: true },
   { label: 'nav.wishlist', href: '/wishlist', route: true },
   { label: 'nav.cart', href: '/cart', route: true },
@@ -339,6 +341,7 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             </div>
+            <SearchTrigger compact />
             <LanguageSwitcher />
             <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
             <button

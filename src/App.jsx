@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext'
 import { StoreProvider, useStore } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
 import { MoodProvider } from './context/MoodContext'
+import SearchProvider from './components/search/SearchContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
@@ -31,7 +32,7 @@ import { clearRuntimeCaches } from './lib/pwaCaches'
 import { isChunkLoadError, recoverFromChunkError } from './lib/chunkRecovery'
 import DocumentHead from './components/ui/DocumentHead'
 import FloatingNav from './components/ui/floating-nav'
-import { SITE_NAME } from './lib/documentHead'
+import { SITE_NAME, SITE_ORIGIN } from './lib/documentHead'
 import AuthCallback from './components/admin/AuthCallback'
 import {
   AUTH_CALLBACK_PATH,
@@ -70,6 +71,7 @@ const PartnerPortal = lazy(() => import('./components/partner/PartnerPortal'))
 const AffiliateApply = lazy(() => import('./components/partner/AffiliateApply'))
 const ContributorApply = lazy(() => import('./components/offerings/ContributorApply'))
 const Settings = lazy(() => import('./components/Settings'))
+const SearchPage = lazy(() => import('./components/search/SearchPage'))
 
 function RouteFallback() {
   return (
@@ -169,10 +171,29 @@ function CheckoutAlias() {
   return <Navigate to={`/purchase/success?ref=${encodeURIComponent(orderId || '')}`} replace />
 }
 
+// Search engines can expose the site search box directly in results when the
+// homepage advertises a SearchAction. The target is the real /search route so
+// a query never lands on a client-only modal with no shareable URL.
+const HOME_SEARCH_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  alternateName: 'Techhackontime999',
+  url: `${SITE_ORIGIN}/`,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE_ORIGIN}/search?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+}
+
 // Static route metadata. Product detail is handled by the product page itself
 // because its title, image, price and JSON-LD come from the loaded product.
 const ROUTE_HEADS = {
-  '/': {},
+  '/': { jsonLd: HOME_SEARCH_JSON_LD },
   '/more': {
     title: `More from ${SITE_NAME}`,
     description: 'Certificates, achievements and a visual gallery from Amit Kumar (Techhackontime999).',
@@ -204,6 +225,11 @@ const ROUTE_HEADS = {
   '/contributor-apply': {
     title: `Become a Contributor — ${SITE_NAME}`,
     description: 'Apply for a free personal-use contributor license on selected digital products.',
+  },
+  '/search': {
+    title: `Search — ${SITE_NAME}`,
+    description: 'Search projects, services, digital products, writing, skills and more across NEURAL AURORA.',
+    robots: 'noindex, follow',
   },
   '/blog': {
     title: `Journal — ${SITE_NAME}`,
@@ -554,6 +580,8 @@ function AppContent() {
               {/* /services was renamed to /offerings — keep old links working */}
               <Route path="/services" element={<Navigate to="/offerings" replace />} />
               <Route path="/services/*" element={<LegacyServicesRedirect />} />
+              {/* Shareable, filterable results page behind ⌘K / the nav search. */}
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/case-study/:slug" element={<CaseStudyDetail />} />
@@ -606,7 +634,9 @@ export default function App() {
         <StoreProvider>
           <AutoTraverseProvider>
             <MoodProvider>
-              <AppContent />
+              <SearchProvider>
+                <AppContent />
+              </SearchProvider>
             </MoodProvider>
           </AutoTraverseProvider>
         </StoreProvider>

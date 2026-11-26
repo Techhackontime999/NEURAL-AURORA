@@ -13,6 +13,7 @@ import ProductCard from './offerings/ProductCard'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
+import AdSlot from './ads/AdSlot'
 
 function ResolvedIcon({ name, className = 'w-4 h-4' }) {
   const Icon = LucideIcons[name]
@@ -1023,6 +1024,8 @@ export default function Service() {
             </motion.div>
           </motion.div>
         </section>
+
+        <AdSlot slot="offerings" className="mx-auto mt-16 max-w-4xl" />
       </main>
 
       <Footer />

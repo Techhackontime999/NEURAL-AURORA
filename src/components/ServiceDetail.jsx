@@ -11,6 +11,7 @@ import { submitContactMessage } from '../lib/supabase'
 import ServiceNavbar from './ServiceNavbar'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
+import AdSlot from './ads/AdSlot'
 
 function parsePrice(price) {
   const cleaned = price.replace(/[^0-9.kK]/g, '')
@@ -524,6 +525,8 @@ export default function ServiceDetail() {
             </DoubleBezel>
           </div>
         </ScrollSection>
+
+        <AdSlot slot="offerings" className="mx-auto mt-16 max-w-4xl" />
       </main>
 
       <Footer />

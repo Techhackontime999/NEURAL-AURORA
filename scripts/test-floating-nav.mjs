@@ -71,7 +71,7 @@ check('hamburger menu: thin scroll affordance is defined once', css.includes('.m
 // --- Integration: nothing from the existing chrome is lost ------------------
 check('top navigation remains mounted on the home page', app.includes('<Navbar />'))
 check('top navigation still owns its full-screen mobile menu', navbar.includes('role="dialog"') && navbar.includes('z-40') && navbar.includes('md:hidden'))
-check('app mounts the bottom bar outside embeds and admin', app.includes('<FloatingNav') && app.includes("!isEmbedRoute && !location.pathname.startsWith('/admin')"))
+check('app mounts the bottom bar outside embeds and admin', app.includes('<FloatingNav') && app.includes('!isEmbedRoute && !isAdminRoute') && app.includes("location.pathname.startsWith('/admin')"))
 check('app reserves space so page content is never hidden', app.includes('pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0'))
 check('app feeds live store counts into the bottom bar', app.includes('cartCount={cartCount}') && app.includes('wishlistCount={wishlistCount}'))
 check('companion widget moves above the bottom bar on mobile', mithi.includes('bottom-[calc(6rem+env(safe-area-inset-bottom))]') && mithi.includes('md:bottom-[calc(1rem+env(safe-area-inset-bottom))]'))

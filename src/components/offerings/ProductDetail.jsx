@@ -40,6 +40,7 @@ import { friendlyStoreError } from '../../lib/storeErrors'
 import StoreShell from './StoreShell'
 import CouponField from './CouponField'
 import ProductRail from './ProductRail'
+import AdSlot from '../ads/AdSlot'
 import ProductPreview from './ProductPreview'
 import ShareMenu from './ShareMenu'
 import ImageLightbox from '../ui/ImageLightbox'
@@ -972,6 +973,8 @@ export default function ProductDetail() {
         title={t('store.recentlyViewed')}
         products={recentlyViewed}
       />
+
+      <AdSlot slot="product_detail" className="mx-auto mb-10 max-w-3xl" />
 
       <AnimatePresence>
         {galleryIndex !== null && (

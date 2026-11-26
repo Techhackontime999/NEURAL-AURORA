@@ -8,6 +8,7 @@ import { BrandLogo } from './ui/BrandLogo'
 import NavScroller from './ui/nav-scroller'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useStore } from '../context/StoreContext'
+import SearchTrigger from './search/SearchTrigger'
 
 const navLinks = [
   { label: 'services.nav.services', href: '#services' },
@@ -26,6 +27,7 @@ const mobileNavLinks = [
   { label: 'common.home', href: '/', route: true, end: true },
   ...navLinks,
   { label: 'services.nav.wishlist', href: '/wishlist', route: true },
+  { label: 'Search', href: '/search', route: true },
   { label: 'services.nav.cart', href: '/cart', route: true },
   { label: 'nav.settings', href: '/settings', route: true },
 ]
@@ -122,6 +124,7 @@ export default function ServiceNavbar() {
                 </button>
               ))}
             </div>
+            <SearchTrigger compact className="hidden sm:inline-flex" />
             <LanguageSwitcher />
             <Link
               to="/wishlist"

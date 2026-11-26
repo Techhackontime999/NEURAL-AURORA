@@ -85,7 +85,10 @@ const createOrder = require('../api/create-order.js')
 const orderStatus = require('../api/order-status.js')
 const download = require('../api/download.js')
 const adminReconcile = require('../api/admin-reconcile-order.js')
-const adminAccessLink = require('../api/admin-access-link.js')
+// Access links were folded into the reconcile function to stay within the
+// Vercel Hobby function limit. Reproduce the action the UI sends.
+const adminAccessLink = (req, res) =>
+  adminReconcile({ ...req, body: { ...(req.body || {}), action: 'access-link' } }, res)
 const adminDeleteOrders = require('../api/admin-delete-orders.js')
 const licenseHandler = require('../api/license.js')
 // Both public licence URLs are rewrites to one combined function. These
@@ -252,12 +255,13 @@ setEnv({})
   check('admin-reconcile: GET -> 405', res.statusCode === 405, `got ${res.statusCode}`)
 }
 {
-  // Configured, but no gateway credentials: must fail closed, not crash.
+  // Admin proof is checked before gateway config: an anonymous caller must
+  // never learn whether payment credentials are configured.
   setEnv({ SUPABASE_SERVICE_ROLE_KEY: SENTINEL_SECRET, SUPABASE_URL: 'https://example.supabase.co' })
   const { res } = await capture((r) =>
     adminReconcile({ method: 'POST', headers: {}, body: { order_ref: 'NA-0000000000000000' } }, r)
   )
-  check('admin-reconcile: missing gateway creds -> 503', res.statusCode === 503, `got ${res.statusCode}`)
+  check('admin-reconcile: admin proof precedes gateway config', res.statusCode === 403, `got ${res.statusCode}`)
 }
 {
   // Fully configured, but the caller presents no admin token.
@@ -357,7 +361,7 @@ check(
 )
 {
   const reconcileSrc = fs.readFileSync('api/admin-reconcile-order.js', 'utf8')
-  const accessLinkSrc = fs.readFileSync('api/admin-access-link.js', 'utf8')
+  const accessLinkSrc = reconcileSrc
   const deleteOrdersSrc = fs.readFileSync('api/admin-delete-orders.js', 'utf8')
   check(
     'admin-auth: no endpoint keeps a divergent copy of the admin check',
@@ -484,7 +488,7 @@ setEnv({})
     'create-order rejects an order because of the phone number'
   )
 
-  const accessLinkSrc = fs.readFileSync('api/admin-access-link.js', 'utf8')
+  const accessLinkSrc = fs.readFileSync('api/admin-reconcile-order.js', 'utf8')
   check(
     'phone: the sign-in link endpoint reports the customer number',
     accessLinkSrc.includes("require('./_lib/phone')") &&

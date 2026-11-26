@@ -26,6 +26,7 @@ import AdminUsers from './AdminUsers'
 import AdminContactMessages from './AdminContactMessages'
 import AdminPayments from './AdminPayments'
 import AdminAds from './AdminAds'
+import AdminAdPlacements from './AdminAdPlacements'
 import AdminServices from './AdminServices'
 import AdminCrmConfig from './AdminCrmConfig'
 import AdminDocsConfig from './AdminDocsConfig'
@@ -68,6 +69,7 @@ export default function AdminDashboard() {
         <Route path="messages" element={<AdminContactMessages />} />
         <Route path="payments" element={<AdminPayments />} />
         <Route path="ads" element={<AdminAds />} />
+        <Route path="ad-placements" element={<AdminAdPlacements />} />
         <Route path="crm-config" element={<AdminCrmConfig />} />
         <Route path="docs-config" element={<AdminDocsConfig />} />
         <Route path="youtube-config" element={<AdminYouTubeConfig />} />

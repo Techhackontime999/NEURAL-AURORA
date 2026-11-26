@@ -19,6 +19,7 @@ import { useStore } from '../../context/StoreContext'
 import StoreShell from './StoreShell'
 import ProductCard from './ProductCard'
 import ProductRail from './ProductRail'
+import AdSlot from '../ads/AdSlot'
 
 const EMPTY_FILTERS = {
   search: '',
@@ -725,6 +726,8 @@ export default function Products() {
         title={t('store.relatedProducts')}
         products={recommended}
       />
+
+      <AdSlot slot="store_listing" className="wrap mb-10" />
     </StoreShell>
   )
 }

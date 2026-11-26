@@ -6,6 +6,7 @@ import { ThemeToggle } from './ui/curtain-theme-toggle'
 import LanguageSwitcher from './LanguageSwitcher'
 import { BrandLogo } from './ui/BrandLogo'
 import NavScroller from './ui/nav-scroller'
+import SearchTrigger from './search/SearchTrigger'
 
 const navLinks = [
   { key: 'contribute', href: '#donate' },
@@ -17,6 +18,7 @@ const navLinks = [
 const mobileNavLinks = [
   { key: 'home', label: 'common.home', href: '/', route: true, end: true },
   ...navLinks.map((link) => ({ ...link, label: `support.nav.${link.key}` })),
+  { key: 'search', label: 'Search', href: '/search', route: true },
   { key: 'settings', label: 'nav.settings', href: '/settings', route: true },
 ]
 
@@ -93,6 +95,7 @@ export default function SupportNavbar() {
               ))}
             </div>
             <div className="flex items-center gap-2">
+              <SearchTrigger compact />
               <ThemeToggle variant="icon" defaultTheme="dark" duration={550} />
               <LanguageSwitcher />
             </div>

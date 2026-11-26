@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { getAdSenseClient, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
 
-const GOOGLE_AD_CLIENT = 'ca-pub-2699270619596438'
 const EASE = [0.16, 1, 0.3, 1]
 const SPRING_STIFF = { type: 'spring', stiffness: 70, damping: 16, mass: 0.6 }
 
@@ -104,50 +104,22 @@ function GoogleAdUnit() {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const containerRef = useRef(null)
-  const adMounted = useRef(false)
   const [loaded, setLoaded] = useState(false)
+  const client = getAdSenseClient()
 
   useEffect(() => {
-    if (adMounted.current) return
-    adMounted.current = true
-
-    if (!document.querySelector('script[src*="adsbygoogle"]')) {
-      const s = document.createElement('script')
-      s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2699270619596438'
-      s.crossOrigin = 'anonymous'
-      s.async = true
-      s.onerror = () => {
-        console.warn('[Ad] AdSense script blocked or failed to load')
-        setLoaded(true)
-      }
-      document.head.appendChild(s)
+    let alive = true
+    const fallback = window.setTimeout(() => setLoaded(true), 5000)
+    loadAdSenseScript(client).then((ready) => {
+      if (!alive) return
+      if (ready) pushAdSense()
+      setLoaded(true)
+    })
+    return () => {
+      alive = false
+      window.clearTimeout(fallback)
     }
-
-    const tryPush = () => {
-      try {
-        (adsbygoogle = window.adsbygoogle || []).push({})
-        setLoaded(true)
-      } catch {
-        setTimeout(tryPush, 500)
-      }
-    }
-
-    const checkAdsByGoogle = () => {
-      if (typeof adsbygoogle !== 'undefined') {
-        tryPush()
-      } else {
-        const interval = setInterval(() => {
-          if (typeof adsbygoogle !== 'undefined') {
-            clearInterval(interval)
-            tryPush()
-          }
-        }, 300)
-        setTimeout(() => { clearInterval(interval); setLoaded(true) }, 5000)
-      }
-    }
-
-    checkAdsByGoogle()
-  }, [])
+  }, [client])
 
   return (
     <div ref={containerRef} className="relative w-full min-h-[320px] flex items-center justify-center">
@@ -162,7 +134,7 @@ function GoogleAdUnit() {
         <ins
           className="adsbygoogle"
           style={{ display: 'block', width: '100%', minHeight: '260px' }}
-          data-ad-client={GOOGLE_AD_CLIENT}
+          data-ad-client={client}
           data-ad-format="auto"
           data-full-width-responsive="true"
         />

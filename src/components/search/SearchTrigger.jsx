@@ -11,7 +11,7 @@ export default function SearchTrigger({ compact = false, className = '' }) {
       onClick={() => openSearch()}
       aria-label="Search this site (Command or Control plus K)"
       title="Search this site (⌘K / Ctrl+K)"
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs tracking-wider transition-all duration-300 hover:border-cyan-400/60 active:scale-[0.97] ${className}`}
+      className={`hidden min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs tracking-wider transition-all duration-300 hover:border-cyan-400/60 active:scale-[0.97] sm:inline-flex ${className}`}
       style={{
         borderColor: 'var(--border-color)',
         color: 'var(--text-secondary)',

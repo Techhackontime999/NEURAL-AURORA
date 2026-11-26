@@ -124,5 +124,8 @@ for (const file of navbars) {
   check(`nav: ${name} links mobile visitors to /search`, source.includes("href: '/search'"))
 }
 
+check('nav: upper search icon is hidden on small screens', trigger.includes('hidden min-h-11') && trigger.includes('sm:inline-flex'))
+check('mobile: bottom bar search tab opens the global overlay', read('src/components/ui/floating-nav.tsx').includes('onSelect: onSearch') && app.includes('onSearch={openSearch}'))
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exitCode = 1

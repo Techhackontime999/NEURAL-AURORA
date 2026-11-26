@@ -124,7 +124,7 @@ export default function ServiceNavbar() {
                 </button>
               ))}
             </div>
-            <SearchTrigger compact className="hidden sm:inline-flex" />
+            <SearchTrigger compact />
             <LanguageSwitcher />
             <Link
               to="/wishlist"

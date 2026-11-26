@@ -6,7 +6,7 @@ import { ToastProvider } from './context/ToastContext'
 import { StoreProvider, useStore } from './context/StoreContext'
 import { AutoTraverseProvider } from './context/AutoTraverseContext'
 import { MoodProvider } from './context/MoodContext'
-import SearchProvider from './components/search/SearchContext'
+import SearchProvider, { useGlobalSearch } from './components/search/SearchContext'
 import AutoTraverseEffect from './components/ui/auto-traverse-effect'
 import StartingLoader from './components/StartingLoader'
 import Navbar from './components/Navbar'
@@ -474,6 +474,7 @@ function MoodMusicToggle() {
 function AppContent() {
   const location = useLocation()
   const { cartCount, wishlistCount } = useStore()
+  const { openSearch } = useGlobalSearch()
   // Supabase email links may land on / with tokens in the hash. Treat that as
   // an auth screen before the home gateway ever mounts.
   const isAuthCallbackLocation = location.pathname === AUTH_CALLBACK_PATH || hasAuthCallbackParams(location)
@@ -527,6 +528,7 @@ function AppContent() {
           profileHref="/library"
           cartCount={cartCount}
           wishlistCount={wishlistCount}
+          onSearch={openSearch}
         />
       )}
       {!loaderDone && <StartingLoader onComplete={() => setLoaderDone(true)} />}

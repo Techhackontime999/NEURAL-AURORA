@@ -24,6 +24,7 @@ type NavItem = {
   badge?: number
   badgeTone?: 'rose' | 'cyan'
   activeWhen?: (pathname: string, search: string) => boolean
+  onSelect?: () => void
 }
 
 type FloatingNavProps = {
@@ -31,20 +32,18 @@ type FloatingNavProps = {
   cartCount?: number
   wishlistCount?: number
   items?: NavItem[]
+  onSearch?: () => void
 }
 
 const isStorePath = (pathname: string) =>
   pathname === '/offerings/products' || pathname.startsWith('/offerings/products/')
 
-const isSearchIntent = (search: string) => {
-  const params = new URLSearchParams(search)
-  return params.get('focus') === 'search' || Boolean(params.get('q'))
-}
-
 /**
  * Mobile-only commerce bar. Home, shop, search, saved, cart and account are
  * the destinations people use most on storefronts; partner and settings links
  * stay in the upper scrollable rail and the account page so nothing is lost.
+ * On small screens the search tab opens the site-wide overlay (the upper-nav
+ * icon is hidden there), while /search remains the no-JS fallback destination.
  * Account always opens the library, whose guest state is the customer sign-in —
  * the admin login is never a commerce destination.
  */
@@ -53,6 +52,7 @@ export default function FloatingNav({
   cartCount = 0,
   wishlistCount = 0,
   items: itemsProp,
+  onSearch,
 }: FloatingNavProps) {
   const { t } = useTranslation()
   const { pathname, search } = useLocation()
@@ -70,14 +70,14 @@ export default function FloatingNav({
         labelKey: 'bottomNav.shop',
         to: '/offerings/products',
         icon: Store,
-        activeWhen: (path, query) => isStorePath(path) && !isSearchIntent(query),
+        activeWhen: (path) => isStorePath(path),
       },
       {
         id: 'search',
         labelKey: 'bottomNav.search',
-        to: '/offerings/products?focus=search',
+        to: '/search',
         icon: Search,
-        activeWhen: (path, query) => isStorePath(path) && isSearchIntent(query),
+        onSelect: onSearch,
       },
       {
         id: 'saved',
@@ -102,7 +102,7 @@ export default function FloatingNav({
         icon: UserRound,
       },
     ]
-  }, [cartCount, itemsProp, profileHref, wishlistCount])
+  }, [cartCount, itemsProp, onSearch, profileHref, wishlistCount])
 
   const activeIndex = useMemo(() => {
     const index = items.findIndex((item) => {
@@ -149,6 +149,11 @@ export default function FloatingNav({
       event.shiftKey ||
       event.altKey
     ) {
+      return
+    }
+    if (item.onSelect) {
+      event.preventDefault()
+      item.onSelect()
       return
     }
     const path = item.matchPath ?? item.to.split('?')[0]

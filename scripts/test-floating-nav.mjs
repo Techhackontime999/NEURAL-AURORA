@@ -48,7 +48,7 @@ check('floating nav: keeps the six commerce destinations', [
   'bottomNav.cart',
   'bottomNav.account',
 ].every((key) => nav.includes(key)))
-check('floating nav: store and search tabs resolve from the same route', nav.includes('isStorePath') && nav.includes('isSearchIntent'))
+check('floating nav: search tab opens global search with /search as fallback', nav.includes('onSelect: onSearch') && nav.includes("to: '/search'") && app.includes('onSearch={openSearch}') && !nav.includes('isSearchIntent'))
 check('floating nav: live cart and wishlist counts become badges', nav.includes('badge: wishlistCount') && nav.includes('badge: cartCount') && nav.includes("badgeTone: 'rose'") && nav.includes("badgeTone: 'cyan'"))
 check('floating nav: uses react-router links and lucide icons', nav.includes("from 'react-router-dom'") && nav.includes("from 'lucide-react'") && nav.includes('animate={{ x: indicator.x }}'))
 check('floating nav: animates only transform, never left/width', nav.includes('relative grid grid-cols-6') && nav.includes('style={{ width: indicator.width') && !nav.includes('animate={{ width') && !nav.includes('animate={{ left'))
@@ -75,7 +75,7 @@ check('app mounts the bottom bar outside embeds and admin', app.includes('<Float
 check('app reserves space so page content is never hidden', app.includes('pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0'))
 check('app feeds live store counts into the bottom bar', app.includes('cartCount={cartCount}') && app.includes('wishlistCount={wishlistCount}'))
 check('companion widget moves above the bottom bar on mobile', mithi.includes('bottom-[calc(6rem+env(safe-area-inset-bottom))]') && mithi.includes('md:bottom-[calc(1rem+env(safe-area-inset-bottom))]'))
-check('search destination focuses the catalogue search field', products.includes('searchInputRef.current?.focus()') && products.includes("current.get('focus') === 'search'") && products.includes('ref={searchInputRef}'))
+check('store deep link still focuses the catalogue search field', products.includes('searchInputRef.current?.focus()') && products.includes("current.get('focus') === 'search'") && products.includes('ref={searchInputRef}'))
 
 // --- Settings destination ----------------------------------------------------
 check('settings: route exists and is private', app.includes("path=\"/settings\"") && app.includes("pathname === '/settings'"))

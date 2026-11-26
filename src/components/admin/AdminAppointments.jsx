@@ -12,7 +12,10 @@ const DEFAULT_AVAILABILITY = {
   start: '09:00',
   end: '17:00',
   slot_interval: 30,
+  slot_capacity: 1,
+  buffer_minutes: 0,
   blackout_dates: [],
+  blocked_slots: [],
 }
 
 const DEFAULT_SETTINGS = {
@@ -71,6 +74,10 @@ export default function AdminAppointments() {
   const [bookingFilter, setBookingFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [smDate, setSmDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [smTypeId, setSmTypeId] = useState('')
+  const [smSlots, setSmSlots] = useState([])
+  const [smLoading, setSmLoading] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -188,6 +195,36 @@ export default function AdminAppointments() {
     try { await navigator.clipboard.writeText(text); toast.success(label) } catch { toast.error('Could not copy') }
   }
 
+  useEffect(() => { if (!smTypeId && types.length > 0) setSmTypeId(types.find(t => t.is_active)?.type_id || types[0].type_id) }, [types, smTypeId])
+
+  async function loadSmSlots(typeId = smTypeId, date = smDate) {
+    if (!typeId || !date) { setSmSlots([]); return }
+    setSmLoading(true)
+    try {
+      const res = await fetch(`/api/book-appointment?action=slots&appointment_type_id=${encodeURIComponent(typeId)}&date=${encodeURIComponent(date)}`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to load slots')
+      setSmSlots(Array.isArray(data.slots) ? data.slots : [])
+    } catch (err) { toast.error(err.message || 'Failed to load slots'); setSmSlots([]) }
+    finally { setSmLoading(false) }
+  }
+
+  useEffect(() => { if (tab === 'slots') loadSmSlots() }, [tab, smTypeId, smDate])
+
+  async function toggleBlockedSlot(slot) {
+    const key = `${smDate}T${slot.time}`
+    const blocked = new Set((settings.availability?.blocked_slots || []).map(s => String(s)))
+    if (blocked.has(key)) blocked.delete(key); else blocked.add(key)
+    const nextSettings = { ...settings, availability: { ...settings.availability, blocked_slots: [...blocked].sort() } }
+    setSettings(nextSettings)
+    try {
+      await updateAdminSettings({ appointment_settings: nextSettings })
+      invalidatePortfolioCache('publicSiteSettings')
+      await loadSmSlots(smTypeId, smDate)
+      toast.success(blocked.has(key) ? 'Slot blocked' : 'Slot unblocked')
+    } catch (err) { toast.error(err.message || 'Failed to update slot') }
+  }
+
   const filteredAppointments = useMemo(() => {
     const q = search.trim().toLowerCase()
     const today = new Date().toISOString().slice(0, 10)
@@ -221,7 +258,7 @@ export default function AdminAppointments() {
           <p className="mt-1 text-sm" style={muted}>Premium booking management — types, meeting links, availability rules, and booking requests.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['bookings', 'types', 'settings'].map(t => (
+          {['bookings', 'types', 'slots', 'settings'].map(t => (
             <button key={t} onClick={() => setTab(t)} className="rounded-lg px-4 py-2 text-sm font-medium capitalize transition-colors" style={{ background: tab === t ? 'var(--accent)' : 'var(--hover-bg)', color: tab === t ? '#fff' : 'var(--text-secondary)' }}>{t}</button>
           ))}
         </div>
@@ -233,6 +270,64 @@ export default function AdminAppointments() {
         <StatCard label="Confirmed" value={stats.confirmed} card={card} muted={muted} accent="#10b981" />
         <StatCard label="Paid" value={stats.paid} card={card} muted={muted} accent="#06b6d4" />
       </div>
+
+      {tab === 'slots' && (
+        <section className="rounded-xl border p-4 md:p-6 space-y-5" style={card}>
+          <SectionHead title="Slot Manager" desc="View slot allocation by date and appointment type. Block or unblock slots for maintenance, breaks, or manual control." muted={muted} />
+          <div className="grid gap-4 md:grid-cols-[220px_1fr_auto]">
+            <Field label="Date"><input type="date" value={smDate} onChange={e => setSmDate(e.target.value)} className="input" style={input} /></Field>
+            <Field label="Appointment type">
+              <select value={smTypeId} onChange={e => setSmTypeId(e.target.value)} className="input" style={input}>
+                {types.length === 0 && <option value="">No types</option>}
+                {types.map(t => <option key={t.type_id} value={t.type_id}>{t.name} ({t.duration_minutes} min)</option>)}
+              </select>
+            </Field>
+            <div className="flex items-end"><button onClick={() => loadSmSlots()} className="rounded-lg px-4 py-2.5 text-sm font-medium" style={{ background: 'var(--hover-bg)', color: 'var(--text-primary)' }}>Refresh</button></div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            <span className="rounded-full px-2.5 py-1" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>Available</span>
+            <span className="rounded-full px-2.5 py-1" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>Few left / full</span>
+            <span className="rounded-full px-2.5 py-1" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>Blocked</span>
+            <span className="rounded-full px-2.5 py-1" style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}>Past/unavailable</span>
+          </div>
+
+          {smLoading && <p className="text-sm" style={muted}>Loading slots...</p>}
+          {!smLoading && smSlots.length === 0 && <div className="rounded-xl border border-dashed p-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>No slots for this date. Check availability settings or pick another date.</div>}
+          {!smLoading && smSlots.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {smSlots.map(slot => {
+                const blocked = slot.reason === 'blocked'
+                const full = slot.reason === 'full'
+                const available = slot.available
+                const color = blocked ? '#ef4444' : available ? '#10b981' : full ? '#f59e0b' : 'var(--text-secondary)'
+                const bg = blocked ? 'rgba(239,68,68,0.08)' : available ? 'rgba(16,185,129,0.08)' : full ? 'rgba(245,158,11,0.08)' : 'var(--hover-bg)'
+                return (
+                  <div key={slot.time} className="rounded-xl border p-4 space-y-3" style={{ borderColor: 'var(--border-color)', background: 'var(--glass-bg)' }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{fmtDateTime(smDate, slot.time)}</p>
+                        <p className="text-[11px] mt-0.5 capitalize" style={{ color }}>{blocked ? 'Blocked' : full ? 'Full' : available ? 'Available' : (slot.reason || 'Unavailable')}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs" style={muted}>Capacity</p>
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{slot.booked ?? 0}/{slot.capacity ?? 1}</p>
+                      </div>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--hover-bg)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, ((slot.booked ?? 0) / Math.max(1, slot.capacity ?? 1)) * 100)}%`, background: color }} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px]" style={muted}>{slot.remaining ?? 0} spot(s) left</span>
+                      <button onClick={() => toggleBlockedSlot(slot)} className="rounded-md px-3 py-1.5 text-[11px] font-medium" style={{ background: bg, color }}>{blocked ? 'Unblock' : 'Block slot'}</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       {tab === 'settings' && (
         <section className="rounded-xl border p-4 md:p-6 space-y-5" style={card}>
@@ -281,10 +376,12 @@ export default function AdminAppointments() {
                 })}
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
               <Field label="Start time"><input type="time" value={settings.availability?.start || '09:00'} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, start: e.target.value } }))} className="input" style={input} /></Field>
               <Field label="End time"><input type="time" value={settings.availability?.end || '17:00'} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, end: e.target.value } }))} className="input" style={input} /></Field>
               <Field label="Slot interval (min)"><input type="number" min="5" step="5" value={settings.availability?.slot_interval ?? 30} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, slot_interval: Math.max(5, Number(e.target.value || 30)) } }))} className="input" style={input} /></Field>
+              <Field label="Capacity / slot"><input type="number" min="1" step="1" value={settings.availability?.slot_capacity ?? 1} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, slot_capacity: Math.max(1, Number(e.target.value || 1)) } }))} className="input" style={input} /></Field>
+              <Field label="Buffer (min)"><input type="number" min="0" step="5" value={settings.availability?.buffer_minutes ?? 0} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, buffer_minutes: Math.max(0, Number(e.target.value || 0)) } }))} className="input" style={input} /></Field>
             </div>
             <Field label="Blackout dates (YYYY-MM-DD, one per line)">
               <textarea value={(settings.availability?.blackout_dates || []).join('\n')} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, blackout_dates: e.target.value.split(/[\n,]+/).map(v => v.trim()).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)) } }))} rows={3} className="input resize-y font-mono text-xs" style={input} placeholder="2026-12-25&#10;2026-01-01" />

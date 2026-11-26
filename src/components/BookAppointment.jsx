@@ -304,23 +304,34 @@ export default function BookAppointment() {
                   <div>
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Available slots</span>
-                      {form.preferred_time && <span className="text-xs" style={{ color: 'var(--accent)' }}>Selected: {formatTime(form.preferred_time)}</span>}
+                      {form.preferred_time && <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>Selected: {formatTime(form.preferred_time)}</span>}
                     </div>
-                    {!form.preferred_date && <div className="rounded-xl border border-dashed px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)' }}>Pick a date to see available slots.</div>}
-                    {form.preferred_date && slotsLoading && <div className="rounded-xl border px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Loading available slots...</div>}
+                    {!form.preferred_date && <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)' }}>Pick a date to see available slots.</div>}
+                    {form.preferred_date && slotsLoading && <div className="rounded-xl border px-4 py-8 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Loading available slots...</div>}
                     {form.preferred_date && !slotsLoading && slotsError && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">{slotsError}</div>}
-                    {form.preferred_date && !slotsLoading && !slotsError && slots.length === 0 && <div className="rounded-xl border px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>No slots available for this date. Try another day.</div>}
+                    {form.preferred_date && !slotsLoading && !slotsError && slots.length === 0 && <div className="rounded-xl border px-4 py-8 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>No slots available for this date. Try another day.</div>}
                     {form.preferred_date && !slotsLoading && !slotsError && slots.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        {slots.map(s => {
-                          const selected = form.preferred_time === s.time
-                          return (
-                            <button key={s.time} type="button" disabled={!s.available} onClick={() => update('preferred_time', s.time)} className="rounded-xl border px-3 py-2.5 text-sm font-medium transition-all disabled:opacity-35 disabled:cursor-not-allowed" style={{ borderColor: selected ? 'color-mix(in srgb, var(--accent) 50%, var(--border-color))' : 'var(--border-color)', background: selected ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'var(--glass-bg)', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                              {formatTime(s.time)}
-                            </button>
-                          )
-                        })}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                          {slots.map(s => {
+                            const selected = form.preferred_time === s.time
+                            const full = s.reason === 'full'
+                            const blocked = s.reason === 'blocked'
+                            const statusLabel = blocked ? 'Blocked' : full ? 'Full' : s.available ? (s.remaining <= 1 && (s.capacity || 1) > 1 ? `${s.remaining} left` : 'Open') : 'Unavailable'
+                            return (
+                              <button key={s.time} type="button" disabled={!s.available} onClick={() => update('preferred_time', s.time)} className="rounded-xl border px-3 py-2.5 text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed" style={{ borderColor: selected ? 'color-mix(in srgb, var(--accent) 55%, var(--border-color))' : blocked ? 'rgba(239,68,68,0.25)' : full ? 'rgba(245,158,11,0.25)' : 'var(--border-color)', background: selected ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'var(--glass-bg)' }}>
+                                <div className="text-sm font-medium" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-primary)' }}>{formatTime(s.time)}</div>
+                                <div className="text-[10px] mt-0.5" style={{ color: blocked ? '#ef4444' : full ? '#f59e0b' : s.available ? '#10b981' : 'var(--text-tertiary)' }}>{statusLabel}</div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-3 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                          <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1.5 align-middle" />Open</span>
+                          <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1.5 align-middle" />Full</span>
+                          <span><span className="inline-block w-2 h-2 rounded-full bg-red-400 mr-1.5 align-middle" />Blocked</span>
+                        </div>
+                      </>
                     )}
                   </div>
                   {settings.timezone_note && <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}><Calendar size={13} /> {settings.timezone_note}</p>}

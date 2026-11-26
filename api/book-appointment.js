@@ -54,11 +54,15 @@ async function handleSlots(req, res, requestId, supabase) {
   const endMin = toMinutes(avail.end || '17:00') ?? 1020
   const interval = Math.max(5, Number(avail.slot_interval) || 30)
   const duration = Math.max(5, Number(typeRow.duration_minutes) || 30)
+  const buffer = Math.max(0, Number(avail.buffer_minutes) || 0)
+  const capacity = Math.max(1, Number(avail.slot_capacity) || 1)
+  const step = Math.max(interval, duration + buffer)
   const blackout = new Set((Array.isArray(avail.blackout_dates) ? avail.blackout_dates : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d))))
+  const blockedSlots = new Set((Array.isArray(avail.blocked_slots) ? avail.blocked_slots : []).map(s => String(s || '').trim()))
   const dayOfWeek = new Date(`${date}T00:00:00`).getDay()
 
   if (blackout.has(date) || !days.includes(dayOfWeek) || endMin <= startMin) {
-    return res.status(200).json({ ok: true, date, slots: [] })
+    return res.status(200).json({ ok: true, date, slots: [], meta: { capacity, buffer_minutes: buffer } })
   }
 
   const { data: bookings, error: bookErr } = await supabase
@@ -67,24 +71,32 @@ async function handleSlots(req, res, requestId, supabase) {
     .eq('preferred_date', date)
   if (bookErr) throw bookErr
 
-  const booked = new Set((bookings || [])
-    .filter(b => b.status !== 'cancelled' && b.payment_status !== 'failed')
-    .map(b => String(b.preferred_time || '').slice(0, 5))
-    .filter(Boolean))
+  const bookedCount = new Map()
+  for (const b of (bookings || [])) {
+    if (b.status === 'cancelled' || b.payment_status === 'failed') continue
+    const t = String(b.preferred_time || '').slice(0, 5)
+    if (t) bookedCount.set(t, (bookedCount.get(t) || 0) + 1)
+  }
 
   const now = Date.now()
   const minNoticeHours = Math.max(0, Number(settings.min_notice_hours) || 0)
   const slots = []
-  for (let m = startMin; m + duration <= endMin; m += interval) {
+  for (let m = startMin; m + duration <= endMin; m += step) {
     const time = fromMinutes(m)
+    const key = `${date}T${time}`
     const slotAt = new Date(`${date}T${time}:00`).getTime()
     const tooSoon = minNoticeHours > 0 && slotAt < now + minNoticeHours * 60 * 60 * 1000
     const isPast = slotAt < now
-    const available = !booked.has(time) && !tooSoon && !isPast
-    slots.push({ time, available, reason: !available ? (booked.has(time) ? 'booked' : (tooSoon || isPast ? 'unavailable' : 'unavailable')) : null })
+    const blocked = blockedSlots.has(key) || blockedSlots.has(`${date} ${time}`)
+    const booked = bookedCount.get(time) || 0
+    const remaining = Math.max(0, capacity - booked)
+    const available = !blocked && !tooSoon && !isPast && remaining > 0
+    let reason = null
+    if (!available) reason = blocked ? 'blocked' : (remaining <= 0 ? 'full' : 'unavailable')
+    slots.push({ time, available, reason, capacity, booked, remaining })
   }
 
-  return res.status(200).json({ ok: true, date, slots })
+  return res.status(200).json({ ok: true, date, slots, meta: { capacity, buffer_minutes: buffer } })
 }
 
 async function handleGet(req, res, requestId, supabase) {
@@ -270,8 +282,14 @@ module.exports = async function handler(req, res) {
     const endMin = toMinutes(avail.end || '17:00') ?? 1020
     const prefMin = toMinutes(preferredTime)
     const duration = Math.max(5, Number(typeRow.duration_minutes) || 30)
+    const capacity = Math.max(1, Number(avail.slot_capacity) || 1)
+    const blockedSlots = new Set((Array.isArray(avail.blocked_slots) ? avail.blocked_slots : []).map(s => String(s || '').trim()))
+    const slotKey = `${preferredDate}T${String(preferredTime).slice(0, 5)}`
     if (blackout.has(preferredDate) || !availDays.includes(dayOfWeek)) {
       return res.status(400).json({ error: 'Selected date is not available for booking.' })
+    }
+    if (blockedSlots.has(slotKey) || blockedSlots.has(`${preferredDate} ${String(preferredTime).slice(0, 5)}`)) {
+      return res.status(400).json({ error: 'This slot is currently unavailable. Please choose another time.' })
     }
     if (prefMin == null || prefMin < startMin || prefMin + duration > endMin) {
       return res.status(400).json({ error: 'Selected time is outside available hours.' })
@@ -282,9 +300,9 @@ module.exports = async function handler(req, res) {
       .eq('preferred_date', preferredDate)
       .eq('preferred_time', String(preferredTime).slice(0, 5))
     if (conflictErr) throw conflictErr
-    const hasConflict = (conflicts || []).some(b => b.status !== 'cancelled' && b.payment_status !== 'failed')
-    if (hasConflict) {
-      return res.status(409).json({ error: 'This slot was just booked. Please choose another time.' })
+    const activeCount = (conflicts || []).filter(b => b.status !== 'cancelled' && b.payment_status !== 'failed').length
+    if (activeCount >= capacity) {
+      return res.status(409).json({ error: 'This slot is fully booked. Please choose another time.' })
     }
 
     const accessToken = crypto.randomBytes(24).toString('hex')

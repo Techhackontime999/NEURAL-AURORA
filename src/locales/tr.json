@@ -75,7 +75,8 @@
     "empty": "No resume available right now.",
     "default": "Default",
     "selectedHint": "This resume will be downloaded when you click the button below.",
-    "viewSelected": "View selected resume"
+    "viewSelected": "View selected resume",
+    "download": "Download"
   },
   "contact": {
     "eyebrow": "İletişim",

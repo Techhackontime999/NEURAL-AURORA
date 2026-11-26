@@ -1,5 +1,6 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { usePersonalInfo, useSocialLinks } from '../lib/usePortfolioData'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
+import { usePersonalInfo, useResumes, useSocialLinks } from '../lib/usePortfolioData'
 import { SplineScene } from './ui/splite'
 import { Spotlight } from './ui/spotlight'
 import MagneticButton from './ui/magnetic-button'
@@ -60,7 +61,37 @@ export default function Hero() {
   const shouldReduceMotion = useReducedMotion()
   const { data: personalInfo } = usePersonalInfo()
   const { data: socialLinks } = useSocialLinks()
+  const { data: resumes = [] } = useResumes()
   const { t } = useTranslation()
+  const [resumeOpen, setResumeOpen] = useState(false)
+  const resumeMenuRef = useRef(null)
+
+  const resumeOptions = useMemo(() => {
+    const active = (resumes || []).filter((r) => r?.file_url)
+    if (active.length > 0) return active
+    if (personalInfo?.resume) {
+      return [{ id: 'legacy', label: t('resume.generalRole', 'General'), file_url: personalInfo.resume, file_name: 'resume.pdf', is_default: true }]
+    }
+    return []
+  }, [resumes, personalInfo?.resume, t])
+
+  const defaultResume = resumeOptions.find((r) => r.is_default) || resumeOptions[0] || null
+
+  useEffect(() => {
+    if (!resumeOpen) return undefined
+    const onPointerDown = (e) => {
+      if (!resumeMenuRef.current?.contains(e.target)) setResumeOpen(false)
+    }
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setResumeOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [resumeOpen])
 
   return (
     <section
@@ -129,19 +160,72 @@ export default function Hero() {
                   </svg>
                 </span>
               </MagneticButton>
-              <MagneticButton
-                as="a"
-                href={personalInfo.resume}
-                download
-                className="group inline-flex items-center gap-3 px-6 py-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/50 dark:text-white/50 hover:text-black/70 dark:hover:text-white/80 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-              >
-                {t('hero.resume')}
-                <span className="w-6 h-6 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <div className="relative" ref={resumeMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setResumeOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={resumeOpen}
+                  className="group inline-flex min-h-11 items-center gap-3 px-6 py-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm text-black/60 dark:text-white/70 hover:text-black/80 dark:hover:text-white/90 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                >
+                  <svg className="w-4 h-4 text-cyan-600/80 dark:text-cyan-300/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                </span>
-              </MagneticButton>
+                  <span>{t('hero.resume')}</span>
+                  <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${resumeOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <AnimatePresence>
+                  {resumeOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                      role="menu"
+                      aria-label={t('resume.selectRole', 'Select resume by role')}
+                      className="absolute left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 top-full mt-2 z-30 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#121218]/95 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.45)] p-2"
+                    >
+                      <p className="px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-black/40 dark:text-white/35">
+                        {t('resume.selectRole', 'Select resume by role')}
+                      </p>
+                      <div className="space-y-1">
+                        {resumeOptions.length > 0 ? resumeOptions.map((resume) => {
+                          const active = defaultResume?.id === resume.id
+                          return (
+                            <a
+                              key={resume.id}
+                              href={resume.file_url}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              role="menuitem"
+                              onClick={() => setResumeOpen(false)}
+                              className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-black/80 dark:text-white/85 truncate">
+                                  {resume.label || t('resume.generalRole', 'General')}
+                                </p>
+                                <p className="text-[11px] text-black/40 dark:text-white/35 truncate">
+                                  {resume.file_name || (active ? t('resume.default', 'Default') : t('resume.downloadPdf'))}
+                                </p>
+                              </div>
+                              <span className="shrink-0 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-medium text-cyan-700 dark:text-cyan-200">
+                                {t('resume.download', 'Download')}
+                              </span>
+                            </a>
+                          )
+                        }) : (
+                          <p className="px-3 py-3 text-sm text-black/45 dark:text-white/40">{t('resume.empty', 'No resume available right now.')}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           </div>
 

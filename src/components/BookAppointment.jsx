@@ -45,8 +45,10 @@ import {
   groupSlots,
   nextAvailableDate,
   normalizeTimeZone,
+  normalizeWorkingDays,
   validateDetails,
   validateSchedule,
+  workingDayLabels,
   zonedDateKey,
 } from '../lib/appointments'
 import './book-appointment.css'
@@ -166,7 +168,8 @@ export default function BookAppointment() {
     : '9999-12-31'
   const minDate = monthInfo?.meta?.min_date || localMinDate
   const maxDate = monthInfo?.meta?.max_date || localMaxDate
-  const workingDays = Array.isArray(settings.availability?.days) ? settings.availability.days : [1, 2, 3, 4, 5]
+  const configuredWorkingDays = Array.isArray(settings.availability?.days) ? settings.availability.days : [1, 2, 3, 4, 5]
+  const workingDays = normalizeWorkingDays(monthInfo?.meta?.working_days ?? configuredWorkingDays)
   const blackoutDates = Array.isArray(settings.availability?.blackout_dates) ? settings.availability.blackout_dates : []
 
   const accessToken = booking?.access_token || searchParams.get('token') || ''
@@ -679,6 +682,8 @@ export default function BookAppointment() {
                   </span>
                 </div>
 
+                <WorkingDays days={workingDays} idPrefix="booking" />
+
                 <div className="booking-toolbar">
                   <div className="booking-month-nav">
                     <button type="button" className="booking-icon-btn" aria-label="Previous month" onClick={() => changeMonth(-1)}>
@@ -970,6 +975,7 @@ export default function BookAppointment() {
                             <button type="button" className="booking-icon-btn" aria-label="Next month" onClick={() => changeMonth(1)}><ChevronRight size={18} /></button>
                           </div>
                         </div>
+                        <WorkingDays days={workingDays} idPrefix="reschedule" />
                         <MonthCalendar
                           weeks={buildMonthGrid(viewMonth.year, viewMonth.month, {
                             minDate,
@@ -1029,6 +1035,31 @@ export default function BookAppointment() {
         </div>
       </div>
     </main>
+  )
+}
+
+function WorkingDays({ days, idPrefix }) {
+  const shortLabels = workingDayLabels(days)
+  const longLabels = workingDayLabels(days, { long: true })
+  const labelId = `${idPrefix}-working-days-label`
+
+  if (shortLabels.length === 0) {
+    return (
+      <p className="booking-working-days" data-ui="working-days">
+        No working days are open yet. Please contact the organiser.
+      </p>
+    )
+  }
+
+  return (
+    <div className="booking-working-days" data-ui="working-days">
+      <span className="booking-working-days-label" id={labelId}>Bookable days</span>
+      <ul aria-labelledby={labelId}>
+        {shortLabels.map((day, index) => (
+          <li key={longLabels[index]} aria-label={longLabels[index]}>{day}</li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

@@ -48,6 +48,12 @@ const emptyType = {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+const WORKING_DAY_PRESETS = [
+  { label: 'Weekdays', days: [1, 2, 3, 4, 5] },
+  { label: 'All days', days: [0, 1, 2, 3, 4, 5, 6] },
+  { label: 'Clear', days: [] },
+]
+
 const TIMEZONES = [
   'Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Tokyo',
   'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago',
@@ -117,6 +123,11 @@ export default function AdminAppointments() {
       toast.success('Appointment settings saved')
     } catch (err) { toast.error(err.message || 'Failed to save settings') }
     finally { setSavingSettings(false) }
+  }
+
+  function setWorkingDays(days) {
+    const sorted = [...new Set(days.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort((a, b) => a - b)
+    setSettings(s => ({ ...s, availability: { ...s.availability, days: sorted } }))
   }
 
   function editType(t) {
@@ -389,19 +400,27 @@ export default function AdminAppointments() {
               <p className="text-xs mt-0.5" style={muted}>Control when visitors can book. Slots are generated from these rules and existing bookings.</p>
             </div>
             <div>
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Working days</span>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Working days</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {WORKING_DAY_PRESETS.map(preset => (
+                    <button key={preset.label} type="button" onClick={() => setWorkingDays(preset.days)} className="rounded-md px-2 py-1 text-[11px] font-medium" style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}>{preset.label}</button>
+                  ))}
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {DAYS.map((d, i) => {
                   const active = (settings.availability?.days || []).includes(i)
                   return (
-                    <button key={d} type="button" onClick={() => setSettings(s => {
-                      const days = new Set(s.availability?.days || [])
+                    <button key={d} type="button" aria-pressed={active} onClick={() => {
+                      const days = new Set(settings.availability?.days || [])
                       if (days.has(i)) days.delete(i); else days.add(i)
-                      return { ...s, availability: { ...s.availability, days: [...days].sort((a,b)=>a-b) } }
-                    })} className="rounded-lg px-3 py-1.5 text-xs font-medium border" style={{ borderColor: active ? 'color-mix(in srgb, var(--accent) 40%, var(--border-color))' : 'var(--border-color)', background: active ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent', color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{d}</button>
+                      setWorkingDays([...days])
+                    }} className="rounded-lg px-3 py-1.5 text-xs font-medium border" style={{ borderColor: active ? 'color-mix(in srgb, var(--accent) 40%, var(--border-color))' : 'var(--border-color)', background: active ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent', color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{d}</button>
                   )
                 })}
               </div>
+              <p className="mt-2 text-[11px]" style={muted}>Pick the days visitors can book. The selection is shown above the calendar on the booking page.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
               <Field label="Start time"><input type="time" value={settings.availability?.start || '09:00'} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, start: e.target.value } }))} className="input" style={input} /></Field>

@@ -10,8 +10,11 @@ import {
   formatSlotTime,
   groupSlots,
   nextAvailableDate,
+  normalizeWorkingDays,
   validateDetails,
   validateSchedule,
+  workingDayLabels,
+  workingDaySummary,
   zonedDateTimeToUtc,
 } from '../src/lib/appointments.js'
 
@@ -65,6 +68,12 @@ check('next available finds the first open date', nextAvailableDate({
   '2026-11-30': { availableCount: 1 },
 }) === '2026-11-27')
 
+// --- Working days -----------------------------------------------------------
+check('working days normalize to a Monday-first order', normalizeWorkingDays([0, 5, 1, 6, 9]).join(',') === '1,5,6,0')
+check('an empty working-day selection stays empty', normalizeWorkingDays([]).length === 0)
+check('working-day labels can be spelled out', workingDayLabels([1, 3, 5], { long: true }).join(', ') === 'Monday, Wednesday, Friday')
+check('working-day summaries cover the presets', workingDaySummary([1, 2, 3, 4, 5]) === 'Mon–Fri' && workingDaySummary([0, 1, 2, 3, 4, 5, 6]) === 'Every day' && workingDaySummary([]) === 'No working days selected')
+
 // --- Slot grouping ----------------------------------------------------------
 const groups = groupSlots([
   { time: '09:00', available: true },
@@ -107,15 +116,18 @@ const css = fs.readFileSync('src/components/book-appointment.css', 'utf8')
 const admin = fs.readFileSync('src/components/admin/AdminAppointments.jsx', 'utf8')
 
 check('API has one request per month availability', api.includes("action === 'availability'") && api.includes('handleAvailability'))
+check('API returns working days with availability', api.includes('working_days: ctx.days'))
 check('API supports token-scoped reschedule and cancel', api.includes("action === 'cancel'") && api.includes("action === 'reschedule'") && api.includes('.eq(\'access_token\', token)'))
 check('API never interprets slots in server-local time', !api.includes('new Date(`${date}T${time}:00`)') && timeLib.includes('zonedDateTimeToUtc'))
 check('API enforces a management cut-off', api.includes('manage_cutoff_hours'))
 check('booking UI exposes visible labels and inline errors', component.includes('<label className="booking-field-label"') && component.includes('aria-invalid={Boolean(errors.') && component.includes('booking-field-error'))
 check('booking UI has calendar, timezone and self-service actions', component.includes('action=availability') && component.includes('id="appt-timezone"') && component.includes('commitReschedule') && component.includes('commitCancel'))
+check('booking UI shows the selected working days', component.includes('<WorkingDays') && component.includes('data-ui="working-days"'))
 check('booking UI offers all three calendar formats', component.includes('buildIcs') && component.includes('calendars.google') && component.includes('calendars.outlook'))
 check('form controls meet 48px and tap targets 44px', /\.booking-input[\s\S]*?min-height: 48px/.test(css) && /\.booking-icon-btn[\s\S]*?height: 44px/.test(css))
 check('reduced motion is respected', css.includes('@media (prefers-reduced-motion: reduce)'))
 check('admin can configure timezone and management policy', admin.includes('Organiser timezone (IANA)') && admin.includes('Allow invitee rescheduling') && admin.includes('Manage cut-off'))
+check('admin working-day control has presets and pressed state', admin.includes('WORKING_DAY_PRESETS') && admin.includes('aria-pressed={active}'))
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

@@ -359,6 +359,47 @@
 
 .booking-help span { display: inline-flex; align-items: center; gap: 0.35rem; }
 
+.booking-working-days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  margin-top: 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.booking-working-days-label {
+  color: var(--text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.booking-working-days ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-working-days li {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-color));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
 .booking-slot-groups { display: grid; gap: 1.25rem; margin-top: 1.5rem; }
 .booking-slot-group-title { display: flex; align-items: baseline; gap: 0.5rem; margin: 0 0 0.6rem; font-size: 0.8125rem; font-weight: 650; }
 .booking-slot-group-title small { color: var(--text-tertiary); font-weight: 450; }

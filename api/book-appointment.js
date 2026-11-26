@@ -175,6 +175,7 @@ async function handleSlots(req, res, supabase) {
     meta: {
       capacity: ctx.capacity,
       buffer_minutes: ctx.buffer,
+      working_days: ctx.days,
       timezone: timeZone,
       timezone_label: shortTimeZoneLabel(timeZone),
     },
@@ -237,6 +238,7 @@ async function handleAvailability(req, res, supabase) {
       max_date: maxDate,
       capacity: ctx.capacity,
       buffer_minutes: ctx.buffer,
+      working_days: ctx.days,
     },
   })
 }

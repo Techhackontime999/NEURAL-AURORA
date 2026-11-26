@@ -21,6 +21,31 @@ export const STEPS = [
   { id: 4, label: 'Confirmed', short: 'Done' },
 ]
 
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WEEKDAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const WORKING_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+/** Normalize organiser working days to Monday-first, 0=Sun ... 6=Sat. */
+export function normalizeWorkingDays(days) {
+  if (!Array.isArray(days)) return [1, 2, 3, 4, 5]
+  const selected = new Set(
+    days.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+  )
+  return WORKING_DAY_ORDER.filter((day) => selected.has(day))
+}
+
+export function workingDayLabels(days, { long = false } = {}) {
+  return normalizeWorkingDays(days).map((day) => (long ? WEEKDAY_LONG[day] : WEEKDAY_SHORT[day]))
+}
+
+export function workingDaySummary(days) {
+  const values = normalizeWorkingDays(days)
+  if (values.length === 0) return 'No working days selected'
+  if (values.length === 7) return 'Every day'
+  if (values.join(',') === '1,2,3,4,5') return 'Mon–Fri'
+  return workingDayLabels(values).join(', ')
+}
+
 const COMMON_TIME_ZONES = [
   'Asia/Kolkata',
   'Asia/Dubai',

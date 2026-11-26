@@ -198,7 +198,7 @@ export default function AdminAdPlacements() {
       </div>
 
       <div className="mb-5 rounded-xl border p-4 text-xs leading-relaxed" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)', background: 'var(--card-bg)' }}>
-        <p><strong className="text-cyan-400">Setup:</strong> run <code>supabase-schema.sql</code> to create <code>ad_placements</code>, then add placements here. Until then, the site uses responsive AdSense units from <code>VITE_ADSENSE_CLIENT</code> and optional <code>VITE_ADSENSE_SLOT_*</code> values.</p>
+        <p><strong className="text-cyan-400">Setup:</strong> run the <code>ad_placements</code> migration to create the table, then add placements here. Until then, the site uses responsive AdSense units from <code>ADSENSE_CLIENT</code> and optional <code>ADSENSE_SLOT_*</code> values.</p>
         <p className="mt-1">Impressions are counted only when an ad is actually visible, and each visitor sees at most a few ads per session.</p>
       </div>
 

@@ -40,20 +40,20 @@ export function sanitizeAdSlot(value) {
 }
 
 export function getAdSenseClient() {
-  return sanitizeAdClient(env.VITE_ADSENSE_CLIENT) || DEFAULT_CLIENT
+  return sanitizeAdClient(env.ADSENSE_CLIENT) || DEFAULT_CLIENT
 }
 
 function envSlotKey(slot) {
-  return `VITE_ADSENSE_SLOT_${String(slot || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`
+  return `ADSENSE_SLOT_${String(slot || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`
 }
 
-/** Env override for a slot, e.g. VITE_ADSENSE_SLOT_BLOG_LISTING. */
+/** Env override for a slot, e.g. ADSENSE_SLOT_BLOG_LISTING. */
 export function getAdSenseSlot(slot) {
   return sanitizeAdSlot(env[envSlotKey(slot)])
 }
 
 export function isAdSenseEnabled() {
-  return env.VITE_ADSENSE_ENABLED !== 'false' && Boolean(getAdSenseClient())
+  return env.ADSENSE_ENABLED !== 'false' && Boolean(getAdSenseClient())
 }
 
 let scriptPromise = null

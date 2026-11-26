@@ -12,6 +12,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
+    // AdSense ids are public by design (they ship in the rendered ad tag), so
+    // expose ADSENSE_* to the browser without a VITE_ prefix. Never use this
+    // prefix for an API key or any other secret.
+    envPrefix: ['VITE_', 'ADSENSE_'],
     plugins: [
       react(),
       VitePWA({

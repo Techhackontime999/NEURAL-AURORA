@@ -57,6 +57,17 @@ check('ads: sponsor, affiliate and custom streams are supported',
 
 check('ads: env fallback activates before any table exists',
   ads.includes('getAdSenseClient') && ads.includes('envFallbackPlacements') && ads.includes('getPublicAdPlacements'))
+check('ads: env vars use the unprefixed ADSENSE_ names', (() => {
+  const config = read('src/lib/adsConfig.js')
+  const example = read('.env.example')
+  const viteConfig = read('vite.config.js')
+  return config.includes('env.ADSENSE_CLIENT') &&
+    config.includes('ADSENSE_SLOT_') &&
+    config.includes("env.ADSENSE_ENABLED") &&
+    viteConfig.includes("envPrefix: ['VITE_', 'ADSENSE_']") &&
+    example.includes('ADSENSE_CLIENT=ca-pub-') &&
+    !config.includes('VITE_ADSENSE') && !example.includes('VITE_ADSENSE') && !viteConfig.includes('VITE_ADSENSE')
+})())
 check('ads: session frequency caps protect the experience',
   ads.includes('MAX_TOTAL_PER_SESSION') && ads.includes('sessionStorage'))
 check('ads: impressions and clicks are tracked without blocking',

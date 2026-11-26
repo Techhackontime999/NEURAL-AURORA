@@ -94,7 +94,9 @@
     "sending": "Gönderiliyor...",
     "sentSuccess": "Mesaj gönderildi! En kısa sürede size döneceğim.",
     "tagline": "NEURAL AURORA . Sinaptik portfolyo",
-    "builtWith": "React, Three.js ve zevkli tasarımla inşa edildi"
+    "builtWith": "React, Three.js ve zevkli tasarımla inşa edildi",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "İnsanlar Ne Diyor",

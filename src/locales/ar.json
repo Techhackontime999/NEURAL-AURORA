@@ -94,7 +94,9 @@
     "sending": "جارٍ الإرسال...",
     "sentSuccess": "تم إرسال الرسالة! سأعود إليك قريباً.",
     "tagline": "NEURAL AURORA . محفظة تشابكية",
-    "builtWith": "بُني بـ React وThree.js وتصميم ذو ذوق"
+    "builtWith": "بُني بـ React وThree.js وتصميم ذو ذوق",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "آراء الناس",

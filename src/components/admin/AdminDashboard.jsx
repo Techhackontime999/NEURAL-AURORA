@@ -19,6 +19,7 @@ import AdminOrders from './AdminOrders'
 import AdminCoupons from './AdminCoupons'
 import AdminAffiliates from './AdminAffiliates'
 import AdminSocialLinks from './AdminSocialLinks'
+import AdminWhatsAppConfig from './AdminWhatsAppConfig'
 import AdminReviews from './AdminReviews'
 import AdminUsers from './AdminUsers'
 import AdminContactMessages from './AdminContactMessages'
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
         <Route path="affiliates" element={<AdminAffiliates />} />
         <Route path="services" element={<AdminServices />} />
         <Route path="social-links" element={<AdminSocialLinks />} />
+      <Route path="whatsapp-config" element={<AdminWhatsAppConfig />} />
         <Route path="reviews" element={<AdminReviews />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="messages" element={<AdminContactMessages />} />

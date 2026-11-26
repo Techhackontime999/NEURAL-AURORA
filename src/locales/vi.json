@@ -94,7 +94,9 @@
     "sending": "Đang gửi...",
     "sentSuccess": "Tin nhắn đã gửi! Tôi sẽ liên hệ lại sớm.",
     "tagline": "NEURAL AURORA . Danh mục synap",
-    "builtWith": "Xây dựng bằng React, Three.js và thiết kế tinh tế"
+    "builtWith": "Xây dựng bằng React, Three.js và thiết kế tinh tế",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "Mọi người nói gì",

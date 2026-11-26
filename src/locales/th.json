@@ -94,7 +94,9 @@
     "sending": "กำลังส่ง...",
     "sentSuccess": "ส่งข้อความแล้ว! ฉันจะติดต่อกลับภายในเร็ว ๆ นี้",
     "tagline": "NEURAL AURORA . พอร์ตโฟลิโอซินแนปส์",
-    "builtWith": "สร้างด้วย React, Three.js และการออกแบบที่ประณีต"
+    "builtWith": "สร้างด้วย React, Three.js และการออกแบบที่ประณีต",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "เสียงจากผู้คน",

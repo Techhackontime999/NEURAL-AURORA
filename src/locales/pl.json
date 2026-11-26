@@ -94,7 +94,9 @@
     "sending": "Wysyłanie...",
     "sentSuccess": "Wiadomość wysłana! Skontaktuję się wkrótce.",
     "tagline": "NEURAL AURORA . Synaptyczne portfolio",
-    "builtWith": "Zbudowane z React, Three.js i wyrafinowanymi wyborami projektowymi"
+    "builtWith": "Zbudowane z React, Three.js i wyrafinowanymi wyborami projektowymi",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "Co mówią ludzie",

@@ -375,3 +375,10 @@ export function useSiteAppearanceSettings() {
     return settings?.appearance || {}
   }, {})
 }
+
+export function usePublicSiteSettings() {
+  return usePortfolioResource('publicSiteSettings', async () => {
+    const settings = await getPublicSettings()
+    return settings || {}
+  }, {})
+}

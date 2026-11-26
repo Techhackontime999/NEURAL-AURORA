@@ -94,7 +94,9 @@
     "sending": "بھیجا جا رہا ہے...",
     "sentSuccess": "پیغام بھیج دیا گیا! میں جلد آپ سے رابطہ کروں گا۔",
     "tagline": "NEURAL AURORA . سیناپٹک پورٹ فولیو",
-    "builtWith": "React، Three.js اور شائستہ ڈیزائن کے ساتھ بنایا گیا"
+    "builtWith": "React، Three.js اور شائستہ ڈیزائن کے ساتھ بنایا گیا",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "لوگ کیا کہتے ہیں",

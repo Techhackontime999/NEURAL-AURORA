@@ -94,7 +94,9 @@
     "sending": "Skickar...",
     "sentSuccess": "Meddelandet skickat! Jag hör av mig snart.",
     "tagline": "NEURAL AURORA . Synaptisk portfolio",
-    "builtWith": "Byggd med React, Three.js och smakfulla designval"
+    "builtWith": "Byggd med React, Three.js och smakfulla designval",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "Vad folk säger",

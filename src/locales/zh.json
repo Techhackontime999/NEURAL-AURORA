@@ -94,7 +94,9 @@
     "sending": "发送中...",
     "sentSuccess": "消息已发送！我会尽快回复您。",
     "tagline": "NEURAL AURORA . 突触作品集",
-    "builtWith": "使用 React、Three.js 和精湛设计构建"
+    "builtWith": "使用 React、Three.js 和精湛设计构建",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "大家怎么说",

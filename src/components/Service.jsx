@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useIn
 import { useTranslation } from 'react-i18next'
 import * as LucideIcons from 'lucide-react'
 const { CheckCircle, ArrowRight, ChevronDown, Layers, Send, Wallet } = LucideIcons
-import { useSocialLinks, useServices, useServicePage } from '../lib/usePortfolioData'
+import { usePublicSiteSettings, useSocialLinks, useServices, useServicePage } from '../lib/usePortfolioData'
 import { sanitizeHtml } from '../lib/utils'
 import { submitContactMessage } from '../lib/supabase'
 import { openRazorpayCheckout } from '../lib/razorpay'
@@ -463,6 +463,9 @@ export default function Service() {
   const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const { data: socialLinks } = useSocialLinks()
+  const { data: publicSettings = {} } = usePublicSiteSettings()
+  const whatsappNumber = String(publicSettings?.whatsapp_number || '').replace(/[^\d]/g, '')
+  const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : ''
   const { data: services } = useServices()
   const { data: page } = useServicePage()
   const [openFAQ, setOpenFAQ] = useState(null)
@@ -910,6 +913,18 @@ export default function Service() {
                       {link.label}
                     </motion.a>
                   ))}
+                  {whatsappLink && (
+                    <motion.a
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
+                      className="group flex items-center gap-2 text-xs text-emerald-600/80 dark:text-emerald-400/80 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors duration-300"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/30 group-hover:bg-emerald-400" />
+                      WhatsApp Support
+                    </motion.a>
+                  )}
                 </div>
               </motion.div>
             </div>

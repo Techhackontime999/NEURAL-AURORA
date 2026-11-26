@@ -94,7 +94,9 @@
     "sending": "Mengirim...",
     "sentSuccess": "Pesan terkirim! Saya akan segera menghubungi Anda.",
     "tagline": "NEURAL AURORA . Portofolio sinaptik",
-    "builtWith": "Dibangun dengan React, Three.js, dan desain yang berkelas"
+    "builtWith": "Dibangun dengan React, Three.js, dan desain yang berkelas",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "Kata Mereka",

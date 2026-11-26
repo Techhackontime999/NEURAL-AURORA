@@ -94,7 +94,9 @@
     "sending": "পাঠানো হচ্ছে...",
     "sentSuccess": "বার্তা পাঠানো হয়েছে! আমি শীঘ্রই আপনার সাথে যোগাযোগ করব।",
     "tagline": "NEURAL AURORA . সিন্যাপটিক পোর্টফোলিও",
-    "builtWith": "React, Three.js এবং রুচিশীল ডিজাইন দিয়ে নির্মিত"
+    "builtWith": "React, Three.js এবং রুচিশীল ডিজাইন দিয়ে নির্মিত",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "লোকজন যা বলেন",

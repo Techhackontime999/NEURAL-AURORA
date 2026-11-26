@@ -94,7 +94,9 @@
     "sending": "שולח...",
     "sentSuccess": "ההודעה נשלחה! אחזור אליך בקרוב.",
     "tagline": "NEURAL AURORA . תיק עבודות סינפטי",
-    "builtWith": "נבנה עם React, Three.js ובחירות עיצוביות מוקפדות"
+    "builtWith": "נבנה עם React, Three.js ובחירות עיצוביות מוקפדות",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "מה אנשים אומרים",

@@ -94,7 +94,9 @@
     "sending": "در حال ارسال...",
     "sentSuccess": "پیام ارسال شد! به‌زودی با شما تماس می‌گیرم.",
     "tagline": "NEURAL AURORA . نمونه‌کار سیناپسی",
-    "builtWith": "ساخته‌شده با React، Three.js و طراحی‌های سنجیده"
+    "builtWith": "ساخته‌شده با React، Three.js و طراحی‌های سنجیده",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "نظر مردم",

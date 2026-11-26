@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, useSpring, AnimatePresence, useIn
 import { useTranslation } from 'react-i18next'
 import { Heart, Coffee, Zap, Rocket, Crown, Sparkles, Star, Shield, CheckCircle, ArrowRight, ChevronDown, Send, Wallet, Smartphone, Gift } from 'lucide-react'
 import { openRazorpayCheckout } from '../lib/razorpay'
-import { useSocialLinks } from '../lib/usePortfolioData'
+import { usePublicSiteSettings, useSocialLinks } from '../lib/usePortfolioData'
 import { getPublicSettings, submitContactMessage } from '../lib/supabase'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
@@ -140,6 +140,9 @@ function ResolvedIcon({ name, className }) {
 export default function Support() {
   const { t } = useTranslation()
   const { data: socialLinks } = useSocialLinks()
+  const { data: publicSettings = {} } = usePublicSiteSettings()
+  const whatsappNumber = String(publicSettings?.whatsapp_number || '').replace(/[^\d]/g, '')
+  const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : ''
   const [settings, setSettings] = useState(defaultSettings)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [selectedAmount, setSelectedAmount] = useState(499)
@@ -606,6 +609,18 @@ export default function Support() {
                       {link.label}
                     </motion.a>
                   ))}
+                  {whatsappLink && (
+                    <motion.a
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ x: 4 }}
+                      className="group flex items-center gap-2 text-xs text-emerald-600/80 dark:text-emerald-400/80 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors duration-300"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/30 group-hover:bg-emerald-400" />
+                      WhatsApp Support
+                    </motion.a>
+                  )}
                 </div>
               </motion.div>
             </div>

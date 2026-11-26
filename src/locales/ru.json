@@ -94,7 +94,9 @@
     "sending": "Отправка...",
     "sentSuccess": "Сообщение отправлено! Скоро свяжусь с вами.",
     "tagline": "NEURAL AURORA . Синаптическое портфолио",
-    "builtWith": "Создано на React, Three.js и со вкусом"
+    "builtWith": "Создано на React, Three.js и со вкусом",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "Что говорят люди",

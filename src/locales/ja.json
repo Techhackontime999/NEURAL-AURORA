@@ -94,7 +94,9 @@
     "sending": "送信中...",
     "sentSuccess": "メッセージを送信しました！すぐにご連絡します。",
     "tagline": "NEURAL AURORA . シナプスポートフォリオ",
-    "builtWith": "React、Three.js、洗練されたデザインで構築"
+    "builtWith": "React、Three.js、洗練されたデザインで構築",
+    "whatsappSupport": "WhatsApp Support",
+    "whatsappSupportHint": "Chat directly on WhatsApp for quick support."
   },
   "reviews": {
     "title": "みんなの声",

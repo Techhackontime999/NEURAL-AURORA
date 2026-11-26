@@ -160,7 +160,7 @@ export default function Hero() {
                   </svg>
                 </span>
               </MagneticButton>
-              <div className="relative" ref={resumeMenuRef}>
+              <div className="relative z-40" ref={resumeMenuRef}>
                 <button
                   type="button"
                   onClick={() => setResumeOpen((v) => !v)}
@@ -186,7 +186,7 @@ export default function Hero() {
                       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                       role="menu"
                       aria-label={t('resume.selectRole', 'Select resume by role')}
-                      className="absolute left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 top-full mt-2 z-30 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#121218]/95 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.45)] p-2"
+                      className="absolute left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 top-full mt-2 z-[70] w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#121218]/95 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.45)] p-2"
                     >
                       <p className="px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-black/40 dark:text-white/35">
                         {t('resume.selectRole', 'Select resume by role')}

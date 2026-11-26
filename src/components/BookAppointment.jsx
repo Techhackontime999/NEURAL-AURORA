@@ -47,8 +47,8 @@ function buildCalendarUrl(booking) {
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${location}`
 }
 
-const inputCls = "w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/40"
-const inputStyle = { background: 'var(--input-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }
+const inputCls = "w-full rounded-xl border px-4 py-3.5 text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 hover:border-[color:color-mix(in_srgb,var(--accent)_30%,var(--border-color))]"
+const inputStyle = { background: 'color-mix(in srgb, var(--input-bg) 92%, transparent)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }
 
 export default function BookAppointment() {
   const [searchParams] = useSearchParams()
@@ -64,8 +64,33 @@ export default function BookAppointment() {
   const [error, setError] = useState('')
   const [booking, setBooking] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [slots, setSlots] = useState([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [slotsError, setSlotsError] = useState('')
 
   useEffect(() => { if (!selectedTypeId && activeTypes.length > 0) setSelectedTypeId(activeTypes[0].type_id) }, [activeTypes, selectedTypeId])
+
+  useEffect(() => {
+    setForm(f => ({ ...f, preferred_time: '' }))
+    setSlots([])
+    setSlotsError('')
+    if (!selectedTypeId || !form.preferred_date) return
+    let cancelled = false
+    setSlotsLoading(true)
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/book-appointment?action=slots&appointment_type_id=${encodeURIComponent(selectedTypeId)}&date=${encodeURIComponent(form.preferred_date)}`)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.error || 'Could not load slots')
+        if (!cancelled) setSlots(Array.isArray(data.slots) ? data.slots : [])
+      } catch (err) {
+        if (!cancelled) { setSlots([]); setSlotsError(err.message || 'Could not load slots') }
+      } finally {
+        if (!cancelled) setSlotsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [selectedTypeId, form.preferred_date])
 
   useEffect(() => {
     const bookingId = searchParams.get('booking')
@@ -272,9 +297,31 @@ export default function BookAppointment() {
                     <h3 className="font-display text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Pick date & time</h3>
                     <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Choose your preferred slot. We’ll confirm the meeting details after booking.</p>
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Preferred date"><input type="date" min={minDateStr} max={maxDateStr || undefined} value={form.preferred_date} onChange={e => update('preferred_date', e.target.value)} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="Preferred time"><input type="time" value={form.preferred_time} onChange={e => update('preferred_time', e.target.value)} className={inputCls} style={inputStyle} /></Field>
+                  <Field label="Preferred date">
+                    <input type="date" min={minDateStr} max={maxDateStr || undefined} value={form.preferred_date} onChange={e => update('preferred_date', e.target.value)} className={inputCls} style={inputStyle} />
+                  </Field>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Available slots</span>
+                      {form.preferred_time && <span className="text-xs" style={{ color: 'var(--accent)' }}>Selected: {formatTime(form.preferred_time)}</span>}
+                    </div>
+                    {!form.preferred_date && <div className="rounded-xl border border-dashed px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)' }}>Pick a date to see available slots.</div>}
+                    {form.preferred_date && slotsLoading && <div className="rounded-xl border px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Loading available slots...</div>}
+                    {form.preferred_date && !slotsLoading && slotsError && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">{slotsError}</div>}
+                    {form.preferred_date && !slotsLoading && !slotsError && slots.length === 0 && <div className="rounded-xl border px-4 py-6 text-sm text-center" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>No slots available for this date. Try another day.</div>}
+                    {form.preferred_date && !slotsLoading && !slotsError && slots.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {slots.map(s => {
+                          const selected = form.preferred_time === s.time
+                          return (
+                            <button key={s.time} type="button" disabled={!s.available} onClick={() => update('preferred_time', s.time)} className="rounded-xl border px-3 py-2.5 text-sm font-medium transition-all disabled:opacity-35 disabled:cursor-not-allowed" style={{ borderColor: selected ? 'color-mix(in srgb, var(--accent) 50%, var(--border-color))' : 'var(--border-color)', background: selected ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'var(--glass-bg)', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                              {formatTime(s.time)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                   {settings.timezone_note && <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}><Calendar size={13} /> {settings.timezone_note}</p>}
                   <div className="flex justify-between pt-2">

@@ -18,6 +18,75 @@ function sanitizeText(value, max = 500) {
   return String(value || '').trim().slice(0, max)
 }
 
+function toMinutes(hhmm) {
+  const m = String(hhmm || '').match(/^(\d{1,2}):(\d{2})/)
+  if (!m) return null
+  const h = Number(m[1]), min = Number(m[2])
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null
+  return h * 60 + min
+}
+function fromMinutes(total) {
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+async function handleSlots(req, res, requestId, supabase) {
+  const source = req.method === 'GET' ? (req.query || {}) : (req.body || {})
+  const typeId = String(source.appointment_type_id || source.type_id || '').trim()
+  const date = String(source.date || '').trim()
+  if (!typeId) return res.status(400).json({ error: 'Appointment type is required.' })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Valid date is required.' })
+
+  const [{ data: settingsRow, error: settingsErr }, { data: typeRow, error: typeErr }] = await Promise.all([
+    supabase.from('admin_settings').select('appointment_settings').eq('id', 1).maybeSingle(),
+    supabase.from('appointment_types').select('type_id, duration_minutes, is_active').eq('type_id', typeId).eq('is_active', true).maybeSingle(),
+  ])
+  if (settingsErr) throw settingsErr
+  if (typeErr) throw typeErr
+  if (settingsRow?.appointment_settings?.enabled === false) return res.status(403).json({ error: 'Appointments are currently unavailable.' })
+  if (!typeRow) return res.status(404).json({ error: 'Appointment type not found.' })
+
+  const settings = settingsRow?.appointment_settings || {}
+  const avail = settings.availability || {}
+  const days = Array.isArray(avail.days) ? avail.days : [1, 2, 3, 4, 5]
+  const startMin = toMinutes(avail.start || '09:00') ?? 540
+  const endMin = toMinutes(avail.end || '17:00') ?? 1020
+  const interval = Math.max(5, Number(avail.slot_interval) || 30)
+  const duration = Math.max(5, Number(typeRow.duration_minutes) || 30)
+  const blackout = new Set((Array.isArray(avail.blackout_dates) ? avail.blackout_dates : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d))))
+  const dayOfWeek = new Date(`${date}T00:00:00`).getDay()
+
+  if (blackout.has(date) || !days.includes(dayOfWeek) || endMin <= startMin) {
+    return res.status(200).json({ ok: true, date, slots: [] })
+  }
+
+  const { data: bookings, error: bookErr } = await supabase
+    .from('appointments')
+    .select('preferred_time, status, payment_status')
+    .eq('preferred_date', date)
+  if (bookErr) throw bookErr
+
+  const booked = new Set((bookings || [])
+    .filter(b => b.status !== 'cancelled' && b.payment_status !== 'failed')
+    .map(b => String(b.preferred_time || '').slice(0, 5))
+    .filter(Boolean))
+
+  const now = Date.now()
+  const minNoticeHours = Math.max(0, Number(settings.min_notice_hours) || 0)
+  const slots = []
+  for (let m = startMin; m + duration <= endMin; m += interval) {
+    const time = fromMinutes(m)
+    const slotAt = new Date(`${date}T${time}:00`).getTime()
+    const tooSoon = minNoticeHours > 0 && slotAt < now + minNoticeHours * 60 * 60 * 1000
+    const isPast = slotAt < now
+    const available = !booked.has(time) && !tooSoon && !isPast
+    slots.push({ time, available, reason: !available ? (booked.has(time) ? 'booked' : (tooSoon || isPast ? 'unavailable' : 'unavailable')) : null })
+  }
+
+  return res.status(200).json({ ok: true, date, slots })
+}
+
 async function handleGet(req, res, requestId, supabase) {
   const source = req.method === 'GET' ? (req.query || {}) : (req.body || {})
   const bookingId = String(source.booking_id || '').trim()
@@ -129,6 +198,9 @@ module.exports = async function handler(req, res) {
     const body = req.body || {}
     const queryAction = String(req.query?.action || '').toLowerCase()
     const action = sanitizeText(body.action || queryAction || (body.razorpay_signature ? 'verify' : (req.method === 'GET' ? 'get' : 'create')), 30).toLowerCase()
+    if (action === 'slots' || action === 'get_slots') {
+      return await handleSlots(req, res, requestId, supabase)
+    }
     if (action === 'get') {
       return await handleGet(req, res, requestId, supabase)
     }
@@ -189,6 +261,31 @@ module.exports = async function handler(req, res) {
     const pricePaise = Math.max(0, Number(typeRow.price_paise) || 0)
     const isPaid = pricePaise > 0
     const currency = sanitizeText(typeRow.currency || 'INR', 10).toUpperCase() || 'INR'
+
+    const avail = appointmentSettings.availability || {}
+    const availDays = Array.isArray(avail.days) ? avail.days : [1, 2, 3, 4, 5]
+    const blackout = new Set((Array.isArray(avail.blackout_dates) ? avail.blackout_dates : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d))))
+    const dayOfWeek = new Date(`${preferredDate}T00:00:00`).getDay()
+    const startMin = toMinutes(avail.start || '09:00') ?? 540
+    const endMin = toMinutes(avail.end || '17:00') ?? 1020
+    const prefMin = toMinutes(preferredTime)
+    const duration = Math.max(5, Number(typeRow.duration_minutes) || 30)
+    if (blackout.has(preferredDate) || !availDays.includes(dayOfWeek)) {
+      return res.status(400).json({ error: 'Selected date is not available for booking.' })
+    }
+    if (prefMin == null || prefMin < startMin || prefMin + duration > endMin) {
+      return res.status(400).json({ error: 'Selected time is outside available hours.' })
+    }
+    const { data: conflicts, error: conflictErr } = await supabase
+      .from('appointments')
+      .select('id, status, payment_status')
+      .eq('preferred_date', preferredDate)
+      .eq('preferred_time', String(preferredTime).slice(0, 5))
+    if (conflictErr) throw conflictErr
+    const hasConflict = (conflicts || []).some(b => b.status !== 'cancelled' && b.payment_status !== 'failed')
+    if (hasConflict) {
+      return res.status(409).json({ error: 'This slot was just booked. Please choose another time.' })
+    }
 
     const accessToken = crypto.randomBytes(24).toString('hex')
     const meetingProvider = sanitizeText(typeRow.meeting_provider || 'custom', 40) || 'custom'

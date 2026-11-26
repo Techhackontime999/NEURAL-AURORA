@@ -7,6 +7,14 @@ import {
 } from '../../lib/supabase'
 import { invalidatePortfolioCache } from '../../lib/usePortfolioData'
 
+const DEFAULT_AVAILABILITY = {
+  days: [1, 2, 3, 4, 5],
+  start: '09:00',
+  end: '17:00',
+  slot_interval: 30,
+  blackout_dates: [],
+}
+
 const DEFAULT_SETTINGS = {
   enabled: true,
   heading: 'Book an Appointment',
@@ -20,6 +28,7 @@ const DEFAULT_SETTINGS = {
   max_days_ahead: 60,
   booking_instructions: '',
   default_meeting_provider: 'custom',
+  availability: DEFAULT_AVAILABILITY,
 }
 
 const emptyType = {
@@ -27,6 +36,8 @@ const emptyType = {
   meeting_provider: 'custom', meeting_url: '', location_label: 'Online meeting',
   is_active: true, display_order: 0,
 }
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const PROVIDERS = [
   { value: 'custom', label: 'Custom link' },
@@ -58,6 +69,7 @@ export default function AdminAppointments() {
   const [savingType, setSavingType] = useState(false)
   const [tab, setTab] = useState('bookings')
   const [bookingFilter, setBookingFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
   const [search, setSearch] = useState('')
 
   useEffect(() => { load() }, [])
@@ -70,7 +82,8 @@ export default function AdminAppointments() {
         getAppointmentTypes().catch(() => []),
         getAppointments().catch(() => []),
       ])
-      setSettings({ ...DEFAULT_SETTINGS, ...(admin?.appointment_settings || {}) })
+      const loaded = admin?.appointment_settings || {}
+      setSettings({ ...DEFAULT_SETTINGS, ...loaded, availability: { ...DEFAULT_AVAILABILITY, ...(loaded.availability || {}) } })
       setTypes(typeRows || [])
       setAppointments(bookingRows || [])
     } catch (err) { toast.error(err.message || 'Failed to load appointments') }
@@ -177,12 +190,15 @@ export default function AdminAppointments() {
 
   const filteredAppointments = useMemo(() => {
     const q = search.trim().toLowerCase()
+    const today = new Date().toISOString().slice(0, 10)
     return appointments.filter(b => {
       if (bookingFilter !== 'all' && b.status !== bookingFilter) return false
+      if (dateFilter === 'today' && b.preferred_date !== today) return false
+      if (dateFilter === 'upcoming' && (b.preferred_date || '') < today) return false
       if (!q) return true
       return [b.customer_name, b.customer_email, b.customer_phone, b.type_name_snapshot, b.preferred_date, b.preferred_time, b.status, b.payment_status].join(' ').toLowerCase().includes(q)
     })
-  }, [appointments, bookingFilter, search])
+  }, [appointments, bookingFilter, dateFilter, search])
 
   const stats = useMemo(() => ({
     total: appointments.length,
@@ -192,7 +208,7 @@ export default function AdminAppointments() {
   }), [appointments])
 
   const card = { background: 'var(--card-bg)', borderColor: 'var(--border-color)' }
-  const input = { background: 'var(--input-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }
+  const input = { background: 'color-mix(in srgb, var(--input-bg) 92%, transparent)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }
   const muted = { color: 'var(--text-secondary)' }
 
   if (loading) return <p className="text-sm" style={muted}>Loading appointments...</p>
@@ -245,6 +261,36 @@ export default function AdminAppointments() {
               <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}><input type="checkbox" checked={!!settings.require_phone} onChange={e => setSettings(s => ({ ...s, require_phone: e.target.checked }))} /> Require phone number</label>
             </div>
           </div>
+          <div className="rounded-xl border p-4 space-y-4" style={{ borderColor: 'var(--border-color)', background: 'var(--glass-bg)' }}>
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Availability & slots</h3>
+              <p className="text-xs mt-0.5" style={muted}>Control when visitors can book. Slots are generated from these rules and existing bookings.</p>
+            </div>
+            <div>
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Working days</span>
+              <div className="flex flex-wrap gap-2">
+                {DAYS.map((d, i) => {
+                  const active = (settings.availability?.days || []).includes(i)
+                  return (
+                    <button key={d} type="button" onClick={() => setSettings(s => {
+                      const days = new Set(s.availability?.days || [])
+                      if (days.has(i)) days.delete(i); else days.add(i)
+                      return { ...s, availability: { ...s.availability, days: [...days].sort((a,b)=>a-b) } }
+                    })} className="rounded-lg px-3 py-1.5 text-xs font-medium border" style={{ borderColor: active ? 'color-mix(in srgb, var(--accent) 40%, var(--border-color))' : 'var(--border-color)', background: active ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent', color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{d}</button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Start time"><input type="time" value={settings.availability?.start || '09:00'} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, start: e.target.value } }))} className="input" style={input} /></Field>
+              <Field label="End time"><input type="time" value={settings.availability?.end || '17:00'} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, end: e.target.value } }))} className="input" style={input} /></Field>
+              <Field label="Slot interval (min)"><input type="number" min="5" step="5" value={settings.availability?.slot_interval ?? 30} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, slot_interval: Math.max(5, Number(e.target.value || 30)) } }))} className="input" style={input} /></Field>
+            </div>
+            <Field label="Blackout dates (YYYY-MM-DD, one per line)">
+              <textarea value={(settings.availability?.blackout_dates || []).join('\n')} onChange={e => setSettings(s => ({ ...s, availability: { ...s.availability, blackout_dates: e.target.value.split(/[\n,]+/).map(v => v.trim()).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)) } }))} rows={3} className="input resize-y font-mono text-xs" style={input} placeholder="2026-12-25&#10;2026-01-01" />
+            </Field>
+          </div>
+
           <Field label="Booking instructions (shown to admin / internal)"><textarea value={settings.booking_instructions || ''} onChange={e => setSettings(s => ({ ...s, booking_instructions: e.target.value }))} rows={2} className="input resize-y" style={input} placeholder="Internal notes: e.g. confirm within 24h, send Zoom link manually if needed..." /></Field>
           <button onClick={saveSettings} disabled={savingSettings} className="rounded-lg px-5 py-2 text-sm font-medium text-white disabled:opacity-50" style={{ background: 'var(--accent)' }}>{savingSettings ? 'Saving...' : 'Save Settings'}</button>
         </section>
@@ -308,13 +354,23 @@ export default function AdminAppointments() {
       {tab === 'bookings' && (
         <section className="rounded-xl border p-4 md:p-6 space-y-4" style={card}>
           <SectionHead title="Booking Requests" desc="Manage status, meeting links, and customer access." muted={muted} />
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex flex-wrap gap-2">
-              {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(s => (
-                <button key={s} onClick={() => setBookingFilter(s)} className="rounded-lg px-3 py-1.5 text-xs capitalize" style={{ background: bookingFilter === s ? 'var(--accent)' : 'var(--hover-bg)', color: bookingFilter === s ? '#fff' : 'var(--text-secondary)' }}>{s}</button>
-              ))}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex flex-wrap gap-2">
+                {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(s => (
+                  <button key={s} onClick={() => setBookingFilter(s)} className="rounded-lg px-3 py-1.5 text-xs capitalize" style={{ background: bookingFilter === s ? 'var(--accent)' : 'var(--hover-bg)', color: bookingFilter === s ? '#fff' : 'var(--text-secondary)' }}>{s}</button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 lg:ml-auto">
+                {[{ id: 'all', label: 'All dates' }, { id: 'today', label: 'Today' }, { id: 'upcoming', label: 'Upcoming' }].map(d => (
+                  <button key={d.id} onClick={() => setDateFilter(d.id)} className="rounded-lg px-3 py-1.5 text-xs" style={{ background: dateFilter === d.id ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'var(--hover-bg)', color: dateFilter === d.id ? 'var(--text-primary)' : 'var(--text-secondary)', border: '1px solid', borderColor: dateFilter === d.id ? 'color-mix(in srgb, var(--accent) 35%, var(--border-color))' : 'transparent' }}>{d.label}</button>
+                ))}
+              </div>
             </div>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, type, date..." className="input lg:ml-auto lg:max-w-xs !py-2 text-sm" style={input} />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, type, date..." className="input sm:max-w-xs !py-2.5 text-sm" style={input} />
+              <span className="text-xs" style={muted}>{filteredAppointments.length} booking{filteredAppointments.length !== 1 ? 's' : ''}</span>
+            </div>
           </div>
           <div className="space-y-3">
             {filteredAppointments.length === 0 && <p className="text-sm" style={muted}>No bookings found.</p>}

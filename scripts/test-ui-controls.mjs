@@ -27,6 +27,7 @@ const navScroller = read('src/components/ui/nav-scroller.tsx')
 const themeToggle = read('src/components/ui/curtain-theme-toggle.jsx')
 const library = read('src/components/offerings/Library.jsx')
 const settings = read('src/components/Settings.jsx')
+const adminLayout = read('src/components/admin/AdminLayout.jsx')
 const products = read('src/components/offerings/Products.jsx')
 const contributor = read('src/components/offerings/ContributorApply.jsx')
 
@@ -158,6 +159,8 @@ check('touch: gateway filters and search are 44px high', loader.includes('inline
 check('contrast: gateway guidance and filter labels are not faint microcopy', loader.includes('text-white/60 font-mono text-center max-w-[28ch]') && loader.includes('text-white/60 hover:border-white/20 hover:text-white'))
 check('touch: store data chip is 44px on phones and visible on focus', products.includes('inline-flex min-h-11 items-center gap-1.5 rounded-full border') && products.includes('focus-visible:opacity-100 sm:min-h-9'))
 check('a11y: outline-none utilities restore a concrete focus ring', css.includes('outline: 2px solid #22d3ee') && css.includes('.focus\\:outline-none:focus {') && css.includes('box-shadow: 0 0 0 2px var(--accent-glow, #22d3ee)'))
+check('admin theme toggle uses crisp icons and a labelled hit area', adminLayout.includes('Sun size={16}') && adminLayout.includes('Moon size={16}') && adminLayout.includes("aria-label={isDark ? 'Switch to light mode'"))
+check('admin routes hide the public WhatsApp launcher', app.includes('const showFloatingWhatsApp = loaderDone && !isEmbedRoute && !isAdminRoute') && app.includes('{showFloatingWhatsApp && <FloatingWhatsApp />}'))
 
 // --- Stale lazy-chunk recovery ----------------------------------------------
 const { isChunkLoadError, recoverFromChunkError } = await import('../src/lib/chunkRecovery.js')

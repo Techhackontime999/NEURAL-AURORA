@@ -494,7 +494,7 @@ function AppContent() {
       {loaderDone && !isEmbedRoute && <MoodMusicToggle />}
       {!isEmbedRoute && <NeuralCursor />}
       {loaderDone && showMithi && <MithiWidget />}
-      {loaderDone && !isEmbedRoute && <FloatingWhatsApp />}
+      {showFloatingWhatsApp && <FloatingWhatsApp />}
       {!isEmbedRoute && <PwaStatus />}
       {showFloatingNav && (
         <FloatingNav

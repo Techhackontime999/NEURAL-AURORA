@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { Moon, Sun } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -153,11 +154,20 @@ export default function AdminLayout({ children }) {
           >
             {/* Theme toggle */}
             <button
+              type="button"
               onClick={toggleTheme}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
-              style={{ color: 'var(--text-secondary)' }}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors hover:brightness-110"
+              style={{
+                borderColor: 'var(--border-color)',
+                background: 'var(--hover-bg)',
+                color: 'var(--text-primary)',
+              }}
             >
-              <span className="text-xs">{isDark ? '☀' : '☾'}</span>
+              <span className="flex h-5 w-5 items-center justify-center" aria-hidden="true">
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </span>
               {isDark ? 'Light Mode' : 'Dark Mode'}
             </button>
 

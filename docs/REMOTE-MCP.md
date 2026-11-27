@@ -14,11 +14,13 @@ Set `SITE_URL` to the public HTTPS deployment origin (for example `https://neura
 | OAuth authorization server metadata | `https://<site>/.well-known/oauth-authorization-server` |
 | OAuth protected resource metadata | `https://<site>/.well-known/oauth-protected-resource` |
 | Dynamic client registration | `https://<site>/api/mcp/register` |
-| Authorization | `https://<site>/api/mcp/authorize` |
+| Authorization | `https://<site>/api/mcp/authorize` (OAuth endpoint, not a browser page) |
 | Token / refresh | `https://<site>/api/mcp/token` |
 | Revocation | `https://<site>/api/mcp/revoke` |
 
 All routes are served by the existing `/api/ai` Vercel function through `vercel.json` rewrites. This keeps the project inside the Hobby plan's 12-function budget.
+
+> **Do not open `/api/mcp/authorize` directly or paste it into a client's Connection field.** It only works when the OAuth client supplies `client_id`, `redirect_uri`, `state`, `code_challenge`, `code_challenge_method` and `scope`. It then redirects the owner to `/admin/ai-connections/authorize?request=...&state=...` for consent. Opening it bare returns a `400 invalid_client` JSON error. The PWA service worker explicitly excludes `/api/*` and `/.well-known/*` from its SPA fallback, so an installed app cannot turn these endpoints into a React 404.
 
 ### Transport and JSON-RPC
 

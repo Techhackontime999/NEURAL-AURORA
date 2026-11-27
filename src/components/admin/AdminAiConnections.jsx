@@ -616,6 +616,10 @@ export default function AdminAiConnections() {
                   <span>Use the Connection field <code className="mcp-mono">{mcpUrl}</code> — not the consent URL — and confirm the registration endpoint above is reachable.</span>
                 </div>
                 <div className="mcp-trouble-row">
+                  <strong>Authorization URL shows the app 404</strong>
+                  <span><code className="mcp-mono">/api/mcp/authorize</code> is an OAuth endpoint, not a page. Let the client open it with its OAuth parameters. If an installed PWA served the old shell, hard-refresh after deploy; the current service worker excludes <code className="mcp-mono">/api/*</code> from SPA fallback.</span>
+                </div>
+                <div className="mcp-trouble-row">
                   <strong>Connected but no tools appear</strong>
                   <span>Enable the client, tick its tools here, save, then disconnect and reconnect. Tools are granted per client, not globally alone.</span>
                 </div>

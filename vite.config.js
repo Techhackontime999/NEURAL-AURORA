@@ -77,6 +77,14 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          // Navigations to API/OAuth endpoints must reach the server, not the
+          // offline SPA shell. Without this denylist the service worker serves
+          // index.html for /api/mcp/* and /.well-known/*, producing a React
+          // 404 instead of the OAuth response.
+          navigateFallbackDenylist: [
+            /^\/api(?:\/|$)/,
+            /^\/\.well-known(?:\/|$)/,
+          ],
           // Only the offline application shell is precached. Route chunks,
           // large imagery, hero video and 3D vendors are fetched on demand and
           // cached at runtime, so installing the SW never downloads ~20 MiB.

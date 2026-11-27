@@ -3,6 +3,7 @@
 // /services redirects still behave.
 //
 // Run after any change to the offerings routes in src/App.jsx.
+import { readFileSync } from 'node:fs'
 import { matchRoutes } from 'react-router'
 
 // Mirrors the offerings-related route tree in src/App.jsx. Keep in sync.
@@ -39,6 +40,20 @@ for (const [path, expected] of cases) {
   const ok = actual === expected
   if (!ok) failures++
   console.log(`${ok ? 'ok  ' : 'FAIL'}  ${path.padEnd(38)} -> ${actual}`)
+}
+
+// The PWA service worker must never answer navigations to server endpoints
+// with the offline SPA shell. This is what makes /api/mcp/authorize show a
+// React 404 instead of the OAuth response in an installed browser.
+const viteConfig = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8')
+const denylist = viteConfig.match(/navigateFallbackDenylist\s*:\s*\[([\s\S]*?)\]/)?.[1] || ''
+for (const [label, expected] of [
+  ['api endpoints', String.raw`/^\/api(?:\/|$)/`],
+  ['oauth metadata', String.raw`/^\/\.well-known(?:\/|$)/`],
+]) {
+  const ok = denylist.includes(expected)
+  if (!ok) failures++
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  service worker denylist: ${label.padEnd(16)} -> ${ok ? 'excluded' : 'missing'}`)
 }
 
 console.log(failures === 0 ? '\nAll route rankings correct.' : `\n${failures} failure(s).`)

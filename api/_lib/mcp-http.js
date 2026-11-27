@@ -206,6 +206,7 @@ async function registerHandler(req, res, deps, cfg) {
       allowedTools: body.tools || body.allowed_tools || [],
       scopes: body.scope || body.scopes,
       authMethod: body.token_endpoint_auth_method,
+      notes: body.notes,
     })
   } catch (error) {
     return oauthError(res, error.status || 400, 'invalid_client_metadata', error.message || 'Invalid client metadata.')
@@ -856,6 +857,7 @@ async function adminHandler(req, res, deps) {
         allowedTools: body.allowedTools,
         scopes: body.scopes,
         authMethod: body.authMethod,
+        notes: body.notes,
       })
       await safeAudit(deps.store, {
         eventType: 'admin_action',
@@ -872,6 +874,7 @@ async function adminHandler(req, res, deps) {
         redirectUris: body.redirectUris,
         allowedTools: body.allowedTools,
         scopes: body.scopes,
+        notes: body.notes,
         enabled: body.enabled,
       })
       await safeAudit(deps.store, {

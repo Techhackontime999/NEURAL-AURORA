@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS ai_oauth_clients (
   allowed_scopes TEXT[] NOT NULL DEFAULT '{}',
   token_endpoint_auth_method TEXT NOT NULL DEFAULT 'none'
     CHECK (token_endpoint_auth_method IN ('none', 'client_secret_post')),
+  notes TEXT NOT NULL DEFAULT ''
+    CONSTRAINT ai_oauth_clients_notes_length CHECK (char_length(notes) <= 500),
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   revoked_at TIMESTAMPTZ,

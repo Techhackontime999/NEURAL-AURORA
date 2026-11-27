@@ -31,7 +31,7 @@ All routes are served by the existing `/api/ai` Vercel function through `vercel.
 
 ## Deployment steps
 
-1. Apply `supabase/migrations/20261203000000_create_ai_connections.sql` (also appended to `supabase-schema.sql` for fresh installs).
+1. Apply `supabase/migrations/20261203000000_create_ai_connections.sql` and `supabase/migrations/20261204000000_add_ai_client_notes.sql` (both appended to `supabase-schema.sql` for fresh installs).
 2. Ensure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set server-side, exactly as for the other admin endpoints.
 3. Set `SITE_URL` to the public HTTPS origin.
 4. Confirm `admin_settings.admin_email` is the current portfolio owner's Supabase auth email and that the matching `profiles.role` is `admin`.
@@ -64,8 +64,11 @@ All routes are served by the existing `/api/ai` Vercel function through `vercel.
 - per-tool enabled and approval toggles;
 - client registration, permission editing, disable and revoke;
 - one-time display of an issued client secret;
-- session listing and revocation;
+- session listing, bulk revocation and expired-session cleanup;
 - pending action review and approve/reject;
+- redacted audit search, filters and CSV export;
+- internal, admin-only notes on each registered client;
+- per-client tool summaries and setup troubleshooting;
 - redacted audit events with client, tool, outcome, error code and request id;
 - a live discovery health check that warns when OAuth metadata still points at `localhost` or another origin.
 

@@ -252,9 +252,10 @@ function scopesForTools(tools, requested) {
   return clean
 }
 
-async function createClient({ ownerUserId, name, redirectUris, allowedTools, scopes, authMethod = 'none' }, client = db()) {
+async function createClient({ ownerUserId, name, redirectUris, allowedTools, scopes, authMethod = 'none', notes = '' }, client = db()) {
   const cleanName = sanitizeText(name, 80).trim()
   if (!cleanName) throw httpError(400, 'invalid_client_name', 'Client name is required.')
+  const cleanNotes = sanitizeText(notes, 500).trim()
   const redirects = validateRedirectUris(redirectUris)
   const tools = Array.isArray(allowedTools)
     ? [...new Set(allowedTools.filter((tool) => TOOL_MAP.has(tool)))].slice(0, TOOLS_LIMIT())
@@ -276,9 +277,10 @@ async function createClient({ ownerUserId, name, redirectUris, allowedTools, sco
         allowed_tools: tools,
         allowed_scopes: allowedScopes,
         token_endpoint_auth_method: method,
+        notes: cleanNotes,
         enabled: true,
       })
-      .select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, token_endpoint_auth_method, enabled, created_at')
+      .select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, token_endpoint_auth_method, notes, enabled, created_at')
       .maybeSingle()
   )
   return { ...row, client_secret: secret }
@@ -300,7 +302,7 @@ async function listClients(client = db()) {
   const rows = must(
     await client
       .from('ai_oauth_clients')
-      .select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, token_endpoint_auth_method, enabled, created_at, revoked_at, last_used_at')
+      .select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, token_endpoint_auth_method, notes, enabled, created_at, revoked_at, last_used_at')
       .order('created_at', { ascending: false })
       .limit(100)
   )
@@ -320,9 +322,10 @@ async function updateClient(clientId, patch, client = db()) {
   } else if (patch.scopes !== undefined) {
     data.allowed_scopes = scopesForTools(current.allowed_tools || [], patch.scopes)
   }
+  if (patch.notes !== undefined) data.notes = sanitizeText(patch.notes, 500).trim()
   if (patch.enabled !== undefined) data.enabled = Boolean(patch.enabled)
   const row = must(
-    await client.from('ai_oauth_clients').update(data).eq('id', current.id).select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, enabled').maybeSingle()
+    await client.from('ai_oauth_clients').update(data).eq('id', current.id).select('id, client_id, client_name, redirect_uris, allowed_tools, allowed_scopes, notes, enabled').maybeSingle()
   )
   return row
 }

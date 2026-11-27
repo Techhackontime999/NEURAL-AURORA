@@ -2747,6 +2747,8 @@ CREATE TABLE IF NOT EXISTS ai_oauth_clients (
   allowed_scopes TEXT[] NOT NULL DEFAULT '{}',
   token_endpoint_auth_method TEXT NOT NULL DEFAULT 'none'
     CHECK (token_endpoint_auth_method IN ('none', 'client_secret_post')),
+  notes TEXT NOT NULL DEFAULT ''
+    CONSTRAINT ai_oauth_clients_notes_length CHECK (char_length(notes) <= 500),
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   revoked_at TIMESTAMPTZ,
@@ -2912,3 +2914,18 @@ REVOKE ALL ON TABLE ai_access_settings, ai_tool_settings, ai_oauth_clients, ai_o
 GRANT ALL ON TABLE ai_access_settings, ai_tool_settings, ai_oauth_clients, ai_oauth_codes,
   ai_oauth_tokens, ai_pending_actions, ai_connection_audit, admin_tasks, admin_reports,
   customer_reply_drafts, ai_content_drafts TO service_role;
+
+-- >>> supabase/migrations/20261204000000_add_ai_client_notes.sql
+
+ALTER TABLE ai_oauth_clients
+  ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT '';
+
+DO $$
+BEGIN
+  ALTER TABLE ai_oauth_clients
+    ADD CONSTRAINT ai_oauth_clients_notes_length CHECK (char_length(notes) <= 500);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+NOTIFY pgrst, 'reload schema';

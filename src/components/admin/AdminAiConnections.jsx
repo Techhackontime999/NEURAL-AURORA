@@ -25,6 +25,7 @@ const emptyForm = {
   tools: [],
   authMethod: 'none',
   offline: true,
+  notes: '',
 }
 
 const SCOPE_LABELS = {
@@ -142,6 +143,11 @@ export default function AdminAiConnections() {
   const [editingId, setEditingId] = useState('')
   const [newSecret, setNewSecret] = useState('')
   const [health, setHealth] = useState(null)
+  const [auditQuery, setAuditQuery] = useState('')
+  const [auditEvent, setAuditEvent] = useState('all')
+  const [auditOutcome, setAuditOutcome] = useState('all')
+  const [auditTool, setAuditTool] = useState('all')
+  const [selectedSessions, setSelectedSessions] = useState([])
 
   const siteOrigin = typeof window === 'undefined' ? '' : window.location.origin
   const mcpUrl = siteOrigin ? `${siteOrigin}/api/mcp` : '/api/mcp'
@@ -209,9 +215,101 @@ export default function AdminAiConnections() {
     return [...scopes]
   }, [form.tools, form.offline, scopeFor])
 
-  const activeSessions = (data?.tokens || []).filter((token) => !token.revoked_at).length
+  const activeSessions = useMemo(() => (data?.tokens || []).filter((token) => !token.revoked_at), [data])
   const pendingActions = (data?.pending || []).filter((item) => !item.used_at && !item.decision).length
   const discoveryOk = health?.issuerOk && health?.resourceOk
+
+  const expiredSessions = useMemo(
+    () =>
+      activeSessions.filter((token) => {
+        const stamp = token.refresh_expires_at || token.expires_at
+        const time = stamp ? new Date(stamp).getTime() : Number.NaN
+        return Number.isFinite(time) && time < Date.now()
+      }),
+    [activeSessions]
+  )
+
+  useEffect(() => {
+    const activeIds = new Set(activeSessions.map((token) => token.id))
+    setSelectedSessions((current) => current.filter((id) => activeIds.has(id)))
+  }, [activeSessions])
+
+  const auditOptions = useMemo(() => {
+    const events = new Set()
+    const outcomes = new Set()
+    const toolNames = new Set()
+    for (const entry of data?.audit || []) {
+      if (entry.event_type) events.add(entry.event_type)
+      if (entry.outcome) outcomes.add(entry.outcome)
+      if (entry.tool_name) toolNames.add(entry.tool_name)
+    }
+    return {
+      events: [...events].sort(),
+      outcomes: [...outcomes].sort(),
+      tools: [...toolNames].sort(),
+    }
+  }, [data])
+
+  const filteredAudit = useMemo(() => {
+    const query = auditQuery.trim().toLowerCase()
+    return (data?.audit || []).filter((entry) => {
+      if (auditEvent !== 'all' && entry.event_type !== auditEvent) return false
+      if (auditOutcome !== 'all' && entry.outcome !== auditOutcome) return false
+      if (auditTool !== 'all' && (entry.tool_name || '') !== auditTool) return false
+      if (!query) return true
+      return [
+        entry.created_at,
+        entry.event_type,
+        entry.tool_name,
+        entry.client_id,
+        entry.outcome,
+        entry.error_code,
+        entry.summary,
+      ]
+        .some((value) => String(value || '').toLowerCase().includes(query))
+    })
+  }, [data, auditQuery, auditEvent, auditOutcome, auditTool])
+
+  function resetAuditFilters() {
+    setAuditQuery('')
+    setAuditEvent('all')
+    setAuditOutcome('all')
+    setAuditTool('all')
+  }
+
+  function exportAudit() {
+    const header = ['Time', 'Event', 'Tool', 'Client', 'Outcome', 'Error', 'Summary']
+    const rows = filteredAudit.map((entry) => [
+      entry.created_at,
+      entry.event_type,
+      entry.tool_name,
+      entry.client_id,
+      entry.outcome,
+      entry.error_code,
+      entry.summary,
+    ])
+    const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+    const csv = [header, ...rows].map((row) => row.map(escape).join(',')).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `neural-aurora-mcp-audit-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${rows.length} redacted audit event${rows.length === 1 ? '' : 's'}.`)
+  }
+
+  function toolSummary(client) {
+    const counts = new Map()
+    for (const name of client.allowed_tools || []) {
+      const scope = scopeFor[name] || 'other'
+      counts.set(scope, (counts.get(scope) || 0) + 1)
+    }
+    return [...counts.entries()].map(([scope, count]) => `${SCOPE_LABELS[scope] || scope} ${count}`).join(' · ')
+  }
 
   function toggleTool(name) {
     setForm((current) => ({
@@ -231,6 +329,7 @@ export default function AdminAiConnections() {
       tools: client.allowed_tools || [],
       authMethod: client.token_endpoint_auth_method || 'none',
       offline: (client.allowed_scopes || []).includes('offline_access'),
+      notes: client.notes || '',
     })
   }
 
@@ -248,6 +347,7 @@ export default function AdminAiConnections() {
         allowedTools: form.tools,
         scopes: selectedScopes,
         authMethod: form.authMethod,
+        notes: form.notes,
       }
       if (editingId) {
         await mcpAdminRequest('client-update', {
@@ -339,6 +439,31 @@ export default function AdminAiConnections() {
     }
   }
 
+  async function revokeSessions(ids, label = 'selected sessions') {
+    if (!ids.length) return
+    const ok = await confirm({
+      title: 'Revoke sessions',
+      message: `Revoke ${ids.length} ${label}? Each client will need to reconnect and complete consent again.`,
+      confirmText: `Revoke ${ids.length} session${ids.length === 1 ? '' : 's'}`,
+      danger: true,
+    })
+    if (!ok) return
+    const results = await Promise.allSettled(
+      ids.map((id) => mcpAdminRequest('token-revoke', { method: 'POST', body: { id } }))
+    )
+    const failed = results.filter((result) => result.status === 'rejected').length
+    if (failed) toast.error(`${ids.length - failed} revoked, ${failed} failed. Check the audit log.`)
+    else toast.success(`${ids.length} session${ids.length === 1 ? '' : 's'} revoked.`)
+    setSelectedSessions([])
+    await load()
+  }
+
+  function toggleSession(id) {
+    setSelectedSessions((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    )
+  }
+
   async function decidePending(item, decision) {
     try {
       await mcpAdminRequest('pending-decide', { method: 'POST', body: { id: item.id, decision } })
@@ -390,7 +515,7 @@ export default function AdminAiConnections() {
         <div className="mcp-stat">
           <span className="mcp-stat-icon"><KeyRound size={18} /></span>
           <div>
-            <div className="mcp-stat-value">{activeSessions}</div>
+            <div className="mcp-stat-value">{activeSessions.length}</div>
             <div className="mcp-stat-label">Active sessions</div>
           </div>
         </div>
@@ -478,6 +603,32 @@ export default function AdminAiConnections() {
               <EndpointChip label="Token" value={`${siteOrigin}/api/mcp/token`} toast={toast} />
               <EndpointChip label="Registration" value={`${siteOrigin}/api/mcp/register`} toast={toast} />
             </div>
+
+            <details className="mcp-disclosure">
+              <summary><ShieldCheck size={14} /> Troubleshooting</summary>
+              <div className="mcp-disclosure-body">
+                <div className="mcp-trouble-row">
+                  <strong>Client opens localhost</strong>
+                  <span>Set <code className="mcp-mono">SITE_URL={siteOrigin}</code> in Vercel Production, redeploy, then remove and re-add the connector so metadata is fetched again.</span>
+                </div>
+                <div className="mcp-trouble-row">
+                  <strong>Couldn&apos;t register an OAuth client</strong>
+                  <span>Use the Connection field <code className="mcp-mono">{mcpUrl}</code> — not the consent URL — and confirm the registration endpoint above is reachable.</span>
+                </div>
+                <div className="mcp-trouble-row">
+                  <strong>Connected but no tools appear</strong>
+                  <span>Enable the client, tick its tools here, save, then disconnect and reconnect. Tools are granted per client, not globally alone.</span>
+                </div>
+                <div className="mcp-trouble-row">
+                  <strong>Writes stop with a confirmation prompt</strong>
+                  <span>Approve the staged action under Pending actions, then ask the client to confirm the same call again.</span>
+                </div>
+                <div className="mcp-trouble-row">
+                  <strong>401 or session rejected</strong>
+                  <span>The token was revoked or rotated. Reconnect the client to complete owner consent again.</span>
+                </div>
+              </div>
+            </details>
           </section>
 
           <section className="mcp-section">
@@ -536,6 +687,19 @@ export default function AdminAiConnections() {
                   label="Allow long-lived refresh tokens"
                 />
               </div>
+
+              <label className="mcp-field" style={{ gridColumn: '1 / -1' }}>
+                Internal note
+                <textarea
+                  className="mcp-input"
+                  rows={2}
+                  value={form.notes}
+                  onChange={(event) => setForm({ ...form, notes: event.target.value })}
+                  maxLength={500}
+                  placeholder="e.g. ChatGPT personal account — reviewed 27 Nov 2026"
+                />
+                <span className="mcp-sub">Only visible to portfolio admins. Never sent to clients or written to tokens.</span>
+              </label>
 
               <div style={{ gridColumn: '1 / -1' }}>
                 <div className="mcp-tool-group-title"><Layers size={13} /> Allowed tools</div>
@@ -634,6 +798,21 @@ export default function AdminAiConnections() {
                           {(client.allowed_scopes || []).join(' ') || 'no scopes'} ·{' '}
                           {client.revoked_at ? `revoked ${formatDate(client.revoked_at)}` : 'active'}
                         </div>
+                        <div className="mcp-tool-summary">
+                          {toolSummary(client) ? (
+                            toolSummary(client).split(' · ').map((part) => <Pill key={part} variant="cyan">{part}</Pill>)
+                          ) : (
+                            <Pill>no tools granted</Pill>
+                          )}
+                        </div>
+                        {(client.allowed_tools || []).length > 0 && (
+                          <div className="mcp-list-meta">
+                            {short((client.allowed_tools || []).join(', '), 160)}
+                          </div>
+                        )}
+                        {client.notes && (
+                          <div className="mcp-note-line"><FileText size={12} /> {client.notes}</div>
+                        )}
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <CopyButton value={client.client_id} toast={toast} label="Client ID" />
@@ -721,7 +900,42 @@ export default function AdminAiConnections() {
                 eyebrow="Sessions"
                 title="Active sessions"
                 sub="Revoking a session forces the client to reconnect and complete consent again."
+                action={<Pill variant="green">{activeSessions.length} active</Pill>}
               />
+              {data.tokens.length > 0 && (
+                <div className="mcp-inline-actions">
+                  <button
+                    type="button"
+                    className="mcp-btn"
+                    onClick={() =>
+                      setSelectedSessions(
+                        selectedSessions.length === activeSessions.length
+                          ? []
+                          : activeSessions.map((token) => token.id)
+                      )
+                    }
+                  >
+                    <ListChecks size={14} />
+                    {selectedSessions.length === activeSessions.length ? 'Clear selection' : 'Select all active'}
+                  </button>
+                  <button
+                    type="button"
+                    className="mcp-btn mcp-btn-danger"
+                    disabled={!selectedSessions.length}
+                    onClick={() => revokeSessions(selectedSessions)}
+                  >
+                    <Ban size={14} /> Revoke selected {selectedSessions.length ? `(${selectedSessions.length})` : ''}
+                  </button>
+                  <button
+                    type="button"
+                    className="mcp-btn"
+                    disabled={!expiredSessions.length}
+                    onClick={() => revokeSessions(expiredSessions.map((token) => token.id), 'expired sessions')}
+                  >
+                    <RefreshCw size={14} /> Clean up expired {expiredSessions.length ? `(${expiredSessions.length})` : ''}
+                  </button>
+                </div>
+              )}
               {!data.tokens.length ? (
                 <div style={{ marginTop: 16 }}><Empty icon={KeyRound}>No sessions.</Empty></div>
               ) : (
@@ -729,14 +943,25 @@ export default function AdminAiConnections() {
                   {data.tokens.map((token) => (
                     <div className="mcp-list-item" key={token.id}>
                       <div className="mcp-list-top">
-                        <div style={{ minWidth: 0 }}>
-                          <div className="mcp-mono" style={{ color: 'var(--text-primary)' }}>{token.client_id}</div>
-                          <div className="mcp-list-meta">
-                            {(token.scopes || []).join(' ') || 'no scopes'} · expires {formatDate(token.expires_at)}
-                          </div>
-                          <div className="mcp-list-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {token.revoked_at ? <Pill variant="red">revoked</Pill> : <Pill variant="green">active</Pill>}
-                            {token.revoked_at && <span>{formatDate(token.revoked_at)}</span>}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
+                          {!token.revoked_at && (
+                            <input
+                              type="checkbox"
+                              className="mcp-row-check"
+                              aria-label={`Select session ${short(token.client_id, 18)}`}
+                              checked={selectedSessions.includes(token.id)}
+                              onChange={() => toggleSession(token.id)}
+                            />
+                          )}
+                          <div style={{ minWidth: 0 }}>
+                            <div className="mcp-mono" style={{ color: 'var(--text-primary)' }}>{token.client_id}</div>
+                            <div className="mcp-list-meta">
+                              {(token.scopes || []).join(' ') || 'no scopes'} · expires {formatDate(token.expires_at)}
+                            </div>
+                            <div className="mcp-list-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {token.revoked_at ? <Pill variant="red">revoked</Pill> : <Pill variant="green">active</Pill>}
+                              {token.revoked_at && <span>{formatDate(token.revoked_at)}</span>}
+                            </div>
                           </div>
                         </div>
                         {!token.revoked_at && (
@@ -791,41 +1016,87 @@ export default function AdminAiConnections() {
               eyebrow="Accountability"
               title="Audit log"
               sub="Redacted before storage. Tool arguments are recorded as key names only; tokens, secrets and customer identifiers are not written here."
-              action={<Pill>{data.audit.length} events</Pill>}
+              action={
+                <div className="mcp-row-actions">
+                  <Pill>{filteredAudit.length} of {data.audit.length} events</Pill>
+                  <button type="button" className="mcp-btn" disabled={!filteredAudit.length} onClick={exportAudit}>
+                    <FileText size={14} /> Export CSV
+                  </button>
+                </div>
+              }
             />
             {!data.audit.length ? (
               <div style={{ marginTop: 16 }}><Empty icon={FileText}>No tool activity yet.</Empty></div>
             ) : (
-              <div className="mcp-table-wrap">
-                <table className="mcp-table">
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th>Event</th>
-                      <th>Tool</th>
-                      <th>Client</th>
-                      <th>Outcome</th>
-                      <th>Summary</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.audit.map((entry) => (
-                      <tr key={entry.id}>
-                        <td>{formatDate(entry.created_at)}</td>
-                        <td><Pill>{entry.event_type}</Pill></td>
-                        <td className="mcp-mono">{entry.tool_name || '—'}</td>
-                        <td className="mcp-mono">{short(entry.client_id, 24)}</td>
-                        <td>
-                          <Pill variant={entry.outcome === 'success' ? 'green' : entry.outcome === 'denied' ? 'red' : ''}>
-                            {entry.outcome}{entry.error_code ? ` · ${entry.error_code}` : ''}
-                          </Pill>
-                        </td>
-                        <td>{short(entry.summary, 180)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="mcp-filters">
+                  <label className="mcp-field">
+                    Search
+                    <input
+                      className="mcp-input"
+                      value={auditQuery}
+                      onChange={(event) => setAuditQuery(event.target.value)}
+                      placeholder="Event, tool, client, summary…"
+                    />
+                  </label>
+                  <label className="mcp-field">
+                    Event
+                    <select className="mcp-select" value={auditEvent} onChange={(event) => setAuditEvent(event.target.value)}>
+                      <option value="all">All events</option>
+                      {auditOptions.events.map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                  </label>
+                  <label className="mcp-field">
+                    Outcome
+                    <select className="mcp-select" value={auditOutcome} onChange={(event) => setAuditOutcome(event.target.value)}>
+                      <option value="all">All outcomes</option>
+                      {auditOptions.outcomes.map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                  </label>
+                  <label className="mcp-field">
+                    Tool
+                    <select className="mcp-select" value={auditTool} onChange={(event) => setAuditTool(event.target.value)}>
+                      <option value="all">All tools</option>
+                      {auditOptions.tools.map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                  </label>
+                  <button type="button" className="mcp-btn mcp-btn-quiet" onClick={resetAuditFilters}>Clear</button>
+                </div>
+                {!filteredAudit.length ? (
+                  <div style={{ marginTop: 16 }}><Empty icon={FileText}>No events match these filters.</Empty></div>
+                ) : (
+                  <div className="mcp-table-wrap">
+                    <table className="mcp-table">
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Event</th>
+                          <th>Tool</th>
+                          <th>Client</th>
+                          <th>Outcome</th>
+                          <th>Summary</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAudit.map((entry) => (
+                          <tr key={entry.id}>
+                            <td>{formatDate(entry.created_at)}</td>
+                            <td><Pill>{entry.event_type}</Pill></td>
+                            <td className="mcp-mono">{entry.tool_name || '—'}</td>
+                            <td className="mcp-mono">{short(entry.client_id, 24)}</td>
+                            <td>
+                              <Pill variant={entry.outcome === 'success' ? 'green' : entry.outcome === 'denied' ? 'red' : ''}>
+                                {entry.outcome}{entry.error_code ? ` · ${entry.error_code}` : ''}
+                              </Pill>
+                            </td>
+                            <td>{short(entry.summary, 180)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </>

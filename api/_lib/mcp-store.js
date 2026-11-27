@@ -23,6 +23,12 @@ const {
 } = require('./mcp-policy')
 
 const PORTFOLIO_ID = 'primary'
+const PRODUCT_LIST_COLUMNS = 'id, slug, title, short_description, category_slug, format, price_paise, compare_at_paise, currency, is_free, status, featured, tags, version, published_at, created_at, updated_at'
+const PRODUCT_DETAIL_COLUMNS = `${PRODUCT_LIST_COLUMNS}, description, cover_image_url, gallery_urls, includes, requirements, support_policy, refund_policy, faqs, release_notes`
+const PRODUCT_WRITE_FIELDS = [
+  'slug', 'title', 'short_description', 'description', 'category_slug', 'format',
+  'price_paise', 'compare_at_paise', 'currency', 'status', 'featured', 'tags', 'version',
+]
 const CODE_TTL_MS = 10 * 60 * 1000
 const ACCESS_TTL_MS = 60 * 60 * 1000
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000
@@ -715,6 +721,23 @@ async function countRows(client, table, filter) {
   return result.count || 0
 }
 
+/** Only admin form fields that are safe for an MCP client to stage. */
+function productPatch(args) {
+  const patch = {}
+  for (const key of PRODUCT_WRITE_FIELDS) {
+    if (args[key] !== undefined) patch[key] = args[key]
+  }
+  for (const key of ['slug', 'title', 'short_description', 'description', 'category_slug', 'format', 'version']) {
+    if (patch[key] !== undefined) {
+      patch[key] = sanitizeText(patch[key], key === 'description' ? 20000 : key === 'title' ? 160 : 240)
+    }
+  }
+  if (Array.isArray(patch.tags)) {
+    patch.tags = patch.tags.map((tag) => sanitizeText(tag, 40)).filter(Boolean)
+  }
+  return patch
+}
+
 async function executeTool(name, args, ctx, client = db()) {
   const ownerUserId = ctx.ownerUserId
   switch (name) {
@@ -1095,16 +1118,76 @@ async function executeTool(name, args, ctx, client = db()) {
       return simpleResult({ deleted: true, gallery_item: row })
     }
 
+    case 'mcp_list_products': {
+      let query = client.from('products').select(PRODUCT_LIST_COLUMNS)
+      if (args.status) query = query.eq('status', args.status)
+      if (args.featured !== undefined) query = query.eq('featured', args.featured)
+      const rows = must(await query.order('created_at', { ascending: false }).limit(args.limit || 30))
+      return untrustedResult({
+        products: rows.map((row) => ({
+          ...row,
+          title: sanitizeText(row.title, 160),
+          short_description: sanitizeText(row.short_description, 240),
+        })),
+      })
+    }
+
+    case 'mcp_get_product': {
+      const parsed = numericOrColumn(args.id)
+      let query = client.from('products').select(PRODUCT_DETAIL_COLUMNS)
+      query = parsed.column ? query.eq('id', parsed.value) : query.eq('slug', args.id)
+      const row = must(await query.maybeSingle())
+      if (!row) throw httpError(404, 'not_found', 'Product not found.')
+      return untrustedResult({
+        product: {
+          ...row,
+          title: sanitizeText(row.title, 160),
+          short_description: sanitizeText(row.short_description, 240),
+          description: sanitizeText(row.description, 20000),
+        },
+      })
+    }
+
+    case 'mcp_create_product': {
+      const patch = productPatch(args)
+      const price = patch.price_paise ?? 0
+      if (patch.compare_at_paise !== undefined && patch.compare_at_paise < price) {
+        throw httpError(400, 'invalid_compare_at', 'compare_at_paise cannot be less than price_paise.')
+      }
+      if (patch.status === 'published') patch.published_at = new Date().toISOString()
+      const row = must(await client.from('products').insert(patch).select(PRODUCT_LIST_COLUMNS).single())
+      return simpleResult({ product: row, confirmation_required: false })
+    }
+
+    case 'mcp_update_product': {
+      const parsed = numericOrColumn(args.id)
+      const where = (query) => (parsed.column ? query.eq('id', parsed.value) : query.eq('slug', args.id))
+      const existing = must(
+        await where(client.from('products').select('price_paise, published_at')).maybeSingle()
+      )
+      if (!existing) throw httpError(404, 'not_found', 'Product not found.')
+      const patch = productPatch(args)
+      if (Object.keys(patch).length === 0) throw httpError(400, 'empty_update', 'No fields to update.')
+      const price = patch.price_paise ?? existing.price_paise
+      if (patch.compare_at_paise !== undefined && patch.compare_at_paise < price) {
+        throw httpError(400, 'invalid_compare_at', 'compare_at_paise cannot be less than price_paise.')
+      }
+      if (patch.status === 'published' && !existing.published_at) patch.published_at = new Date().toISOString()
+      const row = must(await where(client.from('products').update(patch).select(PRODUCT_LIST_COLUMNS)).maybeSingle())
+      return simpleResult({ product: row, confirmation_required: false })
+    }
+
     case 'mcp_search_content': {
       const term = sanitizeText(args.query, 80).trim().toLowerCase()
       if (term.length < 2) throw httpError(400, 'invalid_query', 'Search term must be at least 2 characters.')
       const perSource = Math.min(args.limit || 5, 10)
-      const [projects, services, posts, caseStudies, gallery] = await Promise.all([
+      const [projects, services, posts, caseStudies, gallery, products] = await Promise.all([
         must(client.from('projects').select('id, project_id, title, description').order('display_order', { ascending: true }).limit(100)),
         must(client.from('services').select('id, service_id, title, tagline, description').order('display_order', { ascending: true }).limit(100)),
         must(client.from('blog_posts').select('id, slug, title, excerpt, tags').order('date', { ascending: false }).limit(100)),
         must(client.from('case_studies').select('id, cs_id, title, description, outcome').order('display_order', { ascending: true }).limit(100)),
         must(client.from('gallery').select('id, gallery_id, title, category, description').order('display_order', { ascending: true }).limit(100)),
+        must(client.from('products').select('id, slug, title, short_description').order('created_at', { ascending: false }).limit(100)),
       ])
       const matches = (rows, refKey, textKeys) =>
         rows
@@ -1130,6 +1213,7 @@ async function executeTool(name, args, ctx, client = db()) {
           posts: matches(posts, 'slug', ['excerpt', 'tags']),
           case_studies: matches(caseStudies, 'cs_id', ['description', 'outcome']),
           gallery: matches(gallery, 'gallery_id', ['category', 'description']),
+          products: matches(products, 'slug', ['short_description']),
         },
       })
     }

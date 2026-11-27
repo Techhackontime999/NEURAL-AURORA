@@ -81,12 +81,13 @@ Externally visible and destructive tools are always staged first and require a s
 | Group | Tools | Notes |
 | --- | --- | --- |
 | Profile | `mcp_get_profile` | Advertises `openai/profile` metadata; no user id can be supplied. |
-| Content read | `mcp_list_projects`, `mcp_get_project`, `mcp_list_services`, `mcp_get_service`, `mcp_list_blog_posts`, `mcp_get_blog_post`, `mcp_list_gallery`, `mcp_list_blog_drafts`, `mcp_search_content`, `mcp_list_case_studies`, `mcp_get_case_study`, `mcp_list_approved_reviews` | Read-only; results are untrusted context. Search is bounded and returns references only. |
+| Content read | `mcp_list_projects`, `mcp_get_project`, `mcp_list_services`, `mcp_get_service`, `mcp_list_blog_posts`, `mcp_get_blog_post`, `mcp_list_gallery`, `mcp_list_blog_drafts`, `mcp_search_content`, `mcp_list_case_studies`, `mcp_get_case_study`, `mcp_list_approved_reviews`, `mcp_list_products`, `mcp_get_product` | Read-only; results are untrusted context. Search includes products and returns references only. |
 | Analytics | `mcp_get_analytics_summary` | Aggregates only; no customer PII or gateway ids. |
 | CRM | `mcp_list_crm_inquiries`, `mcp_get_crm_inquiry`, `mcp_draft_customer_reply`, `mcp_mark_inquiry_read`, `mcp_list_appointments`, `mcp_list_reply_drafts`, `mcp_update_reply_draft`, `mcp_set_appointment_note` | Draft editing and appointment notes never send messages, change schedules or expose phone numbers, access tokens, meeting links or gateway ids. Customer text is sanitized as untrusted data. |
 | Orders | `mcp_list_order_summaries` | Status and amount only; no payment signatures. |
 | Internal work | `mcp_list_tasks`, `mcp_create_task`, `mcp_update_task`, `mcp_create_report`, `mcp_list_admin_reports` | Internal only; approval configurable for writes. Reports expose metadata, not payloads. |
 | Content write | `mcp_create_blog_draft`, `mcp_update_blog_post`, `mcp_publish_blog_draft`, `mcp_create_project`, `mcp_update_project`, `mcp_delete_project`, `mcp_create_gallery_item`, `mcp_delete_gallery_item` | Externally visible/destructive tools always require explicit confirmation. |
+| Store write | `mcp_create_product`, `mcp_update_product` | Staged and always require explicit confirmation. Only admin-form fields are writable; no file manifest, licence/entitlement, contributor access or payment field can be changed. |
 | Approval | `mcp_confirm_pending_action` | Executes a previously staged action after confirmation. |
 
 The registry, risk labels, JSON Schemas, scope requirements and default-deny checks live in `api/_lib/mcp-policy.js`. Application execution lives in `api/_lib/mcp-store.js`; payment, refund, payout, licence, entitlement, credential, privilege, access-control, raw database, arbitrary HTTP, shell and unrestricted admin operations are not present.

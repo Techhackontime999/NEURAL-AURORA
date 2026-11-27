@@ -624,6 +624,10 @@ export default function AdminAiConnections() {
                   <span>Enable the client, tick its tools here, save, then disconnect and reconnect. Tools are granted per client, not globally alone.</span>
                 </div>
                 <div className="mcp-trouble-row">
+                  <strong>ChatGPT says it has no live store operation</strong>
+                  <span>Grant <code className="mcp-mono">mcp_list_products</code> and <code className="mcp-mono">mcp_list_order_summaries</code> to the client, save, then reconnect. Product creation and edits are staged tools that need explicit confirmation.</span>
+                </div>
+                <div className="mcp-trouble-row">
                   <strong>Writes stop with a confirmation prompt</strong>
                   <span>Approve the staged action under Pending actions, then ask the client to confirm the same call again.</span>
                 </div>

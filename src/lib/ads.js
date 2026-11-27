@@ -19,12 +19,28 @@ const PROVIDERS = new Set(['adsense', 'sponsor', 'affiliate', 'custom'])
 let cache = null
 let inFlight = null
 
-function safeUrl(value) {
+/**
+ * Sponsor destinations are rendered as links. Reject control characters and
+ * backslashes (browsers normalise `/\evil.test` into a protocol-relative URL)
+ * before anything reaches the DOM, and parse absolute URLs so a malformed
+ * `https://` string cannot become a broken link.
+ */
+export function isValidAdTarget(value) {
   const url = String(value || '').trim()
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/') && !url.startsWith('//')) return url
-  return ''
+  if (!url || /[\u0000-\u001f\u007f\\]/.test(url)) return false
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+  return url.startsWith('/') && !url.startsWith('//')
+}
+
+function safeUrl(value) {
+  return isValidAdTarget(value) ? String(value).trim() : ''
 }
 
 function clamp(value, min, max) {

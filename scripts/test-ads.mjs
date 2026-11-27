@@ -51,9 +51,9 @@ check('ads: slot ids are numeric only',
 check('ads: a usable fallback client keeps existing deployments working',
   /^ca-pub-\d{8,}$/.test(getAdSenseClient()) && isAdSenseEnabled())
 check('ads: unset slot means responsive auto ads', getAdSenseSlot('blog_listing') === '')
-check('ads: all six premium slots are declared',
-  Object.keys(AD_SLOTS).length === 6 &&
-  ['blog_listing', 'article_footer', 'store_listing', 'product_detail', 'search_results', 'offerings']
+check('ads: all eight premium slots are declared',
+  Object.keys(AD_SLOTS).length === 8 &&
+  ['blog_listing', 'article_footer', 'store_listing', 'product_detail', 'search_results', 'offerings', 'home_footer', 'more_hub']
     .every((key) => Boolean(AD_SLOTS[key])))
 check('ads: sponsor, affiliate and custom streams are supported',
   ['adsense', 'sponsor', 'affiliate', 'custom'].every((key) => Boolean(AD_PROVIDERS[key])))
@@ -101,6 +101,29 @@ check('ads: unfilled units collapse instead of leaving blank boxes',
   css.includes("ins.adsbygoogle[data-ad-status='unfilled']") && css.includes("aside:has(> ins.adsbygoogle[data-ad-status='unfilled'])"))
 check('ads: every unit is labelled for readers', slot.includes('aria-label={label}'))
 check('ads: external links are rel=sponsored', slot.includes("'sponsored noopener noreferrer'"))
+check('ads: AdSense runtime loads only near the viewport',
+  slot.includes("rootMargin: '300px 0px'") &&
+  slot.includes('requestedRef.current') &&
+  slot.includes('observer.disconnect()'))
+check('ads: sponsor destinations reject URL tricks',
+  ads.includes('export function isValidAdTarget') &&
+  ads.includes('new URL(url)') &&
+  admin.includes('!isValidAdTarget(form.target_url)'))
+check('ads: admins see impressions, clicks and CTR',
+  admin.includes('Ad placement performance') && admin.includes("label: 'CTR'"))
+check('ads: gateway ads cannot complete in a hidden tab',
+  video.includes("document.visibilityState !== 'visible'") && video.includes('onCompleteRef.current()'))
+check('coverage: home and the more hub are monetized',
+  read('src/App.jsx').includes('slot="home_footer"') &&
+  read('src/components/More.jsx').includes('slot="more_hub"'))
+check('database: coverage and RPC hardening have a migration', (() => {
+  const migration = 'supabase/migrations/20261202000000_extend_and_harden_ads.sql'
+  return fs.existsSync(migration) &&
+    schema.includes("'home_footer', 'more_hub'") &&
+    schema.includes('WHERE id = ad_id AND active = TRUE') &&
+    read(migration).includes('ad_placements_slot_check') &&
+    read(migration).includes('GRANT EXECUTE ON FUNCTION increment_ad_view_count')
+})())
 
 const slots = {
   'src/components/Blog.jsx': 'blog_listing',
@@ -111,6 +134,8 @@ const slots = {
   'src/components/search/SearchPage.jsx': 'search_results',
   'src/components/Service.jsx': 'offerings',
   'src/components/ServiceDetail.jsx': 'offerings',
+  'src/App.jsx': 'home_footer',
+  'src/components/More.jsx': 'more_hub',
 }
 for (const [file, expected] of Object.entries(slots)) {
   check(`placement: ${file.split('/').pop()} uses ${expected}`,

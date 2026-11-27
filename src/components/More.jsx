@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useEducation, useExperience, useBlogPosts, useCaseStudies } from '../lib/usePortfolioData'
 import { sanitizeHtml } from '../lib/utils'
 import MoreNavbar from './MoreNavbar'
+import AdSlot from './ads/AdSlot'
 import AuroraBackground from './AuroraBackground'
 import { Footer } from './ui/footer-section'
 
@@ -345,6 +346,8 @@ export default function More() {
             ))}
           </div>
         </section>
+
+        <AdSlot slot="more_hub" className="mx-auto mt-16 max-w-4xl" />
       </main>
 
       <Footer />

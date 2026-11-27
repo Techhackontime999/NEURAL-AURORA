@@ -6,16 +6,43 @@ import { AD_PROVIDERS, AD_SLOTS, isAdTestMode, loadAdSenseScript, pushAdSense } 
 
 function AdSenseUnit({ placement }) {
   const testMode = isAdTestMode()
+  const insRef = useRef(null)
+  const requestedRef = useRef(false)
+
+  // The AdSense runtime is heavy. Request it only when the slot is near the
+  // viewport so it never competes with the page's LCP, and never push twice
+  // for the same <ins> when React re-renders or test mode changes.
   useEffect(() => {
     let alive = true
-    loadAdSenseScript(placement.ad_client).then((ready) => {
-      if (alive && ready) pushAdSense()
-    })
-    return () => { alive = false }
+    const request = () => {
+      if (requestedRef.current) return
+      requestedRef.current = true
+      loadAdSenseScript(placement.ad_client).then((ready) => {
+        if (alive && ready) pushAdSense()
+      })
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      request()
+      return () => { alive = false }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect()
+        request()
+      }
+    }, { rootMargin: '300px 0px' })
+    if (insRef.current) observer.observe(insRef.current)
+    return () => {
+      alive = false
+      observer.disconnect()
+    }
   }, [placement.ad_client, placement.ad_slot, testMode])
 
   return (
     <ins
+      ref={insRef}
       className="adsbygoogle block w-full"
       style={{ display: 'block', minHeight: placement.ad_slot ? '90px' : '160px' }}
       data-ad-client={placement.ad_client}

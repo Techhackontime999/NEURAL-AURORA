@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  getAllAdPlacements, addAdPlacement, updateAdPlacement, deleteAdPlacement,
+  getAllAdPlacements, addAdPlacement, updateAdPlacement, deleteAdPlacement, isValidAdTarget,
 } from '../../lib/ads'
 import { AD_PROVIDERS, AD_SLOTS, getAdSenseClient, isAdTestMode, setAdTestMode } from '../../lib/adsConfig'
 import { useToast } from '../../context/ToastContext'
@@ -46,7 +46,7 @@ function validate(form) {
   if (form.provider !== 'adsense') {
     if (!form.title.trim()) return 'Title is required for sponsored placements'
     if (!form.target_url.trim()) return 'Destination URL is required'
-    if (!/^https?:\/\//i.test(form.target_url) && !form.target_url.startsWith('/')) return 'Destination must be an http(s) URL or a site path'
+    if (!isValidAdTarget(form.target_url)) return 'Destination must be an http(s) URL or a site path'
   }
   if (form.starts_at && form.ends_at && new Date(form.starts_at) >= new Date(form.ends_at)) return 'End date must be after start date'
   return ''
@@ -132,6 +132,13 @@ export default function AdminAdPlacements() {
     return rows.filter((row) => [row.name, row.title, row.slot, row.provider, row.target_url]
       .some((value) => String(value || '').toLowerCase().includes(term)))
   }, [rows, search])
+
+  const totals = useMemo(() => rows.reduce((acc, row) => {
+    acc.impressions += Number(row.impression_count) || 0
+    acc.clicks += Number(row.click_count) || 0
+    return acc
+  }, { impressions: 0, clicks: 0 }), [rows])
+  const ctr = totals.impressions ? ((totals.clicks / totals.impressions) * 100).toFixed(1) : '0.0'
 
   async function handleCreate() {
     const err = validate(newForm)
@@ -255,6 +262,19 @@ export default function AdminAdPlacements() {
               : 'Test mode is off. The setting expires after 24 hours; visitors always see real ads.'}
           </p>
         </div>
+      </div>
+
+      <div className="mb-5 grid gap-3 sm:grid-cols-3" aria-label="Ad placement performance">
+        {[
+          { label: 'Impressions', value: totals.impressions.toLocaleString() },
+          { label: 'Clicks', value: totals.clicks.toLocaleString() },
+          { label: 'CTR', value: `${ctr}%` },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-xl border p-4" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-tertiary)' }}>{stat.label}</p>
+            <p className="mt-1 font-display text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
+          </div>
+        ))}
       </div>
 
       {showNew && (

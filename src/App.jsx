@@ -32,6 +32,7 @@ import { clearRuntimeCaches } from './lib/pwaCaches'
 import { isChunkLoadError, recoverFromChunkError } from './lib/chunkRecovery'
 import DocumentHead from './components/ui/DocumentHead'
 import FloatingNav from './components/ui/floating-nav'
+import AdSlot from './components/ads/AdSlot'
 import { SITE_NAME, SITE_ORIGIN } from './lib/documentHead'
 import AuthCallback from './components/admin/AuthCallback'
 import {
@@ -364,6 +365,7 @@ function HomePage() {
       <ReviewForm />
       <SectionSeparator />
       <Contact />
+      <AdSlot slot="home_footer" className="mx-auto mt-16 max-w-5xl" />
       <Footer />
     </div>
   )

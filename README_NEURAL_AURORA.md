@@ -80,6 +80,7 @@ Built with **React 18**, **Three.js** (via React Three Fiber), **Framer Motion 1
 | **Taste-Skill Aesthetics** | Liquid Glass design language — `cubic-bezier(0.16, 1, 0.3, 1)` easing, perpetual micro-interactions, cyan/purple/gold accent palette. |
 | **SEO & Discoverability** | Google Search Console verified, sitemap.xml, robots.txt, OG/Twitter cards, canonical URLs, and Vercel deployment. |
 | **Admin Ads Panel** | Full CRUD for Dev Ads at `/admin/ads` — manage Google AdSense + YouTube ads with configurable aspect ratios and duration. |
+| **Monetization Placements** | Eight admin-controlled slots across the site with lazy AdSense loading, session frequency caps, labeled units, direct-sponsor links, and impression/click/CTR reporting at `/admin/ad-placements`. See [docs/ADS-MONETIZATION.md](docs/ADS-MONETIZATION.md). |
 | **Admin User Roles** | User management at `/admin/users` — promote/demote between admin and user roles. |
 | **Enhanced Supabase Migrations** | New migrations for `dev_ads`, `visitor_stats`, contact RLS fixes — all managed via `supabase db push`. |
 | **Vercel Deployment** | Migrated from Netlify to Vercel with auto CI/CD on every push. |

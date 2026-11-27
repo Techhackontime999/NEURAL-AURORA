@@ -18,6 +18,8 @@ export const AD_SLOTS = {
   product_detail: { label: 'Product detail', description: 'Below a product description', format: 'auto' },
   search_results: { label: 'Search results', description: 'Bespoke search results page', format: 'fluid' },
   offerings: { label: 'Offerings', description: 'Below the service list', format: 'auto' },
+  home_footer: { label: 'Home footer', description: 'Above the footer on the landing page', format: 'fluid' },
+  more_hub: { label: 'More hub', description: 'Below the case studies on /more', format: 'fluid' },
 }
 
 export const AD_PROVIDERS = {

@@ -835,9 +835,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE dev_ads TO authenticated;
 CREATE OR REPLACE FUNCTION increment_ad_view_count(ad_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
-  UPDATE dev_ads SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ad_id;
+  UPDATE dev_ads
+  SET view_count = COALESCE(view_count, 0) + 1
+  WHERE id = ad_id AND active = TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE ALL ON FUNCTION increment_ad_view_count(BIGINT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION increment_ad_view_count(BIGINT) TO anon, authenticated;
 
 -- ============================================================
 -- MONETIZATION PLACEMENTS
@@ -850,7 +855,8 @@ CREATE TABLE IF NOT EXISTS ad_placements (
   name TEXT NOT NULL,
   slot TEXT NOT NULL CHECK (slot IN (
     'blog_listing', 'article_footer', 'store_listing',
-    'product_detail', 'search_results', 'offerings'
+    'product_detail', 'search_results', 'offerings',
+    'home_footer', 'more_hub'
   )),
   provider TEXT NOT NULL DEFAULT 'adsense'
     CHECK (provider IN ('adsense', 'sponsor', 'affiliate', 'custom')),

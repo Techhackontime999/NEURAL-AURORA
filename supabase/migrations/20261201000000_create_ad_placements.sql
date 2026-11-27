@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS ad_placements (
   name TEXT NOT NULL,
   slot TEXT NOT NULL CHECK (slot IN (
     'blog_listing', 'article_footer', 'store_listing',
-    'product_detail', 'search_results', 'offerings'
+    'product_detail', 'search_results', 'offerings',
+    'home_footer', 'more_hub'
   )),
   provider TEXT NOT NULL DEFAULT 'adsense'
     CHECK (provider IN ('adsense', 'sponsor', 'affiliate', 'custom')),

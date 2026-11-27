@@ -391,6 +391,14 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
   const [ended, setEnded] = useState(false)
   const [showSkip, setShowSkip] = useState(false)
   const [countdown, setCountdown] = useState(3)
+  const elapsedRef = useRef(0)
+  const countdownRef = useRef(3)
+  const onCompleteRef = useRef(onComplete)
+
+  // StartingLoader supplies a fresh callback on every render. Keeping it in a
+  // ref stops the countdown effect from restarting (and resetting "3") when
+  // the parent re-renders mid-completion.
+  useEffect(() => { onCompleteRef.current = onComplete }, [onComplete])
 
   const duration = video?.duration_seconds || 30
   const isGoogle = video?.ad_type !== 'youtube'
@@ -402,28 +410,39 @@ export default function AdVideoPlayer({ video, onComplete, onSkip }) {
   }, [])
 
   useEffect(() => {
-    if (ended) return
+    if (ended) return undefined
+    elapsedRef.current = 0
     const interval = setInterval(() => {
-      setElapsed((p) => {
-        const next = p + 1
-        setProgress(Math.min((next / duration) * 100, 100))
-        if (next >= duration) { setEnded(true); clearInterval(interval) }
-        return next
-      })
+      // A hidden tab is not a viewed ad. Pausing here keeps the unlock gate
+      // honest and prevents background tabs from completing instantly.
+      if (document.visibilityState !== 'visible') return
+      const next = elapsedRef.current + 1
+      elapsedRef.current = next
+      setElapsed(next)
+      setProgress(Math.min((next / duration) * 100, 100))
+      if (next >= duration) {
+        setEnded(true)
+        clearInterval(interval)
+      }
     }, 1000)
     return () => clearInterval(interval)
   }, [ended, duration])
 
   useEffect(() => {
-    if (!ended) return
+    if (!ended) return undefined
+    countdownRef.current = 3
     const t = setInterval(() => {
-      setCountdown((p) => {
-        if (p <= 1) { clearInterval(t); onComplete() }
-        return p - 1
-      })
+      if (document.visibilityState !== 'visible') return
+      const next = countdownRef.current - 1
+      countdownRef.current = next
+      setCountdown(Math.max(next, 0))
+      if (next <= 0) {
+        clearInterval(t)
+        onCompleteRef.current()
+      }
     }, 1000)
     return () => clearInterval(t)
-  }, [ended, onComplete])
+  }, [ended])
 
   return (
     <motion.div

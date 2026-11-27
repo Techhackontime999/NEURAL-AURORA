@@ -239,11 +239,22 @@ export default function AdminAdPlacements() {
             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${testMode ? 'translate-x-6' : 'translate-x-1'}`} />
           </button>
         </div>
-        {testMode && (
-          <p className="mt-3 text-[11px] text-amber-300">
-            Hard-refresh the page (Ctrl/Cmd + Shift + R) after toggling so AdSense re-reads the ad unit.
+        <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-secondary)' }}>
+            How to test
           </p>
-        )}
+          <ol className="mt-2 grid gap-1.5 text-[11px] leading-relaxed sm:grid-cols-2" style={{ color: 'var(--text-tertiary)' }}>
+            <li><span className="font-semibold text-cyan-400">1.</span> Turn the switch on above.</li>
+            <li><span className="font-semibold text-cyan-400">2.</span> Hard-refresh: Ctrl/Cmd + Shift + R.</li>
+            <li><span className="font-semibold text-cyan-400">3.</span> Open a page with ads and check the layout.</li>
+            <li><span className="font-semibold text-cyan-400">4.</span> Turn it off, then hard-refresh again.</li>
+          </ol>
+          <p className="mt-2 text-[11px] leading-relaxed" style={{ color: testMode ? '#fbbf24' : 'var(--text-tertiary)' }}>
+            {testMode
+              ? 'Test mode is ON in this browser. Test creatives are not counted or billed — never click your own ads.'
+              : 'Test mode is off. The setting expires after 24 hours; visitors always see real ads.'}
+          </p>
+        </div>
       </div>
 
       {showNew && (

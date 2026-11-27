@@ -88,6 +88,10 @@ check('ads: admin exposes a browser-only test switch',
   admin.includes('setAdTestMode(!testMode)') &&
   admin.includes('this browser only') &&
   admin.includes('aria-checked={testMode}'))
+check('ads: admin shows how to use test mode',
+  admin.includes('How to test') &&
+  admin.includes('Hard-refresh: Ctrl/Cmd + Shift + R.') &&
+  admin.includes('never click your own ads'))
 check('ads: session frequency caps protect the experience',
   ads.includes('MAX_TOTAL_PER_SESSION') && ads.includes('sessionStorage'))
 check('ads: impressions and clicks are tracked without blocking',

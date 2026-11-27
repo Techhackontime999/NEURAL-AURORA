@@ -17,6 +17,7 @@
 const crypto = require('node:crypto')
 const { getProvider, providerDiagnostics, chat } = require('./_lib/mithi-ai')
 const { getServiceClient, requireAdmin } = require('./_lib/adminAuth')
+const mcpHttp = require('./_lib/mcp-http')
 
 const MAX_BODY_BYTES = 32 * 1024
 const MAX_MESSAGES = 20
@@ -302,6 +303,11 @@ async function handleChat(req, res, feature, provider) {
 }
 
 module.exports = async function handler(req, res) {
+  // The remote MCP server and its OAuth endpoints share this function so the
+  // Vercel Hobby plan's 12-function budget is unchanged. Public URLs are
+  // provided by vercel.json rewrites; no billable model is involved here.
+  if (mcpHttp.routeAction(req)) return mcpHttp.handler(req, res)
+
   const provider = getProvider()
 
   if (req.method === 'GET') {

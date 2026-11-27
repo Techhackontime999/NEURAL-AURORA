@@ -31,6 +31,8 @@ import AdminServices from './AdminServices'
 import AdminCrmConfig from './AdminCrmConfig'
 import AdminDocsConfig from './AdminDocsConfig'
 import AdminAiAutomation from './AdminAiAutomation'
+import AdminAiConnections from './AdminAiConnections'
+import AdminAiOAuthConsent from './AdminAiOAuthConsent'
 import AdminYouTubeConfig from './AdminYouTubeConfig'
 import AdminVideoHero from './AdminVideoHero'
 import AdminStoreHero from './AdminStoreHero'
@@ -77,6 +79,8 @@ export default function AdminDashboard() {
         <Route path="store-hero" element={<AdminStoreHero />} />
         <Route path="appearance" element={<AdminAppearance />} />
         <Route path="ai-automation" element={<AdminAiAutomation />} />
+        <Route path="ai-connections" element={<AdminAiConnections />} />
+        <Route path="ai-connections/authorize" element={<AdminAiOAuthConsent />} />
         <Route path="payment-settings" element={<AdminPaymentSettings />} />
         <Route path="document-signature" element={<AdminDocumentSignature />} />
         <Route path="data" element={<AdminDataTransfer />} />

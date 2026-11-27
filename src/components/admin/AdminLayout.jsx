@@ -36,6 +36,7 @@ const navItems = [
   { path: '/admin/ad-placements', label: 'Ad Placements', icon: '₹' },
   { path: '/admin/users', label: 'Users', icon: '◎' },
   { path: '/admin/ai-automation', label: 'AI Automation', icon: '✦' },
+  { path: '/admin/ai-connections', label: 'AI Connections', icon: '⇄' },
   { path: '/admin/crm-config', label: 'CRM Config', icon: '⚙' },
   { path: '/admin/docs-config', label: 'Docs Config', icon: '⊡' },
   { path: '/admin/youtube-config', label: 'YouTube Config', icon: '⊡' },

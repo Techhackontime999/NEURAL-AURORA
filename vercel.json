@@ -48,6 +48,34 @@
       "destination": "/api/license?action=sitemap"
     },
     {
+      "source": "/.well-known/oauth-authorization-server",
+      "destination": "/api/ai?action=oauth-metadata"
+    },
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "/api/ai?action=oauth-resource"
+    },
+    {
+      "source": "/api/mcp",
+      "destination": "/api/ai?action=mcp"
+    },
+    {
+      "source": "/api/mcp/register",
+      "destination": "/api/ai?action=oauth-register"
+    },
+    {
+      "source": "/api/mcp/authorize",
+      "destination": "/api/ai?action=oauth-authorize"
+    },
+    {
+      "source": "/api/mcp/token",
+      "destination": "/api/ai?action=oauth-token"
+    },
+    {
+      "source": "/api/mcp/revoke",
+      "destination": "/api/ai?action=oauth-revoke"
+    },
+    {
       "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }

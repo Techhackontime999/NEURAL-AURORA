@@ -56,6 +56,28 @@ export function isAdSenseEnabled() {
   return env.ADSENSE_ENABLED !== 'false' && Boolean(getAdSenseClient())
 }
 
+// Test mode is a browser-local cookie set from the admin panel. It must never
+// be an env var: that would show non-billable test ads to every visitor.
+const AD_TEST_COOKIE = 'na_adtest'
+
+/** True only in the browser where an admin switched test ads on. */
+export function isAdTestMode() {
+  if (typeof document === 'undefined') return false
+  return document.cookie
+    .split(';')
+    .some((part) => part.trim() === `${AD_TEST_COOKIE}=1`)
+}
+
+/** Toggle AdSense test creatives for this browser only. Returns the new state. */
+export function setAdTestMode(enabled) {
+  const next = Boolean(enabled)
+  if (typeof document !== 'undefined') {
+    const maxAge = next ? 60 * 60 * 24 : 0
+    document.cookie = `${AD_TEST_COOKIE}=${next ? 1 : 0}; path=/; max-age=${maxAge}; SameSite=Lax`
+  }
+  return next
+}
+
 let scriptPromise = null
 
 /** Load the AdSense runtime once per document; never blocks rendering. */

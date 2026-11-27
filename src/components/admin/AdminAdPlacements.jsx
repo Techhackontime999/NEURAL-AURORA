@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   getAllAdPlacements, addAdPlacement, updateAdPlacement, deleteAdPlacement,
 } from '../../lib/ads'
-import { AD_PROVIDERS, AD_SLOTS, getAdSenseClient } from '../../lib/adsConfig'
+import { AD_PROVIDERS, AD_SLOTS, getAdSenseClient, isAdTestMode, setAdTestMode } from '../../lib/adsConfig'
 import { useToast } from '../../context/ToastContext'
 import useBulkSelect from '../../lib/useBulkSelect'
 import SearchBar from '../ui/SearchBar'
@@ -107,6 +107,7 @@ export default function AdminAdPlacements() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ ...emptyForm })
   const [error, setError] = useState('')
+  const [testMode, setTestModeState] = useState(() => isAdTestMode())
   const { selectedIds, toggleSelect, toggleAll, clearSelection, allSelected, handleBulkDelete: bulkDeleteRows } = useBulkSelect(rows)
 
   useEffect(() => { load() }, [])
@@ -117,6 +118,12 @@ export default function AdminAdPlacements() {
     } catch (e) {
       toast.error('Could not load placements: ' + e.message)
     }
+  }
+
+  function handleToggleTestMode() {
+    const next = setAdTestMode(!testMode)
+    setTestModeState(next)
+    toast.success(next ? 'Test ads on — this browser only' : 'Test ads off')
   }
 
   const filtered = useMemo(() => {
@@ -200,6 +207,43 @@ export default function AdminAdPlacements() {
       <div className="mb-5 rounded-xl border p-4 text-xs leading-relaxed" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)', background: 'var(--card-bg)' }}>
         <p><strong className="text-cyan-400">Setup:</strong> run the <code>ad_placements</code> migration to create the table, then add placements here. Until then, the site uses responsive AdSense units from <code>ADSENSE_CLIENT</code> and optional <code>ADSENSE_SLOT_*</code> values.</p>
         <p className="mt-1">Impressions are counted only when an ad is actually visible, and each visitor sees at most a few ads per session.</p>
+      </div>
+
+      <div
+        className="mb-5 rounded-xl border p-4"
+        style={{ borderColor: testMode ? '#f59e0b' : 'var(--border-color)', background: 'var(--card-bg)' }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>AdSense test mode</h2>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{ background: testMode ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.06)', color: testMode ? '#fbbf24' : 'var(--text-tertiary)' }}
+              >
+                {testMode ? 'On' : 'Off'}
+              </span>
+            </div>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+              Shows non-billable Google test ads in <strong>this browser only</strong>. Visitors keep seeing real ads, so your earnings are unaffected. Turn it off when you are done.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={testMode}
+            aria-label="AdSense test mode for this browser"
+            onClick={handleToggleTestMode}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${testMode ? 'bg-amber-500' : 'bg-white/15'}`}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${testMode ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+        {testMode && (
+          <p className="mt-3 text-[11px] text-amber-300">
+            Hard-refresh the page (Ctrl/Cmd + Shift + R) after toggling so AdSense re-reads the ad unit.
+          </p>
+        )}
       </div>
 
       {showNew && (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { getAdSenseClient, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
+import { getAdSenseClient, isAdTestMode, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
 
 const EASE = [0.16, 1, 0.3, 1]
 const SPRING_STIFF = { type: 'spring', stiffness: 70, damping: 16, mass: 0.6 }
@@ -106,6 +106,7 @@ function GoogleAdUnit() {
   const containerRef = useRef(null)
   const [loaded, setLoaded] = useState(false)
   const client = getAdSenseClient()
+  const testMode = isAdTestMode()
 
   useEffect(() => {
     let alive = true
@@ -119,7 +120,7 @@ function GoogleAdUnit() {
       alive = false
       window.clearTimeout(fallback)
     }
-  }, [client])
+  }, [client, testMode])
 
   return (
     <div ref={containerRef} className="relative w-full min-h-[320px] flex items-center justify-center">
@@ -136,6 +137,7 @@ function GoogleAdUnit() {
           style={{ display: 'block', width: '100%', minHeight: '260px' }}
           data-ad-client={client}
           data-ad-format="auto"
+          data-adtest={testMode ? 'on' : undefined}
           data-full-width-responsive="true"
         />
       </motion.div>

@@ -8,6 +8,8 @@ import {
   getAdSenseClient,
   getAdSenseSlot,
   isAdSenseEnabled,
+  isAdTestMode,
+  setAdTestMode,
   sanitizeAdClient,
   sanitizeAdSlot,
 } from '../src/lib/adsConfig.js'
@@ -69,6 +71,23 @@ check('ads: env vars use the unprefixed ADSENSE_ names', (() => {
     example.includes('ADSENSE_CLIENT=ca-pub-') &&
     !config.includes('VITE_ADSENSE') && !example.includes('VITE_ADSENSE') && !viteConfig.includes('VITE_ADSENSE')
 })())
+check('ads: test mode is browser-local, never an env var', (() => {
+  const config = read('src/lib/adsConfig.js')
+  return config.includes("AD_TEST_COOKIE = 'na_adtest'") &&
+    config.includes('document.cookie') &&
+    config.includes('SameSite=Lax') &&
+    !config.includes('env.ADSENSE_TEST')
+})())
+check('ads: test mode is off outside a browser',
+  isAdTestMode() === false && typeof setAdTestMode === 'function')
+check('ads: every ad unit carries the test attribute',
+  slot.includes("data-adtest={testMode ? 'on' : undefined}") &&
+  video.includes("data-adtest={testMode ? 'on' : undefined}"))
+check('ads: admin exposes a browser-only test switch',
+  admin.includes('role="switch"') &&
+  admin.includes('setAdTestMode(!testMode)') &&
+  admin.includes('this browser only') &&
+  admin.includes('aria-checked={testMode}'))
 check('ads: session frequency caps protect the experience',
   ads.includes('MAX_TOTAL_PER_SESSION') && ads.includes('sessionStorage'))
 check('ads: impressions and clicks are tracked without blocking',

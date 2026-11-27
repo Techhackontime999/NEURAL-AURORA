@@ -2,16 +2,17 @@ import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 import { useAdPlacement } from '../../lib/ads'
-import { AD_PROVIDERS, AD_SLOTS, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
+import { AD_PROVIDERS, AD_SLOTS, isAdTestMode, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
 
 function AdSenseUnit({ placement }) {
+  const testMode = isAdTestMode()
   useEffect(() => {
     let alive = true
     loadAdSenseScript(placement.ad_client).then((ready) => {
       if (alive && ready) pushAdSense()
     })
     return () => { alive = false }
-  }, [placement.ad_client, placement.ad_slot])
+  }, [placement.ad_client, placement.ad_slot, testMode])
 
   return (
     <ins
@@ -20,6 +21,7 @@ function AdSenseUnit({ placement }) {
       data-ad-client={placement.ad_client}
       data-ad-slot={placement.ad_slot || undefined}
       data-ad-format={AD_SLOTS[placement.slot]?.format || 'auto'}
+      data-adtest={testMode ? 'on' : undefined}
       data-full-width-responsive="true"
       aria-label="Advertisement"
     />

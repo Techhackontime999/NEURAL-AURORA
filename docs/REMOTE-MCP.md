@@ -66,7 +66,8 @@ All routes are served by the existing `/api/ai` Vercel function through `vercel.
 - one-time display of an issued client secret;
 - session listing and revocation;
 - pending action review and approve/reject;
-- redacted audit events with client, tool, outcome, error code and request id.
+- redacted audit events with client, tool, outcome, error code and request id;
+- a live discovery health check that warns when OAuth metadata still points at `localhost` or another origin.
 
 Externally visible and destructive tools are always staged first and require a second explicit confirmation through `mcp_confirm_pending_action` or dashboard approval followed by client confirmation. A staged action is bound to the owner, client, token, tool arguments hash and expiry; it cannot be replayed.
 

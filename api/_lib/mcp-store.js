@@ -156,6 +156,8 @@ async function listToolSettings(client = db()) {
   const byName = new Map(rows.map((row) => [row.tool_name, row]))
   return Array.from(TOOL_MAP.values()).map((tool) => ({
     name: tool.name,
+    title: tool.title,
+    description: tool.description,
     scope: tool.scope,
     risk: tool.risk,
     approval: tool.approval,

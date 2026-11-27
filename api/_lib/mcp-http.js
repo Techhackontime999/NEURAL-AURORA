@@ -330,12 +330,26 @@ async function requestDetailsHandler(req, res, deps) {
   const row = await deps.store.getAuthorizationRequest(bounded(query.request, 160), bounded(query.state, 512))
   if (!row) return oauthError(res, 404, 'invalid_request', 'Authorization request is invalid or expired.')
   const clientRow = await deps.store.findClient(row.client_id)
+  const toolNames = row.allowed_tools || []
+  const toolDetails = toolNames.map((name) => {
+    const tool = deps.policy.TOOL_MAP.get(name)
+    if (!tool) return { name, title: name, description: '', scope: '', risk: 'unknown', approval: 'always' }
+    return {
+      name: tool.name,
+      title: tool.title,
+      description: tool.description,
+      scope: tool.scope,
+      risk: tool.risk,
+      approval: tool.approval,
+    }
+  })
   return json(res, 200, {
     client_id: row.client_id,
     client_name: clientRow?.client_name || row.client_id,
     redirect_uri: row.redirect_uri,
     scopes: row.scopes || [],
-    tools: row.allowed_tools || [],
+    tools: toolNames,
+    tool_details: toolDetails,
     resource: row.resource,
     expires_at: row.expires_at,
     state: query.state,

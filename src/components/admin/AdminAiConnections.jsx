@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Activity,
+  AlertTriangle,
+  Ban,
+  CheckCircle2,
+  Copy,
+  FileText,
+  KeyRound,
+  Layers,
+  ListChecks,
+  Pencil,
+  PlugZap,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react'
 import { useToast } from '../../context/ToastContext'
 import { mcpAdminRequest } from '../../lib/mcpAdmin'
+import './ai-connections.css'
 
 const emptyForm = {
   name: '',
@@ -8,6 +25,24 @@ const emptyForm = {
   tools: [],
   authMethod: 'none',
   offline: true,
+}
+
+const SCOPE_LABELS = {
+  'profile:read': 'Identity',
+  'content:read': 'Portfolio content',
+  'content:write': 'Content changes',
+  'crm:read': 'Inquiries',
+  'orders:read': 'Order summaries',
+  'analytics:read': 'Analytics',
+  'tasks:write': 'Internal work',
+  'offline_access': 'Refresh tokens',
+}
+
+const RISK_LABELS = {
+  read: 'Read',
+  write: 'Write',
+  external: 'External',
+  destructive: 'Destructive',
 }
 
 function formatDate(value) {
@@ -21,6 +56,83 @@ function short(value, length = 90) {
   return text.length > length ? `${text.slice(0, length)}…` : text
 }
 
+function Switch({ checked, onChange, label, disabled = false }) {
+  return (
+    <label className="mcp-switch" title={label}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        aria-label={label}
+        disabled={disabled}
+      />
+      <span className="mcp-switch-track" aria-hidden="true">
+        <span className="mcp-switch-thumb" />
+      </span>
+    </label>
+  )
+}
+
+function CopyButton({ value, toast, label = 'Copied' }) {
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(`${label} copied.`)
+    } catch {
+      toast.error('Copy failed. Select the value and copy it manually.')
+    }
+  }
+  return (
+    <button
+      type="button"
+      className="mcp-icon-btn"
+      onClick={copy}
+      aria-label={`Copy ${label.toLowerCase()}`}
+      title={`Copy ${label.toLowerCase()}`}
+    >
+      <Copy size={14} />
+    </button>
+  )
+}
+
+function SectionHead({ eyebrow, title, sub, action }) {
+  return (
+    <div className="mcp-section-head">
+      <div>
+        <div className="mcp-eyebrow">{eyebrow}</div>
+        <h2 className="mcp-h2">{title}</h2>
+        {sub && <p className="mcp-sub">{sub}</p>}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+function Pill({ children, variant = '' }) {
+  return <span className={`mcp-badge ${variant ? `mcp-badge-${variant}` : ''}`}>{children}</span>
+}
+
+function Empty({ icon: Icon, children }) {
+  return (
+    <div className="mcp-empty">
+      <span className="mcp-empty-icon"><Icon size={17} /></span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function EndpointChip({ label, value, toast }) {
+  return (
+    <div className="mcp-field">
+      <span className="mcp-endpoint-label">{label}</span>
+      <div className="mcp-endpoint-row">
+        <code className="mcp-mono" title={value}>{short(value, 48)}</code>
+        <CopyButton value={value} toast={toast} label={label} />
+      </div>
+    </div>
+  )
+}
+
 export default function AdminAiConnections() {
   const { toast, confirm } = useToast()
   const [data, setData] = useState(null)
@@ -29,6 +141,10 @@ export default function AdminAiConnections() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState('')
   const [newSecret, setNewSecret] = useState('')
+  const [health, setHealth] = useState(null)
+
+  const siteOrigin = typeof window === 'undefined' ? '' : window.location.origin
+  const mcpUrl = siteOrigin ? `${siteOrigin}/api/mcp` : '/api/mcp'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -46,6 +162,30 @@ export default function AdminAiConnections() {
     load()
   }, [load])
 
+  useEffect(() => {
+    if (!siteOrigin) return undefined
+    let active = true
+    Promise.all([
+      fetch('/.well-known/oauth-authorization-server', { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null),
+      fetch('/.well-known/oauth-protected-resource', { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null),
+    ]).then(([authorizationServer, protectedResource]) => {
+      if (!active) return
+      setHealth({
+        issuer: authorizationServer?.issuer || '',
+        resource: protectedResource?.resource || '',
+        issuerOk: authorizationServer?.issuer === siteOrigin,
+        resourceOk: protectedResource?.resource === `${siteOrigin}/api/mcp`,
+      })
+    })
+    return () => {
+      active = false
+    }
+  }, [siteOrigin])
+
   const tools = data?.tools || []
   const scopeFor = useMemo(() => {
     const map = {}
@@ -53,11 +193,25 @@ export default function AdminAiConnections() {
     return map
   }, [tools])
 
+  const toolGroups = useMemo(() => {
+    const groups = new Map()
+    for (const tool of tools) {
+      const key = tool.scope || 'other'
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key).push(tool)
+    }
+    return [...groups.entries()]
+  }, [tools])
+
   const selectedScopes = useMemo(() => {
     const scopes = new Set(form.tools.map((tool) => scopeFor[tool]).filter(Boolean))
     if (form.offline) scopes.add('offline_access')
     return [...scopes]
   }, [form.tools, form.offline, scopeFor])
+
+  const activeSessions = (data?.tokens || []).filter((token) => !token.revoked_at).length
+  const pendingActions = (data?.pending || []).filter((item) => !item.used_at && !item.decision).length
+  const discoveryOk = health?.issuerOk && health?.resourceOk
 
   function toggleTool(name) {
     setForm((current) => ({
@@ -127,7 +281,23 @@ export default function AdminAiConnections() {
     try {
       await mcpAdminRequest('tool', {
         method: 'POST',
-        body: { tool: tool.name, enabled: patch.enabled ?? tool.enabled, requireApproval: patch.requireApproval ?? tool.require_approval },
+        body: {
+          tool: tool.name,
+          enabled: patch.enabled ?? tool.enabled,
+          requireApproval: patch.requireApproval ?? tool.require_approval,
+        },
+      })
+      await load()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  async function toggleClient(client) {
+    try {
+      await mcpAdminRequest('client-update', {
+        method: 'POST',
+        body: { clientId: client.client_id, enabled: !client.enabled },
       })
       await load()
     } catch (err) {
@@ -179,106 +349,175 @@ export default function AdminAiConnections() {
     }
   }
 
-  const cardStyle = {
-    borderColor: 'var(--border-color)',
-    background: 'var(--bg-secondary)',
-  }
-  const muted = { color: 'var(--text-tertiary)' }
-  const inputStyle = {
-    background: 'var(--bg-primary)',
-    borderColor: 'var(--border-color)',
-    color: 'var(--text-primary)',
-  }
-  const buttonClass = 'rounded-lg border px-3 py-1.5 text-xs transition-colors hover:brightness-110'
-  const inputClass = 'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40'
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>AI Connections</h1>
-        <p className="mt-1 max-w-3xl text-sm" style={muted}>
-          Connect compatible external AI clients through a read-by-default, default-deny MCP server. Neural Aurora never
-          runs a model or sends your data to a model provider; the client does the reasoning and calls only the tools you approve.
-        </p>
+    <div className="mcp-page">
+      <div className="mcp-hero">
+        <div className="mcp-hero-grid">
+          <div>
+            <span className="mcp-kicker">External AI access</span>
+            <h1 className="mcp-h1">AI Connections</h1>
+            <p className="mcp-lede">
+              Connect approved AI clients through one standards-based MCP endpoint. Neural Aurora never runs a model or
+              sends your portfolio data to a model provider. The client reasons; you decide which tools it can call.
+            </p>
+          </div>
+          <div className="mcp-endpoint">
+            <span className="mcp-endpoint-label">MCP endpoint</span>
+            <div className="mcp-endpoint-row">
+              <code title={mcpUrl}>{mcpUrl}</code>
+              <CopyButton value={mcpUrl} toast={toast} label="MCP endpoint" />
+            </div>
+            <span className="mcp-sub">Use this URL in ChatGPT, Claude, Cursor, or any HTTP MCP client.</span>
+          </div>
+        </div>
       </div>
 
-      {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>
+      <div className="mcp-stats">
+        <div className="mcp-stat">
+          <span className="mcp-stat-icon"><ShieldCheck size={18} /></span>
+          <div>
+            <div className="mcp-stat-value">{data?.settings?.enabled ? 'Enabled' : 'Disabled'}</div>
+            <div className="mcp-stat-label">External access</div>
+          </div>
+        </div>
+        <div className="mcp-stat">
+          <span className="mcp-stat-icon"><PlugZap size={18} /></span>
+          <div>
+            <div className="mcp-stat-value">{data?.clients?.length ?? 0}</div>
+            <div className="mcp-stat-label">Registered clients</div>
+          </div>
+        </div>
+        <div className="mcp-stat">
+          <span className="mcp-stat-icon"><KeyRound size={18} /></span>
+          <div>
+            <div className="mcp-stat-value">{activeSessions}</div>
+            <div className="mcp-stat-label">Active sessions</div>
+          </div>
+        </div>
+        <div className="mcp-stat">
+          <span className="mcp-stat-icon"><Activity size={18} /></span>
+          <div>
+            <div className="mcp-stat-value">{data?.audit?.length ?? 0}</div>
+            <div className="mcp-stat-label">Audit events</div>
+          </div>
+        </div>
+      </div>
+
+      {health && !discoveryOk && (
+        <div className="mcp-banner mcp-banner-warn">
+          <AlertTriangle size={17} />
+          <div>
+            <strong>OAuth discovery is not bound to this site.</strong>{' '}
+            Clients will be sent to <code className="mcp-mono">{health.issuer || 'an unknown origin'}</code>{' '}
+            instead of <code className="mcp-mono">{siteOrigin}</code>. Set{' '}
+            <code className="mcp-mono">SITE_URL={siteOrigin}</code> in Vercel, redeploy, then refresh this page.
+          </div>
+        </div>
       )}
-      {loading && !data && <div className="text-sm" style={muted}>Loading connections…</div>}
+
+      {health && discoveryOk && (
+        <div className="mcp-banner mcp-banner-ok">
+          <CheckCircle2 size={17} />
+          <div>
+            <strong>OAuth discovery is healthy.</strong> Clients will return here for owner consent, and the resource
+            indicator resolves to this MCP endpoint.
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mcp-error"><AlertTriangle size={16} /><span>{error}</span></div>
+      )}
+
+      {loading && !data && (
+        <div className="mcp-loading"><span className="mcp-spinner" />Loading connections…</div>
+      )}
 
       {data && (
         <>
-          <section className="rounded-2xl border p-5" style={cardStyle}>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Access control</h2>
-            <p className="mt-1 text-xs" style={muted}>
-              External access is off until you enable it. Approval requirements never remove explicit confirmation for
-              externally visible or destructive tools.
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--border-color)' }}>
-                <input
-                  type="checkbox"
+          <section className="mcp-section">
+            <SectionHead
+              eyebrow="Start here"
+              title="Access control"
+              sub="External access is off until you enable it. Approval requirements are a floor: externally visible and destructive tools always need a second confirmation."
+            />
+            <div className="mcp-grid-2">
+              <div className="mcp-switch-row">
+                <div className="mcp-switch-copy">
+                  <div className="mcp-switch-title">Enable MCP access</div>
+                  <div className="mcp-switch-desc">Allow approved clients to call tools after owner consent.</div>
+                </div>
+                <Switch
                   checked={Boolean(data.settings.enabled)}
-                  onChange={(event) => updateSetting({ enabled: event.target.checked })}
+                  onChange={(enabled) => updateSetting({ enabled })}
+                  label="Enable MCP access"
                 />
-                <span style={{ color: 'var(--text-primary)' }}>Enable MCP access for approved clients</span>
-              </label>
-              <label className="flex items-center gap-3 rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--border-color)' }}>
-                <input
-                  type="checkbox"
+              </div>
+              <div className="mcp-switch-row">
+                <div className="mcp-switch-copy">
+                  <div className="mcp-switch-title">Approve internal writes</div>
+                  <div className="mcp-switch-desc">Require a second confirmation for internal task and report changes.</div>
+                </div>
+                <Switch
                   checked={data.settings.require_approval_default !== false}
-                  onChange={(event) => updateSetting({ requireApprovalDefault: event.target.checked })}
+                  onChange={(requireApprovalDefault) => updateSetting({ requireApprovalDefault })}
+                  label="Require approval for internal write tools"
                 />
-                <span style={{ color: 'var(--text-primary)' }}>Require approval for internal write tools by default</span>
-              </label>
+              </div>
+            </div>
+
+            <div className="mcp-steps">
+              <div className="mcp-step"><strong>Add the endpoint</strong>Paste the MCP URL into your client and choose OAuth.</div>
+              <div className="mcp-step"><strong>Approve the client</strong>Sign in as owner and review the exact redirect, scopes and tools.</div>
+              <div className="mcp-step"><strong>Grant only what is needed</strong>Tools you do not tick never appear in the client.</div>
+              <div className="mcp-step"><strong>Confirm public changes</strong>Publishing and deletion stay staged until explicitly confirmed.</div>
+            </div>
+
+            <div className="mcp-grid-3" style={{ marginTop: 16 }}>
+              <EndpointChip label="Authorization" value={`${siteOrigin}/api/mcp/authorize`} toast={toast} />
+              <EndpointChip label="Token" value={`${siteOrigin}/api/mcp/token`} toast={toast} />
+              <EndpointChip label="Registration" value={`${siteOrigin}/api/mcp/register`} toast={toast} />
             </div>
           </section>
 
-          <section className="rounded-2xl border p-5" style={cardStyle}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {editingId ? 'Edit client permissions' : 'Register a client'}
-                </h2>
-                <p className="mt-1 text-xs" style={muted}>
-                  Exact redirect URI matching, PKCE and owner consent are required. A secret is shown only once.
-                </p>
-              </div>
-              {editingId && (
-                <button type="button" className={buttonClass} style={inputStyle} onClick={resetForm}>
+          <section className="mcp-section">
+            <SectionHead
+              eyebrow="Clients"
+              title={editingId ? 'Edit client permissions' : 'Register a client'}
+              sub="Exact redirect URI matching, PKCE and owner consent are required. A client secret is shown only once."
+              action={editingId ? (
+                <button type="button" className="mcp-btn mcp-btn-quiet" onClick={resetForm}>
                   Cancel edit
                 </button>
-              )}
-            </div>
-            <form className="mt-4 grid gap-4 lg:grid-cols-2" onSubmit={saveClient}>
-              <label className="block text-sm" style={{ color: 'var(--text-secondary)' }}>
+              ) : null}
+            />
+
+            <form className="mcp-grid-2" style={{ marginTop: 18 }} onSubmit={saveClient}>
+              <label className="mcp-field">
                 Client name
                 <input
-                  className={`${inputClass} mt-1`}
-                  style={inputStyle}
+                  className="mcp-input"
                   value={form.name}
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
                   maxLength={80}
+                  placeholder="ChatGPT"
                   required
                 />
               </label>
-              <label className="block text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <label className="mcp-field">
                 Redirect URI
                 <input
-                  className={`${inputClass} mt-1`}
-                  style={inputStyle}
+                  className="mcp-input"
                   value={form.redirectUri}
                   onChange={(event) => setForm({ ...form, redirectUri: event.target.value })}
                   placeholder="https://client.example.com/oauth/callback"
                   required
                 />
               </label>
-              <label className="block text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <label className="mcp-field">
                 Token endpoint auth
                 <select
-                  className={`${inputClass} mt-1`}
-                  style={inputStyle}
+                  className="mcp-select"
                   value={form.authMethod}
                   onChange={(event) => setForm({ ...form, authMethod: event.target.value })}
                 >
@@ -286,123 +525,188 @@ export default function AdminAiConnections() {
                   <option value="client_secret_post">Client secret (POST)</option>
                 </select>
               </label>
-              <label className="flex items-center gap-3 self-end rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--border-color)' }}>
-                <input
-                  type="checkbox"
-                  checked={form.offline}
-                  onChange={(event) => setForm({ ...form, offline: event.target.checked })}
-                />
-                <span>Allow long-lived refresh tokens</span>
-              </label>
-              <div className="lg:col-span-2">
-                <p className="mb-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Allowed tools</p>
-                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                  {tools.map((tool) => (
-                    <label key={tool.name} className="flex items-start gap-2 rounded-lg border p-2 text-xs" style={{ borderColor: 'var(--border-color)' }}>
-                      <input
-                        type="checkbox"
-                        checked={form.tools.includes(tool.name)}
-                        onChange={() => toggleTool(tool.name)}
-                      />
-                      <span>
-                        <span className="block font-mono" style={{ color: 'var(--text-primary)' }}>{tool.name}</span>
-                        <span style={muted}>{tool.scope} · {tool.risk}{tool.approval === 'always' ? ' · confirmation always required' : ''}</span>
-                      </span>
-                    </label>
-                  ))}
+              <div className="mcp-switch-row">
+                <div className="mcp-switch-copy">
+                  <div className="mcp-switch-title">Allow refresh tokens</div>
+                  <div className="mcp-switch-desc">Rotated on every use; old tokens cannot be replayed.</div>
                 </div>
-                <p className="mt-2 text-xs" style={muted}>Scopes granted: {selectedScopes.join(' ') || '(none)'}</p>
+                <Switch
+                  checked={form.offline}
+                  onChange={(offline) => setForm({ ...form, offline })}
+                  label="Allow long-lived refresh tokens"
+                />
               </div>
-              <div className="flex items-center gap-3 lg:col-span-2">
-                <button type="submit" className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400">
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div className="mcp-tool-group-title"><Layers size={13} /> Allowed tools</div>
+                {toolGroups.map(([scope, group]) => (
+                  <div className="mcp-tool-group" key={scope}>
+                    <div className="mcp-tool-group-title">
+                      <span>{SCOPE_LABELS[scope] || scope}</span>
+                      <Pill variant="cyan">{scope}</Pill>
+                    </div>
+                    <div className="mcp-tool-grid">
+                      {group.map((tool) => (
+                        <label
+                          key={tool.name}
+                          className={`mcp-tool-option ${form.tools.includes(tool.name) ? 'is-selected' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={form.tools.includes(tool.name)}
+                            onChange={() => toggleTool(tool.name)}
+                          />
+                          <span>
+                            <span className="mcp-tool-name">{tool.title || tool.name}</span>
+                            <span className="mcp-tool-meta">{tool.name}</span>
+                            <span className="mcp-tool-desc">
+                              {tool.description}
+                              {' '}
+                              <Pill variant={tool.risk === 'read' ? '' : tool.risk === 'destructive' ? 'red' : 'amber'}>
+                                {RISK_LABELS[tool.risk] || tool.risk}
+                              </Pill>
+                              {tool.approval === 'always' && <Pill variant="amber">confirm always</Pill>}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="mcp-sub" style={{ marginTop: 12 }}>
+                  Scopes granted: <span className="mcp-mono">{selectedScopes.join(' ') || '(none)'}</span>
+                </p>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button type="submit" className="mcp-btn mcp-btn-primary">
+                  <CheckCircle2 size={15} />
                   {editingId ? 'Save permissions' : 'Register client'}
                 </button>
-                <span className="text-xs" style={muted}>Payments, licensing, credentials, admin roles, raw DB/HTTP/shell access are never available.</span>
+                <span className="mcp-sub">
+                  Payments, licensing, credentials, admin roles, raw DB/HTTP/shell access are never available.
+                </span>
               </div>
             </form>
+
             {newSecret && (
-              <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs" style={{ color: 'var(--text-primary)' }}>
-                Copy this client secret now; it is not stored in plaintext: <code className="break-all">{newSecret}</code>
+              <div className="mcp-secret">
+                <div>
+                  <strong>Copy this client secret now.</strong> It is stored only as a hash and cannot be shown again.
+                  <code>{newSecret}</code>
+                </div>
+                <CopyButton value={newSecret} toast={toast} label="Client secret" />
               </div>
             )}
           </section>
 
-          <section className="rounded-2xl border p-5" style={cardStyle}>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Registered clients</h2>
-            {!data.clients.length && <p className="mt-2 text-sm" style={muted}>No clients registered.</p>}
-            <div className="mt-3 space-y-3">
-              {data.clients.map((client) => (
-                <div key={client.client_id} className="rounded-xl border p-3" style={{ borderColor: 'var(--border-color)' }}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{client.client_name}</p>
-                      <p className="break-all font-mono text-xs" style={muted}>{client.client_id}</p>
-                      <p className="mt-1 break-all text-xs" style={muted}>{(client.redirect_uris || []).join(', ')}</p>
-                      <p className="mt-1 text-xs" style={muted}>
-                        {(client.allowed_tools || []).length} tools · {(client.allowed_scopes || []).join(' ') || 'no scopes'} ·
-                        {' '}{client.revoked_at ? `revoked ${formatDate(client.revoked_at)}` : client.enabled ? 'enabled' : 'disabled'}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" className={buttonClass} style={inputStyle} onClick={() => startEdit(client)}>Edit</button>
-                      {!client.revoked_at && (
-                        <button
-                          type="button"
-                          className={buttonClass}
-                          style={inputStyle}
-                          onClick={async () => {
-                            try {
-                              await mcpAdminRequest('client-update', {
-                                method: 'POST',
-                                body: { clientId: client.client_id, enabled: !client.enabled },
-                              })
-                              await load()
-                            } catch (err) {
-                              toast.error(err.message)
-                            }
-                          }}
-                        >
-                          {client.enabled ? 'Disable' : 'Enable'}
-                        </button>
-                      )}
-                      {!client.revoked_at && (
-                        <button type="button" className={buttonClass} style={inputStyle} onClick={() => revokeClient(client)}>Revoke</button>
-                      )}
+          <section className="mcp-section">
+            <SectionHead
+              eyebrow="Registry"
+              title="Registered clients"
+              sub="Every client is bound to the current owner and can be disabled or revoked at any time."
+              action={<Pill variant={data.clients.length ? 'green' : ''}>{data.clients.length} total</Pill>}
+            />
+            {!data.clients.length ? (
+              <div style={{ marginTop: 16 }}>
+                <Empty icon={PlugZap}>No clients registered yet.</Empty>
+              </div>
+            ) : (
+              <div className="mcp-list">
+                {data.clients.map((client) => (
+                  <div className="mcp-list-item" key={client.client_id}>
+                    <div className="mcp-list-top">
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span className="mcp-list-title">{client.client_name}</span>
+                          {client.revoked_at ? (
+                            <Pill variant="red">revoked</Pill>
+                          ) : client.enabled ? (
+                            <Pill variant="green">enabled</Pill>
+                          ) : (
+                            <Pill variant="amber">disabled</Pill>
+                          )}
+                        </div>
+                        <div className="mcp-mono" style={{ marginTop: 5 }}>{client.client_id}</div>
+                        <div className="mcp-list-meta">{short((client.redirect_uris || []).join(', '), 140)}</div>
+                        <div className="mcp-list-meta">
+                          {(client.allowed_tools || []).length} tools ·{' '}
+                          {(client.allowed_scopes || []).join(' ') || 'no scopes'} ·{' '}
+                          {client.revoked_at ? `revoked ${formatDate(client.revoked_at)}` : 'active'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <CopyButton value={client.client_id} toast={toast} label="Client ID" />
+                        <div className="mcp-row-actions">
+                          <button type="button" className="mcp-btn" onClick={() => startEdit(client)}>
+                            <Pencil size={14} /> Edit
+                          </button>
+                          {!client.revoked_at && (
+                            <button type="button" className="mcp-btn" onClick={() => toggleClient(client)}>
+                              <RefreshCw size={14} /> {client.enabled ? 'Disable' : 'Enable'}
+                            </button>
+                          )}
+                          {!client.revoked_at && (
+                            <button type="button" className="mcp-btn mcp-btn-danger" onClick={() => revokeClient(client)}>
+                              <Ban size={14} /> Revoke
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
 
-          <section className="rounded-2xl border p-5" style={cardStyle}>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Tool permissions</h2>
-            <p className="mt-1 text-xs" style={muted}>Global off switch and approval requirement. A client must also be granted the tool and its scope.</p>
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[680px] text-left text-xs">
-                <thead style={muted}>
-                  <tr><th className="py-2">Tool</th><th>Scope</th><th>Risk</th><th>Enabled</th><th>Require approval</th></tr>
+          <section className="mcp-section">
+            <SectionHead
+              eyebrow="Policy"
+              title="Tool permissions"
+              sub="Global switches apply to every connection. A client must also be granted the tool and its scope before it appears."
+            />
+            <div className="mcp-table-wrap">
+              <table className="mcp-table">
+                <thead>
+                  <tr>
+                    <th>Tool</th>
+                    <th>Scope</th>
+                    <th>Risk</th>
+                    <th>Enabled</th>
+                    <th>Confirmation</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {tools.map((tool) => (
-                    <tr key={tool.name} className="border-t" style={{ borderColor: 'var(--border-color)' }}>
-                      <td className="py-2 font-mono" style={{ color: 'var(--text-primary)' }}>{tool.name}</td>
-                      <td>{tool.scope}</td>
-                      <td>{tool.risk}</td>
+                    <tr key={tool.name}>
                       <td>
-                        <input
-                          type="checkbox"
+                        <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{tool.title || tool.name}</div>
+                        <div className="mcp-mono">{tool.name}</div>
+                      </td>
+                      <td><Pill variant="cyan">{tool.scope}</Pill></td>
+                      <td>
+                        <Pill variant={tool.risk === 'read' ? '' : tool.risk === 'destructive' ? 'red' : 'amber'}>
+                          {RISK_LABELS[tool.risk] || tool.risk}
+                        </Pill>
+                      </td>
+                      <td>
+                        <Switch
                           checked={tool.enabled !== false}
-                          onChange={(event) => updateTool(tool, { enabled: event.target.checked })}
+                          onChange={(enabled) => updateTool(tool, { enabled })}
+                          label={`Enable ${tool.title || tool.name}`}
                         />
                       </td>
                       <td>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(tool.require_approval)}
-                          onChange={(event) => updateTool(tool, { requireApproval: event.target.checked })}
-                        />
-                        {tool.approval === 'always' && <span className="ml-2" style={muted}>always</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Switch
+                            checked={tool.approval === 'always' || Boolean(tool.require_approval)}
+                            onChange={(requireApproval) => updateTool(tool, { requireApproval })}
+                            label={`Require confirmation for ${tool.title || tool.name}`}
+                            disabled={tool.approval === 'always'}
+                          />
+                          {tool.approval === 'always' && <Pill variant="amber">always</Pill>}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -411,71 +715,118 @@ export default function AdminAiConnections() {
             </div>
           </section>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section className="rounded-2xl border p-5" style={cardStyle}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Active sessions</h2>
-              {!data.tokens.length && <p className="mt-2 text-sm" style={muted}>No sessions.</p>}
-              <div className="mt-3 space-y-2">
-                {data.tokens.map((token) => (
-                  <div key={token.id} className="rounded-lg border p-3 text-xs" style={{ borderColor: 'var(--border-color)' }}>
-                    <p className="font-mono" style={{ color: 'var(--text-primary)' }}>{token.client_id}</p>
-                    <p style={muted}>
-                      {token.scopes?.join(' ') || 'no scopes'} · expires {formatDate(token.expires_at)} ·
-                      {' '}{token.revoked_at ? `revoked ${formatDate(token.revoked_at)}` : 'active'}
-                    </p>
-                    {!token.revoked_at && (
-                      <button type="button" className={`${buttonClass} mt-2`} style={inputStyle} onClick={() => revokeToken(token)}>
-                        Revoke session
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="mcp-grid-2">
+            <section className="mcp-section">
+              <SectionHead
+                eyebrow="Sessions"
+                title="Active sessions"
+                sub="Revoking a session forces the client to reconnect and complete consent again."
+              />
+              {!data.tokens.length ? (
+                <div style={{ marginTop: 16 }}><Empty icon={KeyRound}>No sessions.</Empty></div>
+              ) : (
+                <div className="mcp-list">
+                  {data.tokens.map((token) => (
+                    <div className="mcp-list-item" key={token.id}>
+                      <div className="mcp-list-top">
+                        <div style={{ minWidth: 0 }}>
+                          <div className="mcp-mono" style={{ color: 'var(--text-primary)' }}>{token.client_id}</div>
+                          <div className="mcp-list-meta">
+                            {(token.scopes || []).join(' ') || 'no scopes'} · expires {formatDate(token.expires_at)}
+                          </div>
+                          <div className="mcp-list-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {token.revoked_at ? <Pill variant="red">revoked</Pill> : <Pill variant="green">active</Pill>}
+                            {token.revoked_at && <span>{formatDate(token.revoked_at)}</span>}
+                          </div>
+                        </div>
+                        {!token.revoked_at && (
+                          <button type="button" className="mcp-btn mcp-btn-danger" onClick={() => revokeToken(token)}>
+                            <Trash2 size={14} /> Revoke
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
-            <section className="rounded-2xl border p-5" style={cardStyle}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Pending confirmations</h2>
-              {!data.pending.length && <p className="mt-2 text-sm" style={muted}>No staged actions.</p>}
-              <div className="mt-3 space-y-2">
-                {data.pending.map((item) => (
-                  <div key={item.id} className="rounded-lg border p-3 text-xs" style={{ borderColor: 'var(--border-color)' }}>
-                    <p className="font-mono" style={{ color: 'var(--text-primary)' }}>{item.tool_name}</p>
-                    <p style={muted}>{short(item.summary, 160)}</p>
-                    <p style={muted}>{item.client_id} · expires {formatDate(item.expires_at)} · {item.decision || 'awaiting decision'}</p>
-                    {!item.used_at && !item.decision && (
-                      <div className="mt-2 flex gap-2">
-                        <button type="button" className={buttonClass} style={inputStyle} onClick={() => decidePending(item, 'approved')}>Approve</button>
-                        <button type="button" className={buttonClass} style={inputStyle} onClick={() => decidePending(item, 'rejected')}>Reject</button>
+            <section className="mcp-section">
+              <SectionHead
+                eyebrow="Confirmations"
+                title="Pending actions"
+                sub="Externally visible and destructive tools wait here until the owner and client both confirm."
+                action={<Pill variant={pendingActions ? 'amber' : ''}>{pendingActions} waiting</Pill>}
+              />
+              {!data.pending.length ? (
+                <div style={{ marginTop: 16 }}><Empty icon={ListChecks}>No staged actions.</Empty></div>
+              ) : (
+                <div className="mcp-list">
+                  {data.pending.map((item) => (
+                    <div className="mcp-list-item" key={item.id}>
+                      <div className="mcp-list-title">{item.tool_name}</div>
+                      <div className="mcp-list-meta">{short(item.summary, 180)}</div>
+                      <div className="mcp-list-meta">
+                        {item.client_id} · expires {formatDate(item.expires_at)} · {item.decision || 'awaiting decision'}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {!item.used_at && !item.decision && (
+                        <div className="mcp-row-actions" style={{ marginTop: 12 }}>
+                          <button type="button" className="mcp-btn mcp-btn-primary" onClick={() => decidePending(item, 'approved')}>
+                            <CheckCircle2 size={14} /> Approve
+                          </button>
+                          <button type="button" className="mcp-btn" onClick={() => decidePending(item, 'rejected')}>
+                            <Ban size={14} /> Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
 
-          <section className="rounded-2xl border p-5" style={cardStyle}>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Audit log</h2>
-            <p className="mt-1 text-xs" style={muted}>Values are redacted before storage. Tool arguments are recorded as key names only.</p>
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-xs">
-                <thead style={muted}>
-                  <tr><th className="py-2">Time</th><th>Event</th><th>Tool</th><th>Client</th><th>Outcome</th><th>Summary</th></tr>
-                </thead>
-                <tbody>
-                  {data.audit.map((entry) => (
-                    <tr key={entry.id} className="border-t" style={{ borderColor: 'var(--border-color)' }}>
-                      <td className="py-2">{formatDate(entry.created_at)}</td>
-                      <td>{entry.event_type}</td>
-                      <td className="font-mono">{entry.tool_name || '—'}</td>
-                      <td className="font-mono">{short(entry.client_id, 24)}</td>
-                      <td>{entry.outcome}{entry.error_code ? ` (${entry.error_code})` : ''}</td>
-                      <td>{short(entry.summary, 180)}</td>
+          <section className="mcp-section">
+            <SectionHead
+              eyebrow="Accountability"
+              title="Audit log"
+              sub="Redacted before storage. Tool arguments are recorded as key names only; tokens, secrets and customer identifiers are not written here."
+              action={<Pill>{data.audit.length} events</Pill>}
+            />
+            {!data.audit.length ? (
+              <div style={{ marginTop: 16 }}><Empty icon={FileText}>No tool activity yet.</Empty></div>
+            ) : (
+              <div className="mcp-table-wrap">
+                <table className="mcp-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Event</th>
+                      <th>Tool</th>
+                      <th>Client</th>
+                      <th>Outcome</th>
+                      <th>Summary</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {data.audit.map((entry) => (
+                      <tr key={entry.id}>
+                        <td>{formatDate(entry.created_at)}</td>
+                        <td><Pill>{entry.event_type}</Pill></td>
+                        <td className="mcp-mono">{entry.tool_name || '—'}</td>
+                        <td className="mcp-mono">{short(entry.client_id, 24)}</td>
+                        <td>
+                          <Pill variant={entry.outcome === 'success' ? 'green' : entry.outcome === 'denied' ? 'red' : ''}>
+                            {entry.outcome}{entry.error_code ? ` · ${entry.error_code}` : ''}
+                          </Pill>
+                        </td>
+                        <td>{short(entry.summary, 180)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         </>
       )}

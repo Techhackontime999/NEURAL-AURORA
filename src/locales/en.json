@@ -935,6 +935,7 @@
     "sponsored": "Sponsored",
     "videoUnavailable": "Video unavailable",
     "unavailable": "Unavailable",
+    "adUnavailable": "Ad unavailable",
     "adComplete": "Ad Complete",
     "enteringIn": "Entering in {{count}}s",
     "skip": "Skip",

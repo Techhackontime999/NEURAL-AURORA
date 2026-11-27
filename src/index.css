@@ -482,14 +482,19 @@
   }
 }
 
-/* AdSense marks units it could not fill. Collapse the whole labelled box so
-   an empty ad never leaves a blank card in the layout. */
+/* AdSense marks units it could not fill. Hide the empty <ins> but keep the
+   labelled box and show a quiet fallback so the layout never flashes away. */
 ins.adsbygoogle[data-ad-status='unfilled'] {
   display: none !important;
 }
 
-aside:has(> ins.adsbygoogle[data-ad-status='unfilled']) {
-  display: none !important;
+.adsense-fallback {
+  display: none;
+}
+
+.adsense-fallback[data-visible='true'],
+aside:has(> ins.adsbygoogle[data-ad-status='unfilled']) .adsense-fallback {
+  display: flex;
 }
 
 @layer utilities {

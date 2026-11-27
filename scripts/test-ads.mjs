@@ -97,8 +97,10 @@ check('ads: session frequency caps protect the experience',
 check('ads: impressions and clicks are tracked without blocking',
   ads.includes('markAdImpression') && ads.includes('markAdClick') && ads.includes('record_ad_event'))
 check('ads: only visible units count as impressions', slot.includes('IntersectionObserver'))
-check('ads: unfilled units collapse instead of leaving blank boxes',
-  css.includes("ins.adsbygoogle[data-ad-status='unfilled']") && css.includes("aside:has(> ins.adsbygoogle[data-ad-status='unfilled'])"))
+check('ads: unfilled units show a fallback instead of an empty card',
+  css.includes("ins.adsbygoogle[data-ad-status='unfilled']") &&
+  css.includes("aside:has(> ins.adsbygoogle[data-ad-status='unfilled']) .adsense-fallback") &&
+  slot.includes('Sponsored space'))
 check('ads: every unit is labelled for readers', slot.includes('aria-label={label}'))
 check('ads: external links are rel=sponsored', slot.includes("'sponsored noopener noreferrer'"))
 check('ads: AdSense runtime loads only near the viewport',
@@ -113,6 +115,10 @@ check('ads: admins see impressions, clicks and CTR',
   admin.includes('Ad placement performance') && admin.includes("label: 'CTR'"))
 check('ads: gateway ads cannot complete in a hidden tab',
   video.includes("document.visibilityState !== 'visible'") && video.includes('onCompleteRef.current()'))
+check('ads: unfilled gateway ads show an honest fallback',
+  video.includes('adsense-fallback') &&
+  video.includes("ins.dataset.adStatus === 'unfilled'") &&
+  read('src/locales/en.json').includes('"adUnavailable": "Ad unavailable"'))
 check('coverage: home and the more hub are monetized',
   read('src/App.jsx').includes('slot="home_footer"') &&
   read('src/components/More.jsx').includes('slot="more_hub"'))

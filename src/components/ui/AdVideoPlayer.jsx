@@ -105,21 +105,39 @@ function GoogleAdUnit() {
   const shouldReduceMotion = useReducedMotion()
   const containerRef = useRef(null)
   const [loaded, setLoaded] = useState(false)
+  const [unfilled, setUnfilled] = useState(false)
   const client = getAdSenseClient()
   const testMode = isAdTestMode()
 
   useEffect(() => {
     let alive = true
+    setUnfilled(false)
     const fallback = window.setTimeout(() => setLoaded(true), 5000)
     loadAdSenseScript(client).then((ready) => {
       if (!alive) return
       if (ready) pushAdSense()
+      else setUnfilled(true)
       setLoaded(true)
     })
     return () => {
       alive = false
       window.clearTimeout(fallback)
     }
+  }, [client, testMode])
+
+  // Google marks an unfilled <ins> instead of removing it. Mirror the placement
+  // fallback here so the gateway never leaves an empty animated container.
+  useEffect(() => {
+    const ins = containerRef.current?.querySelector('ins.adsbygoogle')
+    if (!ins) return undefined
+    const sync = () => {
+      if (ins.dataset.adStatus === 'unfilled') setUnfilled(true)
+    }
+    sync()
+    if (typeof MutationObserver === 'undefined') return undefined
+    const observer = new MutationObserver(sync)
+    observer.observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] })
+    return () => observer.disconnect()
   }, [client, testMode])
 
   return (
@@ -168,6 +186,17 @@ function GoogleAdUnit() {
           </motion.div>
         )}
       </AnimatePresence>
+      {unfilled && (
+        <div
+          className="adsense-fallback absolute inset-0 z-10 items-center justify-center"
+          data-visible="true"
+          aria-hidden="true"
+        >
+          <span className="px-4 text-center text-[11px] font-mono uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            {t('ads.adUnavailable', { defaultValue: 'Ad unavailable' })}
+          </span>
+        </div>
+      )}
       <motion.div
         className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-[0.15em] flex items-center gap-1.5"
         style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.2)', color: 'rgba(251,191,36,0.6)' }}

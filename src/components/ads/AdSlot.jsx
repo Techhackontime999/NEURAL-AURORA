@@ -1,13 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 import { useAdPlacement } from '../../lib/ads'
 import { AD_PROVIDERS, AD_SLOTS, isAdTestMode, loadAdSenseScript, pushAdSense } from '../../lib/adsConfig'
 
+function AdFallback({ visible, minHeight }) {
+  return (
+    <div
+      className="adsense-fallback min-h-[90px] items-center justify-center rounded-lg border border-dashed text-center text-[10px] font-mono uppercase tracking-[0.18em]"
+      data-visible={visible ? 'true' : undefined}
+      aria-hidden="true"
+      style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)', minHeight }}
+    >
+      Sponsored space
+    </div>
+  )
+}
+
 function AdSenseUnit({ placement }) {
   const testMode = isAdTestMode()
   const insRef = useRef(null)
   const requestedRef = useRef(false)
+  const [scriptFailed, setScriptFailed] = useState(false)
 
   // The AdSense runtime is heavy. Request it only when the slot is near the
   // viewport so it never competes with the page's LCP, and never push twice
@@ -17,8 +31,11 @@ function AdSenseUnit({ placement }) {
     const request = () => {
       if (requestedRef.current) return
       requestedRef.current = true
+      setScriptFailed(false)
       loadAdSenseScript(placement.ad_client).then((ready) => {
-        if (alive && ready) pushAdSense()
+        if (!alive) return
+        if (ready) pushAdSense()
+        else setScriptFailed(true)
       })
     }
 
@@ -40,18 +57,22 @@ function AdSenseUnit({ placement }) {
     }
   }, [placement.ad_client, placement.ad_slot, testMode])
 
+  const minHeight = placement.ad_slot ? '90px' : '160px'
   return (
-    <ins
-      ref={insRef}
-      className="adsbygoogle block w-full"
-      style={{ display: 'block', minHeight: placement.ad_slot ? '90px' : '160px' }}
-      data-ad-client={placement.ad_client}
-      data-ad-slot={placement.ad_slot || undefined}
-      data-ad-format={AD_SLOTS[placement.slot]?.format || 'auto'}
-      data-adtest={testMode ? 'on' : undefined}
-      data-full-width-responsive="true"
-      aria-label="Advertisement"
-    />
+    <>
+      <ins
+        ref={insRef}
+        className="adsbygoogle block w-full"
+        style={{ display: 'block', minHeight }}
+        data-ad-client={placement.ad_client}
+        data-ad-slot={placement.ad_slot || undefined}
+        data-ad-format={AD_SLOTS[placement.slot]?.format || 'auto'}
+        data-adtest={testMode ? 'on' : undefined}
+        data-full-width-responsive="true"
+        aria-label="Advertisement"
+      />
+      <AdFallback visible={scriptFailed} minHeight={minHeight} />
+    </>
   )
 }
 

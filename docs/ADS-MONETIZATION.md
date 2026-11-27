@@ -23,8 +23,10 @@ protocol-relative and backslash tricks are rejected.
 
 - Public reads are limited to active rows; `starts_at` / `ends_at` are enforced in the browser.
 - One placement per slot per view, chosen by weight. A session sees at most 8 ads total.
-- Impressions are counted only when the unit is actually visible. Unfilled AdSense units
-  collapse instead of leaving a blank box.
+- Impressions are counted only when the unit is actually visible. When Google marks a unit
+  `data-ad-status="unfilled"`, only the empty `<ins>` is hidden; the labelled box stays and
+  shows a quiet "Sponsored space" fallback instead of flashing away. The gateway player uses
+  the same pattern with "Ad unavailable".
 - The AdSense runtime is requested only when a slot is within 300px of the viewport, so it
   never competes with the page's LCP. `ADSENSE_ENABLED=false` disables it entirely.
 - `/admin/ad-placements` shows total impressions, clicks and CTR; the test-mode switch is

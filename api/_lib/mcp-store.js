@@ -1095,6 +1095,155 @@ async function executeTool(name, args, ctx, client = db()) {
       return simpleResult({ deleted: true, gallery_item: row })
     }
 
+    case 'mcp_search_content': {
+      const term = sanitizeText(args.query, 80).trim().toLowerCase()
+      if (term.length < 2) throw httpError(400, 'invalid_query', 'Search term must be at least 2 characters.')
+      const perSource = Math.min(args.limit || 5, 10)
+      const [projects, services, posts, caseStudies, gallery] = await Promise.all([
+        must(client.from('projects').select('id, project_id, title, description').order('display_order', { ascending: true }).limit(100)),
+        must(client.from('services').select('id, service_id, title, tagline, description').order('display_order', { ascending: true }).limit(100)),
+        must(client.from('blog_posts').select('id, slug, title, excerpt, tags').order('date', { ascending: false }).limit(100)),
+        must(client.from('case_studies').select('id, cs_id, title, description, outcome').order('display_order', { ascending: true }).limit(100)),
+        must(client.from('gallery').select('id, gallery_id, title, category, description').order('display_order', { ascending: true }).limit(100)),
+      ])
+      const matches = (rows, refKey, textKeys) =>
+        rows
+          .filter((row) =>
+            [row.title, ...textKeys.map((key) => row[key])]
+              .some((value) => String(value || '').toLowerCase().includes(term))
+          )
+          .slice(0, perSource)
+          .map((row) => {
+            const summary = textKeys.map((key) => String(row[key] || '')).filter(Boolean).join(' · ')
+            return {
+              id: row.id,
+              ref: row[refKey],
+              title: sanitizeText(row.title || '', 200),
+              summary: sanitizeText(summary, 240),
+            }
+          })
+      return untrustedResult({
+        query: term,
+        matches: {
+          projects: matches(projects, 'project_id', ['description']),
+          services: matches(services, 'service_id', ['tagline', 'description']),
+          posts: matches(posts, 'slug', ['excerpt', 'tags']),
+          case_studies: matches(caseStudies, 'cs_id', ['description', 'outcome']),
+          gallery: matches(gallery, 'gallery_id', ['category', 'description']),
+        },
+      })
+    }
+
+    case 'mcp_list_case_studies': {
+      const rows = must(
+        await client.from('case_studies').select('id, cs_id, title, slug, description, outcome, tech, display_order')
+          .order('display_order', { ascending: true }).limit(args.limit || 30)
+      )
+      return untrustedResult({ case_studies: rows })
+    }
+
+    case 'mcp_get_case_study': {
+      const columns = 'id, cs_id, title, slug, description, outcome, content, tech, display_order'
+      const parsed = numericOrColumn(args.id)
+      const looksLikeSlug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args.id)
+      let query = client.from('case_studies').select(columns)
+      if (parsed.column) query = query.eq('id', parsed.value)
+      else if (looksLikeSlug) query = query.eq('slug', args.id)
+      else query = query.eq('cs_id', args.id)
+      let row = must(await query.maybeSingle())
+      if (!row && !parsed.column) {
+        row = must(
+          await client.from('case_studies').select(columns).eq(looksLikeSlug ? 'cs_id' : 'slug', args.id).maybeSingle()
+        )
+      }
+      if (!row) throw httpError(404, 'not_found', 'Case study not found.')
+      return untrustedResult({ case_study: row })
+    }
+
+    case 'mcp_list_appointments': {
+      let query = client.from('appointments').select(
+        'id, customer_name, customer_email, type_name_snapshot, preferred_date, preferred_time, timezone, status, payment_status, created_at'
+      )
+      if (args.status) query = query.eq('status', args.status)
+      if (args.paymentStatus) query = query.eq('payment_status', args.paymentStatus)
+      const rows = must(await query.order('preferred_date', { ascending: false }).limit(args.limit || 30))
+      return untrustedResult({
+        appointments: rows.map((row) => ({
+          ...row,
+          customer_name: sanitizeText(row.customer_name, 160),
+          customer_email: sanitizeText(row.customer_email, 254),
+        })),
+      })
+    }
+
+    case 'mcp_list_reply_drafts': {
+      let query = client.from('customer_reply_drafts')
+        .select('id, inquiry_id, recipient_name, subject, body, status, created_at')
+        .eq('owner_user_id', ownerUserId)
+      if (args.status) query = query.eq('status', args.status)
+      const rows = must(await query.order('created_at', { ascending: false }).limit(args.limit || 30))
+      return untrustedResult({
+        drafts: rows.map((row) => ({
+          ...row,
+          recipient_name: sanitizeText(row.recipient_name, 160),
+          body: sanitizeText(row.body, 6000),
+        })),
+      })
+    }
+
+    case 'mcp_update_reply_draft': {
+      const parsed = numericOrColumn(args.id)
+      if (!parsed.column) throw httpError(400, 'invalid_id', 'Reply draft id must be numeric.')
+      const patch = {}
+      if (args.subject !== undefined) patch.subject = sanitizeText(args.subject, 160)
+      if (args.body !== undefined) patch.body = sanitizeText(args.body, 6000)
+      if (args.status !== undefined) patch.status = args.status
+      if (Object.keys(patch).length === 0) throw httpError(400, 'empty_update', 'No fields to update.')
+      const row = must(
+        await client.from('customer_reply_drafts').update(patch).eq('id', parsed.value)
+          .eq('owner_user_id', ownerUserId)
+          .select('id, inquiry_id, subject, body, status, created_at').maybeSingle()
+      )
+      if (!row) throw httpError(404, 'not_found', 'Reply draft not found.')
+      return simpleResult({ draft: row, sent: false })
+    }
+
+    case 'mcp_list_admin_reports': {
+      const rows = must(
+        await client.from('admin_reports').select('id, title, summary, period_start, period_end, created_at')
+          .eq('owner_user_id', ownerUserId)
+          .order('created_at', { ascending: false }).limit(args.limit || 30)
+      )
+      return untrustedResult({
+        reports: rows.map((row) => ({ ...row, summary: sanitizeText(row.summary, 4000) })),
+      })
+    }
+
+    case 'mcp_list_approved_reviews': {
+      const rows = must(
+        await client.from('reviews').select('id, name, rating, message, created_at')
+          .eq('approved', true).order('created_at', { ascending: false }).limit(args.limit || 30)
+      )
+      return untrustedResult({
+        reviews: rows.map((row) => ({
+          ...row,
+          name: sanitizeText(row.name, 160),
+          message: sanitizeText(row.message, 4000),
+        })),
+      })
+    }
+
+    case 'mcp_set_appointment_note': {
+      const parsed = numericOrColumn(args.id)
+      if (!parsed.column) throw httpError(400, 'invalid_id', 'Appointment id must be numeric.')
+      const row = must(
+        await client.from('appointments').update({ admin_note: sanitizeText(args.note, 2000) })
+          .eq('id', parsed.value).select('id, status, admin_note').maybeSingle()
+      )
+      if (!row) throw httpError(404, 'not_found', 'Appointment not found.')
+      return simpleResult({ appointment: row, customer_notified: false })
+    }
+
     default:
       throw httpError(403, 'prohibited_operation', 'Tool is not permitted.')
   }

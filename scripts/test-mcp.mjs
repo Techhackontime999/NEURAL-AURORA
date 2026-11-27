@@ -593,6 +593,13 @@ function rpc(body, extraHeaders = {}) {
   check('policy: no prohibited operation is exposed as a tool', policy.TOOLS.every((tool) => !policy.isProhibitedToolName(tool.name)), policy.TOOLS.map((tool) => tool.name).join(', '))
   check('policy: no WhatsApp portfolio command is exposed', !policy.TOOLS.some((tool) => /whatsapp|message_send|send_sms/i.test(tool.name)))
   check('policy: payment and licensing names are always prohibited', ['mcp_refund', 'mcp_payout', 'mcp_issue_license', 'mcp_change_entitlement', 'mcp_sql_query', 'mcp_shell_exec'].every((name) => policy.toolAccessError(name) === 'unknown_tool' || policy.toolAccessError(name) === 'prohibited_operation'))
+  const expandedTools = ['mcp_search_content', 'mcp_list_case_studies', 'mcp_get_case_study', 'mcp_list_appointments', 'mcp_list_reply_drafts', 'mcp_update_reply_draft', 'mcp_list_admin_reports', 'mcp_list_approved_reviews', 'mcp_set_appointment_note']
+  check('policy: expanded read and internal-write tools are registered', expandedTools.every((name) => policy.TOOL_MAP.has(name)), expandedTools.filter((name) => !policy.TOOL_MAP.has(name)).join(', '))
+  check('policy: expanded write tools never send or publish', ['mcp_update_reply_draft', 'mcp_set_appointment_note'].every((name) => {
+    const tool = policy.TOOL_MAP.get(name)
+    return tool?.risk === 'write' && tool.approval === 'configurable' && /never|does not|without/i.test(tool.description)
+  }))
+  check('policy: search tool is bounded and read-only', policy.TOOL_MAP.get('mcp_search_content').risk === 'read' && policy.TOOL_MAP.get('mcp_search_content').inputSchema.properties.limit.maximum <= 10)
   check('policy: tool requires grant, scope and global enablement', policy.toolAccessError('mcp_get_profile', { allowedTools: [], scopes: ['profile:read'] }) === 'tool_not_granted' && policy.toolAccessError('mcp_get_profile', { allowedTools: ['mcp_get_profile'], scopes: [] }) === 'scope_not_granted' && policy.toolAccessError('mcp_get_profile', { allowedTools: ['mcp_get_profile'], scopes: ['profile:read'], globalEnabledTools: { mcp_get_profile: false } }) === 'tool_disabled' && policy.toolAccessError('mcp_get_profile', { accessEnabled: false }) === 'external_ai_access_disabled')
 }
 {

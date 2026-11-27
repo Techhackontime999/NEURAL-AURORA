@@ -56,5 +56,20 @@ for (const [label, expected] of [
   console.log(`${ok ? 'ok  ' : 'FAIL'}  service worker denylist: ${label.padEnd(16)} -> ${ok ? 'excluded' : 'missing'}`)
 }
 
+// ChatGPT normalized connectors may append a trailing slash to the endpoint,
+// so both forms must reach the same MCP function.
+const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
+const rewriteSources = new Set(vercel.rewrites.map((rule) => rule.source))
+const requiredRewrites = [
+  '/api/mcp', '/api/mcp/',
+  '/api/mcp/register', '/api/mcp/register/',
+  '/api/mcp/authorize', '/api/mcp/authorize/',
+  '/api/mcp/token', '/api/mcp/token/',
+  '/api/mcp/revoke', '/api/mcp/revoke/',
+]
+const missingRewrites = requiredRewrites.filter((path) => !rewriteSources.has(path))
+if (missingRewrites.length) failures += missingRewrites.length
+console.log(`${missingRewrites.length ? 'FAIL' : 'ok  '}  vercel rewrites: MCP canonical + trailing paths -> ${missingRewrites.length ? missingRewrites.join(', ') : 'complete'}`)
+
 console.log(failures === 0 ? '\nAll route rankings correct.' : `\n${failures} failure(s).`)
 process.exit(failures === 0 ? 0 : 1)

@@ -60,7 +60,15 @@
       "destination": "/api/ai?action=mcp"
     },
     {
+      "source": "/api/mcp/",
+      "destination": "/api/ai?action=mcp"
+    },
+    {
       "source": "/api/mcp/register",
+      "destination": "/api/ai?action=oauth-register"
+    },
+    {
+      "source": "/api/mcp/register/",
       "destination": "/api/ai?action=oauth-register"
     },
     {
@@ -68,11 +76,23 @@
       "destination": "/api/ai?action=oauth-authorize"
     },
     {
+      "source": "/api/mcp/authorize/",
+      "destination": "/api/ai?action=oauth-authorize"
+    },
+    {
       "source": "/api/mcp/token",
       "destination": "/api/ai?action=oauth-token"
     },
     {
+      "source": "/api/mcp/token/",
+      "destination": "/api/ai?action=oauth-token"
+    },
+    {
       "source": "/api/mcp/revoke",
+      "destination": "/api/ai?action=oauth-revoke"
+    },
+    {
+      "source": "/api/mcp/revoke/",
       "destination": "/api/ai?action=oauth-revoke"
     },
     {

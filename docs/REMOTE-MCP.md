@@ -20,7 +20,7 @@ Set `SITE_URL` to the public HTTPS deployment origin (for example `https://neura
 
 All routes are served by the existing `/api/ai` Vercel function through `vercel.json` rewrites. This keeps the project inside the Hobby plan's 12-function budget.
 
-> **Do not open `/api/mcp/authorize` directly or paste it into a client's Connection field.** It only works when the OAuth client supplies `client_id`, `redirect_uri`, `state`, `code_challenge`, `code_challenge_method` and `scope`. It then redirects the owner to `/admin/ai-connections/authorize?request=...&state=...` for consent. Opening it bare returns a `400 invalid_client` JSON error. The PWA service worker explicitly excludes `/api/*` and `/.well-known/*` from its SPA fallback, so an installed app cannot turn these endpoints into a React 404.
+> **Do not open `/api/mcp/authorize` directly or paste it into a client's Connection field.** It only works when the OAuth client supplies `client_id`, `redirect_uri`, `state`, `code_challenge`, `code_challenge_method` and `scope`. It then redirects the owner to `/admin/ai-connections/authorize?request=...&state=...` for consent. Opening it bare returns a `400 invalid_client` JSON error. The PWA service worker explicitly excludes `/api/*` and `/.well-known/*` from its SPA fallback, so an installed app cannot turn these endpoints into a React 404. Canonical and trailing-slash forms (`/api/mcp` and `/api/mcp/`) both reach the same endpoint; the canonical OAuth resource remains the form without a trailing slash.
 
 ### Transport and JSON-RPC
 

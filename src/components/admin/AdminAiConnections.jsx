@@ -492,7 +492,7 @@ export default function AdminAiConnections() {
               <code title={mcpUrl}>{mcpUrl}</code>
               <CopyButton value={mcpUrl} toast={toast} label="MCP endpoint" />
             </div>
-            <span className="mcp-sub">Use this URL in ChatGPT, Claude, Cursor, or any HTTP MCP client.</span>
+            <span className="mcp-sub">Use this URL in ChatGPT, Claude, Cursor, or any HTTP MCP client. A trailing slash is accepted too; this is the canonical OAuth resource.</span>
           </div>
         </div>
       </div>
